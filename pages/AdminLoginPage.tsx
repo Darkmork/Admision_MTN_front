@@ -50,7 +50,7 @@ const LoginPage: React.FC = () => {
                             id="email"
                             label="Correo Electrónico"
                             type="email"
-                            placeholder={userType === 'familia' ? 'familia@ejemplo.com' : 'admin@montetabor.cl'}
+                            placeholder={userType === 'familia' ? 'familia@ejemplo.com' : 'admin@mtn.cl'}
                             isRequired
                         />
                         <Input

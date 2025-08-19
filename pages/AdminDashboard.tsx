@@ -1,308 +1,418 @@
-
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import Card from '../components/ui/Card';
-import Table from '../components/ui/Table';
-import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
+import Badge from '../components/ui/Badge';
 import Modal from '../components/ui/Modal';
-import { mockApplications } from '../services/mockData';
-import { ApplicationStatus, Application } from '../types';
-import { DashboardIcon, FileTextIcon, UsersIcon, BarChartIcon, CheckCircleIcon } from '../components/icons/Icons';
-import { useApplications, useNotifications } from '../context/AppContext';
+import { DashboardIcon, FileTextIcon, UsersIcon, BarChartIcon, CheckCircleIcon, ClockIcon, UserIcon } from '../components/icons/Icons';
+import { 
+  FiFileText, 
+  FiBarChart2, 
+  FiFile, 
+  FiKey, 
+  FiMail, 
+  FiAlertTriangle, 
+  FiCheckCircle, 
+  FiXCircle, 
+  FiRefreshCw, 
+  FiEdit,
+  FiUser,
+  FiBookOpen,
+  FiCalendar,
+  FiClock,
+  FiEye,
+  FiDownload,
+  FiUpload,
+  FiPlus,
+  FiTrash2,
+  FiSettings,
+  FiList,
+  FiAlertCircle,
+  FiInfo,
+  FiCheck,
+  FiX,
+  FiSearch
+} from 'react-icons/fi';
+import CreateUserForm from '../components/admin/CreateUserForm';
+import { CreateUserRequest, UserRole, User } from '../types/user';
+import { useApplications, useNotifications, useAppContext } from '../context/AppContext';
+import { schoolUserService } from '../services/schoolUserService';
+import { 
+  evaluationService
+} from '../services/evaluationService';
+import {
+  Evaluation, 
+  EvaluationType, 
+  EvaluationStatus,
+  EVALUATION_TYPE_LABELS,
+  EVALUATION_STATUS_LABELS 
+} from '../types/evaluation';
+import EvaluationManagement from '../components/admin/EvaluationManagement';
+import EvaluationStatistics from '../components/admin/EvaluationStatistics';
+import EvaluationReports from '../components/admin/EvaluationReports';
+import EvaluatorManagement from '../components/admin/EvaluatorManagement';
+import { UserManagement } from '../components/users';
+import { Application } from '../services/applicationService';
+import { mockApplications, mockApplicationService } from '../services/mockApplicationService';
+import { useAuth } from '../context/AuthContext';
+
 
 const sections = [
   { key: 'dashboard', label: 'Dashboard General' },
   { key: 'postulaciones', label: 'Gestión de Postulaciones' },
+  { key: 'evaluaciones', label: 'Gestión de Evaluaciones' },
+  { key: 'evaluadores', label: 'Gestión de Evaluadores' },
   { key: 'entrevistas', label: 'Gestión de Entrevistas' },
+  { key: 'analytics', label: 'Análisis de Datos' },
   { key: 'reportes', label: 'Reportes' },
   { key: 'usuarios', label: 'Gestión de Usuarios' },
   { key: 'notificaciones', label: 'Notificaciones' },
   { key: 'historial', label: 'Historial de Acciones' },
-  { key: 'cuenta', label: 'Opciones de Cuenta' },
-  { key: 'ayuda', label: 'Ayuda y Soporte' },
+
 ];
 
 const AdminDashboard: React.FC = () => {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const { applications: contextApplications, updateApplication } = useApplications();
-  const { addNotification } = useNotifications();
+  const [dateFilter, setDateFilter] = useState({ start: '', end: '' });
+  const [statusFilter, setStatusFilter] = useState('all');
   
-  // Use context applications if available, otherwise use mock data
-  const applicationsData = contextApplications.length > 0 ? contextApplications : mockApplications;
+  // Estados para cambio de contraseña
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  
+  // Estados para gestión de usuarios
+  const [showCreateUserForm, setShowCreateUserForm] = useState(false);
+  const [showEditUserForm, setShowEditUserForm] = useState(false);
+  const [showActivityModal, setShowActivityModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [showCredentialsModal, setShowCredentialsModal] = useState(false);
+  const [showAuditModal, setShowAuditModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
+  const [userFilter, setUserFilter] = useState({
+    role: 'all',
+    status: 'all',
+    search: ''
+  });
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+  
+  // Evaluation management state
+  const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
+  const [isLoadingEvaluations, setIsLoadingEvaluations] = useState(false);
+  const [evaluationFilter, setEvaluationFilter] = useState({
+    status: 'all',
+    type: 'all',
+    evaluator: 'all'
+  });
+  const [evaluationSubsection, setEvaluationSubsection] = useState<'management' | 'statistics' | 'reports'>('management');
+  const [showAssignEvaluationModal, setShowAssignEvaluationModal] = useState(false);
+  const [selectedApplicationForEvaluation, setSelectedApplicationForEvaluation] = useState<Application | null>(null);
+  
+  // Estados para aplicaciones reales
+  const { applications } = useApplications();
+  const { addNotification } = useNotifications();
+  const { user, logout } = useAuth();
+  const { dispatch } = useAppContext();
+  
+  // Estado local para aplicaciones (para evaluadores)
+  const [localApplications, setLocalApplications] = useState<Application[]>([]);
+  const [isLoadingLocalApplications, setIsLoadingLocalApplications] = useState(false);
 
-  const stats = useMemo(() => {
-    const statusCounts = applicationsData.reduce((acc, app) => {
-      acc[app.status] = (acc[app.status] || 0) + 1;
-      return acc;
-    }, {} as Record<ApplicationStatus, number>);
+  useEffect(() => {
+    loadApplications();
+    if (activeSection === 'usuarios') {
+      loadUsers();
+    }
+    if (activeSection === 'evaluadores') {
+      loadLocalApplications();
+    }
+  }, [activeSection]);
 
-    return {
-      totalApplications: applicationsData.length,
-      acceptedApplications: applicationsData.filter(a => a.status === ApplicationStatus.ACCEPTED).length,
-      interviewsScheduled: applicationsData.filter(a => a.status === ApplicationStatus.INTERVIEW_SCHEDULED).length,
-      recentApplications: applicationsData.slice(0, 5),
-      statusCounts,
-    };
-  }, [applicationsData]);
-
-  const handleUpdateApplicationStatus = (applicationId: string, newStatus: ApplicationStatus) => {
-    updateApplication(applicationId, { status: newStatus });
-    addNotification({
-      type: 'success',
-      title: 'Estado actualizado',
-      message: `Se ha actualizado el estado de la postulación a ${newStatus}`
-    });
-    setIsModalOpen(false);
-    setSelectedApplication(null);
+  const loadApplications = async () => {
+    try {
+      dispatch({ type: 'SET_LOADING', payload: true });
+      // Use the public endpoint for now (for development)
+      const response = await fetch('http://localhost:8080/api/applications/public/all', {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        dispatch({ type: 'SET_APPLICATIONS', payload: data });
+      } else {
+        // If API fails, use mock applications for development
+        console.warn('API call failed, using mock applications');
+        const mockApps = [
+          {
+            id: 'APP-001',
+            status: 'SUBMITTED',
+            submissionDate: '2024-08-15T10:30:00',
+            student: {
+              firstName: 'Juan Carlos',
+              lastName: 'Gangale González',
+              rut: '12345678-9',
+              gradeApplied: '3° Básico'
+            }
+          },
+          {
+            id: 'APP-002',
+            status: 'INTERVIEW_SCHEDULED',
+            submissionDate: '2024-08-16T09:15:00',
+            student: {
+              firstName: 'Ana Sofía',
+              lastName: 'González López',
+              rut: '87654321-0',
+              gradeApplied: '4° Básico'
+            }
+          }
+        ];
+        dispatch({ type: 'SET_APPLICATIONS', payload: mockApps });
+      }
+    } catch (error) {
+      console.error('Error loading applications:', error);
+      // Use mock data as fallback
+      const mockApps = [
+        {
+          id: 'APP-001',
+          status: 'SUBMITTED',
+          submissionDate: '2024-08-15T10:30:00',
+          student: {
+            firstName: 'Juan Carlos',
+            lastName: 'Gangale González',
+            rut: '12345678-9',
+            gradeApplied: '3° Básico'
+          }
+        }
+      ];
+      dispatch({ type: 'SET_APPLICATIONS', payload: mockApps });
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
   };
 
-  const getStatusBadgeVariant = (status: ApplicationStatus) => {
-    switch (status) {
-      case ApplicationStatus.ACCEPTED: return 'success';
-      case ApplicationStatus.REJECTED: return 'error';
-      case ApplicationStatus.WAITLIST: return 'warning';
-      case ApplicationStatus.INTERVIEW_SCHEDULED: return 'info';
-      default: return 'neutral';
+  const loadLocalApplications = async () => {
+    try {
+      setIsLoadingLocalApplications(true);
+      const apps = await mockApplicationService.getAllApplications();
+      setLocalApplications(apps);
+    } catch (error) {
+      console.error('Error loading local applications:', error);
+      // Fallback a datos estáticos
+      setLocalApplications(mockApplications);
+    } finally {
+      setIsLoadingLocalApplications(false);
+    }
+  };
+
+  const loadUsers = async () => {
+    try {
+      setIsLoadingUsers(true);
+      const usersData = await schoolUserService.getUsers();
+      setUsers(usersData);
+    } catch (error) {
+      console.error('Error cargando usuarios:', error);
+      addNotification({
+        type: 'error',
+        title: 'Error',
+        message: 'No se pudieron cargar los usuarios'
+      });
+    } finally {
+      setIsLoadingUsers(false);
     }
   };
 
   const renderSection = () => {
     switch (activeSection) {
-            case 'dashboard':
-                return (
-          <Card className="p-6 mb-6">
-            <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">Dashboard General</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <Card className="p-6"><h3 className="text-gris-piedra font-semibold">Total Postulaciones</h3><p className="text-4xl font-bold text-azul-monte-tabor">{stats.totalApplications}</p></Card>
-              <Card className="p-6"><h3 className="text-gris-piedra font-semibold">Aceptados</h3><p className="text-4xl font-bold text-verde-esperanza">{stats.acceptedApplications}</p></Card>
-              <Card className="p-6"><h3 className="text-gris-piedra font-semibold">Entrevistas Agendadas</h3><p className="text-4xl font-bold text-dorado-nazaret">{stats.interviewsScheduled}</p></Card>
-                    </div>
-            <h3 className="text-xl font-bold text-azul-monte-tabor mb-4">Postulaciones Recientes</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                            <tbody>
-                  {stats.recentApplications.map(app => (
-                    <tr key={app.id} className="border-b last:border-none">
-                      <td className="py-3 pr-3 font-bold">{app.applicant.firstName} {app.applicant.lastName}</td>
-                      <td className="py-3 px-3 text-gris-piedra">{app.applicant.grade}</td>
-                      <td className="py-3 pl-3 text-right">
-                        <span className="px-2 py-1 rounded-full font-semibold text-xs bg-blue-200 text-azul-monte-tabor">{app.status}</span>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-            </div>
-          </Card>
-        );
-      case 'postulaciones':
-        const applicationColumns = [
-          {
-            key: 'applicant' as keyof Application,
-            header: 'Postulante',
-            render: (value: any, item: Application) => (
-              <div>
-                <p className="font-semibold">{item.applicant.firstName} {item.applicant.lastName}</p>
-                <p className="text-sm text-gris-piedra">{item.applicant.grade}</p>
+      case 'dashboard':
+        return (
+          <div className="space-y-6">
+            {/* Welcome Card */}
+            <Card className="p-6 bg-gradient-to-r from-azul-monte-tabor to-blue-600 text-white">
+              <h2 className="text-2xl font-bold mb-2">
+                Bienvenido/a, {user?.firstName} {user?.lastName}
+              </h2>
+              <p className="text-blue-100 mb-4">
+                Panel de administración del sistema de admisión
+              </p>
+              <div className="flex gap-4">
+                <Button 
+                  variant="outline" 
+                  className="text-white border-white hover:bg-white hover:text-azul-monte-tabor"
+                  onClick={() => setActiveSection('postulaciones')}
+                >
+                  Ver Postulaciones
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="text-white border-white hover:bg-white hover:text-azul-monte-tabor"
+                  onClick={() => setActiveSection('evaluaciones')}
+                >
+                  Gestionar Evaluaciones
+                </Button>
               </div>
-            )
-          },
-          {
-            key: 'submissionDate' as keyof Application,
-            header: 'Fecha de Postulación',
-            render: (value: string) => new Date(value).toLocaleDateString('es-CL')
-          },
-          {
-            key: 'status' as keyof Application,
-            header: 'Estado',
-            render: (value: ApplicationStatus) => (
-              <Badge variant={getStatusBadgeVariant(value)}>
-                {value}
-              </Badge>
-            )
-          },
-          {
-            key: 'interviewDate' as keyof Application,
-            header: 'Entrevista',
-            render: (value: string | undefined) => 
-              value ? new Date(value).toLocaleDateString('es-CL') : '-'
-          },
-          {
-            key: 'id' as keyof Application,
-            header: 'Acciones',
-            render: (value: string, item: Application) => (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  setSelectedApplication(item);
-                  setIsModalOpen(true);
-                }}
-              >
-                Ver Detalles
-              </Button>
-            )
-          }
-        ];
+            </Card>
 
+            {/* Stats Overview */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <Card className="p-4 text-center">
+                <FileTextIcon className="w-8 h-8 text-blue-500 mx-auto mb-2" />
+                <p className="text-2xl font-bold text-blue-600">
+                  {applications.length}
+                </p>
+                <p className="text-sm text-gris-piedra">Total Postulaciones</p>
+              </Card>
+              
+              <Card className="p-4 text-center">
+                <ClockIcon className="w-8 h-8 text-yellow-500 mx-auto mb-2" />
+                <p className="text-2xl font-bold text-yellow-600">
+                  {applications.filter(app => app.status === 'PENDING').length}
+                </p>
+                <p className="text-sm text-gris-piedra">Pendientes</p>
+              </Card>
+              
+              <Card className="p-4 text-center">
+                <CheckCircleIcon className="w-8 h-8 text-green-500 mx-auto mb-2" />
+                <p className="text-2xl font-bold text-green-600">
+                  {applications.filter(app => app.status === 'APPROVED').length}
+                </p>
+                <p className="text-sm text-gris-piedra">Aprobadas</p>
+              </Card>
+              
+              <Card className="p-4 text-center">
+                <UsersIcon className="w-8 h-8 text-purple-500 mx-auto mb-2" />
+                <p className="text-2xl font-bold text-purple-600">
+                  {users.length}
+                </p>
+                <p className="text-sm text-gris-piedra">Usuarios Sistema</p>
+              </Card>
+            </div>
+          </div>
+        );
+
+      case 'evaluaciones':
         return (
-          <Card className="p-6">
-            <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">Gestión de Postulaciones</h2>
-            <Table 
-              data={applicationsData} 
-              columns={applicationColumns}
-              emptyMessage="No hay postulaciones disponibles"
+          <div className="space-y-6">
+            {/* Navigation tabs for subsections */}
+            <div className="flex gap-2">
+              <Button
+                variant={evaluationSubsection === 'management' ? 'primary' : 'outline'}
+                onClick={() => setEvaluationSubsection('management')}
+              >
+                <FiList className="w-5 h-5 mr-2" />
+                Gestión de Evaluaciones
+              </Button>
+              <Button
+                variant={evaluationSubsection === 'statistics' ? 'primary' : 'outline'}
+                onClick={() => setEvaluationSubsection('statistics')}
+              >
+                <FiBarChart2 className="w-5 h-5 mr-2" />
+                Estadísticas y Análisis
+              </Button>
+              <Button
+                variant={evaluationSubsection === 'reports' ? 'primary' : 'outline'}
+                onClick={() => setEvaluationSubsection('reports')}
+              >
+                <FiFile className="w-5 h-5 mr-2" />
+                Informes y Reportes
+              </Button>
+            </div>
+
+            {/* Render appropriate subsection */}
+            {evaluationSubsection === 'management' ? (
+              <EvaluationManagement 
+                applications={applications} 
+                onRefresh={loadApplications}
+              />
+            ) : evaluationSubsection === 'statistics' ? (
+              <EvaluationStatistics />
+            ) : (
+              <EvaluationReports 
+                applications={applications}
+                onRefresh={loadApplications}
+              />
+            )}
+          </div>
+        );
+
+      case 'evaluadores':
+        return (
+          <div className="space-y-6">
+            <EvaluatorManagement 
+              applications={localApplications} 
+              onRefresh={loadLocalApplications}
             />
-          </Card>
+          </div>
         );
-      case 'entrevistas':
-        return (
-          <Card className="p-6">
-            <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">Gestión de Entrevistas</h2>
-            <p className="text-gris-piedra">(Aquí se podrá agendar, ver y gestionar entrevistas.)</p>
-          </Card>
-        );
-      case 'reportes':
-        return (
-          <Card className="p-6">
-            <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">Reportes</h2>
-            <p className="text-gris-piedra">(Aquí se podrán ver estadísticas, gráficos y exportar datos.)</p>
-          </Card>
-        );
+
       case 'usuarios':
         return (
-          <Card className="p-6">
-            <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">Gestión de Usuarios</h2>
-            <p className="text-gris-piedra">(Aquí se podrán gestionar cuentas de administradores y familias.)</p>
-          </Card>
+          <div className="space-y-6">
+            <UserManagement />
+          </div>
         );
-      case 'notificaciones':
+
+
+
+      default:
         return (
           <Card className="p-6">
-            <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">Notificaciones</h2>
-            <p className="text-gris-piedra">(Aquí aparecerán notificaciones importantes para los administradores.)</p>
+            <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">
+              Sección en Desarrollo
+            </h2>
+            <p className="text-gris-piedra">Esta sección estará disponible próximamente.</p>
           </Card>
         );
-      case 'historial':
-        return (
-          <Card className="p-6">
-            <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">Historial de Acciones</h2>
-            <p className="text-gris-piedra">(Aquí se mostrará el historial de acciones realizadas por los administradores en el sistema.)</p>
-          </Card>
-        );
-      case 'cuenta':
-        return (
-          <Card className="p-6">
-            <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">Opciones de Cuenta</h2>
-            <ul className="space-y-3">
-              <li><button className="text-azul-monte-tabor hover:underline">Cambiar contraseña</button></li>
-              <li><button className="text-azul-monte-tabor hover:underline">Cerrar sesión</button></li>
-            </ul>
-          </Card>
-        );
-      case 'ayuda':
-        return (
-          <Card className="p-6">
-            <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">Ayuda y Soporte</h2>
-            <p className="text-gris-piedra">¿Tienes dudas? Contáctanos a <a href="mailto:contacto@montetabor.cl" className="text-azul-monte-tabor underline">contacto@montetabor.cl</a></p>
-                    </Card>
-                );
-            default:
-        return null;
-        }
-    };
-    
+    }
+  };
+
   return (
-    <>
-      <div className="flex min-h-[calc(100vh-150px)] bg-gray-50 py-12">
+    <div className="min-h-screen bg-gray-50">
+      <div className="flex">
         {/* Sidebar */}
-        <aside className="w-64 bg-azul-monte-tabor p-6 flex-shrink-0 hidden md:flex md:flex-col rounded-xl mr-8">
-          <nav className="space-y-2">
+        <aside className="w-64 bg-white shadow-md min-h-screen flex flex-col">
+          <div className="p-6">
+            <h1 className="text-xl font-bold text-azul-monte-tabor">Panel Admin</h1>
+            <p className="text-sm text-gris-piedra mt-1">{user?.firstName} {user?.lastName}</p>
+          </div>
+          <nav className="px-4 flex-1">
             {sections.map(section => (
-          <button
+              <button
                 key={section.key}
                 onClick={() => setActiveSection(section.key)}
-                className={`w-full text-left px-4 py-2 rounded-lg font-semibold transition-colors duration-200 ${activeSection === section.key ? 'bg-dorado-nazaret/20 text-dorado-nazaret' : 'text-blanco-pureza hover:bg-blue-800'}`}
-          >
-                {section.label}
-          </button>
+                className={`w-full flex items-center gap-3 px-4 py-3 mb-2 rounded-lg text-left transition-colors ${
+                  activeSection === section.key
+                    ? 'bg-azul-monte-tabor text-white'
+                    : 'text-gris-piedra hover:bg-gray-100'
+                }`}
+              >
+                <span className="text-sm">{section.label}</span>
+              </button>
             ))}
-                  </nav>
-              </aside>
-              {/* Main Content */}
-        <main className="flex-1 max-w-5xl mx-auto">
+          </nav>
+          <div className="p-4 border-t border-gray-200 mt-auto">
+            <Button
+              variant="primary"
+              className="w-full bg-azul-monte-tabor hover:bg-blue-700 text-white font-medium py-3 transition-all duration-200 shadow-md hover:shadow-lg"
+              onClick={() => logout()}
+            >
+              Cerrar Sesión
+            </Button>
+          </div>
+        </aside>
+
+        {/* Main Content */}
+        <main className="flex-1 p-6">
           {renderSection()}
-              </main>
-          </div>
-
-      {/* Application Details Modal */}
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setSelectedApplication(null);
-        }}
-        title="Detalles de Postulación"
-        size="lg"
-      >
-        {selectedApplication && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <h4 className="font-semibold text-azul-monte-tabor mb-2">Información del Postulante</h4>
-                <p><strong>Nombre:</strong> {selectedApplication.applicant.firstName} {selectedApplication.applicant.lastName}</p>
-                <p><strong>Fecha de Nacimiento:</strong> {selectedApplication.applicant.birthDate}</p>
-                <p><strong>Nivel:</strong> {selectedApplication.applicant.grade}</p>
-              </div>
-              <div>
-                <h4 className="font-semibold text-azul-monte-tabor mb-2">Estado de Postulación</h4>
-                <div className="mb-2">
-                  <Badge variant={getStatusBadgeVariant(selectedApplication.status)}>
-                    {selectedApplication.status}
-                  </Badge>
-                </div>
-                <p><strong>Fecha de Postulación:</strong> {new Date(selectedApplication.submissionDate).toLocaleDateString('es-CL')}</p>
-                {selectedApplication.interviewDate && (
-                  <p><strong>Fecha de Entrevista:</strong> {new Date(selectedApplication.interviewDate).toLocaleDateString('es-CL')}</p>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <h4 className="font-semibold text-azul-monte-tabor mb-2">Documentos</h4>
-              <div className="space-y-2">
-                {selectedApplication.documents.map(doc => (
-                  <div key={doc.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                    <span>{doc.name}</span>
-                    <Badge variant={doc.status === 'approved' ? 'success' : doc.status === 'rejected' ? 'error' : 'neutral'}>
-                      {doc.status === 'approved' ? 'Aprobado' : doc.status === 'rejected' ? 'Rechazado' : 'Pendiente'}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <h4 className="font-semibold text-azul-monte-tabor mb-2">Cambiar Estado</h4>
-              <div className="flex gap-2 flex-wrap">
-                {Object.values(ApplicationStatus).map(status => (
-                  <Button
-                    key={status}
-                    size="sm"
-                    variant={selectedApplication.status === status ? 'primary' : 'outline'}
-                    onClick={() => handleUpdateApplicationStatus(selectedApplication.id, status)}
-                  >
-                    {status}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-      </Modal>
-    </>
+        </main>
+      </div>
+    </div>
   );
 };
 

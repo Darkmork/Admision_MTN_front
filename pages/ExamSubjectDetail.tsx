@@ -6,15 +6,17 @@ import Badge from '../components/ui/Badge';
 import Modal from '../components/ui/Modal';
 import { examSubjects, getTopicsByLevel, educationalLevels } from '../services/examMockData';
 import { 
-    ArrowLeftIcon, 
-    ClockIcon, 
-    BookOpenIcon, 
-    DownloadIcon, 
-    PlayIcon,
-    CalendarIcon,
-    UserGroupIcon,
-    CheckCircleIcon
-} from '../components/icons/Icons';
+    ArrowLeft, 
+    Clock, 
+    BookOpen, 
+    Download, 
+    Play,
+    Calendar,
+    Users,
+    CheckCircle,
+    Calculator,
+    Globe
+} from 'lucide-react';
 import { useNotifications } from '../context/AppContext';
 
 const ExamSubjectDetail: React.FC = () => {
@@ -105,7 +107,7 @@ const ExamSubjectDetail: React.FC = () => {
                         to="/examenes" 
                         className="inline-flex items-center text-azul-monte-tabor hover:text-blue-800 transition-colors"
                     >
-                        <ArrowLeftIcon className="w-4 h-4 mr-2" />
+                        <ArrowLeft className="w-4 h-4 mr-2" />
                         Volver al Portal de Exámenes
                     </Link>
                 </div>
@@ -127,21 +129,21 @@ const ExamSubjectDetail: React.FC = () => {
                     {/* Subject Stats */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
                         <div className="bg-blue-50 p-4 rounded-lg">
-                            <ClockIcon className="w-8 h-8 text-azul-monte-tabor mx-auto mb-2" />
+                            <Clock className="w-8 h-8 text-azul-monte-tabor mx-auto mb-2" />
                             <div className="font-bold text-azul-monte-tabor">
                                 {formatDuration(subject.duration)}
                             </div>
                             <div className="text-sm text-gris-piedra">Duración</div>
                         </div>
                         <div className="bg-yellow-50 p-4 rounded-lg">
-                            <BookOpenIcon className="w-8 h-8 text-dorado-nazaret mx-auto mb-2" />
+                            <BookOpen className="w-8 h-8 text-dorado-nazaret mx-auto mb-2" />
                             <div className="font-bold text-dorado-nazaret">
                                 {subject.totalQuestions}
                             </div>
                             <div className="text-sm text-gris-piedra">Preguntas</div>
                         </div>
                         <div className="bg-green-50 p-4 rounded-lg">
-                            <CheckCircleIcon className="w-8 h-8 text-verde-esperanza mx-auto mb-2" />
+                            <CheckCircle className="w-8 h-8 text-verde-esperanza mx-auto mb-2" />
                             <div className="font-bold text-verde-esperanza">
                                 {subject.passingScore}%
                             </div>
@@ -158,7 +160,7 @@ const ExamSubjectDetail: React.FC = () => {
                     <ul className="space-y-2">
                         {subject.instructions.map((instruction, index) => (
                             <li key={index} className="flex items-start gap-3">
-                                <CheckCircleIcon className="w-5 h-5 text-verde-esperanza flex-shrink-0 mt-0.5" />
+                                <CheckCircle className="w-5 h-5 text-verde-esperanza flex-shrink-0 mt-0.5" />
                                 <span className="text-gris-piedra">{instruction}</span>
                             </li>
                         ))}
@@ -243,7 +245,7 @@ const ExamSubjectDetail: React.FC = () => {
                                             <Button 
                                                 size="sm" 
                                                 variant="outline"
-                                                leftIcon={<PlayIcon className="w-4 h-4" />}
+                                                leftIcon={<Play className="w-4 h-4" />}
                                                 onClick={() => handleDownloadMaterial(material)}
                                             >
                                                 Ver
@@ -252,7 +254,7 @@ const ExamSubjectDetail: React.FC = () => {
                                             <Button 
                                                 size="sm" 
                                                 variant="outline"
-                                                leftIcon={<DownloadIcon className="w-4 h-4" />}
+                                                leftIcon={<Download className="w-4 h-4" />}
                                                 onClick={() => handleDownloadMaterial(material)}
                                                 disabled={!material.downloadable}
                                             >
@@ -283,7 +285,7 @@ const ExamSubjectDetail: React.FC = () => {
                             >
                                 <div className="flex items-center justify-between mb-2">
                                     <div className="flex items-center gap-2">
-                                        <CalendarIcon className="w-5 h-5 text-azul-monte-tabor" />
+                                        <Calendar className="w-5 h-5 text-azul-monte-tabor" />
                                         <span className="font-semibold">
                                             {new Date(schedule.date).toLocaleDateString('es-CL', {
                                                 weekday: 'long',
@@ -296,13 +298,13 @@ const ExamSubjectDetail: React.FC = () => {
                                 </div>
                                 <div className="flex items-center justify-between mb-3">
                                     <div className="flex items-center gap-2">
-                                        <ClockIcon className="w-4 h-4 text-gris-piedra" />
+                                        <Clock className="w-4 h-4 text-gris-piedra" />
                                         <span className="text-gris-piedra">
                                             {schedule.startTime} - {schedule.endTime}
                                         </span>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <UserGroupIcon className="w-4 h-4 text-gris-piedra" />
+                                        <Users className="w-4 h-4 text-gris-piedra" />
                                         <span className="text-sm text-gris-piedra">
                                             {schedule.currentEnrollment}/{schedule.maxCapacity}
                                         </span>

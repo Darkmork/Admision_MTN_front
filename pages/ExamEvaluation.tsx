@@ -4,7 +4,7 @@ import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Badge from '../components/ui/Badge';
-import { ArrowLeftIcon, SaveIcon, CheckCircleIcon, ClockIcon } from '../components/icons/Icons';
+import { ArrowLeft, Save, CheckCircle, Clock } from 'lucide-react';
 import { useFormValidation } from '../hooks/useFormValidation';
 import { useNotifications } from '../context/AppContext';
 import { 
@@ -238,7 +238,7 @@ const ExamEvaluation: React.FC = () => {
                         onClick={() => navigate('/profesor')}
                         className="inline-flex items-center text-azul-monte-tabor hover:text-blue-800 transition-colors mb-4"
                     >
-                        <ArrowLeftIcon className="w-4 h-4 mr-2" />
+                        <ArrowLeft className="w-4 h-4 mr-2" />
                         Volver al Dashboard
                     </button>
                     
@@ -259,7 +259,7 @@ const ExamEvaluation: React.FC = () => {
                                 </p>
                             </div>
                             <div className="text-right">
-                                <ClockIcon className="w-12 h-12 text-blue-200 mb-2" />
+                                <Clock className="w-12 h-12 text-blue-200 mb-2" />
                                 <p className="text-blue-100 text-sm">
                                     Tiempo: {exam.timeSpent} min
                                 </p>
@@ -593,7 +593,7 @@ const ExamEvaluation: React.FC = () => {
                         onClick={handleSubmit}
                         isLoading={isSubmitting}
                         loadingText="Guardando..."
-                        leftIcon={<SaveIcon className="w-4 h-4" />}
+                        leftIcon={<Save className="w-4 h-4" />}
                     >
                         Guardar Evaluación
                     </Button>

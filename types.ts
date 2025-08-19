@@ -84,17 +84,82 @@ export interface StudentExam {
     evaluation?: ExamEvaluation;
 }
 
-export interface Professor {
+// UserRole se importa desde types/user.ts para evitar duplicaciones
+// y mantener consistencia con el backend
+
+// Enum para especialidades de psicólogos
+export enum PsychologySpecialty {
+    EDUCATIONAL = 'EDUCATIONAL',
+    CLINICAL = 'CLINICAL', 
+    DEVELOPMENTAL = 'DEVELOPMENTAL',
+    COGNITIVE = 'COGNITIVE'
+}
+
+// Enum para niveles de kinder
+export enum KinderLevel {
+    PREKINDER = 'PREKINDER',
+    KINDER = 'KINDER'
+}
+
+// Enum para tipos de personal de apoyo
+export enum SupportStaffType {
+    ADMINISTRATIVE = 'ADMINISTRATIVE',
+    TECHNICAL = 'TECHNICAL',
+    ACADEMIC_COORDINATOR = 'ACADEMIC_COORDINATOR',
+    STUDENT_SERVICES = 'STUDENT_SERVICES',
+    IT_SUPPORT = 'IT_SUPPORT'
+}
+
+// Interface base para todos los usuarios
+export interface BaseUser {
     id: string;
     firstName: string;
     lastName: string;
     email: string;
-    password: string; // For login authentication
-    subjects: string[]; // Array of subject IDs (MATH, SPANISH, ENGLISH)
+    password: string;
+    role: UserRole;
+    isActive: boolean;
+    createdAt: string;
+    updatedAt: string;
+    phone?: string;
+    profileImage?: string;
+}
+
+export interface Professor extends BaseUser {
+    role: UserRole.PROFESSOR;
+    subjects: string[]; // Solo Matemática, Lenguaje, Inglés
     assignedGrades: string[]; // Array of grade levels assigned (e.g., ['prekinder', 'kinder', '1basico'])
     department: string;
-    isActive: boolean;
     isAdmin?: boolean; // Para permisos de administrador
+    yearsOfExperience?: number;
+    qualifications?: string[];
+}
+
+export interface KinderTeacher extends BaseUser {
+    role: UserRole.KINDER_TEACHER;
+    assignedLevel: 'prekinder' | 'kinder'; // Solo prekinder o kinder
+    specializations?: string[]; // Ej: "Desarrollo Motor", "Lenguaje Inicial"
+    yearsOfExperience?: number;
+    qualifications?: string[];
+}
+
+export interface Psychologist extends BaseUser {
+    role: UserRole.PSYCHOLOGIST;
+    specialty: PsychologySpecialty;
+    licenseNumber: string;
+    assignedGrades: string[]; // Niveles que puede evaluar
+    canConductInterviews: boolean;
+    canPerformPsychologicalEvaluations: boolean;
+    specializedAreas: string[]; // Areas específicas como "Dificultades de Aprendizaje", "Trastornos del Desarrollo"
+}
+
+export interface SupportStaff extends BaseUser {
+    role: UserRole.SUPPORT_STAFF;
+    staffType: SupportStaffType;
+    department: string;
+    responsibilities: string[];
+    canAccessReports: boolean;
+    canManageSchedules: boolean;
 }
 
 export interface ExamEvaluation {
@@ -151,3 +216,61 @@ export interface StudentProfile {
     examResults: StudentExam[];
     overallEvaluation?: string;
 }
+
+// Union type para todos los tipos de usuario
+export type User = Professor | KinderTeacher | Psychologist | SupportStaff;
+
+// Interface para formulario de creación de usuarios
+export interface CreateUserRequest {
+    firstName: string;
+    lastName: string;
+    email: string;
+    password: string;
+    role: UserRole;
+    phone?: string;
+    
+    // Campos específicos para profesores (solo Matemática, Lenguaje, Inglés)
+    subjects?: string[];
+    assignedGrades?: string[];
+    department?: string;
+    yearsOfExperience?: number;
+    qualifications?: string[];
+    
+    // Campos específicos para personal de kinder
+    assignedLevel?: KinderLevel;
+    specializations?: string[];
+    
+    // Campos específicos para psicólogos
+    specialty?: PsychologySpecialty;
+    licenseNumber?: string;
+    canConductInterviews?: boolean;
+    canPerformPsychologicalEvaluations?: boolean;
+    specializedAreas?: string[];
+    
+    // Campos específicos para personal de apoyo
+    staffType?: SupportStaffType;
+    responsibilities?: string[];
+    canAccessReports?: boolean;
+    canManageSchedules?: boolean;
+}
+
+// Mapas para mostrar labels en español
+export const PsychologySpecialtyLabels = {
+    [PsychologySpecialty.EDUCATIONAL]: 'Psicología Educacional',
+    [PsychologySpecialty.CLINICAL]: 'Psicología Clínica',
+    [PsychologySpecialty.DEVELOPMENTAL]: 'Psicología del Desarrollo',
+    [PsychologySpecialty.COGNITIVE]: 'Psicología Cognitiva'
+};
+
+export const SupportStaffTypeLabels = {
+    [SupportStaffType.ADMINISTRATIVE]: 'Administrativo',
+    [SupportStaffType.TECHNICAL]: 'Técnico',
+    [SupportStaffType.ACADEMIC_COORDINATOR]: 'Coordinador Académico',
+    [SupportStaffType.STUDENT_SERVICES]: 'Servicios Estudiantiles',
+    [SupportStaffType.IT_SUPPORT]: 'Soporte TI'
+};
+
+export const KinderLevelLabels = {
+    [KinderLevel.PREKINDER]: 'Pre-Kinder',
+    [KinderLevel.KINDER]: 'Kinder'
+};

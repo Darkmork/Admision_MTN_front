@@ -10,26 +10,19 @@ const ToastContainer: React.FC = () => {
     };
 
     return (
-        <div className="fixed top-0 right-0 z-50 p-4 space-y-2">
+        <div className="fixed top-0 left-1/2 transform -translate-x-1/2 z-50 p-4">
             {notifications
                 .filter(notification => !notification.read)
-                .slice(0, 5) // Show max 5 toasts
-                .map((notification, index) => (
-                    <div 
+                .slice(0, 1) // Show only 1 toast at a time
+                .map((notification) => (
+                    <Toast
                         key={notification.id}
-                        style={{ 
-                            transform: `translateY(${index * 10}px)`,
-                            zIndex: 50 - index 
-                        }}
-                    >
-                        <Toast
-                            id={notification.id}
-                            type={notification.type}
-                            title={notification.title}
-                            message={notification.message}
-                            onClose={handleClose}
-                        />
-                    </div>
+                        id={notification.id}
+                        type={notification.type}
+                        title={notification.title}
+                        message={notification.message}
+                        onClose={handleClose}
+                    />
                 ))
             }
         </div>

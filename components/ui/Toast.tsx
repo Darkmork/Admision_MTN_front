@@ -76,30 +76,31 @@ const Toast: React.FC<ToastProps> = ({
     return (
         <div
             className={`
-                fixed top-4 right-4 z-50 max-w-sm w-full
-                transform transition-all duration-300 ease-in-out
-                ${isVisible && !isLeaving ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}
+                fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-96 max-w-[90vw]
+                transition-all duration-300 ease-in-out
+                ${isVisible && !isLeaving ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'}
             `}
         >
             <div className={`
-                rounded-lg border-l-4 p-4 shadow-lg bg-blanco-pureza
+                rounded-lg border-l-4 p-4 shadow-xl bg-blanco-pureza
                 ${getColors()}
+                backdrop-blur-sm
             `}>
                 <div className="flex items-start">
                     <div className="flex-shrink-0">
                         {getIcon()}
                     </div>
-                    <div className="ml-3 w-0 flex-1">
+                    <div className="ml-3 flex-1 min-w-0">
                         <p className="text-sm font-semibold text-gray-900">
                             {title}
                         </p>
-                        <p className="mt-1 text-sm text-gris-piedra">
+                        <p className="mt-1 text-sm text-gris-piedra break-words">
                             {message}
                         </p>
                     </div>
                     <div className="ml-4 flex-shrink-0 flex">
                         <button
-                            className="bg-blanco-pureza rounded-md inline-flex text-gris-piedra hover:text-gray-500 focus:outline-none"
+                            className="bg-blanco-pureza rounded-md inline-flex text-gris-piedra hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-azul-monte-tabor p-1"
                             onClick={handleClose}
                         >
                             <XCircleIcon className="h-4 w-4" />

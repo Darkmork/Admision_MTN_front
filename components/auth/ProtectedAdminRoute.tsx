@@ -23,8 +23,9 @@ const ProtectedAdminRoute: React.FC<ProtectedAdminRouteProps> = ({ children }) =
             return <Navigate to="/profesor/login" replace />;
         }
 
-        // Verificar que sea Jorge Gangale (el único admin)
-        if (professorData.email !== 'jorge.gangale@mtn.cl' || !professorData.isAdmin) {
+        // Verificar que tenga permisos de admin
+        const adminEmails = ['admisiones@mtn.cl', 'jorge.gangale@mtn.cl'];
+        if (!adminEmails.includes(professorData.email) || !professorData.isAdmin) {
             return <Navigate to="/profesor" replace />;
         }
 

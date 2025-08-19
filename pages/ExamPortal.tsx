@@ -4,19 +4,19 @@ import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import { examSubjects } from '../services/examMockData';
-import { ClockIcon, BookOpenIcon, UserGroupIcon, CalendarIcon } from '../components/icons/Icons';
+import { Clock, BookOpen, Users, Calendar, Calculator, Globe } from 'lucide-react';
 
 const ExamPortal: React.FC = () => {
     const getSubjectIcon = (subjectId: string) => {
         switch (subjectId) {
             case 'MATH':
-                return '🧮';
+                return <Calculator className="w-8 h-8 text-blue-600" />;
             case 'SPANISH':
-                return '📚';
+                return <BookOpen className="w-8 h-8 text-green-600" />;
             case 'ENGLISH':
-                return '🇺🇸';
+                return <Globe className="w-8 h-8 text-purple-600" />;
             default:
-                return '📝';
+                return <BookOpen className="w-8 h-8 text-gray-600" />;
         }
     };
 
@@ -46,7 +46,7 @@ const ExamPortal: React.FC = () => {
                 {/* Important Notice */}
                 <Card className="mb-8 p-6 border-l-4 border-dorado-nazaret bg-amber-50">
                     <div className="flex items-start gap-4">
-                        <CalendarIcon className="w-6 h-6 text-dorado-nazaret flex-shrink-0 mt-1" />
+                        <Calendar className="w-6 h-6 text-dorado-nazaret flex-shrink-0 mt-1" />
                         <div>
                             <h3 className="font-bold text-azul-monte-tabor mb-2">Información Importante</h3>
                             <ul className="text-gris-piedra space-y-1 text-sm">
@@ -79,7 +79,7 @@ const ExamPortal: React.FC = () => {
                             <div className="space-y-3 mb-6">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
-                                        <ClockIcon className="w-4 h-4 text-dorado-nazaret" />
+                                        <Clock className="w-4 h-4 text-dorado-nazaret" />
                                         <span className="text-sm font-medium">Duración:</span>
                                     </div>
                                     <span className="text-sm text-gris-piedra">
@@ -89,7 +89,7 @@ const ExamPortal: React.FC = () => {
                                 
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
-                                        <BookOpenIcon className="w-4 h-4 text-dorado-nazaret" />
+                                        <BookOpen className="w-4 h-4 text-dorado-nazaret" />
                                         <span className="text-sm font-medium">Preguntas:</span>
                                     </div>
                                     <span className="text-sm text-gris-piedra">
@@ -99,7 +99,7 @@ const ExamPortal: React.FC = () => {
 
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
-                                        <UserGroupIcon className="w-4 h-4 text-dorado-nazaret" />
+                                        <Users className="w-4 h-4 text-dorado-nazaret" />
                                         <span className="text-sm font-medium">Puntaje mínimo:</span>
                                     </div>
                                     <Badge variant="info" size="sm">

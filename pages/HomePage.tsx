@@ -2,13 +2,13 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
-import { FileTextIcon, UsersIcon, CheckCircleIcon, ClockIcon } from '../components/icons/Icons';
+import { FileText, Users, CheckCircle, Clock, Calendar, Calculator, BookOpen, Globe } from 'lucide-react';
 
 const HomePage: React.FC = () => {
     const admissionSteps = [
-        { title: 'Registro y Postulación', description: 'Complete el formulario en línea con los datos del postulante y la familia.', icon: <FileTextIcon className="w-12 h-12 text-dorado-nazaret" /> },
-        { title: 'Entrevistas Familiares', description: 'Agende y asista a una entrevista con nuestro equipo de admisiones.', icon: <UsersIcon className="w-12 h-12 text-dorado-nazaret" /> },
-        { title: 'Publicación de Resultados', description: 'Consulte los resultados del proceso de admisión en las fechas publicadas.', icon: <CheckCircleIcon className="w-12 h-12 text-dorado-nazaret" /> },
+        { title: 'Registro y Postulación', description: 'Complete el formulario en línea con los datos del postulante y la familia.', icon: <FileText className="w-12 h-12 text-dorado-nazaret" /> },
+        { title: 'Entrevistas Familiares', description: 'Agende y asista a una entrevista con nuestro equipo de admisiones.', icon: <Users className="w-12 h-12 text-dorado-nazaret" /> },
+        { title: 'Publicación de Resultados', description: 'Consulte los resultados del proceso de admisión en las fechas publicadas.', icon: <CheckCircle className="w-12 h-12 text-dorado-nazaret" /> },
     ];
 
     const admissionTimeline = [
@@ -27,11 +27,18 @@ const HomePage: React.FC = () => {
                 <div className="relative container mx-auto px-6">
                     <h1 className="text-5xl md:text-6xl font-black font-serif mb-4 animate-fade-in-down">Formando Líderes con Espíritu de Servicio</h1>
                     <p className="text-xl text-gray-200 mb-8 max-w-3xl mx-auto">Únase a una comunidad educativa comprometida con la excelencia académica y la formación católica.</p>
-                    <Link to="/postulacion">
-                        <Button size="lg" variant="primary">
-                            Postula Aquí
-                        </Button>
-                    </Link>
+                    <div className="flex gap-4 justify-center">
+                        <Link to="/apoderado/login?redirect=/postulacion">
+                            <Button size="lg" variant="primary">
+                                Postular Aquí
+                            </Button>
+                        </Link>
+                        <Link to="/apoderado/login">
+                            <Button size="lg" variant="secondary">
+                                Portal Apoderados
+                            </Button>
+                        </Link>
+                    </div>
                 </div>
             </section>
 
@@ -62,17 +69,23 @@ const HomePage: React.FC = () => {
                     </p>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                         <div className="bg-blanco-pureza bg-opacity-10 p-6 rounded-lg">
-                            <div className="text-4xl mb-3">🧮</div>
+                            <div className="flex justify-center mb-3">
+                                <Calculator className="w-12 h-12 text-dorado-nazaret" />
+                            </div>
                             <h3 className="font-bold text-dorado-nazaret mb-2">Matemática</h3>
                             <p className="text-gray-200 text-sm">Evaluación adaptada según tu nivel educativo</p>
                         </div>
                         <div className="bg-blanco-pureza bg-opacity-10 p-6 rounded-lg">
-                            <div className="text-4xl mb-3">📚</div>
+                            <div className="flex justify-center mb-3">
+                                <BookOpen className="w-12 h-12 text-dorado-nazaret" />
+                            </div>
                             <h3 className="font-bold text-dorado-nazaret mb-2">Lenguaje</h3>
                             <p className="text-gray-200 text-sm">Comprensión lectora y expresión escrita</p>
                         </div>
                         <div className="bg-blanco-pureza bg-opacity-10 p-6 rounded-lg">
-                            <div className="text-4xl mb-3">🇺🇸</div>
+                            <div className="flex justify-center mb-3">
+                                <Globe className="w-12 h-12 text-dorado-nazaret" />
+                            </div>
                             <h3 className="font-bold text-dorado-nazaret mb-2">Inglés</h3>
                             <p className="text-gray-200 text-sm">Gramática, vocabulario y comprensión</p>
                         </div>
@@ -99,7 +112,7 @@ const HomePage: React.FC = () => {
                                 </div>
                                 <div className="relative">
                                     <div className={`w-8 h-8 rounded-full flex items-center justify-center z-10 ${item.current ? 'bg-dorado-nazaret ring-8 ring-amber-200' : 'bg-azul-monte-tabor'}`}>
-                                        <ClockIcon className="w-5 h-5 text-blanco-pureza" />
+                                        <Clock className="w-5 h-5 text-blanco-pureza" />
                                     </div>
                                 </div>
                                 <div className="w-5/12"></div>
@@ -108,6 +121,7 @@ const HomePage: React.FC = () => {
                     </div>
                 </div>
             </section>
+
         </div>
     );
 };

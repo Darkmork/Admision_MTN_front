@@ -105,10 +105,10 @@ export const mockProfessors: Professor[] = [
         firstName: 'Jorge',
         lastName: 'Gangale',
         email: 'jorge.gangale@mtn.cl',
-        password: 'profesor123',
-        subjects: ['MATH'],
-        assignedGrades: ['8basico', '1medio', '2medio', '3medio', '4medio'],
-        department: 'Matemática Avanzada',
+        password: 'admin123',  // Usar la contraseña de admin
+        subjects: ['MATH', 'ADMIN'],
+        assignedGrades: ['8basico', '1medio', '2medio', '3medio', '4medio', 'all'],
+        department: 'Matemática Avanzada / Administración',
         isActive: true,
         isAdmin: true
     }

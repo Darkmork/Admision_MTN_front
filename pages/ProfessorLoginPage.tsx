@@ -64,7 +64,8 @@ const ProfessorLoginPage: React.FC = () => {
                     email: professor.email,
                     subjects: professor.subjects,
                     assignedGrades: professor.assignedGrades,
-                    department: professor.department
+                    department: professor.department,
+                    isAdmin: professor.isAdmin || false
                 }));
 
                 addNotification({
@@ -73,7 +74,12 @@ const ProfessorLoginPage: React.FC = () => {
                     message: `Hola ${professor.firstName} ${professor.lastName}`
                 });
 
-                navigate('/profesor');
+                // Redirigir según los permisos del usuario
+                if (professor.isAdmin) {
+                    navigate('/admin');
+                } else {
+                    navigate('/profesor');
+                }
             } else {
                 addNotification({
                     type: 'error',
@@ -162,22 +168,7 @@ const ProfessorLoginPage: React.FC = () => {
                             Iniciar Sesión
                         </Button>
 
-                        {/* Información de demo */}
-                        <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                            <h4 className="text-sm font-semibold text-azul-monte-tabor mb-2">
-                                Credenciales de Demostración:
-                            </h4>
-                            <div className="text-xs text-gris-piedra space-y-1">
-                                <p><strong>Email:</strong> jorge.gangale@mtn.cl</p>
-                                <p><strong>Contraseña:</strong> profesor123</p>
-                                <p className="mt-2 text-blue-600">
-                                    <strong>Niveles asignados:</strong> 8° Básico a IV° Medio (Matemática)
-                                </p>
-                                <p className="mt-1 text-yellow-600">
-                                    <strong>⭐ Permisos de Administrador</strong>
-                                </p>
-                            </div>
-                        </div>
+
 
                         <div className="text-center pt-4 border-t border-gray-200">
                             <button
@@ -190,29 +181,7 @@ const ProfessorLoginPage: React.FC = () => {
                     </div>
                 </Card>
 
-                {/* Lista de profesores disponibles para demo */}
-                <Card className="p-6 bg-blanco-pureza bg-opacity-95">
-                    <h4 className="text-sm font-bold text-azul-monte-tabor mb-3">
-                        Otros Profesores Disponibles:
-                    </h4>
-                    <div className="space-y-2 text-xs text-gris-piedra">
-                        <div>
-                            <p><strong>Carlos Ruiz:</strong> carlos.ruiz@mtn.cl</p>
-                            <p className="text-blue-600">Lenguaje - PK a 3° Básico</p>
-                        </div>
-                        <div>
-                            <p><strong>Jennifer Thompson:</strong> jennifer.thompson@mtn.cl</p>
-                            <p className="text-blue-600">Inglés - PK a 4° Básico</p>
-                        </div>
-                        <div>
-                            <p><strong>María González:</strong> maria.gonzalez@mtn.cl</p>
-                            <p className="text-blue-600">Matemática - PK a 2° Básico</p>
-                        </div>
-                        <p className="mt-2 text-center text-blue-700">
-                            <strong>Contraseña para todos:</strong> profesor123
-                        </p>
-                    </div>
-                </Card>
+
             </div>
         </div>
     );
