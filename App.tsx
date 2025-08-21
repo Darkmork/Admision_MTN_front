@@ -16,13 +16,16 @@ import ExamPortal from './pages/ExamPortal';
 import ExamSubjectDetail from './pages/ExamSubjectDetail';
 import ProfessorDashboard from './pages/ProfessorDashboard';
 import ProfessorLoginPage from './pages/ProfessorLoginPage';
-import ExamEvaluation from './pages/ExamEvaluation';
+import AdmissionReportForm from './components/evaluations/AdmissionReportForm';
+import CycleDirectorReportForm from './components/evaluations/CycleDirectorReportForm';
+import CycleDirectorInterviewForm from './components/evaluations/CycleDirectorInterviewForm';
 import StudentProfile from './pages/StudentProfile';
 import ProtectedProfessorRoute from './components/auth/ProtectedProfessorRoute';
 import ProtectedAdminRoute from './components/auth/ProtectedAdminRoute';
 import ProtectedApoderadoRoute from './components/auth/ProtectedApoderadoRoute';
 import CalendarNotifications from './pages/CalendarNotifications';
 import InterviewModule from './pages/InterviewModule';
+import ReportsDashboard from './pages/ReportsDashboard';
 
 function App() {
     return (
@@ -33,6 +36,7 @@ function App() {
                     <main className="flex-grow">
                         <Routes>
                             <Route path="/" element={<HomePage />} />
+                            <Route path="/login" element={<LoginPage />} />
                             <Route path="/postulacion" element={
                                 <ProtectedApoderadoRoute>
                                     <ApplicationForm />
@@ -45,7 +49,7 @@ function App() {
                                 </ProtectedApoderadoRoute>
                             } />
                             <Route path="/familia" element={<FamilyDashboard />} />
-                            <Route path="/familia/login" element={<LoginPage />} />
+                            <Route path="/familia/login" element={<ProfessorLoginPage />} />
                             <Route path="/admin" element={
                                 <ProtectedAdminRoute>
                                     <AdminDashboard />
@@ -59,9 +63,19 @@ function App() {
                                     <ProfessorDashboard />
                                 </ProtectedProfessorRoute>
                             } />
-                            <Route path="/profesor/evaluar/:examId" element={
+                            <Route path="/profesor/informe/:examId" element={
                                 <ProtectedProfessorRoute>
-                                    <ExamEvaluation />
+                                    <AdmissionReportForm />
+                                </ProtectedProfessorRoute>
+                            } />
+                            <Route path="/profesor/informe-director/:examId" element={
+                                <ProtectedProfessorRoute>
+                                    <CycleDirectorReportForm />
+                                </ProtectedProfessorRoute>
+                            } />
+                            <Route path="/profesor/entrevista-director/:examId" element={
+                                <ProtectedProfessorRoute>
+                                    <CycleDirectorInterviewForm />
                                 </ProtectedProfessorRoute>
                             } />
                             <Route path="/profesor/estudiante/:studentId" element={
@@ -72,6 +86,11 @@ function App() {
                             {/* Nuevas rutas */}
                             <Route path="/calendario" element={<CalendarNotifications />} />
                             <Route path="/entrevistas" element={<InterviewModule />} />
+                            <Route path="/reportes" element={
+                                <ProtectedAdminRoute>
+                                    <ReportsDashboard />
+                                </ProtectedAdminRoute>
+                            } />
                         </Routes>
                     </main>
                     <Footer />

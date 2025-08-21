@@ -1,38 +1,31 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 interface ProtectedAdminRouteProps {
     children: React.ReactNode;
 }
 
 const ProtectedAdminRoute: React.FC<ProtectedAdminRouteProps> = ({ children }) => {
-    // Verificar si hay un profesor logueado con permisos de admin
-    const currentProfessor = localStorage.getItem('currentProfessor');
+    const { user, isAuthenticated, isLoading } = useAuth();
     
-    if (!currentProfessor) {
-        // Redirigir al login si no hay profesor autenticado
-        return <Navigate to="/profesor/login" replace />;
+    if (isLoading) {
+        return <div>Cargando...</div>;
+    }
+    
+    if (!isAuthenticated || !user) {
+        // Redirigir al login si no hay usuario autenticado
+        return <Navigate to="/login" replace />;
     }
 
-    try {
-        // Verificar que los datos del profesor sean válidos y tenga permisos de admin
-        const professorData = JSON.parse(currentProfessor);
-        
-        if (!professorData.id || !professorData.email) {
-            localStorage.removeItem('currentProfessor');
-            return <Navigate to="/profesor/login" replace />;
-        }
-
-        // Verificar que tenga permisos de admin
-        const adminEmails = ['admisiones@mtn.cl', 'jorge.gangale@mtn.cl'];
-        if (!adminEmails.includes(professorData.email) || !professorData.isAdmin) {
+    // Verificar que tenga permisos de admin
+    if (user.role !== 'ADMIN') {
+        // Si no es admin, redirigir según su rol
+        if (user.role === 'APODERADO') {
+            return <Navigate to="/family" replace />;
+        } else {
             return <Navigate to="/profesor" replace />;
         }
-
-    } catch (error) {
-        // Datos corruptos, limpiar y redirigir
-        localStorage.removeItem('currentProfessor');
-        return <Navigate to="/profesor/login" replace />;
     }
 
     return <>{children}</>;

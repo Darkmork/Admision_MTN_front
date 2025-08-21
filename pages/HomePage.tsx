@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import { FileText, Users, CheckCircle, Clock, Calendar, Calculator, BookOpen, Globe } from 'lucide-react';
+import TestProfessorLogin from '../components/TestProfessorLogin';
 
 const HomePage: React.FC = () => {
     const admissionSteps = [
@@ -122,6 +123,30 @@ const HomePage: React.FC = () => {
                 </div>
             </section>
 
+            {/* Sección de Contacto */}
+            <section className="py-16 bg-azul-monte-tabor text-blanco-pureza">
+                <div className="container mx-auto px-6 text-center">
+                    <h2 className="text-3xl font-bold mb-8">¿Tienes Preguntas?</h2>
+                    <p className="text-xl mb-8">
+                        Nuestro equipo está aquí para ayudarte en todo el proceso de admisión
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                        <Button variant="outline" size="lg" className="text-blanco-pureza border-blanco-pureza hover:bg-blanco-pureza hover:text-azul-monte-tabor">
+                            Contactar Admisión
+                        </Button>
+                        <Button variant="primary" size="lg">
+                            Agendar Visita
+                        </Button>
+                    </div>
+                </div>
+            </section>
+
+            {/* Componente de Prueba Temporal */}
+            <section className="py-16 bg-gray-50">
+                <div className="container mx-auto px-6">
+                    <TestProfessorLogin />
+                </div>
+            </section>
         </div>
     );
 };

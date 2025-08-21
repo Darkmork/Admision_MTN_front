@@ -1,0 +1,152 @@
+import api from './api';
+
+export interface ProfessorLoginRequest {
+    email: string;
+    password: string;
+}
+
+export interface ProfessorAuthResponse {
+    success: boolean;
+    message: string;
+    token?: string;
+    id?: number;
+    email?: string;
+    firstName?: string;
+    lastName?: string;
+    role?: string;
+}
+
+export interface ProfessorUser {
+    id: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+    role: string;
+    active: boolean;
+    emailVerified: boolean;
+}
+
+class ProfessorAuthService {
+    
+    async login(request: ProfessorLoginRequest): Promise<ProfessorAuthResponse> {
+        try {
+            console.log('🔐 Intentando login de profesor:', request.email);
+            
+            const response = await api.post('/api/auth/login', request);
+            const data = response.data;
+            
+            console.log('✅ Login exitoso para profesor:', data);
+            
+            // Guardar token en localStorage
+            if (data.token) {
+                localStorage.setItem('professor_token', data.token);
+                localStorage.setItem('professor_user', JSON.stringify({
+                    email: data.email,
+                    firstName: data.firstName,
+                    lastName: data.lastName,
+                    role: data.role
+                }));
+            }
+            
+            return data;
+            
+        } catch (error: any) {
+            console.error('❌ Error en login de profesor:', error);
+            
+            if (error.response?.status === 401) {
+                throw new Error('Credenciales inválidas');
+            } else if (error.response?.status === 400) {
+                throw new Error('Datos de login inválidos');
+            } else if (error.response?.status === 500) {
+                throw new Error('Error del servidor');
+            }
+            
+            throw new Error('Error al iniciar sesión');
+        }
+    }
+    
+    async getCurrentProfessor(): Promise<ProfessorUser | null> {
+        try {
+            const token = localStorage.getItem('professor_token');
+            if (!token) {
+                return null;
+            }
+            
+            // Configurar el token en el header
+            const config = {
+                headers: { Authorization: `Bearer ${token}` }
+            };
+            
+            const response = await api.get('/api/users/me', config);
+            return response.data;
+            
+        } catch (error: any) {
+            console.error('❌ Error obteniendo profesor actual:', error);
+            // Si hay error de autenticación, limpiar datos
+            if (error.response?.status === 401) {
+                this.logout();
+            }
+            return null;
+        }
+    }
+    
+    isAuthenticated(): boolean {
+        const token = localStorage.getItem('professor_token');
+        return !!token;
+    }
+    
+    getStoredProfessor() {
+        const stored = localStorage.getItem('professor_user');
+        return stored ? JSON.parse(stored) : null;
+    }
+    
+    logout() {
+        localStorage.removeItem('professor_token');
+        localStorage.removeItem('professor_user');
+        localStorage.removeItem('currentProfessor');
+    }
+    
+    // Método para verificar si el usuario es un profesor válido
+    isProfessorRole(role: string): boolean {
+        const professorRoles = [
+            // Administración
+            'ADMIN',
+            
+            // Profesores por ciclo
+            'TEACHER_EARLY_CYCLE',
+            
+            // Profesores básica (3° a 7°)
+            'TEACHER_LANGUAGE_BASIC',
+            'TEACHER_MATHEMATICS_BASIC',
+            'TEACHER_ENGLISH_BASIC',
+            'TEACHER_SCIENCE_BASIC',
+            'TEACHER_HISTORY_BASIC',
+            
+            // Profesores media (8° a IV)
+            'TEACHER_LANGUAGE_HIGH',
+            'TEACHER_MATHEMATICS_HIGH',
+            'TEACHER_ENGLISH_HIGH',
+            'TEACHER_SCIENCE_HIGH',
+            'TEACHER_HISTORY_HIGH',
+            
+            // Coordinadores
+            'COORDINATOR_LANGUAGE',
+            'COORDINATOR_MATHEMATICS',
+            'COORDINATOR_ENGLISH',
+            'COORDINATOR_SCIENCE',
+            'COORDINATOR_HISTORY',
+            
+            // Especialistas
+            'CYCLE_DIRECTOR',
+            'PSYCHOLOGIST',
+            
+            // Legacy roles (compatibilidad)
+            'TEACHER_LANGUAGE',
+            'TEACHER_MATHEMATICS', 
+            'TEACHER_ENGLISH'
+        ];
+        return professorRoles.includes(role);
+    }
+}
+
+export const professorAuthService = new ProfessorAuthService();

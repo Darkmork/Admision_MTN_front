@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
@@ -18,8 +18,10 @@ import {
     mockStudentExams,
     mockStudentProfiles
 } from '../services/professorMockData';
-import { ExamStatus, StudentExam } from '../types';
+import { ExamStatus, StudentExam, StudentProfile } from '../types';
 import { Link, useNavigate } from 'react-router-dom';
+import { professorEvaluationService, ProfessorEvaluation, ProfessorEvaluationStats } from '../services/professorEvaluationService';
+import { EvaluationStatus, EvaluationType } from '../types/evaluation';
 
 const baseSections = [
     { key: 'dashboard', label: 'Dashboard General', icon: DashboardIcon },
@@ -30,22 +32,100 @@ const baseSections = [
 ];
 
 const ProfessorDashboard: React.FC = () => {
-    const [activeSection, setActiveSection] = useState('dashboard');
+    const [activeSection, setActiveSection] = useState('evaluaciones'); // Cambiado de 'dashboard' a 'evaluaciones'
     const navigate = useNavigate();
+    
+    console.log('🚀 ProfessorDashboard renderizándose...');
+    console.log('📋 activeSection inicial:', activeSection);
     
     // Obtener profesor actual del localStorage
     const [currentProfessor, setCurrentProfessor] = useState(() => {
         const storedProfessor = localStorage.getItem('currentProfessor');
-        return storedProfessor ? JSON.parse(storedProfessor) : null;
+        console.log('🔍 localStorage.getItem("currentProfessor"):', storedProfessor);
+        const parsed = storedProfessor ? JSON.parse(storedProfessor) : null;
+        console.log('🔍 currentProfessor parseado:', parsed);
+        return parsed;
     });
 
+    // Usar useRef para estabilizar la referencia y evitar re-renders infinitos
+    const currentProfessorRef = useRef(currentProfessor);
+    currentProfessorRef.current = currentProfessor;
+
+    // Estado para las evaluaciones reales
+    const [evaluations, setEvaluations] = useState<ProfessorEvaluation[]>([]);
+    const [evaluationStats, setEvaluationStats] = useState<ProfessorEvaluationStats>({
+        total: 0,
+        pending: 0,
+        inProgress: 0,
+        completed: 0,
+        averageScore: 0
+    });
+    const [isLoading, setIsLoading] = useState(true);
+
+    // Cargar evaluaciones del profesor - SOLO UNA VEZ al montar
+    useEffect(() => {
+        console.log('🔄 useEffect ejecutándose...');
+        console.log('👤 currentProfessor:', currentProfessor);
+        
+        const loadEvaluations = async () => {
+            if (!currentProfessor) {
+                console.log('❌ No hay currentProfessor, saltando loadEvaluations');
+                return;
+            }
+            
+            try {
+                setIsLoading(true);
+                console.log('🔄 Cargando evaluaciones del profesor...');
+                console.log('🆔 ID del profesor:', currentProfessor.id);
+                
+                const [evaluationsData, statsData] = await Promise.all([
+                    professorEvaluationService.getMyEvaluations(),
+                    professorEvaluationService.getMyEvaluationStats()
+                ]);
+                
+                console.log('✅ Evaluaciones obtenidas del servicio:', evaluationsData);
+                console.log('📊 Stats obtenidos del servicio:', statsData);
+                
+                setEvaluations(evaluationsData);
+                setEvaluationStats(statsData);
+                
+                console.log('✅ Estado actualizado - evaluations:', evaluationsData.length);
+                console.log('✅ Estado actualizado - evaluationStats:', statsData);
+                
+            } catch (error: any) {
+                console.error('❌ Error cargando evaluaciones:', error);
+                
+                // Si no hay evaluaciones asignadas, mostrar estado vacío
+                if (error.message.includes('No se encontraron evaluaciones')) {
+                    setEvaluations([]);
+                    setEvaluationStats({
+                        total: 0,
+                        pending: 0,
+                        inProgress: 0,
+                        completed: 0,
+                        averageScore: 0
+                    });
+                } else {
+                    // Para otros errores, mostrar notificación
+                    console.error('Error específico:', error.message);
+                }
+            } finally {
+                setIsLoading(false);
+                console.log('✅ Loading completado');
+            }
+        };
+
+        loadEvaluations();
+    }, []); // ✅ DEPENDENCIAS VACÍAS - SOLO SE EJECUTA AL MONTAR
+
+    // Datos mock para compatibilidad (se pueden eliminar después)
     const stats = useMemo(() => {
-        return getProfessorStats(currentProfessor.id);
-    }, [currentProfessor.id]);
+        return getProfessorStats(currentProfessor?.id);
+    }, [currentProfessor?.id]);
 
     const pendingExams = useMemo(() => {
-        return getPendingExamsByProfessor(currentProfessor.id);
-    }, [currentProfessor.id]);
+        return getPendingExamsByProfessor(currentProfessor?.id);
+    }, [currentProfessor?.id]);
 
     const handleLogout = () => {
         localStorage.removeItem('currentProfessor');
@@ -79,127 +159,178 @@ const ProfessorDashboard: React.FC = () => {
         }
     };
 
+    const getEvaluationStatusBadge = (status: EvaluationStatus) => {
+        switch (status) {
+            case EvaluationStatus.COMPLETED:
+                return <Badge variant="success">Completada</Badge>;
+            case EvaluationStatus.IN_PROGRESS:
+                return <Badge variant="warning">En Progreso</Badge>;
+            case EvaluationStatus.PENDING:
+                return <Badge variant="info">Pendiente</Badge>;
+            default:
+                return <Badge variant="neutral">{status}</Badge>;
+        }
+    };
+
+    const getEvaluationTypeLabel = (type: EvaluationType) => {
+        const labels: { [key in EvaluationType]: string } = {
+            [EvaluationType.MATHEMATICS_EXAM]: 'Examen de Matemáticas',
+            [EvaluationType.LANGUAGE_EXAM]: 'Examen de Lenguaje',
+            [EvaluationType.ENGLISH_EXAM]: 'Examen de Inglés',
+            [EvaluationType.PSYCHOLOGICAL_INTERVIEW]: 'Entrevista Psicológica',
+            [EvaluationType.CYCLE_DIRECTOR_INTERVIEW]: 'Entrevista Director de Ciclo',
+            [EvaluationType.CYCLE_DIRECTOR_REPORT]: 'Informe Director de Ciclo'
+        };
+        return labels[type] || type;
+    };
+
     const renderDashboard = () => (
         <div className="space-y-6">
             {/* Welcome Card */}
             <Card className="p-6 bg-gradient-to-r from-azul-monte-tabor to-blue-700 text-blanco-pureza">
                 <h1 className="text-2xl font-bold mb-2">
-                    Bienvenido/a, {currentProfessor.firstName} {currentProfessor.lastName}
+                    Bienvenido/a, {currentProfessor?.firstName} {currentProfessor?.lastName}
                 </h1>
                 <p className="text-blue-100">
-                    Departamento de {currentProfessor.department}
+                    Departamento de {currentProfessor?.department}
                 </p>
                 <p className="text-blue-100 text-sm mt-1">
-                    Asignaturas: {currentProfessor.subjects.map(getSubjectName).join(', ')}
+                    Asignaturas: {currentProfessor?.subjects.map(getSubjectName).join(', ')}
                 </p>
             </Card>
 
-            {/* Stats Grid */}
+            {/* Stats Grid - Usando datos reales */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <Card className="p-6 text-center">
                     <FileTextIcon className="w-8 h-8 text-azul-monte-tabor mx-auto mb-3" />
-                    <div className="text-2xl font-bold text-azul-monte-tabor">{stats?.totalExams || 0}</div>
-                    <div className="text-sm text-gris-piedra">Total Exámenes</div>
+                    <div className="text-2xl font-bold text-azul-monte-tabor">{evaluationStats.total}</div>
+                    <div className="text-sm text-gris-piedra">Total Evaluaciones</div>
                 </Card>
                 
                 <Card className="p-6 text-center">
                     <CheckCircleIcon className="w-8 h-8 text-verde-esperanza mx-auto mb-3" />
-                    <div className="text-2xl font-bold text-verde-esperanza">{stats?.evaluatedExams || 0}</div>
-                    <div className="text-sm text-gris-piedra">Evaluados</div>
+                    <div className="text-2xl font-bold text-verde-esperanza">{evaluationStats.completed}</div>
+                    <div className="text-sm text-gris-piedra">Completadas</div>
                 </Card>
                 
                 <Card className="p-6 text-center">
                     <ClockIcon className="w-8 h-8 text-dorado-nazaret mx-auto mb-3" />
-                    <div className="text-2xl font-bold text-dorado-nazaret">{stats?.pendingEvaluations || 0}</div>
+                    <div className="text-2xl font-bold text-dorado-nazaret">{evaluationStats.pending + evaluationStats.inProgress}</div>
                     <div className="text-sm text-gris-piedra">Pendientes</div>
                 </Card>
                 
                 <Card className="p-6 text-center">
                     <UsersIcon className="w-8 h-8 text-azul-monte-tabor mx-auto mb-3" />
-                    <div className="text-2xl font-bold text-azul-monte-tabor">{stats?.averageScore || 0}%</div>
+                    <div className="text-2xl font-bold text-azul-monte-tabor">{evaluationStats.averageScore}%</div>
                     <div className="text-sm text-gris-piedra">Promedio General</div>
                 </Card>
             </div>
 
-            {/* Recent Activity */}
+            {/* Recent Evaluations - Usando datos reales */}
             <Card className="p-6">
-                <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">Actividad Reciente</h2>
-                <div className="space-y-3">
-                    {pendingExams.slice(0, 5).map((exam) => {
-                        const student = mockStudentProfiles.find(s => s.id === exam.studentId);
-                        return (
-                            <div key={exam.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">Evaluaciones Recientes</h2>
+                {isLoading ? (
+                    <div className="text-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-azul-monte-tabor mx-auto"></div>
+                        <p className="text-gris-piedra mt-2">Cargando evaluaciones...</p>
+                    </div>
+                ) : evaluations.length > 0 ? (
+                    <div className="space-y-3">
+                        {evaluations.slice(0, 5).map((evaluation) => (
+                            <div key={evaluation.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                                 <div>
                                     <p className="font-medium">
-                                        {student?.firstName} {student?.lastName}
+                                        {evaluation.studentName}
                                     </p>
                                     <p className="text-sm text-gris-piedra">
-                                        {getSubjectName(exam.subjectId)} - {student?.grade}
+                                        {getEvaluationTypeLabel(evaluation.evaluationType)} - {evaluation.studentGrade}
                                     </p>
+                                    {evaluation.scheduledDate && (
+                                        <p className="text-xs text-gris-piedra">
+                                            Programada: {new Date(evaluation.scheduledDate).toLocaleDateString('es-CL')}
+                                        </p>
+                                    )}
                                 </div>
-                                <div className="flex items-center gap-3">
-                                    {getStatusBadge(exam.status)}
+                                <div className="flex items-center gap-2">
+                                    {getEvaluationStatusBadge(evaluation.status)}
                                     <Button 
                                         size="sm" 
                                         variant="primary"
-                                        onClick={() => navigate(`/profesor/evaluar/${exam.id}`)}
+                                        onClick={() => navigate(
+                                            evaluation.evaluationType === 'CYCLE_DIRECTOR_INTERVIEW'
+                                                ? `/profesor/entrevista-director/${evaluation.id}`
+                                                : evaluation.evaluationType === 'CYCLE_DIRECTOR_REPORT'
+                                                ? `/profesor/informe-director/${evaluation.id}`
+                                                : `/profesor/informe/${evaluation.id}`
+                                        )}
                                     >
-                                        Evaluar
+                                        {evaluation.evaluationType === 'CYCLE_DIRECTOR_INTERVIEW' 
+                                            ? (evaluation.status === EvaluationStatus.COMPLETED ? "Ver Entrevista" : "Crear Entrevista")
+                                            : (evaluation.status === EvaluationStatus.COMPLETED ? "Ver Informe" : "Crear Informe")}
                                     </Button>
                                 </div>
                             </div>
-                        );
-                    })}
-                    {pendingExams.length === 0 && (
-                        <p className="text-gris-piedra text-center py-4">
-                            No hay evaluaciones pendientes en este momento
-                        </p>
-                    )}
-                </div>
+                        ))}
+                    </div>
+                ) : (
+                    <p className="text-gris-piedra text-center py-4">
+                        No hay evaluaciones asignadas en este momento
+                    </p>
+                )}
             </Card>
         </div>
     );
 
     const renderEvaluaciones = () => {
-        const examColumns = [
+        const evaluationColumns = [
             {
-                key: 'student' as keyof any,
+                key: 'student' as keyof ProfessorEvaluation,
                 header: 'Estudiante',
-                render: (value: any, exam: StudentExam) => {
-                    const student = mockStudentProfiles.find(s => s.id === exam.studentId);
-                    return (
-                        <div>
-                            <p className="font-semibold">{student?.firstName} {student?.lastName}</p>
-                            <p className="text-sm text-gris-piedra">{student?.grade}</p>
-                        </div>
-                    );
-                }
+                render: (value: any, evaluation: ProfessorEvaluation) => (
+                    <div>
+                        <p className="font-semibold">{evaluation.studentName}</p>
+                        <p className="text-sm text-gris-piedra">{evaluation.studentGrade}</p>
+                    </div>
+                )
             },
             {
-                key: 'subjectId' as keyof StudentExam,
-                header: 'Asignatura',
-                render: (subjectId: string) => getSubjectName(subjectId)
+                key: 'evaluationType' as keyof ProfessorEvaluation,
+                header: 'Tipo de Evaluación',
+                render: (type: EvaluationType) => getEvaluationTypeLabel(type)
             },
             {
-                key: 'completedAt' as keyof StudentExam,
-                header: 'Fecha Completado',
+                key: 'scheduledDate' as keyof ProfessorEvaluation,
+                header: 'Fecha Programada',
                 render: (date: string) => date ? new Date(date).toLocaleDateString('es-CL') : '-'
             },
             {
-                key: 'score' as keyof StudentExam,
+                key: 'status' as keyof ProfessorEvaluation,
+                header: 'Estado',
+                render: (status: EvaluationStatus) => getEvaluationStatusBadge(status)
+            },
+            {
+                key: 'score' as keyof ProfessorEvaluation,
                 header: 'Puntaje',
                 render: (score: number) => score ? `${score} pts` : '-'
             },
             {
-                key: 'actions' as keyof any,
+                key: 'actions' as keyof ProfessorEvaluation,
                 header: 'Acciones',
-                render: (value: any, exam: StudentExam) => (
+                render: (value: any, evaluation: ProfessorEvaluation) => (
                     <Button 
                         size="sm" 
                         variant="primary"
-                        onClick={() => navigate(`/profesor/evaluar/${exam.id}`)}
+                        onClick={() => navigate(
+                            evaluation.evaluationType === 'CYCLE_DIRECTOR_INTERVIEW'
+                                ? `/profesor/entrevista-director/${evaluation.id}`
+                                : evaluation.evaluationType === 'CYCLE_DIRECTOR_REPORT'
+                                ? `/profesor/informe-director/${evaluation.id}`
+                                : `/profesor/informe/${evaluation.id}`
+                        )}
                     >
-                        Evaluar
+                        {evaluation.evaluationType === 'CYCLE_DIRECTOR_INTERVIEW' 
+                            ? (evaluation.status === EvaluationStatus.COMPLETED ? "Ver Entrevista" : "Crear Entrevista")
+                            : (evaluation.status === EvaluationStatus.COMPLETED ? "Ver Informe" : "Crear Informe")}
                     </Button>
                 )
             }
@@ -208,71 +339,144 @@ const ProfessorDashboard: React.FC = () => {
         return (
             <Card className="p-6">
                 <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">
-                    Evaluaciones Pendientes ({pendingExams.length})
+                    Mis Evaluaciones Asignadas ({evaluations.length})
                 </h2>
-                <Table 
-                    data={pendingExams}
-                    columns={examColumns}
-                    emptyMessage="No hay evaluaciones pendientes"
-                />
+                {(() => { console.log('🔄 Renderizando evaluaciones - isLoading:', isLoading, 'evaluations:', evaluations); return null; })()}
+                {isLoading ? (
+                    <div className="text-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-azul-monte-tabor mx-auto"></div>
+                        <p className="text-gris-piedra mt-2">Cargando evaluaciones...</p>
+                    </div>
+                ) : (
+                    <Table 
+                        data={evaluations}
+                        columns={evaluationColumns}
+                        emptyMessage="No hay evaluaciones asignadas"
+                    />
+                )}
             </Card>
         );
     };
 
     const renderEstudiantes = () => {
-        const myStudents = mockStudentProfiles.filter(student => 
-            student.examResults.some(exam => 
-                currentProfessor.subjects.includes(exam.subjectId)
-            )
-        );
+        // Crear lista única de estudiantes desde las evaluaciones reales
+        const uniqueStudents = new Map();
+        evaluations.forEach(evaluation => {
+            const studentId = evaluation.studentId || evaluation.id;
+            if (!uniqueStudents.has(studentId)) {
+                uniqueStudents.set(studentId, {
+                    id: studentId,
+                    name: evaluation.studentName,
+                    grade: evaluation.studentGrade,
+                    birthDate: evaluation.studentBirthDate,
+                    currentSchool: evaluation.currentSchool,
+                    evaluations: []
+                });
+            }
+            uniqueStudents.get(studentId).evaluations.push(evaluation);
+        });
+        
+        const myStudents = Array.from(uniqueStudents.values());
 
         const studentColumns = [
             {
-                key: 'name' as keyof any,
+                key: 'name' as const,
                 header: 'Estudiante',
                 render: (value: any, student: any) => (
                     <div>
-                        <p className="font-semibold">{student.firstName} {student.lastName}</p>
+                        <p className="font-semibold">{student.name}</p>
                         <p className="text-sm text-gris-piedra">{student.grade}</p>
+                        {student.currentSchool && (
+                            <p className="text-xs text-gris-piedra">
+                                {student.currentSchool}
+                            </p>
+                        )}
                     </div>
                 )
             },
             {
-                key: 'examResults' as keyof any,
-                header: 'Exámenes',
-                render: (examResults: any[], student: any) => {
-                    const myExams = mockStudentExams.filter(exam => 
-                        exam.studentId === student.id && 
-                        currentProfessor.subjects.includes(exam.subjectId)
-                    );
-                    return `${myExams.length} exámenes`;
-                }
+                key: 'evaluations' as const,
+                header: 'Evaluaciones',
+                render: (evaluations: ProfessorEvaluation[], student: any) => (
+                    <div>
+                        <p className="font-medium">{evaluations.length} evaluacion{evaluations.length !== 1 ? 'es' : ''}</p>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                            {evaluations.map((evaluation, index) => (
+                                <span key={index} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                    {getEvaluationTypeLabel(evaluation.evaluationType).split(' ')[0]}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+                )
             },
             {
-                key: 'status' as keyof any,
+                key: 'status' as const,
                 header: 'Estado',
                 render: (value: any, student: any) => {
-                    const myExams = mockStudentExams.filter(exam => 
-                        exam.studentId === student.id && 
-                        currentProfessor.subjects.includes(exam.subjectId)
+                    const completedEvaluations = student.evaluations.filter((e: ProfessorEvaluation) => 
+                        e.status === EvaluationStatus.COMPLETED
                     );
-                    const evaluated = myExams.filter(exam => exam.evaluation).length;
-                    return evaluated === myExams.length ? 
-                        <Badge variant="success">Completo</Badge> : 
-                        <Badge variant="warning">Pendiente</Badge>;
+                    const totalEvaluations = student.evaluations.length;
+                    
+                    if (completedEvaluations.length === totalEvaluations) {
+                        return <Badge variant="success">Completo ({completedEvaluations.length}/{totalEvaluations})</Badge>;
+                    } else if (completedEvaluations.length > 0) {
+                        return <Badge variant="warning">Parcial ({completedEvaluations.length}/{totalEvaluations})</Badge>;
+                    } else {
+                        return <Badge variant="info">Pendiente ({completedEvaluations.length}/{totalEvaluations})</Badge>;
+                    }
                 }
             },
             {
-                key: 'actions' as keyof any,
-                header: 'Ver Perfil',
+                key: 'averageScore' as const,
+                header: 'Promedio',
+                render: (value: any, student: any) => {
+                    const completedWithScore = student.evaluations.filter((e: ProfessorEvaluation) => 
+                        e.status === EvaluationStatus.COMPLETED && e.score
+                    );
+                    
+                    if (completedWithScore.length === 0) {
+                        return <span className="text-gris-piedra">-</span>;
+                    }
+                    
+                    const average = completedWithScore.reduce((sum: number, e: ProfessorEvaluation) => 
+                        sum + (e.score || 0), 0) / completedWithScore.length;
+                    
+                    return (
+                        <div className="text-center">
+                            <span className="font-semibold text-azul-monte-tabor">
+                                {Math.round(average)} pts
+                            </span>
+                        </div>
+                    );
+                }
+            },
+            {
+                key: 'actions' as const,
+                header: 'Acciones',
                 render: (value: any, student: any) => (
-                    <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => navigate(`/profesor/estudiante/${student.id}`)}
-                    >
-                        Ver Perfil
-                    </Button>
+                    <div className="flex gap-2">
+                        {student.evaluations.map((evaluation: ProfessorEvaluation) => (
+                            <Button 
+                                key={evaluation.id}
+                                size="sm" 
+                                variant={evaluation.status === EvaluationStatus.COMPLETED ? "outline" : "primary"}
+                                onClick={() => navigate(
+                                    evaluation.evaluationType === 'CYCLE_DIRECTOR_INTERVIEW'
+                                        ? `/profesor/entrevista-director/${evaluation.id}`
+                                        : evaluation.evaluationType === 'CYCLE_DIRECTOR_REPORT'
+                                        ? `/profesor/informe-director/${evaluation.id}`
+                                        : `/profesor/informe/${evaluation.id}`
+                                )}
+                                title={getEvaluationTypeLabel(evaluation.evaluationType)}
+                            >
+                                {evaluation.evaluationType === 'CYCLE_DIRECTOR_INTERVIEW' 
+                                    ? (evaluation.status === EvaluationStatus.COMPLETED ? "Ver Entrevista" : "Entrevista")
+                                    : (evaluation.status === EvaluationStatus.COMPLETED ? "Ver Informe" : "Evaluar")}
+                            </Button>
+                        ))}
+                    </div>
                 )
             }
         ];
@@ -282,41 +486,327 @@ const ProfessorDashboard: React.FC = () => {
                 <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">
                     Mis Estudiantes ({myStudents.length})
                 </h2>
-                <Table 
-                    data={myStudents}
-                    columns={studentColumns}
-                    emptyMessage="No hay estudiantes asignados"
-                />
+                {isLoading ? (
+                    <div className="text-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-azul-monte-tabor mx-auto"></div>
+                        <p className="text-gris-piedra mt-2">Cargando estudiantes...</p>
+                    </div>
+                ) : (
+                    <Table 
+                        data={myStudents}
+                        columns={studentColumns}
+                        emptyMessage="No hay estudiantes asignados"
+                    />
+                )}
             </Card>
         );
     };
 
+    const renderReportesEstadisticas = () => {
+        // Calcular estadísticas detalladas
+        const completedEvaluations = evaluations.filter(e => e.status === EvaluationStatus.COMPLETED);
+        const evaluationsWithScore = completedEvaluations.filter(e => e.score);
+        
+        // Estadísticas por tipo de evaluación
+        const statsByType = evaluations.reduce((acc: any, evaluation) => {
+            const type = evaluation.evaluationType;
+            if (!acc[type]) {
+                acc[type] = { total: 0, completed: 0, pending: 0, averageScore: 0, scores: [] };
+            }
+            acc[type].total++;
+            if (evaluation.status === EvaluationStatus.COMPLETED) {
+                acc[type].completed++;
+                if (evaluation.score) {
+                    acc[type].scores.push(evaluation.score);
+                }
+            } else {
+                acc[type].pending++;
+            }
+            acc[type].averageScore = acc[type].scores.length > 0 
+                ? Math.round(acc[type].scores.reduce((sum: number, score: number) => sum + score, 0) / acc[type].scores.length)
+                : 0;
+            return acc;
+        }, {});
+
+        // Estadísticas por grado
+        const statsByGrade = evaluations.reduce((acc: any, evaluation) => {
+            const grade = evaluation.studentGrade;
+            if (!acc[grade]) {
+                acc[grade] = { total: 0, completed: 0, averageScore: 0, scores: [] };
+            }
+            acc[grade].total++;
+            if (evaluation.status === EvaluationStatus.COMPLETED) {
+                acc[grade].completed++;
+                if (evaluation.score) {
+                    acc[grade].scores.push(evaluation.score);
+                }
+            }
+            acc[grade].averageScore = acc[grade].scores.length > 0 
+                ? Math.round(acc[grade].scores.reduce((sum: number, score: number) => sum + score, 0) / acc[grade].scores.length)
+                : 0;
+            return acc;
+        }, {});
+
+        // Evaluaciones por fecha (últimas 2 semanas)
+        const twoWeeksAgo = new Date();
+        twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+        
+        const recentEvaluations = completedEvaluations.filter(e => 
+            e.completedDate && new Date(e.completedDate) >= twoWeeksAgo
+        );
+
+        return (
+            <div className="space-y-6">
+                {/* Header */}
+                <div className="flex justify-between items-center">
+                    <h2 className="text-xl font-bold text-azul-monte-tabor">
+                        Reportes y Estadísticas
+                    </h2>
+                    <div className="flex gap-2">
+                        <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => window.print()}
+                        >
+                            Imprimir Reporte
+                        </Button>
+                        <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                                // Generar CSV básico
+                                const csvData = evaluations.map(e => 
+                                    `${e.studentName},${e.studentGrade},${getEvaluationTypeLabel(e.evaluationType)},${e.status},${e.score || 'N/A'}`
+                                ).join('\n');
+                                const blob = new Blob([`Estudiante,Grado,Evaluación,Estado,Puntaje\n${csvData}`], { type: 'text/csv' });
+                                const url = window.URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = `evaluaciones_${currentProfessor?.firstName}_${new Date().toISOString().split('T')[0]}.csv`;
+                                a.click();
+                            }}
+                        >
+                            Exportar CSV
+                        </Button>
+                    </div>
+                </div>
+
+                {/* Resumen General */}
+                <Card className="p-6">
+                    <h3 className="text-lg font-bold text-azul-monte-tabor mb-4">Resumen General</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div className="bg-blue-50 p-4 rounded-lg text-center">
+                            <div className="text-2xl font-bold text-azul-monte-tabor">{evaluationStats.total}</div>
+                            <div className="text-sm text-gris-piedra">Total Evaluaciones</div>
+                        </div>
+                        <div className="bg-green-50 p-4 rounded-lg text-center">
+                            <div className="text-2xl font-bold text-verde-esperanza">{evaluationStats.completed}</div>
+                            <div className="text-sm text-gris-piedra">Completadas</div>
+                            <div className="text-xs text-gris-piedra">
+                                ({Math.round((evaluationStats.completed / evaluationStats.total) * 100)}%)
+                            </div>
+                        </div>
+                        <div className="bg-yellow-50 p-4 rounded-lg text-center">
+                            <div className="text-2xl font-bold text-dorado-nazaret">{evaluationStats.pending + evaluationStats.inProgress}</div>
+                            <div className="text-sm text-gris-piedra">Pendientes</div>
+                        </div>
+                        <div className="bg-purple-50 p-4 rounded-lg text-center">
+                            <div className="text-2xl font-bold text-azul-monte-tabor">{evaluationStats.averageScore}</div>
+                            <div className="text-sm text-gris-piedra">Promedio General</div>
+                        </div>
+                    </div>
+                </Card>
+
+                {/* Estadísticas por Tipo de Evaluación */}
+                <Card className="p-6">
+                    <h3 className="text-lg font-bold text-azul-monte-tabor mb-4">Estadísticas por Tipo de Evaluación</h3>
+                    <div className="space-y-4">
+                        {Object.entries(statsByType).map(([type, stats]: [string, any]) => (
+                            <div key={type} className="border border-gray-200 rounded-lg p-4">
+                                <div className="flex justify-between items-center mb-2">
+                                    <h4 className="font-semibold text-azul-monte-tabor">
+                                        {getEvaluationTypeLabel(type as EvaluationType)}
+                                    </h4>
+                                    <Badge variant="info">{stats.total} evaluaciones</Badge>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                    <div>
+                                        <span className="text-gris-piedra">Completadas:</span>
+                                        <span className="ml-2 font-medium text-verde-esperanza">
+                                            {stats.completed}/{stats.total} ({Math.round((stats.completed/stats.total)*100)}%)
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <span className="text-gris-piedra">Pendientes:</span>
+                                        <span className="ml-2 font-medium text-dorado-nazaret">{stats.pending}</span>
+                                    </div>
+                                    <div>
+                                        <span className="text-gris-piedra">Promedio:</span>
+                                        <span className="ml-2 font-medium text-azul-monte-tabor">
+                                            {stats.averageScore > 0 ? `${stats.averageScore} pts` : 'N/A'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </Card>
+
+                {/* Estadísticas por Grado */}
+                <Card className="p-6">
+                    <h3 className="text-lg font-bold text-azul-monte-tabor mb-4">Estadísticas por Grado</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {Object.entries(statsByGrade).map(([grade, stats]: [string, any]) => (
+                            <div key={grade} className="border border-gray-200 rounded-lg p-4">
+                                <h4 className="font-semibold text-azul-monte-tabor mb-2">{grade}</h4>
+                                <div className="space-y-2 text-sm">
+                                    <div className="flex justify-between">
+                                        <span className="text-gris-piedra">Total:</span>
+                                        <span className="font-medium">{stats.total}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-gris-piedra">Completadas:</span>
+                                        <span className="font-medium text-verde-esperanza">{stats.completed}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-gris-piedra">Promedio:</span>
+                                        <span className="font-medium text-azul-monte-tabor">
+                                            {stats.averageScore > 0 ? `${stats.averageScore} pts` : 'N/A'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </Card>
+
+                {/* Actividad Reciente */}
+                <Card className="p-6">
+                    <h3 className="text-lg font-bold text-azul-monte-tabor mb-4">
+                        Actividad Reciente (últimas 2 semanas)
+                    </h3>
+                    {recentEvaluations.length > 0 ? (
+                        <div className="space-y-3">
+                            {recentEvaluations.slice(0, 10).map((evaluation) => (
+                                <div key={evaluation.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                    <div>
+                                        <p className="font-medium">{evaluation.studentName}</p>
+                                        <p className="text-sm text-gris-piedra">
+                                            {getEvaluationTypeLabel(evaluation.evaluationType)} - {evaluation.studentGrade}
+                                        </p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="font-medium text-azul-monte-tabor">
+                                            {evaluation.score ? `${evaluation.score} pts` : 'Sin puntaje'}
+                                        </p>
+                                        <p className="text-xs text-gris-piedra">
+                                            {evaluation.completedDate ? new Date(evaluation.completedDate).toLocaleDateString('es-CL') : '-'}
+                                        </p>
+                                    </div>
+                                </div>
+                            ))}
+                            {recentEvaluations.length > 10 && (
+                                <p className="text-center text-gris-piedra text-sm">
+                                    ... y {recentEvaluations.length - 10} evaluaciones más
+                                </p>
+                            )}
+                        </div>
+                    ) : (
+                        <p className="text-gris-piedra text-center py-4">
+                            No hay evaluaciones completadas en las últimas 2 semanas
+                        </p>
+                    )}
+                </Card>
+
+                {/* Progreso y Productividad */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <Card className="p-6">
+                        <h3 className="text-lg font-bold text-azul-monte-tabor mb-4">Progreso Semanal</h3>
+                        <div className="space-y-3">
+                            <div className="flex justify-between items-center">
+                                <span className="text-gris-piedra">Esta semana:</span>
+                                <span className="font-medium text-azul-monte-tabor">
+                                    {recentEvaluations.filter(e => {
+                                        const oneWeekAgo = new Date();
+                                        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+                                        return e.completedDate && new Date(e.completedDate) >= oneWeekAgo;
+                                    }).length} evaluaciones
+                                </span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-gris-piedra">Semana anterior:</span>
+                                <span className="font-medium text-azul-monte-tabor">
+                                    {recentEvaluations.filter(e => {
+                                        const twoWeeksAgo = new Date();
+                                        const oneWeekAgo = new Date();
+                                        twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+                                        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+                                        return e.completedDate && 
+                                               new Date(e.completedDate) >= twoWeeksAgo && 
+                                               new Date(e.completedDate) < oneWeekAgo;
+                                    }).length} evaluaciones
+                                </span>
+                            </div>
+                        </div>
+                    </Card>
+
+                    <Card className="p-6">
+                        <h3 className="text-lg font-bold text-azul-monte-tabor mb-4">Información del Profesor</h3>
+                        <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                                <span className="text-gris-piedra">Nombre:</span>
+                                <span className="font-medium">{currentProfessor?.firstName} {currentProfessor?.lastName}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-gris-piedra">Departamento:</span>
+                                <span className="font-medium">{currentProfessor?.department}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-gris-piedra">Asignaturas:</span>
+                                <span className="font-medium">{currentProfessor?.subjects.map(getSubjectName).join(', ')}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-gris-piedra">Total estudiantes:</span>
+                                <span className="font-medium">{new Set(evaluations.map(e => e.studentId)).size}</span>
+                            </div>
+                        </div>
+                    </Card>
+                </div>
+            </div>
+        );
+    };
+
     const renderSection = () => {
+        console.log('🔄 renderSection ejecutándose...');
+        console.log('📋 activeSection:', activeSection);
+        console.log('📋 activeSection type:', typeof activeSection);
+        console.log('📋 activeSection === "evaluaciones":', activeSection === 'evaluaciones');
+        
         switch (activeSection) {
             case 'dashboard':
+                console.log('🏠 Renderizando dashboard');
                 return renderDashboard();
             case 'evaluaciones':
+                console.log('📋 Renderizando evaluaciones');
                 return renderEvaluaciones();
             case 'estudiantes':
+                console.log('👥 Renderizando estudiantes');
                 return renderEstudiantes();
             case 'reportes':
-                return (
-                    <Card className="p-6">
-                        <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">Reportes y Estadísticas</h2>
-                        <p className="text-gris-piedra">Funcionalidad en desarrollo...</p>
-                    </Card>
-                );
+                console.log('📊 Renderizando reportes');
+                return renderReportesEstadisticas();
             case 'configuracion':
+                console.log('⚙️ Renderizando configuración');
                 return (
                     <Card className="p-6">
                         <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">Configuración</h2>
                         <div className="space-y-4">
                             <div>
                                 <h3 className="font-semibold text-azul-monte-tabor mb-2">Información Personal</h3>
-                                <p><strong>Nombre:</strong> {currentProfessor.firstName} {currentProfessor.lastName}</p>
-                                <p><strong>Email:</strong> {currentProfessor.email}</p>
-                                <p><strong>Departamento:</strong> {currentProfessor.department}</p>
-                                {currentProfessor.isAdmin && (
+                                <p><strong>Nombre:</strong> {currentProfessor?.firstName} {currentProfessor?.lastName}</p>
+                                <p><strong>Email:</strong> {currentProfessor?.email}</p>
+                                <p><strong>Departamento:</strong> {currentProfessor?.department}</p>
+                                {currentProfessor?.isAdmin && (
                                     <p className="text-dorado-nazaret"><strong>Permisos:</strong> Administrador</p>
                                 )}
                             </div>
@@ -327,6 +817,7 @@ const ProfessorDashboard: React.FC = () => {
                     </Card>
                 );
             case 'admin':
+                console.log('👑 Renderizando admin');
                 return (
                     <Card className="p-6">
                         <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">Panel de Administrador</h2>
@@ -368,7 +859,9 @@ const ProfessorDashboard: React.FC = () => {
                     </Card>
                 );
             default:
-                return renderDashboard();
+                console.log('⚠️ Caso default - activeSection no reconocido:', activeSection);
+                console.log('🔄 Redirigiendo a evaluaciones por defecto');
+                return renderEvaluaciones();
         }
     };
 

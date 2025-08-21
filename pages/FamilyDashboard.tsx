@@ -36,6 +36,7 @@ import {
 import { useApplications } from '../context/AppContext';
 import { applicationService, Application } from '../services/applicationService';
 import { useAuth } from '../context/AuthContext';
+import FamilyInterviews from '../components/family/FamilyInterviews';
 
 const sections = [
   { key: 'resumen', label: 'Resumen de Postulación' },
@@ -564,64 +565,7 @@ const FamilyDashboard: React.FC = () => {
           </Card>
         );
       case 'entrevistas':
-        return (
-          <Card className="p-6">
-            <h2 className="text-xl font-bold text-azul-monte-tabor mb-6 flex items-center gap-2">
-              <UsersIcon className="w-6 h-6" />
-              Mis Entrevistas
-            </h2>
-            
-            <div className="space-y-6">
-              {/* Entrevistas Programadas */}
-              <div>
-                <h3 className="font-semibold text-azul-monte-tabor mb-3">Entrevistas Programadas</h3>
-                <div className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <h4 className="font-medium text-azul-monte-tabor">Entrevista Familiar - Admisión 2025</h4>
-                      <p className="text-sm text-gris-piedra mt-1">
-                        Reunión con la familia {hasRealApplication ? myApplication.student.lastName : myApplication.applicant?.lastName} para conocer más sobre el proyecto educativo
-                      </p>
-                    </div>
-                    <Badge variant="success" size="sm">Confirmada</Badge>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p><strong>📅 Fecha:</strong> 15 de Octubre, 2024</p>
-                      <p><strong>🕐 Hora:</strong> 10:00 - 11:00 AM</p>
-                    </div>
-                    <div>
-                      <p><strong>📍 Lugar:</strong> Sala de Reuniones - Edificio Principal</p>
-                      <p><strong>👨‍💼 Entrevistador:</strong> Equipo de Admisiones</p>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                    <p className="text-sm text-azul-monte-tabor">
-                      <strong>Recordatorio:</strong> Por favor llegue 10 minutos antes de la hora programada. 
-                      Traiga una copia del certificado de nacimiento y últimas notas.
-                    </p>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Acciones */}
-              <div>
-                <h3 className="font-semibold text-azul-monte-tabor mb-3">Acciones Disponibles</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Button variant="outline" className="justify-start">
-                    📅 Reprogramar Entrevista
-                  </Button>
-                  <Button variant="outline" className="justify-start">
-                    <FiMail className="w-4 h-4 mr-2" />
-                  Contactar Admisiones
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </Card>
-        );
+        return <FamilyInterviews />;
       case 'notificaciones':
         return (
           <Card className="p-6">

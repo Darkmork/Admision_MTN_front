@@ -4,17 +4,37 @@ import { Link, useNavigate } from 'react-router-dom';
 import Card from '../components/ui/Card';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
+import { useAuth } from '../context/AuthContext';
+import { useNotifications } from '../context/AppContext';
 
 const LoginPage: React.FC = () => {
     const [userType, setUserType] = useState<'familia' | 'admin'>('familia');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
+    const { login, user, isAuthenticated } = useAuth();
+    const { addNotification } = useNotifications();
+
+    // Redirigir si ya está autenticado
+    React.useEffect(() => {
+        if (isAuthenticated && user) {
+            if (user.role === 'ADMIN') {
+                navigate('/admin');
+            } else if (user.role === 'APODERADO') {
+                navigate('/familia');
+            } else {
+                navigate('/profesor');
+            }
+        }
+    }, [isAuthenticated, user, navigate]);
 
     return (
         <div className="min-h-[calc(100vh-250px)] flex items-center justify-center bg-gray-50 p-4">
             <div className="max-w-md w-full">
                 <div className="flex justify-center mb-6">
                      <Link to="/" className="flex items-center gap-3">
-                        <img src="/images/Logo_Comunicaciones.jpg" alt="Logo Colegio Monte Tabor y Nazaret" className="h-14" />
+                        <img src="/images/logoMTN.png" alt="Logo Colegio Monte Tabor y Nazaret" className="h-14" />
                     </Link>
                 </div>
                 <Card className="p-8 shadow-2xl">
@@ -38,18 +58,35 @@ const LoginPage: React.FC = () => {
                     <p className="text-center text-gris-piedra mb-6">
                         {userType === 'familia' ? 'Bienvenido/a. Ingrese para ver el estado de su postulación.' : 'Ingrese sus credenciales para continuar.'}
                     </p>
-                    <form className="space-y-6" onSubmit={e => {
+                    <form className="space-y-6" onSubmit={async (e) => {
                         e.preventDefault();
-                        if (userType === 'familia') {
-                            navigate('/familia');
-                        } else {
-                            navigate('/admin');
+                        setIsLoading(true);
+                        
+                        try {
+                            await login(email, password, userType);
+                            
+                            // Redirigir según el tipo de usuario
+                            if (userType === 'familia') {
+                                navigate('/familia');
+                            } else {
+                                navigate('/admin');
+                            }
+                        } catch (error: any) {
+                            addNotification({
+                                type: 'error',
+                                title: 'Error de autenticación',
+                                message: error.message || 'Credenciales inválidas'
+                            });
+                        } finally {
+                            setIsLoading(false);
                         }
                     }}>
                         <Input
                             id="email"
                             label="Correo Electrónico"
                             type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
                             placeholder={userType === 'familia' ? 'familia@ejemplo.com' : 'admin@mtn.cl'}
                             isRequired
                         />
@@ -57,13 +94,22 @@ const LoginPage: React.FC = () => {
                             id="password"
                             label="Contraseña"
                             type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
                             placeholder="••••••••"
                             isRequired
                         />
                         <div className="text-right">
                             <a href="#" className="text-sm text-azul-monte-tabor hover:underline">¿Olvidó su contraseña?</a>
                         </div>
-                        <Button type="submit" size="lg" variant={userType === 'familia' ? 'primary' : 'secondary'} className="w-full">
+                        <Button 
+                            type="submit" 
+                            size="lg" 
+                            variant={userType === 'familia' ? 'primary' : 'secondary'} 
+                            className="w-full"
+                            isLoading={isLoading}
+                            loadingText="Ingresando..."
+                        >
                             Ingresar
                         </Button>
                     </form>

@@ -233,9 +233,9 @@ const StudentProfile: React.FC = () => {
                                                         <Button 
                                                             size="sm" 
                                                             variant="primary"
-                                                            onClick={() => navigate(`/profesor/evaluar/${exam.id}`)}
+                                                            onClick={() => navigate(`/profesor/informe/${exam.id}`)}
                                                         >
-                                                            Evaluar
+                                                            Crear Informe
                                                         </Button>
                                                     </div>
                                                 </div>

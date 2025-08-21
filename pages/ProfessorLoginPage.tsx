@@ -6,7 +6,7 @@ import Input from '../components/ui/Input';
 import { LogoIcon, UserIcon } from '../components/icons/Icons';
 import { useFormValidation } from '../hooks/useFormValidation';
 import { useNotifications } from '../context/AppContext';
-import { mockProfessors } from '../services/professorMockData';
+import { professorAuthService } from '../services/professorAuthService';
 
 const ProfessorLoginPage: React.FC = () => {
     const navigate = useNavigate();
@@ -45,53 +45,67 @@ const ProfessorLoginPage: React.FC = () => {
         setIsLoggingIn(true);
 
         try {
-            // Simular verificación de login
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            console.log('🔐 Iniciando login para profesor:', data.email);
+            
+            // Usar el servicio de autenticación real
+            const response = await professorAuthService.login({
+                email: data.email,
+                password: data.password
+            });
 
-            // Buscar profesor en datos mock
-            const professor = mockProfessors.find(p => 
-                p.email === data.email && 
-                p.password === data.password &&
-                p.isActive
-            );
+            if (response.success && response.token) {
+                // Verificar que el rol sea de profesor
+                if (response.role && professorAuthService.isProfessorRole(response.role)) {
+                    
+                    // Guardar información del profesor en localStorage para compatibilidad
+                    localStorage.setItem('currentProfessor', JSON.stringify({
+                        id: response.id || 26, // Usar ID real del backend o fallback
+                        firstName: response.firstName || '',
+                        lastName: response.lastName || '',
+                        email: response.email || '',
+                        subjects: getSubjectsByRole(response.role),
+                        assignedGrades: ['prekinder', 'kinder', '1basico', '2basico', '3basico', '4basico', '5basico', '6basico', '7basico', '8basico', '1medio', '2medio', '3medio', '4medio'],
+                        department: getDepartmentByRole(response.role),
+                        isAdmin: response.role === 'ADMIN'
+                    }));
 
-            if (professor) {
-                // Guardar información del profesor en localStorage
-                localStorage.setItem('currentProfessor', JSON.stringify({
-                    id: professor.id,
-                    firstName: professor.firstName,
-                    lastName: professor.lastName,
-                    email: professor.email,
-                    subjects: professor.subjects,
-                    assignedGrades: professor.assignedGrades,
-                    department: professor.department,
-                    isAdmin: professor.isAdmin || false
-                }));
+                    addNotification({
+                        type: 'success',
+                        title: 'Bienvenido/a',
+                        message: `Hola ${response.firstName} ${response.lastName}`
+                    });
 
-                addNotification({
-                    type: 'success',
-                    title: 'Bienvenido/a',
-                    message: `Hola ${professor.firstName} ${professor.lastName}`
-                });
-
-                // Redirigir según los permisos del usuario
-                if (professor.isAdmin) {
-                    navigate('/admin');
+                    console.log('✅ Login exitoso, redirigiendo al dashboard...');
+                    
+                    // ✅ Redirigir según el rol del usuario
+                    if (response.role === 'ADMIN') {
+                        console.log('🔑 Usuario admin detectado, redirigiendo al panel de administración...');
+                        navigate('/admin');
+                    } else {
+                        console.log('👨‍🏫 Usuario profesor detectado, redirigiendo al dashboard de profesor...');
+                        navigate('/profesor');
+                    }
+                    
                 } else {
-                    navigate('/profesor');
+                    addNotification({
+                        type: 'error',
+                        title: 'Acceso denegado',
+                        message: 'Este portal es solo para profesores y personal del colegio'
+                    });
                 }
             } else {
                 addNotification({
                     type: 'error',
                     title: 'Error de autenticación',
-                    message: 'Email o contraseña incorrectos'
+                    message: response.message || 'Error al iniciar sesión'
                 });
             }
-        } catch (error) {
+        } catch (error: any) {
+            console.error('❌ Error en login:', error);
             addNotification({
                 type: 'error',
                 title: 'Error del sistema',
-                message: 'No se pudo procesar el login. Intenta nuevamente.'
+                message: error.message || 'No se pudo procesar el login. Intenta nuevamente.'
             });
         } finally {
             setIsLoggingIn(false);
@@ -104,13 +118,145 @@ const ProfessorLoginPage: React.FC = () => {
         }
     };
 
+    // Función para obtener las asignaturas según el rol
+    const getSubjectsByRole = (role: string): string[] => {
+        switch (role) {
+            // Administración
+            case 'ADMIN':
+                return ['MATH', 'SPANISH', 'ENGLISH', 'SCIENCE', 'HISTORY', 'PSYCHOLOGY'];
+            
+            // Profesores ciclo inicial (pueden evaluar todo en su ciclo)
+            case 'TEACHER_EARLY_CYCLE':
+                return ['MATH', 'SPANISH'];
+            
+            // Profesores básica por asignatura
+            case 'TEACHER_LANGUAGE_BASIC':
+                return ['SPANISH'];
+            case 'TEACHER_MATHEMATICS_BASIC':
+                return ['MATH'];
+            case 'TEACHER_ENGLISH_BASIC':
+                return ['ENGLISH'];
+            case 'TEACHER_SCIENCE_BASIC':
+                return ['SCIENCE'];
+            case 'TEACHER_HISTORY_BASIC':
+                return ['HISTORY'];
+            
+            // Profesores media por asignatura
+            case 'TEACHER_LANGUAGE_HIGH':
+                return ['SPANISH'];
+            case 'TEACHER_MATHEMATICS_HIGH':
+                return ['MATH'];
+            case 'TEACHER_ENGLISH_HIGH':
+                return ['ENGLISH'];
+            case 'TEACHER_SCIENCE_HIGH':
+                return ['SCIENCE'];
+            case 'TEACHER_HISTORY_HIGH':
+                return ['HISTORY'];
+            
+            // Coordinadores (acceso a su área en todos los niveles)
+            case 'COORDINATOR_LANGUAGE':
+                return ['SPANISH'];
+            case 'COORDINATOR_MATHEMATICS':
+                return ['MATH'];
+            case 'COORDINATOR_ENGLISH':
+                return ['ENGLISH'];
+            case 'COORDINATOR_SCIENCE':
+                return ['SCIENCE'];
+            case 'COORDINATOR_HISTORY':
+                return ['HISTORY'];
+            
+            // Especialistas
+            case 'CYCLE_DIRECTOR':
+                return ['MATH', 'SPANISH', 'ENGLISH', 'SCIENCE', 'HISTORY'];
+            case 'PSYCHOLOGIST':
+                return ['PSYCHOLOGY'];
+            
+            // Legacy roles
+            case 'TEACHER_MATHEMATICS':
+                return ['MATH'];
+            case 'TEACHER_LANGUAGE':
+                return ['SPANISH'];
+            case 'TEACHER_ENGLISH':
+                return ['ENGLISH'];
+            
+            default:
+                return [];
+        }
+    };
+
+    // Función para obtener el departamento según el rol
+    const getDepartmentByRole = (role: string): string => {
+        switch (role) {
+            // Administración
+            case 'ADMIN':
+                return 'Administración';
+            
+            // Profesores ciclo inicial
+            case 'TEACHER_EARLY_CYCLE':
+                return 'Educación Inicial (K-2°)';
+            
+            // Profesores básica
+            case 'TEACHER_LANGUAGE_BASIC':
+                return 'Lenguaje y Comunicación (3°-7°)';
+            case 'TEACHER_MATHEMATICS_BASIC':
+                return 'Matemática (3°-7°)';
+            case 'TEACHER_ENGLISH_BASIC':
+                return 'Inglés (3°-7°)';
+            case 'TEACHER_SCIENCE_BASIC':
+                return 'Ciencias Naturales (3°-7°)';
+            case 'TEACHER_HISTORY_BASIC':
+                return 'Historia y Geografía (3°-7°)';
+            
+            // Profesores media
+            case 'TEACHER_LANGUAGE_HIGH':
+                return 'Lenguaje y Comunicación (8°-IV)';
+            case 'TEACHER_MATHEMATICS_HIGH':
+                return 'Matemática (8°-IV)';
+            case 'TEACHER_ENGLISH_HIGH':
+                return 'Inglés (8°-IV)';
+            case 'TEACHER_SCIENCE_HIGH':
+                return 'Ciencias Naturales (8°-IV)';
+            case 'TEACHER_HISTORY_HIGH':
+                return 'Historia y Geografía (8°-IV)';
+            
+            // Coordinadores
+            case 'COORDINATOR_LANGUAGE':
+                return 'Coordinación de Lenguaje';
+            case 'COORDINATOR_MATHEMATICS':
+                return 'Coordinación de Matemática';
+            case 'COORDINATOR_ENGLISH':
+                return 'Coordinación de Inglés';
+            case 'COORDINATOR_SCIENCE':
+                return 'Coordinación de Ciencias';
+            case 'COORDINATOR_HISTORY':
+                return 'Coordinación de Historia';
+            
+            // Especialistas
+            case 'CYCLE_DIRECTOR':
+                return 'Dirección de Ciclo';
+            case 'PSYCHOLOGIST':
+                return 'Psicología';
+            
+            // Legacy roles
+            case 'TEACHER_MATHEMATICS':
+                return 'Matemática (Sistema Anterior)';
+            case 'TEACHER_LANGUAGE':
+                return 'Lenguaje y Comunicación (Sistema Anterior)';
+            case 'TEACHER_ENGLISH':
+                return 'Inglés (Sistema Anterior)';
+            
+            default:
+                return 'General';
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-azul-monte-tabor via-blue-700 to-blue-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
             <div className="max-w-md w-full space-y-8">
                 {/* Logo y Header */}
                 <div className="text-center">
                     <div className="mx-auto flex justify-center">
-                        <LogoIcon />
+                        <LogoIcon className="w-32 h-32" />
                     </div>
                     <h2 className="mt-6 text-3xl font-bold text-blanco-pureza">
                         Portal de Profesores
