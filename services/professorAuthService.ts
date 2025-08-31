@@ -112,7 +112,13 @@ class ProfessorAuthService {
             // Administración
             'ADMIN',
             
-            // Profesores por ciclo
+            // Roles del backend (actuales)
+            'TEACHER',
+            'COORDINATOR',
+            'CYCLE_DIRECTOR',
+            'PSYCHOLOGIST',
+            
+            // Profesores por ciclo (legacy/específicos)
             'TEACHER_EARLY_CYCLE',
             
             // Profesores básica (3° a 7°)
@@ -129,16 +135,12 @@ class ProfessorAuthService {
             'TEACHER_SCIENCE_HIGH',
             'TEACHER_HISTORY_HIGH',
             
-            // Coordinadores
+            // Coordinadores específicos
             'COORDINATOR_LANGUAGE',
             'COORDINATOR_MATHEMATICS',
             'COORDINATOR_ENGLISH',
             'COORDINATOR_SCIENCE',
             'COORDINATOR_HISTORY',
-            
-            // Especialistas
-            'CYCLE_DIRECTOR',
-            'PSYCHOLOGIST',
             
             // Legacy roles (compatibilidad)
             'TEACHER_LANGUAGE',

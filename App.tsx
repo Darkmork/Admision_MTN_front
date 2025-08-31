@@ -26,6 +26,7 @@ import ProtectedApoderadoRoute from './components/auth/ProtectedApoderadoRoute';
 import CalendarNotifications from './pages/CalendarNotifications';
 import InterviewModule from './pages/InterviewModule';
 import ReportsDashboard from './pages/ReportsDashboard';
+import InterviewSchedulingTest from './pages/InterviewSchedulingTest';
 
 function App() {
     return (
@@ -89,6 +90,11 @@ function App() {
                             <Route path="/reportes" element={
                                 <ProtectedAdminRoute>
                                     <ReportsDashboard />
+                                </ProtectedAdminRoute>
+                            } />
+                            <Route path="/test-interview-scheduling" element={
+                                <ProtectedAdminRoute>
+                                    <InterviewSchedulingTest />
                                 </ProtectedAdminRoute>
                             } />
                         </Routes>

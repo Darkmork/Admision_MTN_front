@@ -6,7 +6,7 @@ interface User {
     email: string;
     firstName: string;
     lastName: string;
-    role: 'APODERADO' | 'ADMIN' | 'TEACHER_LANGUAGE' | 'TEACHER_MATHEMATICS' | 'TEACHER_ENGLISH' | 'CYCLE_DIRECTOR' | 'PSYCHOLOGIST';
+    role: 'APODERADO' | 'ADMIN' | 'TEACHER' | 'COORDINATOR' | 'CYCLE_DIRECTOR' | 'PSYCHOLOGIST' | 'TEACHER_LANGUAGE' | 'TEACHER_MATHEMATICS' | 'TEACHER_ENGLISH';
     phone?: string;
     rut?: string;
 }
@@ -20,11 +20,39 @@ interface AuthContextType {
     logout: () => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 interface AuthProviderProps {
     children: ReactNode;
 }
+
+// Helper function to map backend roles to frontend roles
+const mapBackendRole = (backendRole: string): User['role'] => {
+    switch (backendRole) {
+        case 'ADMIN':
+            return 'ADMIN';
+        case 'APODERADO':
+            return 'APODERADO';
+        case 'TEACHER':
+            return 'TEACHER'; // Keep generic teacher role
+        case 'COORDINATOR':
+            return 'COORDINATOR';
+        case 'CYCLE_DIRECTOR':
+            return 'CYCLE_DIRECTOR';
+        case 'PSYCHOLOGIST':
+            return 'PSYCHOLOGIST';
+        // Legacy specific teacher roles (if still used)
+        case 'TEACHER_LANGUAGE':
+            return 'TEACHER_LANGUAGE';
+        case 'TEACHER_MATHEMATICS':
+            return 'TEACHER_MATHEMATICS';
+        case 'TEACHER_ENGLISH':
+            return 'TEACHER_ENGLISH';
+        default:
+            console.warn(`Unknown backend role: ${backendRole}, defaulting to TEACHER`);
+            return 'TEACHER';
+    }
+};
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
@@ -59,7 +87,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                     email: response.email,
                     firstName: response.firstName,
                     lastName: response.lastName,
-                    role: response.role as 'APODERADO' | 'ADMIN' | 'TEACHER_LANGUAGE' | 'TEACHER_MATHEMATICS' | 'TEACHER_ENGLISH' | 'CYCLE_DIRECTOR' | 'PSYCHOLOGIST'
+                    role: mapBackendRole(response.role || 'TEACHER')
                 };
                 
                 // ✅ Si es admin, también configurar información de profesor para compatibilidad
@@ -122,7 +150,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                     email: response.email,
                     firstName: response.firstName,
                     lastName: response.lastName,
-                    role: response.role as 'APODERADO' | 'ADMIN' | 'TEACHER_LANGUAGE' | 'TEACHER_MATHEMATICS' | 'TEACHER_ENGLISH' | 'CYCLE_DIRECTOR' | 'PSYCHOLOGIST',
+                    role: mapBackendRole(response.role || 'APODERADO'),
                     phone: userData.phone,
                     rut: userData.rut
                 };

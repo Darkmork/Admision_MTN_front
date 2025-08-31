@@ -28,12 +28,22 @@ const gradeOptions = educationalLevels.map(level => ({
     label: level.label
 }));
 
+const schoolOptions = [
+    { value: '', label: 'Seleccione un colegio...' },
+    { value: 'MONTE_TABOR', label: 'Monte Tabor' },
+    { value: 'NAZARET', label: 'Nazaret' }
+];
+
+console.log('📚 School options loaded:', schoolOptions);
+
 const validationConfig = {
     firstName: { required: true, minLength: 2 },
-    lastName: { required: true, minLength: 2 },
+    paternalLastName: { required: true, minLength: 2 },
+    maternalLastName: { required: true, minLength: 2 },
     rut: { required: true, minLength: 9 },
     birthDate: { required: true },
     grade: { required: true },
+    schoolApplied: { required: true },
     studentEmail: { email: true },
     studentAddress: { required: true, minLength: 5 },
     currentSchool: { minLength: 2 }, // Será requerido condicionalmente
@@ -99,9 +109,28 @@ const ApplicationForm: React.FC = () => {
     // Estado para verificación de email
     const [isEmailVerified, setIsEmailVerified] = useState(false);
     
+    // Helper function to convert to uppercase for text fields
+    const toUpperCase = (value: string) => {
+        return value ? value.toUpperCase() : '';
+    };
+
+    // Fields that should be converted to uppercase
+    const uppercaseFields = [
+        'firstName', 'paternalLastName', 'maternalLastName', 'studentAddress', 'currentSchool', 'additionalNotes',
+        'parent1Name', 'parent1Address', 'parent1Profession',
+        'parent2Name', 'parent2Address', 'parent2Profession',
+        'supporterName', 'supporterRelation',
+        'guardianName', 'guardianRelation'
+    ];
+
     // Helper function to update fields
     const updateField = useCallback((name: string, value: any) => {
-        setData(prev => ({ ...prev, [name]: value }));
+        // Apply uppercase transformation for specific fields
+        const processedValue = uppercaseFields.includes(name) && typeof value === 'string' 
+            ? toUpperCase(value) 
+            : value;
+        
+        setData(prev => ({ ...prev, [name]: processedValue }));
     }, []);
     
     // Helper function to touch fields (placeholder)
@@ -111,7 +140,12 @@ const ApplicationForm: React.FC = () => {
     
     // Función para actualizar datos de autenticación
     const updateAuthField = useCallback((name: string, value: string) => {
-        setAuthData(prev => ({ ...prev, [name]: value }));
+        // Apply uppercase transformation for names
+        const processedValue = (name === 'firstName' || name === 'lastName') 
+            ? value.toUpperCase()
+            : value;
+        
+        setAuthData(prev => ({ ...prev, [name]: processedValue }));
     }, []);
     
     // Función para manejar login
@@ -241,8 +275,8 @@ const ApplicationForm: React.FC = () => {
         switch (currentStep) {
             case 0:
                 // Validate postulant data
-                if (!data.firstName?.trim() || !data.lastName?.trim() || !data.rut?.trim() || 
-                    !data.birthDate || !data.grade || !data.studentAddress?.trim()) {
+                if (!data.firstName?.trim() || !data.paternalLastName?.trim() || !data.maternalLastName?.trim() || 
+                    !data.rut?.trim() || !data.birthDate || !data.grade || !data.studentAddress?.trim()) {
                     return false;
                 }
                 // Check for school if required
@@ -304,7 +338,7 @@ const ApplicationForm: React.FC = () => {
 
     const getStepFields = useCallback((step: number): string[] => {
         switch (step) {
-            case 0: return ['firstName', 'lastName', 'rut', 'birthDate', 'grade', 'studentAddress'];
+            case 0: return ['firstName', 'paternalLastName', 'maternalLastName', 'rut', 'birthDate', 'grade', 'studentAddress'];
             case 1: return ['parent1Name', 'parent1Email', 'parent1Phone', 'parent1Rut', 'parent1Address', 'parent1Profession', 'parent2Name', 'parent2Email', 'parent2Phone', 'parent2Rut', 'parent2Address', 'parent2Profession'];
             case 2: return ['supporterName', 'supporterEmail', 'supporterPhone', 'supporterRut', 'supporterRelation'];
             case 3: return ['guardianName', 'guardianEmail', 'guardianPhone', 'guardianRut', 'guardianRelation'];
@@ -326,12 +360,14 @@ const ApplicationForm: React.FC = () => {
                     const applicationRequest = {
                         // Datos del estudiante
                         firstName: data.firstName,
-                        lastName: data.lastName,
+                        paternalLastName: data.paternalLastName,
+                        maternalLastName: data.maternalLastName,
                         rut: data.rut,
                         birthDate: data.birthDate,
                         studentEmail: data.studentEmail,
                         studentAddress: data.studentAddress,
                         grade: data.grade,
+                        schoolApplied: data.schoolApplied,
                         currentSchool: data.currentSchool,
                         additionalNotes: data.additionalNotes,
 
@@ -403,7 +439,7 @@ const ApplicationForm: React.FC = () => {
                     // Agregar a la lista local (opcional, para compatibilidad con el contexto existente)
                     addApplication({
                         id: response.id?.toString() || Date.now().toString(),
-                        studentName: response.studentName || `${data.firstName} ${data.lastName}`,
+                        studentName: response.studentName || `${data.firstName} ${data.paternalLastName} ${data.maternalLastName}`,
                         grade: response.grade || data.grade,
                         status: response.status || 'pending',
                         submissionDate: response.submissionDate || new Date().toISOString(),
@@ -474,10 +510,12 @@ const ApplicationForm: React.FC = () => {
         switch (currentStep) {
             case 0:
                 if (!data.firstName?.trim()) missing.push('Nombres');
-                if (!data.lastName?.trim()) missing.push('Apellidos');
+                if (!data.paternalLastName?.trim()) missing.push('Apellido Paterno');
+                if (!data.maternalLastName?.trim()) missing.push('Apellido Materno');
                 if (!data.rut?.trim()) missing.push('RUT');
                 if (!data.birthDate) missing.push('Fecha de Nacimiento');
                 if (!data.grade) missing.push('Nivel al que postula');
+                if (!data.schoolApplied) missing.push('Colegio');
                 if (!data.studentAddress?.trim()) missing.push('Dirección');
                 if (requiresCurrentSchool(data.grade || '') && !data.currentSchool?.trim()) missing.push('Colegio de Procedencia');
                 break;
@@ -713,7 +751,7 @@ const ApplicationForm: React.FC = () => {
                 return (
                     <div className="space-y-4">
                         <h3 className="text-xl font-bold text-azul-monte-tabor">Información del Postulante</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <Input 
                                 id="firstName" 
                                 label="Nombres" 
@@ -725,15 +763,27 @@ const ApplicationForm: React.FC = () => {
                                 error={errors.firstName}
                             />
                             <Input 
-                                id="lastName" 
-                                label="Apellidos" 
-                                placeholder="Pérez González" 
+                                id="paternalLastName" 
+                                label="Apellido Paterno" 
+                                placeholder="Pérez" 
                                 isRequired 
-                                value={data.lastName || ''}
-                                onChange={(e) => updateField('lastName', e.target.value)}
-                                onBlur={() => touchField('lastName')}
-                                error={errors.lastName}
+                                value={data.paternalLastName || ''}
+                                onChange={(e) => updateField('paternalLastName', e.target.value)}
+                                onBlur={() => touchField('paternalLastName')}
+                                error={errors.paternalLastName}
                             />
+                            <Input 
+                                id="maternalLastName" 
+                                label="Apellido Materno" 
+                                placeholder="González" 
+                                isRequired 
+                                value={data.maternalLastName || ''}
+                                onChange={(e) => updateField('maternalLastName', e.target.value)}
+                                onBlur={() => touchField('maternalLastName')}
+                                error={errors.maternalLastName}
+                            />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <RutInput 
                                 name="rut" 
                                 label="RUT del Postulante" 
@@ -809,6 +859,17 @@ const ApplicationForm: React.FC = () => {
                             onChange={(e) => updateField('grade', e.target.value)}
                             onBlur={() => touchField('grade')}
                             error={errors.grade}
+                        />
+                        
+                        <Select 
+                            id="schoolApplied" 
+                            label="Colegio al que postula" 
+                            options={schoolOptions}
+                            isRequired 
+                            value={data.schoolApplied || ''}
+                            onChange={(e) => updateField('schoolApplied', e.target.value)}
+                            onBlur={() => touchField('schoolApplied')}
+                            error={errors.schoolApplied}
                         />
                         
                         {/* Campo de observaciones adicionales */}

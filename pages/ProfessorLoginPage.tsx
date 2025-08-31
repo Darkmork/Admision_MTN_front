@@ -7,10 +7,12 @@ import { LogoIcon, UserIcon } from '../components/icons/Icons';
 import { useFormValidation } from '../hooks/useFormValidation';
 import { useNotifications } from '../context/AppContext';
 import { professorAuthService } from '../services/professorAuthService';
+import { useAuth } from '../context/AuthContext';
 
 const ProfessorLoginPage: React.FC = () => {
     const navigate = useNavigate();
     const { addNotification } = useNotifications();
+    const { login: loginWithAuth } = useAuth();
     const [isLoggingIn, setIsLoggingIn] = useState(false);
 
     const validationConfig = {
@@ -56,6 +58,12 @@ const ProfessorLoginPage: React.FC = () => {
             if (response.success && response.token) {
                 // Verificar que el rol sea de profesor
                 if (response.role && professorAuthService.isProfessorRole(response.role)) {
+                    
+                    // ✅ Si es admin, registrar en AuthContext principal
+                    if (response.role === 'ADMIN') {
+                        console.log('🔑 Usuario admin detectado, registrando en AuthContext principal...');
+                        await loginWithAuth(data.email, data.password, 'ADMIN');
+                    }
                     
                     // Guardar información del profesor en localStorage para compatibilidad
                     localStorage.setItem('currentProfessor', JSON.stringify({

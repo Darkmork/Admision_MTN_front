@@ -85,9 +85,8 @@ const EvaluationManagement: React.FC<EvaluationManagementProps> = ({
       
       // Definir qué roles pueden ser evaluadores
       const evaluatorRoles = [
-        SystemUserRole.TEACHER_LANGUAGE,
-        SystemUserRole.TEACHER_MATHEMATICS, 
-        SystemUserRole.TEACHER_ENGLISH,
+        SystemUserRole.TEACHER,      // Profesores generales con especialización
+        SystemUserRole.COORDINATOR,  // Coordinadores de asignatura
         SystemUserRole.CYCLE_DIRECTOR,
         SystemUserRole.PSYCHOLOGIST
       ];
@@ -221,16 +220,38 @@ const EvaluationManagement: React.FC<EvaluationManagementProps> = ({
   ];
 
   const getEvaluatorsByType = (evaluationType: EvaluationType) => {
-    const roleMap = {
-      [EvaluationType.LANGUAGE_EXAM]: UserRole.TEACHER_LANGUAGE,
-      [EvaluationType.MATHEMATICS_EXAM]: UserRole.TEACHER_MATHEMATICS,
-      [EvaluationType.ENGLISH_EXAM]: UserRole.TEACHER_ENGLISH,
-      [EvaluationType.CYCLE_DIRECTOR_REPORT]: UserRole.CYCLE_DIRECTOR,
-      [EvaluationType.CYCLE_DIRECTOR_INTERVIEW]: UserRole.CYCLE_DIRECTOR,
-      [EvaluationType.PSYCHOLOGICAL_INTERVIEW]: UserRole.PSYCHOLOGIST
+    // Mapeo de tipos de evaluación a criterios de filtrado
+    const getEvaluatorCriteria = (type: EvaluationType) => {
+      switch (type) {
+        case EvaluationType.LANGUAGE_EXAM:
+          return (evaluator: User) => 
+            (evaluator.role === SystemUserRole.TEACHER || evaluator.role === SystemUserRole.COORDINATOR) &&
+            evaluator.subject === 'LANGUAGE';
+            
+        case EvaluationType.MATHEMATICS_EXAM:
+          return (evaluator: User) => 
+            (evaluator.role === SystemUserRole.TEACHER || evaluator.role === SystemUserRole.COORDINATOR) &&
+            evaluator.subject === 'MATHEMATICS';
+            
+        case EvaluationType.ENGLISH_EXAM:
+          return (evaluator: User) => 
+            (evaluator.role === SystemUserRole.TEACHER || evaluator.role === SystemUserRole.COORDINATOR) &&
+            evaluator.subject === 'ENGLISH';
+            
+        case EvaluationType.CYCLE_DIRECTOR_REPORT:
+        case EvaluationType.CYCLE_DIRECTOR_INTERVIEW:
+          return (evaluator: User) => evaluator.role === SystemUserRole.CYCLE_DIRECTOR;
+          
+        case EvaluationType.PSYCHOLOGICAL_INTERVIEW:
+          return (evaluator: User) => evaluator.role === SystemUserRole.PSYCHOLOGIST;
+          
+        default:
+          return () => false;
+      }
     };
 
-    return evaluators.filter(evaluator => evaluator.role === roleMap[evaluationType]);
+    const criteria = getEvaluatorCriteria(evaluationType);
+    return evaluators.filter(criteria);
   };
 
   return (
@@ -519,7 +540,7 @@ const CustomAssignmentModal: React.FC<CustomAssignmentModalProps> = ({
                   <option value={0}>Seleccionar evaluador...</option>
                   {availableEvaluators.map(evaluator => (
                     <option key={evaluator.id} value={evaluator.id}>
-                      {evaluator.firstName} {evaluator.lastName} - {USER_ROLE_LABELS[evaluator.role]}
+                      {evaluator.firstName} {evaluator.lastName} - {SystemRoleLabels[evaluator.role]}
                     </option>
                   ))}
                 </select>

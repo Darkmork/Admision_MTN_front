@@ -17,7 +17,7 @@ import {
   ViewIcon,
   EditIcon
 } from '../icons/Icons';
-import { FiCalendar, FiClock, FiUser, FiVideo, FiMapPin, FiPhone, FiMail, FiFilter, FiSearch, FiEye, FiEdit, FiCheck, FiX, FiRefreshCw } from 'react-icons/fi';
+import { FiCalendar, FiClock, FiUser, FiVideo, FiMapPin, FiPhone, FiMail, FiFilter, FiSearch, FiEye, FiEdit, FiCheck, FiX, FiRefreshCw, FiArrowLeft } from 'react-icons/fi';
 import {
   Interview,
   InterviewStatus,
@@ -40,13 +40,15 @@ import InterviewTable from './InterviewTable';
 import InterviewForm from './InterviewForm';
 import InterviewCalendar from './InterviewCalendar';
 import InterviewStatsPanel from './InterviewStatsPanel';
-import interviewService from '../../services/interviewService';
+import interviewService from '../../services/interviewService-temp';
+import { emailTemplateService, EmailTemplate } from '../../services/emailTemplateService';
 
 interface InterviewManagementProps {
   className?: string;
+  onBack?: () => void;
 }
 
-const InterviewManagement: React.FC<InterviewManagementProps> = ({ className = '' }) => {
+const InterviewManagement: React.FC<InterviewManagementProps> = ({ className = '', onBack }) => {
   // Estados principales
   const [interviews, setInterviews] = useState<Interview[]>([]);
   const [selectedInterview, setSelectedInterview] = useState<Interview | null>(null);
@@ -76,9 +78,16 @@ const InterviewManagement: React.FC<InterviewManagementProps> = ({ className = '
   // Modo de vista (tabla o calendario)
   const [viewMode, setViewMode] = useState<'table' | 'calendar' | 'stats'>('table');
 
+  // Estados para email templates
+  const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [selectedInterviewForEmail, setSelectedInterviewForEmail] = useState<Interview | null>(null);
+  const [selectedEmailTemplate, setSelectedEmailTemplate] = useState<EmailTemplate | null>(null);
+
   useEffect(() => {
     loadInterviews();
     loadStats();
+    loadEmailTemplates();
   }, [filters]);
 
   const loadInterviews = async () => {
@@ -137,6 +146,25 @@ const InterviewManagement: React.FC<InterviewManagementProps> = ({ className = '
       setStats(null);
     } finally {
       setIsLoadingStats(false);
+    }
+  };
+
+  const loadEmailTemplates = async () => {
+    try {
+      const response = await emailTemplateService.getAllTemplates();
+      if (response.success) {
+        // Filtrar solo templates relacionados con entrevistas
+        const interviewTemplates = response.data.filter(template => 
+          template.category.includes('INTERVIEW') || 
+          template.category === 'STUDENT_SELECTION' ||
+          template.category === 'STUDENT_REJECTION'
+        );
+        setEmailTemplates(interviewTemplates);
+      }
+    } catch (error) {
+      console.error('Error cargando email templates:', error);
+      // Si falla, usar templates vacíos pero no mostrar error
+      setEmailTemplates([]);
     }
   };
 
@@ -226,46 +254,68 @@ const InterviewManagement: React.FC<InterviewManagementProps> = ({ className = '
     });
   };
 
-  // Funciones de notificación
+  // Funciones de notificación mejoradas con templates
   const handleSendNotification = async (interview: Interview, type: 'scheduled' | 'confirmed' | 'reminder') => {
-    try {
-      setIsSubmitting(true);
-      await interviewService.sendNotification(interview.id, type);
-      
-      const typeLabels = {
-        scheduled: 'programada',
-        confirmed: 'confirmada', 
-        reminder: 'recordatorio'
-      };
-      
-      setToast({
-        message: `Notificación de entrevista ${typeLabels[type]} enviada exitosamente a la familia`,
-        type: 'success'
-      });
-    } catch (error) {
-      console.error('Error enviando notificación:', error);
-      setToast({
-        message: 'Error al enviar la notificación por correo',
-        type: 'error'
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    // Abrir modal de selección de template
+    setSelectedInterviewForEmail(interview);
+    setShowEmailModal(true);
   };
 
   const handleSendReminder = async (interview: Interview) => {
+    // Abrir modal de selección de template con templates de recordatorio
+    setSelectedInterviewForEmail(interview);
+    setShowEmailModal(true);
+  };
+
+  const handleSendEmailWithTemplate = async (templateKey: string, variables?: Record<string, any>) => {
+    if (!selectedInterviewForEmail) return;
+
     try {
       setIsSubmitting(true);
-      await interviewService.sendReminder(interview.id);
       
-      setToast({
-        message: 'Recordatorio de entrevista enviado exitosamente a la familia',
-        type: 'success'
-      });
+      // Preparar variables de la entrevista
+      const interviewVariables = {
+        studentName: selectedInterviewForEmail.studentName,
+        studentFirstName: selectedInterviewForEmail.studentName.split(' ')[0],
+        studentLastName: selectedInterviewForEmail.studentName.split(' ').slice(1).join(' '),
+        parentNames: selectedInterviewForEmail.parentNames,
+        gradeApplied: selectedInterviewForEmail.gradeApplied,
+        interviewDate: new Date(selectedInterviewForEmail.scheduledDate).toLocaleDateString('es-CL'),
+        interviewTime: selectedInterviewForEmail.scheduledTime,
+        interviewerName: selectedInterviewForEmail.interviewerName,
+        interviewMode: selectedInterviewForEmail.mode === 'VIRTUAL' ? 'Virtual' : 'Presencial',
+        interviewLocation: selectedInterviewForEmail.location || 'Por confirmar',
+        meetingLink: selectedInterviewForEmail.virtualMeetingLink || '',
+        collegeName: 'Colegio Monte Tabor y Nazaret',
+        collegePhone: '+56 2 2345 6789',
+        collegeEmail: 'info@mtn.cl',
+        currentDate: new Date().toLocaleDateString('es-CL'),
+        currentYear: new Date().getFullYear().toString(),
+        ...variables
+      };
+
+      // Enviar email usando el servicio de templates
+      const result = await emailTemplateService.sendTemplatedEmail(
+        templateKey, 
+        selectedInterviewForEmail.applicationId, 
+        interviewVariables
+      );
+
+      if (result.success) {
+        setToast({
+          message: 'Email enviado exitosamente a la familia',
+          type: 'success'
+        });
+        setShowEmailModal(false);
+        setSelectedInterviewForEmail(null);
+        setSelectedEmailTemplate(null);
+      } else {
+        throw new Error(result.message || 'Error al enviar el email');
+      }
     } catch (error) {
-      console.error('Error enviando recordatorio:', error);
+      console.error('Error enviando email:', error);
       setToast({
-        message: 'Error al enviar el recordatorio por correo',
+        message: 'Error al enviar el email',
         type: 'error'
       });
     } finally {
@@ -287,6 +337,16 @@ const InterviewManagement: React.FC<InterviewManagementProps> = ({ className = '
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
+          {onBack && (
+            <Button 
+              onClick={onBack}
+              variant="outline"
+              className="flex items-center"
+            >
+              <FiArrowLeft className="w-4 h-4 mr-2" />
+              Volver
+            </Button>
+          )}
           <CalendarIcon className="w-8 h-8 text-azul-monte-tabor" />
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
@@ -350,7 +410,7 @@ const InterviewManagement: React.FC<InterviewManagementProps> = ({ className = '
           
           <Card className="p-4 text-center">
             <UserIcon className="w-6 h-6 text-purple-500 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-purple-600">{stats.averageScore.toFixed(1)}</p>
+            <p className="text-2xl font-bold text-purple-600">{(stats.averageScore || 0).toFixed(1)}</p>
             <p className="text-sm text-gray-600">Puntuación Promedio</p>
           </Card>
         </div>
@@ -531,6 +591,99 @@ const InterviewManagement: React.FC<InterviewManagementProps> = ({ className = '
           onCancel={() => setShowForm(false)}
           isSubmitting={isSubmitting}
         />
+      </Modal>
+
+      {/* Modal de selección de template de email */}
+      <Modal
+        isOpen={showEmailModal}
+        onClose={() => {
+          setShowEmailModal(false);
+          setSelectedInterviewForEmail(null);
+          setSelectedEmailTemplate(null);
+        }}
+        title="Enviar Email"
+        size="lg"
+      >
+        <div className="space-y-6">
+          {selectedInterviewForEmail && (
+            <Card className="p-4 bg-blue-50">
+              <h4 className="font-medium text-gray-900 mb-2">Entrevista seleccionada:</h4>
+              <div className="text-sm space-y-1">
+                <p><strong>Estudiante:</strong> {selectedInterviewForEmail.studentName}</p>
+                <p><strong>Padres:</strong> {selectedInterviewForEmail.parentNames}</p>
+                <p><strong>Fecha:</strong> {new Date(selectedInterviewForEmail.scheduledDate).toLocaleDateString('es-CL')}</p>
+                <p><strong>Hora:</strong> {selectedInterviewForEmail.scheduledTime}</p>
+                <p><strong>Entrevistador:</strong> {selectedInterviewForEmail.interviewerName}</p>
+              </div>
+            </Card>
+          )}
+
+          <div>
+            <h4 className="font-medium text-gray-900 mb-3">Seleccionar Template de Email:</h4>
+            <div className="space-y-2 max-h-60 overflow-y-auto">
+              {emailTemplates.length > 0 ? (
+                emailTemplates.map((template) => (
+                  <div
+                    key={template.id}
+                    className={`p-3 border rounded-md cursor-pointer transition-colors ${
+                      selectedEmailTemplate?.id === template.id
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    onClick={() => setSelectedEmailTemplate(template)}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h5 className="font-medium text-gray-900">{template.name}</h5>
+                        <p className="text-sm text-gray-600">{template.description}</p>
+                        <Badge 
+                          variant={template.category.includes('INTERVIEW') ? 'info' : 'neutral'}
+                          size="sm"
+                          className="mt-1"
+                        >
+                          {template.category.replace(/_/g, ' ')}
+                        </Badge>
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {template.isDefault && (
+                          <Badge variant="success" size="sm">Por defecto</Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <FiMail className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                  <p>No hay templates de email disponibles</p>
+                  <p className="text-sm">Crea templates en la sección Emails Institucionales</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex justify-end space-x-3">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowEmailModal(false);
+                setSelectedInterviewForEmail(null);
+                setSelectedEmailTemplate(null);
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => selectedEmailTemplate && handleSendEmailWithTemplate(selectedEmailTemplate.templateKey)}
+              disabled={!selectedEmailTemplate || isSubmitting}
+              isLoading={isSubmitting}
+              loadingText="Enviando..."
+            >
+              <FiMail className="w-4 h-4 mr-2" />
+              Enviar Email
+            </Button>
+          </div>
+        </div>
       </Modal>
 
       {/* Toast de notificaciones */}

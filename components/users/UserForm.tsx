@@ -29,6 +29,7 @@ import {
   AcademicCapIcon,
   BookOpenIcon
 } from '../icons/Icons';
+import WeeklyCalendar from '../schedule/WeeklyCalendar';
 
 const UserForm: React.FC<UserFormProps> = ({
   user,
@@ -202,6 +203,25 @@ const UserForm: React.FC<UserFormProps> = ({
   const requiresLevel = UserUtils.requiresEducationalLevel(formData.role);
   const requiresSubject = UserUtils.requiresSubject(formData.role);
   const availableSubjects = formData.educationalLevel ? UserUtils.getSubjectsForLevel(formData.educationalLevel) : [];
+  
+  // Determinar si el usuario puede realizar entrevistas (necesita gestión de horarios)
+  const canInterview = formData.role === UserRole.PSYCHOLOGIST || formData.role === UserRole.CYCLE_DIRECTOR || formData.role === UserRole.COORDINATOR;
+  
+  console.log(`👤 UserForm - Usuario: ${formData.firstName} ${formData.lastName}`);
+  console.log(`🏷️ UserForm - Role: ${formData.role}`);
+  console.log(`📅 UserForm - canInterview: ${canInterview}`);
+  console.log(`🆔 UserForm - userForSchedule.id: ${user?.id || 0}`);
+  
+  // Para el InterviewerScheduleManager necesitamos un objeto User
+  const userForSchedule = user || {
+    id: 0, // Se actualizará después de crear el usuario
+    firstName: formData.firstName,
+    lastName: formData.lastName,
+    email: formData.email,
+    role: formData.role,
+    educationalLevel: formData.educationalLevel,
+    subject: formData.subject
+  };
 
   const getFormTitle = () => {
     switch (mode) {
@@ -380,11 +400,9 @@ const UserForm: React.FC<UserFormProps> = ({
               >
                 {/* Administración */}
                 <optgroup label="👑 Administración">
-                  {UserUtils.getAdminRoles().map(role => (
-                    <option key={role} value={role}>
-                      {USER_ROLE_LABELS[role]}
-                    </option>
-                  ))}
+                  <option value={UserRole.ADMIN}>
+                    {USER_ROLE_LABELS[UserRole.ADMIN]}
+                  </option>
                 </optgroup>
 
                 {/* Docentes */}
@@ -479,6 +497,50 @@ const UserForm: React.FC<UserFormProps> = ({
               {errors.roleCombination && (
                 <p className="text-sm text-red-600">{errors.roleCombination}</p>
               )}
+            </div>
+          )}
+
+          {/* Gestión de Horarios (solo para entrevistadores) */}
+          {canInterview && user && user.id > 0 && !isCreateMode && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center w-5 h-5 bg-azul-monte-tabor text-white rounded text-xs">⏰</div>
+                <h3 className="text-lg font-medium text-gray-900">Gestión de Horarios de Entrevistas</h3>
+              </div>
+              
+              <div className="bg-gray-50 rounded-lg p-4">
+                <p className="text-sm text-gray-600 mb-4">
+                  Como {formData.role === UserRole.PSYCHOLOGIST ? 'psicólogo(a)' : 
+                       formData.role === UserRole.CYCLE_DIRECTOR ? 'director(a) de ciclo' : 'coordinador(a)'}, 
+                  puedes marcar tus horarios disponibles haciendo click en las casillas del calendario (8 AM - 4 PM).
+                </p>
+                
+                <WeeklyCalendar 
+                  userId={userForSchedule.id || 0}
+                  userRole={formData.role}
+                  onScheduleChange={() => {
+                    // Opcional: callback cuando se actualicen horarios
+                    console.log('Horarios actualizados');
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Mensaje informativo para entrevistadores recién creados */}
+          {canInterview && isCreateMode && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-start gap-2">
+                <div className="flex-shrink-0 w-5 h-5 bg-blue-500 text-white rounded text-xs flex items-center justify-center mt-0.5">ℹ</div>
+                <div>
+                  <h4 className="text-sm font-medium text-blue-900 mb-1">Gestión de Horarios</h4>
+                  <p className="text-sm text-blue-700">
+                    Después de crear este usuario {formData.role === UserRole.PSYCHOLOGIST ? 'psicólogo' : 
+                                                   formData.role === UserRole.CYCLE_DIRECTOR ? 'director de ciclo' : 'coordinador'}, 
+                    podrás configurar sus horarios disponibles para entrevistas editando su perfil.
+                  </p>
+                </div>
+              </div>
             </div>
           )}
 

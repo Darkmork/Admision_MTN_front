@@ -26,18 +26,28 @@ const Pagination: React.FC<PaginationProps> = ({
 }) => {
   if (totalPages <= 1) return null;
 
+  // Paginación inteligente: ajustar maxVisible según totalPages
+  const getSmartMaxVisible = () => {
+    if (totalPages <= 3) return totalPages;      // Mostrar todas si son 3 o menos
+    if (totalPages <= 5) return Math.min(5, totalPages); // Máximo 5 si hay pocas páginas
+    if (totalPages <= 10) return 3;             // Solo 3 visibles si hay 10 o menos
+    return Math.min(maxVisible, 5);             // Máximo 5 para muchas páginas
+  };
+
+  const smartMaxVisible = getSmartMaxVisible();
+
   const getVisiblePages = () => {
     const pages: (number | string)[] = [];
-    const half = Math.floor(maxVisible / 2);
+    const half = Math.floor(smartMaxVisible / 2);
     
     let start = Math.max(0, currentPage - half);
     let end = Math.min(totalPages - 1, currentPage + half);
 
     // Adjust if we're near the beginning or end
     if (currentPage <= half) {
-      end = Math.min(totalPages - 1, maxVisible - 1);
+      end = Math.min(totalPages - 1, smartMaxVisible - 1);
     } else if (currentPage >= totalPages - half - 1) {
-      start = Math.max(0, totalPages - maxVisible);
+      start = Math.max(0, totalPages - smartMaxVisible);
     }
 
     // Add first page and ellipsis if needed
@@ -65,11 +75,14 @@ const Pagination: React.FC<PaginationProps> = ({
   };
 
   const visiblePages = getVisiblePages();
+  
+  // Ocultar botones first/last si hay muy pocas páginas
+  const shouldShowFirstLast = showFirstLast && totalPages > 5;
 
   return (
     <nav className={`flex items-center justify-center space-x-1 ${className}`}>
       {/* First page button */}
-      {showFirstLast && currentPage > 0 && (
+      {shouldShowFirstLast && currentPage > 0 && (
         <Button
           variant="outline"
           size="sm"
@@ -121,7 +134,7 @@ const Pagination: React.FC<PaginationProps> = ({
       </Button>
 
       {/* Last page button */}
-      {showFirstLast && currentPage < totalPages - 1 && (
+      {shouldShowFirstLast && currentPage < totalPages - 1 && (
         <Button
           variant="outline"
           size="sm"

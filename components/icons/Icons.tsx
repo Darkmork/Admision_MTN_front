@@ -1,4 +1,20 @@
 import React from 'react';
+import { 
+    FiEye as FiEyeIcon, 
+    FiMail as FiMailIcon, 
+    FiCheck as FiCheckIcon, 
+    FiX as FiXIcon, 
+    FiClock as FiClockIcon, 
+    FiRefreshCw as FiRefreshCwIcon 
+} from 'react-icons/fi';
+
+// Re-export icons for use in components
+export const FiEye = FiEyeIcon;
+export const FiMail = FiMailIcon;
+export const FiCheck = FiCheckIcon;
+export const FiX = FiXIcon;
+export const FiClock = FiClockIcon;
+export const FiRefreshCw = FiRefreshCwIcon;
 
 export const LogoIcon = ({ className = "w-12 h-12" }: { className?: string }) => (
     <img 

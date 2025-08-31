@@ -23,18 +23,31 @@ import {
   UsersIcon,
   ChartBarIcon,
   ExclamationTriangleIcon,
-  InformationCircleIcon
+  InformationCircleIcon,
+  ArrowLeftIcon
 } from '../icons/Icons';
 
-const UserManagement: React.FC = () => {
+interface UserManagementProps {
+  onBack?: () => void;
+}
+
+const UserManagement: React.FC<UserManagementProps> = ({ onBack }) => {
+  // Función para calcular el mejor tamaño de página
+  const getOptimalPageSize = (totalUsers: number): number => {
+    if (totalUsers <= 20) return Math.max(10, totalUsers);  // Mínimo 10, pero si hay menos, mostrar todos
+    if (totalUsers <= 50) return 15;  // Para colegios medianos
+    if (totalUsers <= 100) return 20; // Para colegios grandes
+    return 25; // Para instituciones muy grandes
+  };
+
   const [state, setState] = useState<UserManagementState>({
     users: [],
     selectedUser: null,
     isLoading: false,
     isSubmitting: false,
     error: null,
-    filters: { page: 0, size: 10 },
-    pagination: { page: 0, size: 10, total: 0, totalPages: 0 },
+    filters: { page: 0, size: 15 }, // Tamaño inicial más razonable
+    pagination: { page: 0, size: 15, total: 0, totalPages: 0 },
     stats: null
   });
 
@@ -55,11 +68,38 @@ const UserManagement: React.FC = () => {
   });
 
   // Cargar usuarios
-  const loadUsers = useCallback(async (filters: UserFiltersType = state.filters) => {
+  const loadUsers = useCallback(async (filters: UserFiltersType = state.filters, skipOptimalSize: boolean = false) => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
     
     try {
       const response = await userService.getSchoolStaffUsers(filters);
+      
+      // Si es la primera carga y no estamos evitando el ajuste automático,
+      // ajustar el tamaño de página según el total de usuarios
+      let updatedFilters = filters;
+      if (!skipOptimalSize && response.totalElements > 0) {
+        const optimalSize = getOptimalPageSize(response.totalElements);
+        if (filters.size !== optimalSize) {
+          updatedFilters = { ...filters, size: optimalSize, page: 0 };
+          
+          // Recargar con el nuevo tamaño óptimo
+          const reloadResponse = await userService.getSchoolStaffUsers(updatedFilters);
+          
+          setState(prev => ({
+            ...prev,
+            users: reloadResponse.content,
+            filters: updatedFilters,
+            pagination: {
+              page: reloadResponse.number,
+              size: reloadResponse.size,
+              total: reloadResponse.totalElements,
+              totalPages: reloadResponse.totalPages
+            },
+            isLoading: false
+          }));
+          return;
+        }
+      }
       
       setState(prev => ({
         ...prev,
@@ -90,6 +130,10 @@ const UserManagement: React.FC = () => {
       setState(prev => ({ ...prev, stats }));
     } catch (error: any) {
       console.error('Error cargando estadísticas:', error);
+      // Si es 401, no mostrar error ya que la redirección se maneja en api.ts
+      if (error.response?.status !== 401) {
+        showToast('Error al cargar estadísticas de usuarios', 'error');
+      }
     }
   }, []);
 
@@ -102,7 +146,8 @@ const UserManagement: React.FC = () => {
   // Manejar cambios de filtros
   const handleFiltersChange = useCallback((newFilters: UserFiltersType) => {
     setState(prev => ({ ...prev, filters: newFilters }));
-    loadUsers(newFilters);
+    // Evitar ajuste automático de tamaño cuando el usuario está cambiando filtros manualmente
+    loadUsers(newFilters, true);
   }, [loadUsers]);
 
   // Manejar paginación
@@ -231,6 +276,16 @@ const UserManagement: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
+          {onBack && (
+            <Button 
+              onClick={onBack}
+              variant="outline"
+              className="flex items-center"
+            >
+              <ArrowLeftIcon className="w-4 h-4 mr-2" />
+              Volver
+            </Button>
+          )}
           <UsersIcon className="w-8 h-8 text-azul-monte-tabor" />
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
@@ -267,7 +322,7 @@ const UserManagement: React.FC = () => {
       <UserFilters
         filters={state.filters}
         onChange={handleFiltersChange}
-        onReset={() => handleFiltersChange({ page: 0, size: 10 })}
+        onReset={() => handleFiltersChange({ page: 0, size: 15 })}
       />
 
       {/* Error */}

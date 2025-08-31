@@ -240,20 +240,28 @@ class UserService {
     try {
       console.log('👨‍🏫 Obteniendo usuarios del colegio (staff)');
       
-      // Obtener todos los usuarios y filtrar en frontend para excluir APODERADOS
-      const response = await this.getAllUsers(filters);
-      
-      // Filtrar solo usuarios del colegio (no APODERADOS)
-      const schoolStaffUsers = response.content.filter(user => user.role !== UserRole.APODERADO);
-      
-      console.log('✅ Usuarios del colegio filtrados:', schoolStaffUsers.length);
-      
-      return {
-        ...response,
-        content: schoolStaffUsers,
-        totalElements: schoolStaffUsers.length,
-        numberOfElements: schoolStaffUsers.length
+      // Filtrar en el backend excluyendo APODERADOS mediante parámetros
+      const staffFilters = {
+        ...filters,
+        excludeRole: 'APODERADO' // Nuevo parámetro para excluir APODERADOS
       };
+      
+      const params = new URLSearchParams();
+      
+      if (staffFilters.search) params.append('search', staffFilters.search);
+      if (staffFilters.role) params.append('role', staffFilters.role);
+      if (staffFilters.active !== undefined) params.append('active', staffFilters.active.toString());
+      if (staffFilters.page !== undefined) params.append('page', staffFilters.page.toString());
+      if (staffFilters.size !== undefined) params.append('size', staffFilters.size.toString());
+      if (staffFilters.sort) params.append('sort', staffFilters.sort);
+      // Excluir APODERADOS en el backend
+      params.append('excludeRole', 'APODERADO');
+
+      const response = await api.get(`/api/users?${params.toString()}`);
+      
+      console.log('✅ Usuarios del colegio obtenidos del backend');
+      return response.data;
+
     } catch (error: any) {
       console.error('❌ Error obteniendo usuarios del colegio:', error);
       throw this.handleError(error, 'Error al obtener usuarios del colegio');

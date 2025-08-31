@@ -75,8 +75,10 @@ api.interceptors.response.use(
             console.error('Error headers:', error.response.headers);
             console.error('Request data:', error.config.data);
             
-            // Si es 401, limpiar la sesión correspondiente
+            // Si es 401, limpiar la sesión correspondiente y redirigir
             if (error.response.status === 401) {
+                console.warn('🔐 JWT token expired or invalid - cleaning session');
+                
                 // Limpiar token de usuario regular
                 localStorage.removeItem('auth_token');
                 localStorage.removeItem('authenticated_user');
@@ -85,6 +87,26 @@ api.interceptors.response.use(
                 localStorage.removeItem('professor_token');
                 localStorage.removeItem('professor_user');
                 localStorage.removeItem('currentProfessor');
+                
+                // Solo redirigir si no estamos ya en una página de login o si no es una ruta pública
+                const currentPath = window.location.pathname;
+                const isLoginPage = currentPath.includes('/login') || currentPath === '/';
+                const requestUrl = error.config?.url || '';
+                const isPublicRoute = requestUrl.includes('/public/') || 
+                                     requestUrl.includes('/api/auth/login') || 
+                                     requestUrl.includes('/api/auth/register');
+                
+                if (!isLoginPage && !isPublicRoute) {
+                    console.warn('🔄 Redirecting to login due to expired token');
+                    // Usar setTimeout para evitar problemas con el contexto de React
+                    setTimeout(() => {
+                        if (currentPath.includes('/admin') || currentPath.includes('/profesor')) {
+                            window.location.href = '/admin/login';
+                        } else {
+                            window.location.href = '/login';
+                        }
+                    }, 100);
+                }
             }
         } else if (error.request) {
             // La petición fue hecha pero no se recibió respuesta

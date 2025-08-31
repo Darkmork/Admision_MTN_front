@@ -3,7 +3,6 @@ import { useParams, Link } from 'react-router-dom';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
-import Modal from '../components/ui/Modal';
 import { examSubjects, getTopicsByLevel, educationalLevels } from '../services/examMockData';
 import { 
     ArrowLeft, 
@@ -12,19 +11,14 @@ import {
     Download, 
     Play,
     Calendar,
-    Users,
     CheckCircle,
     Calculator,
     Globe
 } from 'lucide-react';
-import { useNotifications } from '../context/AppContext';
 
 const ExamSubjectDetail: React.FC = () => {
     const { subjectId } = useParams<{ subjectId: string }>();
-    const [selectedSchedule, setSelectedSchedule] = useState<string | null>(null);
-    const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
     const [selectedLevel, setSelectedLevel] = useState<string>('1basico');
-    const { addNotification } = useNotifications();
 
     const subject = examSubjects.find(s => s.id.toLowerCase() === subjectId?.toLowerCase());
 
@@ -46,13 +40,13 @@ const ExamSubjectDetail: React.FC = () => {
     const getSubjectIcon = (subjectId: string) => {
         switch (subjectId) {
             case 'MATH':
-                return '🧮';
+                return <Calculator className="w-16 h-16 text-blue-600" />;
             case 'SPANISH':
-                return '📚';
+                return <BookOpen className="w-16 h-16 text-green-600" />;
             case 'ENGLISH':
-                return '🇺🇸';
+                return <Globe className="w-16 h-16 text-purple-600" />;
             default:
-                return '📝';
+                return <BookOpen className="w-16 h-16 text-gray-600" />;
         }
     };
 
@@ -78,24 +72,9 @@ const ExamSubjectDetail: React.FC = () => {
         }
     };
 
-    const handleScheduleExam = () => {
-        if (selectedSchedule) {
-            addNotification({
-                type: 'success',
-                title: 'Examen programado',
-                message: `Tu examen de ${subject.name} ha sido programado exitosamente.`
-            });
-            setIsScheduleModalOpen(false);
-            setSelectedSchedule(null);
-        }
-    };
-
     const handleDownloadMaterial = (material: any) => {
-        addNotification({
-            type: 'info',
-            title: 'Descarga iniciada',
-            message: `Descargando: ${material.title}`
-        });
+        // Simulación de descarga
+        console.log(`Descargando: ${material.title}`);
     };
 
     return (
@@ -115,7 +94,7 @@ const ExamSubjectDetail: React.FC = () => {
                 {/* Subject Header */}
                 <Card className="p-8 mb-8">
                     <div className="text-center mb-6">
-                        <div className="text-6xl mb-4">
+                        <div className="mb-4 flex justify-center">
                             {getSubjectIcon(subject.id)}
                         </div>
                         <h1 className="text-3xl font-bold text-azul-monte-tabor mb-3">
@@ -268,25 +247,25 @@ const ExamSubjectDetail: React.FC = () => {
                     </div>
                 </Card>
 
-                {/* Schedule Exam */}
+                {/* Exam Schedule */}
                 <Card className="p-6">
                     <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">
-                        Programar Examen
+                        Fecha de Examen
                     </h2>
                     <p className="text-gris-piedra mb-6">
-                        Selecciona una fecha y horario disponible para rendir tu examen de {subject.name}.
+                        Fechas y horarios programados para el examen de {subject.name}.
                     </p>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {subject.schedules.map((schedule) => (
                             <div 
                                 key={schedule.id} 
-                                className="border border-gray-200 rounded-lg p-4 hover:border-azul-monte-tabor transition-colors"
+                                className="border border-azul-monte-tabor rounded-lg p-4 bg-blue-50"
                             >
                                 <div className="flex items-center justify-between mb-2">
                                     <div className="flex items-center gap-2">
                                         <Calendar className="w-5 h-5 text-azul-monte-tabor" />
-                                        <span className="font-semibold">
+                                        <span className="font-semibold text-azul-monte-tabor">
                                             {new Date(schedule.date).toLocaleDateString('es-CL', {
                                                 weekday: 'long',
                                                 year: 'numeric',
@@ -298,93 +277,23 @@ const ExamSubjectDetail: React.FC = () => {
                                 </div>
                                 <div className="flex items-center justify-between mb-3">
                                     <div className="flex items-center gap-2">
-                                        <Clock className="w-4 h-4 text-gris-piedra" />
-                                        <span className="text-gris-piedra">
+                                        <Clock className="w-4 h-4 text-dorado-nazaret" />
+                                        <span className="font-medium text-dorado-nazaret">
                                             {schedule.startTime} - {schedule.endTime}
                                         </span>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <Users className="w-4 h-4 text-gris-piedra" />
-                                        <span className="text-sm text-gris-piedra">
-                                            {schedule.currentEnrollment}/{schedule.maxCapacity}
-                                        </span>
-                                    </div>
                                 </div>
-                                <div className="mb-3">
-                                    <span className="text-sm text-gris-piedra">Lugar: {schedule.location}</span>
+                                <div className="mb-2">
+                                    <span className="text-sm text-gris-piedra"><strong>Lugar:</strong> {schedule.location}</span>
                                 </div>
-                                <Button 
-                                    size="sm" 
-                                    variant={schedule.currentEnrollment >= schedule.maxCapacity ? 'outline' : 'primary'}
-                                    className="w-full"
-                                    disabled={schedule.currentEnrollment >= schedule.maxCapacity}
-                                    onClick={() => {
-                                        setSelectedSchedule(schedule.id);
-                                        setIsScheduleModalOpen(true);
-                                    }}
-                                >
-                                    {schedule.currentEnrollment >= schedule.maxCapacity ? 'Completo' : 'Seleccionar'}
-                                </Button>
+                                <div>
+                                    <span className="text-sm text-gris-piedra"><strong>Duración:</strong> 1 hora y 20 minutos</span>
+                                </div>
                             </div>
                         ))}
                     </div>
                 </Card>
 
-                {/* Schedule Confirmation Modal */}
-                <Modal
-                    isOpen={isScheduleModalOpen}
-                    onClose={() => {
-                        setIsScheduleModalOpen(false);
-                        setSelectedSchedule(null);
-                    }}
-                    title="Confirmar Programación de Examen"
-                    size="md"
-                >
-                    {selectedSchedule && (
-                        <div className="space-y-4">
-                            <p className="text-gris-piedra">
-                                ¿Estás seguro de que deseas programar tu examen de <strong>{subject.name}</strong> 
-                                en el siguiente horario?
-                            </p>
-                            
-                            {(() => {
-                                const schedule = subject.schedules.find(s => s.id === selectedSchedule);
-                                return schedule ? (
-                                    <div className="bg-blue-50 p-4 rounded-lg">
-                                        <div className="font-semibold text-azul-monte-tabor mb-2">
-                                            {new Date(schedule.date).toLocaleDateString('es-CL', {
-                                                weekday: 'long',
-                                                year: 'numeric',
-                                                month: 'long',
-                                                day: 'numeric'
-                                            })}
-                                        </div>
-                                        <div className="text-gris-piedra">
-                                            <p><strong>Horario:</strong> {schedule.startTime} - {schedule.endTime}</p>
-                                            <p><strong>Lugar:</strong> {schedule.location}</p>
-                                            <p><strong>Duración:</strong> {formatDuration(subject.duration)}</p>
-                                        </div>
-                                    </div>
-                                ) : null;
-                            })()}
-
-                            <div className="flex gap-3 justify-end">
-                                <Button 
-                                    variant="outline" 
-                                    onClick={() => {
-                                        setIsScheduleModalOpen(false);
-                                        setSelectedSchedule(null);
-                                    }}
-                                >
-                                    Cancelar
-                                </Button>
-                                <Button variant="primary" onClick={handleScheduleExam}>
-                                    Confirmar Programación
-                                </Button>
-                            </div>
-                        </div>
-                    )}
-                </Modal>
             </div>
         </div>
     );

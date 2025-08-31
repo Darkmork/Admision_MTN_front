@@ -6,7 +6,7 @@ export const examSchedules: ExamSchedule[] = [
         date: '2024-08-15',
         startTime: '09:00',
         endTime: '10:30',
-        location: 'Aula 101',
+        location: 'Sala 5BN',
         maxCapacity: 30,
         currentEnrollment: 25
     },
@@ -15,7 +15,7 @@ export const examSchedules: ExamSchedule[] = [
         date: '2024-08-15',
         startTime: '11:00',
         endTime: '12:30',
-        location: 'Aula 102',
+        location: 'Sala 6AT',
         maxCapacity: 30,
         currentEnrollment: 28
     },
@@ -24,7 +24,7 @@ export const examSchedules: ExamSchedule[] = [
         date: '2024-08-16',
         startTime: '09:00',
         endTime: '10:30',
-        location: 'Aula 101',
+        location: 'Sala 5BN',
         maxCapacity: 30,
         currentEnrollment: 22
     },
@@ -33,7 +33,7 @@ export const examSchedules: ExamSchedule[] = [
         date: '2024-08-17',
         startTime: '14:00',
         endTime: '15:30',
-        location: 'Laboratorio de Idiomas',
+        location: 'Sala 4MT',
         maxCapacity: 25,
         currentEnrollment: 20
     },
@@ -42,7 +42,7 @@ export const examSchedules: ExamSchedule[] = [
         date: '2024-08-17',
         startTime: '16:00',
         endTime: '17:30',
-        location: 'Laboratorio de Idiomas',
+        location: 'Sala 3NZ',
         maxCapacity: 25,
         currentEnrollment: 18
     }
@@ -281,15 +281,15 @@ export const examSubjects: ExamSubject[] = [
         id: 'MATH',
         name: 'Matemática',
         description: 'Evaluación de conceptos matemáticos fundamentales adaptada según el nivel educativo del estudiante.',
-        duration: 90,
+        duration: 80,
         totalQuestions: 30,
-        passingScore: 70,
+        passingScore: 60,
         instructions: [
             'Lee cuidadosamente cada pregunta antes de responder.',
             'Puedes usar calculadora para operaciones básicas (según nivel).',
             'Muestra tu trabajo en los problemas que lo requieran.',
             'Revisa tus respuestas antes de entregar.',
-            'Tienes 90 minutos para completar el examen.'
+            'Tienes 1 hora y 20 minutos para completar el examen.'
         ],
         studyMaterials: studyMaterials.filter(material => material.id.startsWith('MAT')),
         schedules: [examSchedules[0], examSchedules[1], examSchedules[2]],
@@ -299,9 +299,9 @@ export const examSubjects: ExamSubject[] = [
         id: 'SPANISH',
         name: 'Lenguaje y Comunicación',
         description: 'Evaluación de comprensión lectora, gramática, ortografía y expresión escrita en español adaptada por nivel.',
-        duration: 90,
+        duration: 80,
         totalQuestions: 35,
-        passingScore: 75,
+        passingScore: 60,
         instructions: [
             'Lee los textos con atención antes de responder.',
             'Cuida la ortografía y gramática en tus respuestas.',
@@ -317,15 +317,15 @@ export const examSubjects: ExamSubject[] = [
         id: 'ENGLISH',
         name: 'Inglés',
         description: 'Evaluación de conocimientos de inglés adaptada según el nivel educativo del estudiante.',
-        duration: 75,
+        duration: 80,
         totalQuestions: 25,
-        passingScore: 65,
+        passingScore: 60,
         instructions: [
             'All questions are in English, answer in English.',
             'Read each question carefully.',
             'Choose the best answer for multiple choice questions.',
             'For writing sections, use proper grammar and spelling.',
-            'You have 75 minutes to complete the exam.'
+            'You have 1 hour and 20 minutes to complete the exam.'
         ],
         studyMaterials: studyMaterials.filter(material => material.id.startsWith('ENG')),
         schedules: [examSchedules[3], examSchedules[4]],

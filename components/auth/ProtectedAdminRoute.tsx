@@ -22,7 +22,7 @@ const ProtectedAdminRoute: React.FC<ProtectedAdminRouteProps> = ({ children }) =
     if (user.role !== 'ADMIN') {
         // Si no es admin, redirigir según su rol
         if (user.role === 'APODERADO') {
-            return <Navigate to="/family" replace />;
+            return <Navigate to="/familia" replace />;
         } else {
             return <Navigate to="/profesor" replace />;
         }

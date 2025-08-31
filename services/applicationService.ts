@@ -9,6 +9,7 @@ export interface ApplicationRequest {
     studentEmail?: string;
     studentAddress: string;
     grade: string;
+    schoolApplied: string; // "MONTE_TABOR" para niños, "NAZARET" para niñas
     currentSchool?: string;
     additionalNotes?: string;
 
@@ -59,6 +60,7 @@ export interface Application {
     student: {
         firstName: string;
         lastName: string;
+        maternalLastName?: string;
         rut: string;
         birthDate: string;
         email?: string;
@@ -66,6 +68,15 @@ export interface Application {
         gradeApplied: string;
         currentSchool?: string;
         additionalNotes?: string;
+        // Campos de categorías especiales
+        targetSchool?: string;
+        isEmployeeChild?: boolean;
+        employeeParentName?: string;
+        isAlumniChild?: boolean;
+        alumniParentYear?: number;
+        isInclusionStudent?: boolean;
+        inclusionType?: string;
+        inclusionNotes?: string;
     };
     father: {
         fullName: string;
@@ -109,33 +120,67 @@ export interface Application {
 
 class ApplicationService {
     
-    // Método para administradores: obtener todas las postulaciones
+    // Método mejorado para administradores: obtener todas las postulaciones desde la base de datos real
     async getAllApplications(): Promise<Application[]> {
         try {
-            console.log('📊 Admin: Obteniendo todas las postulaciones');
+            console.log('📊 Admin: Obteniendo todas las postulaciones desde DB');
             
-            const response = await api.get('/api/applications/admin/all');
-            
-            if (!Array.isArray(response.data)) {
-                console.error('❌ Error: response.data no es un array:', response.data);
-                return [];
+            // TEMPORAL: Usar directamente el endpoint público que sabemos que funciona
+            let response;
+            try {
+                console.log('🔄 Probando endpoint público que funciona...');
+                response = await api.get('/api/applications/public/all');
+                console.log('✅ Éxito con endpoint público:', response.data.length);
+            } catch (publicError) {
+                console.log('❌ Falló endpoint público:', publicError);
+                
+                // Intentar endpoints protegidos como fallback
+                const endpoints = [
+                    '/api/applications',
+                    '/api/applications/all',
+                    '/api/applications/admin',
+                    '/api/applications/admin/all'
+                ];
+                
+                for (const endpoint of endpoints) {
+                    try {
+                        response = await api.get(endpoint);
+                        console.log(`✅ Éxito con endpoint: ${endpoint}`);
+                        break;
+                    } catch (endpointError) {
+                        console.log(`❌ Falló endpoint: ${endpoint}`, endpointError.response?.status);
+                        continue;
+                    }
+                }
+                
+                if (!response) {
+                    throw new Error('Ningún endpoint de aplicaciones disponible');
+                }
             }
             
-            console.log('✅ Admin: Postulaciones obtenidas:', response.data.length);
-            return response.data;
+            // Procesar la respuesta
+            let applications = [];
+            if (Array.isArray(response.data)) {
+                applications = response.data;
+            } else if (response.data && Array.isArray(response.data.content)) {
+                applications = response.data.content; // Para respuestas paginadas
+            } else if (response.data && response.data.applications) {
+                applications = response.data.applications;
+            } else {
+                console.warn('⚠️ Estructura de respuesta inesperada:', response.data);
+                applications = [];
+            }
+            
+            console.log('✅ Admin: Postulaciones obtenidas desde DB:', applications.length);
+            console.log('📋 Primera postulación como ejemplo:', applications[0]);
+            return applications;
             
         } catch (error: any) {
-            console.error('❌ Error admin obteniendo postulaciones:', error);
+            console.error('❌ Error obteniendo postulaciones desde DB:', error);
             
-            // Si el endpoint admin no está disponible, intentar endpoint público
-            try {
-                console.log('🔄 Intentando endpoint público como fallback...');
-                const publicResponse = await api.get('/api/applications/public/all');
-                return Array.isArray(publicResponse.data) ? publicResponse.data : [];
-            } catch (fallbackError) {
-                console.error('❌ Error con endpoint público:', fallbackError);
-                throw new Error('Error al obtener todas las postulaciones');
-            }
+            // Como fallback, devolver un array vacío en lugar de mock data
+            console.log('🔄 Devolviendo array vacío como fallback');
+            return [];
         }
     }
     

@@ -64,7 +64,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
   
   const [formData, setFormData] = useState({
     applicationId: 0,
-    interviewerUserId: 0,
+    interviewerId: 0,
     type: InterviewType.FAMILY,
     mode: InterviewMode.IN_PERSON,
     scheduledDate: '',
@@ -89,7 +89,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
     if (interview && (mode === InterviewFormMode.EDIT || mode === InterviewFormMode.VIEW || mode === InterviewFormMode.COMPLETE)) {
       setFormData({
         applicationId: interview.applicationId,
-        interviewerUserId: interview.interviewerUserId,
+        interviewerId: interview.interviewerId,
         type: interview.type,
         mode: interview.mode,
         scheduledDate: interview.scheduledDate,
@@ -150,8 +150,8 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
         newErrors.scheduledTime = 'La hora es obligatoria';
       }
 
-      if (!formData.interviewerUserId) {
-        newErrors.interviewerUserId = 'Debe seleccionar un entrevistador';
+      if (!formData.interviewerId) {
+        newErrors.interviewerId = 'Debe seleccionar un entrevistador';
       }
 
       if (formData.duration < INTERVIEW_VALIDATION.DURATION.MIN || formData.duration > INTERVIEW_VALIDATION.DURATION.MAX) {
@@ -198,7 +198,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
     if (mode === InterviewFormMode.CREATE) {
       const createData: CreateInterviewRequest = {
         applicationId: formData.applicationId,
-        interviewerUserId: formData.interviewerUserId,
+        interviewerId: formData.interviewerId,
         type: formData.type,
         mode: formData.mode,
         scheduledDate: formData.scheduledDate,
@@ -212,7 +212,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
       onSubmit(createData);
     } else if (mode === InterviewFormMode.EDIT) {
       const updateData: UpdateInterviewRequest = {
-        interviewerUserId: formData.interviewerUserId,
+        interviewerId: formData.interviewerId,
         type: formData.type,
         mode: formData.mode,
         scheduledDate: formData.scheduledDate,
@@ -354,10 +354,10 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
               </label>
               <select
                 id="interviewer"
-                value={formData.interviewerUserId}
-                onChange={(e) => handleInputChange('interviewerUserId', parseInt(e.target.value))}
+                value={formData.interviewerId}
+                onChange={(e) => handleInputChange('interviewerId', parseInt(e.target.value))}
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-azul-monte-tabor focus:border-transparent ${
-                  errors.interviewerUserId ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                  errors.interviewerId ? 'border-red-300 bg-red-50' : 'border-gray-300'
                 }`}
                 disabled={isViewMode || isCompleteMode}
               >
@@ -372,8 +372,8 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
                   </option>
                 ))}
               </select>
-              {errors.interviewerUserId && (
-                <p className="mt-1 text-sm text-red-600">{errors.interviewerUserId}</p>
+              {errors.interviewerId && (
+                <p className="mt-1 text-sm text-red-600">{errors.interviewerId}</p>
               )}
             </div>
           </div>
