@@ -30,6 +30,13 @@ import {
   INTERVIEW_CONFIG
 } from '../../types/interview';
 
+// Utility function to create a local date from YYYY-MM-DD string
+// Prevents timezone issues when parsing date strings
+const parseLocalDate = (dateString: string): Date => {
+  const [year, month, day] = dateString.split('-').map(Number);
+  return new Date(year, month - 1, day);
+};
+
 const DAYS_OF_WEEK = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 const MONTHS = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -259,7 +266,7 @@ const InterviewCalendar: React.FC<InterviewCalendarProps> = ({
               size="sm"
               className="mt-2"
               onClick={() => {
-                const startTime = new Date(selectedDate);
+                const startTime = parseLocalDate(selectedDate.toISOString().split('T')[0]);
                 startTime.setHours(9, 0, 0, 0);
                 const endTime = new Date(startTime);
                 endTime.setHours(10, 0, 0, 0);

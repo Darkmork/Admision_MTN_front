@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
@@ -12,9 +13,10 @@ import {
   FileTextIcon,
   FunnelIcon,
   RefreshIcon,
-  ClipboardDocumentListIcon
+  ClipboardDocumentListIcon,
+  ArrowLeftIcon
 } from '../components/icons/Icons';
-import { FiFileText } from 'react-icons/fi';
+import { FiFileText, FiArrowLeft } from 'react-icons/fi';
 import * as XLSX from 'xlsx';
 import { applicationService } from '../services/applicationService';
 import { userService } from '../services/userService';
@@ -39,6 +41,7 @@ interface ReportFilter {
 }
 
 const ReportsDashboard: React.FC = () => {
+  const navigate = useNavigate();
   const [reports, setReports] = useState<Record<string, ReportData>>({
     detailedAdmission: {
       id: 'detailedAdmission',
@@ -413,38 +416,54 @@ const ReportsDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Back Button - Prominent */}
+      <div className="mb-4 bg-white p-3 rounded-lg shadow-sm border border-gray-200">
+        <Button
+          variant="primary"
+          onClick={() => navigate('/admin')}
+          className="flex items-center space-x-2"
+          size="md"
+        >
+          <FiArrowLeft className="w-4 h-4" />
+          <span>← Volver al Dashboard</span>
+        </Button>
+      </div>
+
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <ChartBarIcon className="w-8 h-8 text-azul-monte-tabor" />
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              Dashboard de Reportes
-            </h1>
-            <p className="text-sm text-gray-600">
-              Genera y exporta reportes detallados del sistema de admisión
-            </p>
+      <div className="mb-4">
+        
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <ChartBarIcon className="w-8 h-8 text-azul-monte-tabor" />
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">
+                Dashboard de Reportes
+              </h1>
+              <p className="text-sm text-gray-600">
+                Genera y exporta reportes detallados del sistema de admisión
+              </p>
+            </div>
           </div>
-        </div>
 
-        <div className="flex items-center space-x-3">
-          <Button
-            variant="outline"
-            onClick={refreshAllReports}
-            className="flex items-center space-x-2"
-          >
-            <RefreshIcon className="w-4 h-4" />
-            <span>Actualizar Todo</span>
-          </Button>
+          <div className="flex items-center space-x-3">
+            <Button
+              variant="outline"
+              onClick={refreshAllReports}
+              className="flex items-center space-x-2"
+            >
+              <RefreshIcon className="w-4 h-4" />
+              <span>Actualizar Todo</span>
+            </Button>
 
-          <Button
-            variant="outline"
-            onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center space-x-2"
-          >
-            <FunnelIcon className="w-4 h-4" />
-            <span>Filtros</span>
-          </Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center space-x-2"
+            >
+              <FunnelIcon className="w-4 h-4" />
+              <span>Filtros</span>
+            </Button>
+          </div>
         </div>
       </div>
 

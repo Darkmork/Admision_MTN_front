@@ -103,12 +103,17 @@ const InterviewSchedulingTest: React.FC = () => {
 
           {/* Información de horarios configurados */}
           <div className="mt-8 bg-gray-50 border border-gray-200 rounded-lg p-4">
-            <h4 className="font-semibold text-gray-900 mb-3">ℹ️ Horarios Configurados en el Sistema</h4>
+            <h4 className="font-semibold text-gray-900 mb-3">ℹ️ Entrevistadores Disponibles con Horarios Configurados</h4>
             <div className="text-sm text-gray-700 space-y-2">
-              <div><strong>Test Admin (ID 100):</strong> Lunes 9-11, Miércoles 14-16, Viernes 10-12</div>
-              <div><strong>Carlos Morales (ID 104):</strong> Martes 9-12, Jueves 13-16</div>
-              <div><strong>Ana Rivera (ID 105):</strong> Lunes 10-12, Miércoles 15-16, Viernes 9-11</div>
-              <div><strong>Elena Castro (ID 106):</strong> Miércoles 8-12, Viernes 13-15</div>
+              <div><strong>Dra. María González Silva (PSYCHOLOGIST):</strong> Lunes 9-12, Miércoles 14-17, Viernes 9-12</div>
+              <div><strong>Dr. Carlos Mendoza Torres (CYCLE_DIRECTOR):</strong> Martes 9-13, Jueves 15-18</div>
+              <div><strong>Psic. Ana Rivera Campos (TEACHER):</strong> Lunes 8-12, Miércoles 14-17</div>
+              <div><strong>Prof. Roberto Silva Mora (COORDINATOR):</strong> Lunes 14-18, Miércoles 9-13</div>
+              <div><strong>Dra. Patricia López Vega (PSYCHOLOGIST):</strong> Martes 8:30-12:30, Jueves 14-17</div>
+              <div><strong>Psic. Fernando Morales Díaz (PSYCHOLOGIST):</strong> Lunes 10-14, Viernes 15-18</div>
+              <div className="text-blue-600 font-medium mt-2">
+                Total: 9 entrevistadores con {/*scheduleCount*/} horarios configurados
+              </div>
             </div>
           </div>
         </div>

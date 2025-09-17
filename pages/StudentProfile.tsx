@@ -15,7 +15,7 @@ import {
     mockStudentProfiles, 
     mockStudentExams, 
     mockProfessors 
-} from '../services/professorMockData';
+} from '../services/staticData';
 import { ExamStatus } from '../types';
 
 const StudentProfile: React.FC = () => {

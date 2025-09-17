@@ -84,7 +84,9 @@ const ApoderadoLogin: React.FC = () => {
 
         try {
             await register(registerData, 'apoderado');
-            navigate(redirectTo);
+            // Para usuarios nuevos registrados, redirigir al formulario de postulación
+            // no al dashboard directamente
+            navigate('/postulacion');
         } catch (err) {
             setError('Error al crear la cuenta. Intente nuevamente.');
         } finally {

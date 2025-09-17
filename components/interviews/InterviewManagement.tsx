@@ -40,8 +40,21 @@ import InterviewTable from './InterviewTable';
 import InterviewForm from './InterviewForm';
 import InterviewCalendar from './InterviewCalendar';
 import InterviewStatsPanel from './InterviewStatsPanel';
-import interviewService from '../../services/interviewService-temp';
+import InterviewStatusPanel from './InterviewStatusPanel';
+import InterviewOverview from './InterviewOverview';
+import InterviewDashboard from './InterviewDashboard';
+import SimpleStudentList from './SimpleStudentList';
+import StudentDetailPage from './StudentDetailPage';
+import EnhancedInterviewCalendar from './EnhancedInterviewCalendar';
+import InterviewerAvailabilityView from './InterviewerAvailabilityView';
+import InterviewTemplateManager from './InterviewTemplateManager';
+import NotificationCenter from '../notifications/NotificationCenter';
+import ReportExporter from '../reports/ReportExporter';
+import interviewService from '../../services/interviewService';
 import { emailTemplateService, EmailTemplate } from '../../services/emailTemplateService';
+import { notificationService } from '../../services/notificationService';
+import { whatsappSmsService } from '../../services/whatsappSmsService';
+import { interviewTemplateService, InterviewTemplate } from '../../services/interviewTemplateService';
 
 interface InterviewManagementProps {
   className?: string;
@@ -62,6 +75,9 @@ const InterviewManagement: React.FC<InterviewManagementProps> = ({ className = '
   const [showCalendar, setShowCalendar] = useState(false);
   const [showStats, setShowStats] = useState(false);
   const [formMode, setFormMode] = useState<InterviewFormMode>(InterviewFormMode.CREATE);
+  
+  // Estado para sincronización entre vistas
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Estados de filtros
   const [filters, setFilters] = useState<InterviewFilters>({
@@ -75,8 +91,12 @@ const InterviewManagement: React.FC<InterviewManagementProps> = ({ className = '
   const [stats, setStats] = useState<InterviewStats | null>(null);
   const [isLoadingStats, setIsLoadingStats] = useState(false);
 
-  // Modo de vista (tabla o calendario)
-  const [viewMode, setViewMode] = useState<'table' | 'calendar' | 'stats'>('table');
+  // Modo de vista (simple es el nuevo modo limpio)
+  const [viewMode, setViewMode] = useState<'simple' | 'dashboard' | 'table' | 'calendar' | 'enhanced-calendar' | 'availability' | 'templates' | 'stats' | 'status' | 'overview'>('simple');
+  
+  // Estados para la vista simple
+  const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
+  const [selectedStudentName, setSelectedStudentName] = useState<string>('');
 
   // Estados para email templates
   const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
@@ -197,13 +217,39 @@ const InterviewManagement: React.FC<InterviewManagementProps> = ({ className = '
     setShowForm(true);
   };
 
+  const handleEditFromView = (interview: Interview) => {
+    setSelectedInterview(interview);
+    setFormMode(InterviewFormMode.EDIT);
+    // No cerrar el modal, solo cambiar el modo
+  };
+
+  // Verificar si ya existe una entrevista programada del mismo tipo para la aplicación
+  const hasScheduledInterviewOfType = (applicationId: number, interviewType: InterviewType): boolean => {
+    return interviews.some(interview => 
+      interview.applicationId === applicationId && 
+      interview.type === interviewType &&
+      (interview.status === InterviewStatus.SCHEDULED || 
+       interview.status === InterviewStatus.CONFIRMED ||
+       interview.status === InterviewStatus.IN_PROGRESS)
+    );
+  };
+
   const handleFormSubmit = async (data: CreateInterviewRequest | UpdateInterviewRequest | CompleteInterviewRequest) => {
     try {
       setIsSubmitting(true);
       
       if (formMode === InterviewFormMode.CREATE) {
-        await interviewService.createInterview(data as CreateInterviewRequest);
-        showToast('Entrevista programada exitosamente', 'success');
+        const createData = data as CreateInterviewRequest;
+        
+        // Prevenir doble programación del mismo tipo
+        if (hasScheduledInterviewOfType(createData.applicationId, createData.type)) {
+          showToast(`Ya existe una entrevista ${createData.type.toLowerCase()} programada o en progreso para esta solicitud. No se puede programar otra del mismo tipo.`, 'error');
+          setIsSubmitting(false);
+          return;
+        }
+        
+        await interviewService.createInterview(createData);
+        showToast('Entrevista programada exitosamente con estado AGENDADA', 'success');
       } else if (formMode === InterviewFormMode.EDIT && selectedInterview) {
         await interviewService.updateInterview(selectedInterview.id, data as UpdateInterviewRequest);
         showToast('Entrevista actualizada exitosamente', 'success');
@@ -215,6 +261,9 @@ const InterviewManagement: React.FC<InterviewManagementProps> = ({ className = '
       setShowForm(false);
       await loadInterviews();
       await loadStats(); // Recargar estadísticas también
+      
+      // Incrementar refreshKey para sincronizar todas las vistas
+      setRefreshKey(prev => prev + 1);
       
     } catch (err: any) {
       console.error('Error procesando entrevista:', err);
@@ -230,6 +279,7 @@ const InterviewManagement: React.FC<InterviewManagementProps> = ({ className = '
       showToast('Entrevista cancelada exitosamente', 'success');
       await loadInterviews();
       await loadStats();
+      setRefreshKey(prev => prev + 1); // Sincronizar todas las vistas
     } catch (err: any) {
       console.error('Error cancelando entrevista:', err);
       showToast(err.message || 'Error al cancelar la entrevista', 'error');
@@ -323,6 +373,28 @@ const InterviewManagement: React.FC<InterviewManagementProps> = ({ className = '
     }
   };
 
+  // Funciones para la vista simple
+  const handleStudentSelect = (applicationId: number, studentName: string) => {
+    setSelectedStudentId(applicationId);
+    setSelectedStudentName(studentName);
+  };
+
+  const handleBackToStudentList = () => {
+    setSelectedStudentId(null);
+    setSelectedStudentName('');
+  };
+
+  const handleScheduleInterviewForStudent = (applicationId: number, interviewType?: string) => {
+    setSelectedInterview({
+      applicationId: applicationId.toString(),
+      studentName: selectedStudentName,
+      type: interviewType as any,
+      // Otros campos se llenarán en el formulario
+    } as any);
+    setFormMode(InterviewFormMode.CREATE);
+    setShowForm(true);
+  };
+
   const getViewModeIcon = (mode: string) => {
     switch (mode) {
       case 'table': return <FiFilter className="w-5 h-5" />;
@@ -359,6 +431,13 @@ const InterviewManagement: React.FC<InterviewManagementProps> = ({ className = '
         </div>
 
         <div className="flex items-center space-x-3">
+          <NotificationCenter />
+          
+          <ReportExporter 
+            interviews={interviews} 
+            stats={stats}
+          />
+          
           <Button
             variant="outline"
             onClick={() => setShowFilters(!showFilters)}
@@ -495,6 +574,20 @@ const InterviewManagement: React.FC<InterviewManagementProps> = ({ className = '
       {/* Navegación de vistas */}
       <div className="flex gap-2">
         <Button
+          variant={viewMode === 'simple' ? 'primary' : 'outline'}
+          onClick={() => setViewMode('simple')}
+        >
+          <FiUser className="w-5 h-5 mr-2" />
+          Vista Simple
+        </Button>
+        <Button
+          variant={viewMode === 'dashboard' ? 'primary' : 'outline'}
+          onClick={() => setViewMode('dashboard')}
+        >
+          <FiUser className="w-5 h-5 mr-2" />
+          Dashboard
+        </Button>
+        <Button
           variant={viewMode === 'table' ? 'primary' : 'outline'}
           onClick={() => setViewMode('table')}
         >
@@ -509,11 +602,39 @@ const InterviewManagement: React.FC<InterviewManagementProps> = ({ className = '
           Calendario
         </Button>
         <Button
+          variant={viewMode === 'enhanced-calendar' ? 'primary' : 'outline'}
+          onClick={() => setViewMode('enhanced-calendar')}
+        >
+          <FiCalendar className="w-5 h-5 mr-2" />
+          Calendario Pro
+        </Button>
+        <Button
+          variant={viewMode === 'availability' ? 'primary' : 'outline'}
+          onClick={() => setViewMode('availability')}
+        >
+          <FiUser className="w-5 h-5 mr-2" />
+          Disponibilidad
+        </Button>
+        <Button
+          variant={viewMode === 'templates' ? 'primary' : 'outline'}
+          onClick={() => setViewMode('templates')}
+        >
+          <FiUser className="w-5 h-5 mr-2" />
+          Templates
+        </Button>
+        <Button
           variant={viewMode === 'stats' ? 'primary' : 'outline'}
           onClick={() => setViewMode('stats')}
         >
           <FiUser className="w-5 h-5 mr-2" />
           Estadísticas
+        </Button>
+        <Button
+          variant={viewMode === 'status' ? 'primary' : 'outline'}
+          onClick={() => setViewMode('status')}
+        >
+          <FiClock className="w-5 h-5 mr-2" />
+          En Proceso
         </Button>
       </div>
 
@@ -533,9 +654,41 @@ const InterviewManagement: React.FC<InterviewManagementProps> = ({ className = '
         </Card>
       ) : (
         <>
+          {viewMode === 'simple' && (
+            selectedStudentId ? (
+              <StudentDetailPage
+                applicationId={selectedStudentId}
+                studentName={selectedStudentName}
+                onBack={handleBackToStudentList}
+                onScheduleInterview={handleScheduleInterviewForStudent}
+                onViewInterview={handleViewInterview}
+                onEditInterview={handleEditInterview}
+              />
+            ) : (
+              <SimpleStudentList
+                onStudentSelect={handleStudentSelect}
+              />
+            )
+          )}
+
+          {viewMode === 'dashboard' && (
+            <InterviewDashboard
+              key={`dashboard-${refreshKey}`}
+              onScheduleInterview={(applicationId) => {
+                setSelectedInterview(null);
+                setFormMode(InterviewFormMode.CREATE);
+                setShowForm(true);
+                // Pre-llenar con application ID si es necesario
+              }}
+              onViewInterview={handleViewInterview}
+              onEditInterview={handleEditInterview}
+            />
+          )}
+
           {viewMode === 'table' && (
             <Card className="p-6">
               <InterviewTable
+                key={`table-${refreshKey}`}
                 interviews={interviews}
                 isLoading={isLoading}
                 onEdit={handleEditInterview}
@@ -552,6 +705,7 @@ const InterviewManagement: React.FC<InterviewManagementProps> = ({ className = '
           {viewMode === 'calendar' && (
             <Card className="p-6">
               <InterviewCalendar
+                key={`calendar-${refreshKey}`}
                 interviews={interviews}
                 onSelectEvent={handleViewInterview}
                 onSelectSlot={(slotInfo) => {
@@ -563,10 +717,97 @@ const InterviewManagement: React.FC<InterviewManagementProps> = ({ className = '
             </Card>
           )}
 
+          {viewMode === 'enhanced-calendar' && (
+            <Card className="p-6">
+              <EnhancedInterviewCalendar
+                key={`enhanced-calendar-${refreshKey}`}
+                interviews={interviews}
+                onSelectEvent={handleViewInterview}
+                onSelectSlot={(slotInfo) => {
+                  console.log('Selected slot:', slotInfo);
+                  handleCreateInterview();
+                }}
+                onReschedule={async (interview, newDate, newTime) => {
+                  try {
+                    await interviewService.updateInterview(interview.id, {
+                      scheduledDate: newDate,
+                      scheduledTime: newTime
+                    });
+                    
+                    // Notificar cambios
+                    notificationService.notifyInterviewUpdated(
+                      { ...interview, scheduledDate: newDate, scheduledTime: newTime },
+                      ['Fecha reprogramada', `Nueva fecha: ${newDate} ${newTime}`]
+                    );
+                    
+                    // Enviar notificación por WhatsApp/SMS si está configurado
+                    if (whatsappSmsService.isConfigured().anyEnabled) {
+                      // Aquí necesitarías el número de teléfono de los padres
+                      // await whatsappSmsService.sendRescheduleNotice(interview, parentPhone, 'Reprogramación solicitada por administración');
+                    }
+                    
+                    showToast('Entrevista reprogramada exitosamente', 'success');
+                    await loadInterviews();
+                    setRefreshKey(prev => prev + 1);
+                  } catch (error: any) {
+                    showToast(error.message || 'Error al reprogramar la entrevista', 'error');
+                    throw error;
+                  }
+                }}
+              />
+            </Card>
+          )}
+
+          {viewMode === 'availability' && (
+            <InterviewerAvailabilityView
+              key={`availability-${refreshKey}`}
+              interviews={interviews}
+              onScheduleInterview={(interviewerId, date, time) => {
+                setSelectedInterview({
+                  interviewerId,
+                  scheduledDate: date,
+                  scheduledTime: time
+                } as any);
+                setFormMode(InterviewFormMode.CREATE);
+                setShowForm(true);
+              }}
+              onViewInterview={handleViewInterview}
+              onEditInterview={handleEditInterview}
+            />
+          )}
+
+          {viewMode === 'templates' && (
+            <InterviewTemplateManager
+              key={`templates-${refreshKey}`}
+            />
+          )}
+
           {viewMode === 'stats' && stats && (
             <InterviewStatsPanel
+              key={`stats-${refreshKey}`}
               stats={stats}
               isLoading={isLoadingStats}
+            />
+          )}
+
+          {viewMode === 'status' && (
+            <InterviewStatusPanel
+              key={`status-${refreshKey}`}
+              onScheduleInterview={(interview) => {
+                setSelectedInterview(null);
+                setFormMode(InterviewFormMode.CREATE);
+                setShowForm(true);
+              }}
+              onViewInterview={(interview) => {
+                // Buscar la entrevista correspondiente en la lista
+                const foundInterview = interviews.find(i => 
+                  i.applicationId === interview.applicationId && 
+                  i.type === interview.interviewType
+                );
+                if (foundInterview) {
+                  handleViewInterview(foundInterview);
+                }
+              }}
             />
           )}
         </>
@@ -589,6 +830,7 @@ const InterviewManagement: React.FC<InterviewManagementProps> = ({ className = '
           mode={formMode}
           onSubmit={handleFormSubmit}
           onCancel={() => setShowForm(false)}
+          onEdit={handleEditFromView}
           isSubmitting={isSubmitting}
         />
       </Modal>

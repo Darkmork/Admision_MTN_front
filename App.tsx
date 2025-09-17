@@ -27,6 +27,7 @@ import CalendarNotifications from './pages/CalendarNotifications';
 import InterviewModule from './pages/InterviewModule';
 import ReportsDashboard from './pages/ReportsDashboard';
 import InterviewSchedulingTest from './pages/InterviewSchedulingTest';
+import MicroservicesTestPage from './pages/MicroservicesTestPage';
 
 function App() {
     return (
@@ -97,6 +98,7 @@ function App() {
                                     <InterviewSchedulingTest />
                                 </ProtectedAdminRoute>
                             } />
+                            <Route path="/test-microservices" element={<MicroservicesTestPage />} />
                         </Routes>
                     </main>
                     <Footer />

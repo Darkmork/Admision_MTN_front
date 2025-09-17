@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
-import { examSubjects, getTopicsByLevel, educationalLevels } from '../services/examMockData';
+import { examSubjects, getTopicsByLevel, educationalLevels } from '../services/staticData';
 import { 
     ArrowLeft, 
     Clock, 

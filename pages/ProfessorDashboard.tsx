@@ -18,17 +18,15 @@ import {
     getProfessorStats,
     mockStudentExams,
     mockStudentProfiles
-} from '../services/professorMockData';
+} from '../services/staticData';
 import { ExamStatus, StudentExam, StudentProfile } from '../types';
 import { Link, useNavigate } from 'react-router-dom';
 import { professorEvaluationService, ProfessorEvaluation, ProfessorEvaluationStats } from '../services/professorEvaluationService';
 import { EvaluationStatus, EvaluationType } from '../types/evaluation';
-import { unifiedApiService, DashboardAPI } from '../services/unifiedApiService';
 import { FiRefreshCw, FiBarChart2 } from 'react-icons/fi';
 
 const baseSections = [
     { key: 'dashboard', label: 'Dashboard General', icon: DashboardIcon },
-    { key: 'unified-dashboard', label: '🎯 Dashboard Unificado', icon: BarChartIcon },
     { key: 'evaluaciones', label: 'Evaluaciones Pendientes', icon: ClockIcon },
     { key: 'estudiantes', label: 'Mis Estudiantes', icon: UsersIcon },
     { key: 'reportes', label: 'Reportes y Estadísticas', icon: FileTextIcon },
@@ -66,10 +64,6 @@ const ProfessorDashboard: React.FC = () => {
     });
     const [isLoading, setIsLoading] = useState(true);
     
-    // Estado para dashboard unificado
-    const [unifiedProfessorData, setUnifiedProfessorData] = useState<any>(null);
-    const [isLoadingUnified, setIsLoadingUnified] = useState(false);
-    const [unifiedError, setUnifiedError] = useState<string | null>(null);
 
     // Cargar evaluaciones del profesor - SOLO UNA VEZ al montar
     useEffect(() => {
@@ -127,27 +121,6 @@ const ProfessorDashboard: React.FC = () => {
         loadEvaluations();
     }, []); // ✅ DEPENDENCIAS VACÍAS - SOLO SE EJECUTA AL MONTAR
 
-    // Función para cargar dashboard unificado del profesor
-    const loadUnifiedProfessorDashboard = async () => {
-        if (!currentProfessor) return;
-        
-        try {
-            setIsLoadingUnified(true);
-            setUnifiedError(null);
-            console.log('🎯 Cargando dashboard unificado del profesor...');
-            
-            // Un solo API call para obtener todos los datos del dashboard del profesor
-            const data = await DashboardAPI.getProfessor(currentProfessor.id);
-            console.log('✅ Dashboard unificado del profesor obtenido:', data);
-            
-            setUnifiedProfessorData(data);
-        } catch (error: any) {
-            console.error('❌ Error cargando dashboard unificado del profesor:', error);
-            setUnifiedError(error.message || 'Error al cargar dashboard unificado');
-        } finally {
-            setIsLoadingUnified(false);
-        }
-    };
 
     // Datos mock para compatibilidad (se pueden eliminar después)
     const stats = useMemo(() => {
@@ -807,174 +780,6 @@ const ProfessorDashboard: React.FC = () => {
         );
     };
 
-    const renderUnifiedDashboard = () => (
-        <div className="space-y-6">
-            {/* Header del Dashboard Unificado */}
-            <Card className="p-6 bg-gradient-to-r from-green-500 to-blue-600 text-white">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h2 className="text-2xl font-bold mb-2">
-                            🎯 Dashboard Unificado - Profesor
-                        </h2>
-                        <p className="text-green-100 mb-2">
-                            Sistema API consolidado para evaluadores
-                        </p>
-                        <p className="text-green-200 text-sm">
-                            1 API call vs 5-8 calls tradicionales • Performance optimizada • Datos centralizados
-                        </p>
-                    </div>
-                    <div className="text-right">
-                        <Button 
-                            variant="outline" 
-                            className="text-white border-white hover:bg-white hover:text-green-600 mb-2"
-                            onClick={loadUnifiedProfessorDashboard}
-                            disabled={isLoadingUnified}
-                        >
-                            <FiRefreshCw className={`w-4 h-4 mr-2 ${isLoadingUnified ? 'animate-spin' : ''}`} />
-                            {isLoadingUnified ? 'Cargando...' : 'Actualizar'}
-                        </Button>
-                        <p className="text-xs text-green-100">
-                            Dashboard consolidado
-                        </p>
-                    </div>
-                </div>
-            </Card>
-
-            {/* Mostrar datos del dashboard unificado */}
-            {isLoadingUnified ? (
-                <div className="flex justify-center items-center py-12">
-                    <div className="text-center">
-                        <FiRefreshCw className="w-8 h-8 text-azul-monte-tabor mx-auto mb-2 animate-spin" />
-                        <p className="text-gris-piedra">Cargando dashboard unificado del profesor...</p>
-                    </div>
-                </div>
-            ) : unifiedError ? (
-                <Card className="p-6 border-red-200 bg-red-50">
-                    <div className="flex items-center gap-2 text-red-800">
-                        <ClockIcon className="w-5 h-5" />
-                        <div>
-                            <h3 className="font-semibold">Error al cargar dashboard unificado</h3>
-                            <p className="text-sm">{unifiedError}</p>
-                        </div>
-                    </div>
-                    <Button 
-                        variant="outline" 
-                        className="mt-4"
-                        onClick={loadUnifiedProfessorDashboard}
-                    >
-                        <FiRefreshCw className="w-4 h-4 mr-2" />
-                        Reintentar
-                    </Button>
-                </Card>
-            ) : unifiedProfessorData ? (
-                <>
-                    {/* Stats del dashboard unificado */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <Card className="p-6 text-center">
-                            <FileTextIcon className="w-8 h-8 text-azul-monte-tabor mx-auto mb-3" />
-                            <div className="text-2xl font-bold text-azul-monte-tabor">
-                                {unifiedProfessorData.summary?.pendingInterviews || 0}
-                            </div>
-                            <div className="text-sm text-gris-piedra">Entrevistas Pendientes</div>
-                            <div className="text-xs text-gris-piedra mt-1">
-                                Desde API unificada
-                            </div>
-                        </Card>
-                        
-                        <Card className="p-6 text-center">
-                            <CheckCircleIcon className="w-8 h-8 text-verde-esperanza mx-auto mb-3" />
-                            <div className="text-2xl font-bold text-verde-esperanza">
-                                {unifiedProfessorData.summary?.pendingEvaluations || 0}
-                            </div>
-                            <div className="text-sm text-gris-piedra">Evaluaciones Pendientes</div>
-                            <div className="text-xs text-gris-piedra mt-1">
-                                Consolidado
-                            </div>
-                        </Card>
-                        
-                        <Card className="p-6 text-center">
-                            <UsersIcon className="w-8 h-8 text-azul-monte-tabor mx-auto mb-3" />
-                            <div className="text-2xl font-bold text-azul-monte-tabor">
-                                {unifiedProfessorData.interviews?.interviews?.length || 0}
-                            </div>
-                            <div className="text-sm text-gris-piedra">Total Entrevistas</div>
-                            <div className="text-xs text-gris-piedra mt-1">
-                                Asignadas
-                            </div>
-                        </Card>
-                    </div>
-
-                    {/* Datos detallados */}
-                    {unifiedProfessorData.interviews?.interviews && unifiedProfessorData.interviews.interviews.length > 0 && (
-                        <Card className="p-6">
-                            <h3 className="text-lg font-semibold text-azul-monte-tabor mb-4">
-                                Mis Entrevistas (Dashboard Unificado)
-                            </h3>
-                            <div className="space-y-3">
-                                {unifiedProfessorData.interviews.interviews.slice(0, 5).map((interview: any, index: number) => (
-                                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                        <div>
-                                            <p className="font-medium text-azul-monte-tabor">
-                                                {interview.type} - {interview.scheduledTime}
-                                            </p>
-                                            <p className="text-sm text-gris-piedra">
-                                                {interview.location}
-                                            </p>
-                                        </div>
-                                        <Badge variant="info">
-                                            {interview.status}
-                                        </Badge>
-                                    </div>
-                                ))}
-                            </div>
-                        </Card>
-                    )}
-
-                    {/* Comparación de performance */}
-                    <Card className="p-6 bg-blue-50 border-blue-200">
-                        <h3 className="text-lg font-semibold text-blue-900 mb-4 flex items-center">
-                            <FiBarChart2 className="w-5 h-5 mr-2" />
-                            Performance del Dashboard Unificado - Profesor
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="text-center">
-                                <p className="text-2xl font-bold text-green-600">1</p>
-                                <p className="text-sm text-green-700">API Call Total</p>
-                                <p className="text-xs text-gray-600">vs 5-8 tradicionales</p>
-                            </div>
-                            <div className="text-center">
-                                <p className="text-2xl font-bold text-blue-600">70%</p>
-                                <p className="text-sm text-blue-700">Reducción de Latencia</p>
-                                <p className="text-xs text-gray-600">Carga más rápida</p>
-                            </div>
-                            <div className="text-center">
-                                <p className="text-2xl font-bold text-purple-600">Real-time</p>
-                                <p className="text-sm text-purple-700">Datos Consolidados</p>
-                                <p className="text-xs text-gray-600">Información centralizada</p>
-                            </div>
-                        </div>
-                    </Card>
-                </>
-            ) : (
-                <Card className="p-6">
-                    <div className="text-center py-8">
-                        <FiBarChart2 className="w-12 h-12 text-gris-piedra mx-auto mb-4" />
-                        <p className="text-gris-piedra">
-                            Haga clic en "Actualizar" para cargar el dashboard unificado
-                        </p>
-                        <Button 
-                            variant="primary" 
-                            className="mt-4"
-                            onClick={loadUnifiedProfessorDashboard}
-                        >
-                            <FiRefreshCw className="w-4 h-4 mr-2" />
-                            Cargar Dashboard Unificado
-                        </Button>
-                    </div>
-                </Card>
-            )}
-        </div>
-    );
 
     const renderSection = () => {
         console.log('🔄 renderSection ejecutándose...');
@@ -986,9 +791,6 @@ const ProfessorDashboard: React.FC = () => {
             case 'dashboard':
                 console.log('🏠 Renderizando dashboard');
                 return renderDashboard();
-            case 'unified-dashboard':
-                console.log('🎯 Renderizando dashboard unificado');
-                return renderUnifiedDashboard();
             case 'evaluaciones':
                 console.log('📋 Renderizando evaluaciones');
                 return renderEvaluaciones();

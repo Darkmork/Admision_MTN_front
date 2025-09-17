@@ -247,6 +247,11 @@ const AdmissionReportForm: React.FC = () => {
                 message: 'El informe de admisión ha sido guardado exitosamente'
             });
             
+            // Navegar de regreso al dashboard después de guardar exitosamente
+            setTimeout(() => {
+                navigate('/profesor/dashboard');
+            }, 1500);
+            
         } catch (error) {
             console.error('❌ Error al guardar informe:', error);
             addNotification({

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-// Configuración base de axios
+// Configuración base de axios - Using nginx gateway for microservices
 const api = axios.create({
     baseURL: 'http://localhost:8080',
     timeout: 30000, // Aumentado a 30 segundos para consultas complejas

@@ -9,7 +9,7 @@ import EmailVerification from '../components/ui/EmailVerification';
 import { CheckCircleIcon, LogoIcon, UploadIcon } from '../components/icons/Icons';
 import { useApplications, useNotifications } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
-import { educationalLevels } from '../services/examMockData';
+import { educationalLevelsForForm as educationalLevels } from '../services/staticData';
 import api from '../services/api';
 import { applicationService } from '../services/applicationService';
 import { documentService, DOCUMENT_TYPES } from '../services/documentService';
@@ -224,6 +224,15 @@ const ApplicationForm: React.FC = () => {
         }
     }, [isAuthenticated, user]);
     
+    // Inicializar el año de postulación con año actual + 1
+    useEffect(() => {
+        const currentYear = new Date().getFullYear();
+        const applicationYear = (currentYear + 1).toString();
+        if (!data.applicationYear) {
+            updateField('applicationYear', applicationYear);
+        }
+    }, []);
+    
     // Helper function to check if current school is required
     const requiresCurrentSchool = useCallback((grade: string): boolean => {
         const schoolRequiredGrades = [
@@ -276,7 +285,13 @@ const ApplicationForm: React.FC = () => {
             case 0:
                 // Validate postulant data
                 if (!data.firstName?.trim() || !data.paternalLastName?.trim() || !data.maternalLastName?.trim() || 
-                    !data.rut?.trim() || !data.birthDate || !data.grade || !data.studentAddress?.trim()) {
+                    !data.rut?.trim() || !data.birthDate || !data.grade || !data.schoolApplied || !data.studentAddress?.trim()) {
+                    return false;
+                }
+                // Validate application year (must be current year + 1)
+                const currentYear = new Date().getFullYear();
+                const applicationYear = parseInt(data.applicationYear);
+                if (!data.applicationYear || applicationYear !== currentYear + 1) {
                     return false;
                 }
                 // Check for school if required
@@ -517,6 +532,14 @@ const ApplicationForm: React.FC = () => {
                 if (!data.grade) missing.push('Nivel al que postula');
                 if (!data.schoolApplied) missing.push('Colegio');
                 if (!data.studentAddress?.trim()) missing.push('Dirección');
+                
+                // Validate application year
+                const currentYear = new Date().getFullYear();
+                const applicationYear = parseInt(data.applicationYear);
+                if (!data.applicationYear || applicationYear !== currentYear + 1) {
+                    missing.push('Año al que postula');
+                }
+                
                 if (requiresCurrentSchool(data.grade || '') && !data.currentSchool?.trim()) missing.push('Colegio de Procedencia');
                 break;
             case 1:
@@ -870,6 +893,27 @@ const ApplicationForm: React.FC = () => {
                             onChange={(e) => updateField('schoolApplied', e.target.value)}
                             onBlur={() => touchField('schoolApplied')}
                             error={errors.schoolApplied}
+                        />
+                        
+                        <Input 
+                            id="applicationYear" 
+                            label="Año al que postula" 
+                            placeholder={`${new Date().getFullYear() + 1}`}
+                            isRequired 
+                            value={data.applicationYear || (new Date().getFullYear() + 1).toString()}
+                            onChange={(e) => {
+                                const year = parseInt(e.target.value);
+                                const currentYear = new Date().getFullYear();
+                                if (year === currentYear + 1) {
+                                    updateField('applicationYear', e.target.value);
+                                } else {
+                                    updateField('applicationYear', (currentYear + 1).toString());
+                                }
+                            }}
+                            onBlur={() => touchField('applicationYear')}
+                            error={errors.applicationYear}
+                            readOnly
+                            helpText={`Las postulaciones son siempre para el año ${new Date().getFullYear() + 1}`}
                         />
                         
                         {/* Campo de observaciones adicionales */}

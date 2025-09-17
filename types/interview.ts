@@ -2,13 +2,14 @@
 
 // Enum de estados de entrevista
 export enum InterviewStatus {
-  SCHEDULED = 'SCHEDULED',
-  CONFIRMED = 'CONFIRMED',
-  IN_PROGRESS = 'IN_PROGRESS',
-  COMPLETED = 'COMPLETED',
-  CANCELLED = 'CANCELLED',
-  NO_SHOW = 'NO_SHOW',
-  RESCHEDULED = 'RESCHEDULED'
+  PENDING = 'PENDING',           // Pendiente (creada pero sin programar)
+  SCHEDULED = 'SCHEDULED',       // Programada/Agendada (fecha y hora asignadas)
+  CONFIRMED = 'CONFIRMED',       // Confirmada (familia confirmó asistencia)
+  IN_PROGRESS = 'IN_PROGRESS',   // En progreso
+  COMPLETED = 'COMPLETED',       // Realizada/Completada
+  CANCELLED = 'CANCELLED',       // Cancelada
+  NO_SHOW = 'NO_SHOW',          // No se presentaron
+  RESCHEDULED = 'RESCHEDULED'    // Reprogramada
 }
 
 // Enum de tipos de entrevista
@@ -38,10 +39,11 @@ export enum InterviewResult {
 
 // Labels para la UI
 export const INTERVIEW_STATUS_LABELS: Record<InterviewStatus, string> = {
-  [InterviewStatus.SCHEDULED]: 'Programada',
+  [InterviewStatus.PENDING]: 'Pendiente',
+  [InterviewStatus.SCHEDULED]: 'Agendada',
   [InterviewStatus.CONFIRMED]: 'Confirmada',
   [InterviewStatus.IN_PROGRESS]: 'En Progreso',
-  [InterviewStatus.COMPLETED]: 'Completada',
+  [InterviewStatus.COMPLETED]: 'Realizada',
   [InterviewStatus.CANCELLED]: 'Cancelada',
   [InterviewStatus.NO_SHOW]: 'No Asistió',
   [InterviewStatus.RESCHEDULED]: 'Reprogramada'
@@ -111,6 +113,7 @@ export interface CreateInterviewRequest {
   virtualMeetingLink?: string;
   notes?: string;
   preparation?: string;
+  status?: InterviewStatus; // Estado inicial - por defecto será SCHEDULED al programar
 }
 
 export interface UpdateInterviewRequest {
@@ -261,6 +264,7 @@ export interface InterviewFormProps {
   mode: InterviewFormMode;
   onSubmit: (data: CreateInterviewRequest | UpdateInterviewRequest | CompleteInterviewRequest) => void;
   onCancel: () => void;
+  onEdit?: (interview: Interview) => void;
   isSubmitting?: boolean;
   className?: string;
 }
@@ -284,6 +288,8 @@ export const InterviewUtils = {
   // Obtener color del estado
   getStatusColor: (status: InterviewStatus): 'primary' | 'success' | 'warning' | 'error' | 'info' => {
     switch (status) {
+      case InterviewStatus.PENDING:
+        return 'warning';
       case InterviewStatus.SCHEDULED:
         return 'info';
       case InterviewStatus.CONFIRMED:
@@ -300,6 +306,49 @@ export const InterviewUtils = {
       default:
         return 'info';
     }
+  },
+
+  // Validar transiciones de estado válidas
+  canTransitionTo: (currentStatus: InterviewStatus, newStatus: InterviewStatus): boolean => {
+    const validTransitions: Record<InterviewStatus, InterviewStatus[]> = {
+      [InterviewStatus.PENDING]: [InterviewStatus.SCHEDULED, InterviewStatus.CANCELLED],
+      [InterviewStatus.SCHEDULED]: [
+        InterviewStatus.CONFIRMED, 
+        InterviewStatus.CANCELLED, 
+        InterviewStatus.RESCHEDULED,
+        InterviewStatus.NO_SHOW,
+        InterviewStatus.IN_PROGRESS
+      ],
+      [InterviewStatus.CONFIRMED]: [
+        InterviewStatus.IN_PROGRESS, 
+        InterviewStatus.CANCELLED, 
+        InterviewStatus.RESCHEDULED,
+        InterviewStatus.NO_SHOW
+      ],
+      [InterviewStatus.IN_PROGRESS]: [InterviewStatus.COMPLETED, InterviewStatus.CANCELLED],
+      [InterviewStatus.COMPLETED]: [], // Estado final
+      [InterviewStatus.CANCELLED]: [InterviewStatus.SCHEDULED], // Puede reagendarse
+      [InterviewStatus.NO_SHOW]: [InterviewStatus.RESCHEDULED], // Puede reprogramarse
+      [InterviewStatus.RESCHEDULED]: [InterviewStatus.SCHEDULED] // Vuelve a programada
+    };
+
+    return validTransitions[currentStatus]?.includes(newStatus) || false;
+  },
+
+  // Obtener próximas transiciones válidas
+  getValidTransitions: (currentStatus: InterviewStatus): InterviewStatus[] => {
+    const validTransitions: Record<InterviewStatus, InterviewStatus[]> = {
+      [InterviewStatus.PENDING]: [InterviewStatus.SCHEDULED],
+      [InterviewStatus.SCHEDULED]: [InterviewStatus.CONFIRMED, InterviewStatus.CANCELLED, InterviewStatus.RESCHEDULED],
+      [InterviewStatus.CONFIRMED]: [InterviewStatus.IN_PROGRESS, InterviewStatus.CANCELLED, InterviewStatus.NO_SHOW],
+      [InterviewStatus.IN_PROGRESS]: [InterviewStatus.COMPLETED],
+      [InterviewStatus.COMPLETED]: [],
+      [InterviewStatus.CANCELLED]: [InterviewStatus.SCHEDULED],
+      [InterviewStatus.NO_SHOW]: [InterviewStatus.RESCHEDULED],
+      [InterviewStatus.RESCHEDULED]: [InterviewStatus.SCHEDULED]
+    };
+
+    return validTransitions[currentStatus] || [];
   },
 
   // Obtener color del resultado
@@ -439,7 +488,7 @@ export const INTERVIEW_VALIDATION = {
   DURATION: {
     MIN: 15,
     MAX: 180,
-    DEFAULT: 60
+    DEFAULT: 30
   },
   NOTES: {
     MAX_LENGTH: 1000

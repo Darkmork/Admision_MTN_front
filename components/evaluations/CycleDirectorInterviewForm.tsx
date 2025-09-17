@@ -235,6 +235,11 @@ Entrevistador: ${currentProfessor?.firstName} ${currentProfessor?.lastName}`,
                 message: 'La entrevista del Director de Ciclo ha sido guardada exitosamente'
             });
             
+            // Navegar de regreso al dashboard después de guardar exitosamente
+            setTimeout(() => {
+                navigate('/profesor/dashboard');
+            }, 1500);
+            
         } catch (error) {
             console.error('❌ Error al guardar entrevista:', error);
             addNotification({

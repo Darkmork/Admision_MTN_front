@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
-import { examSubjects } from '../services/examMockData';
+import { examSubjects } from '../services/staticData';
 import { Clock, BookOpen, Users, Calendar, Calculator, Globe } from 'lucide-react';
 
 const ExamPortal: React.FC = () => {

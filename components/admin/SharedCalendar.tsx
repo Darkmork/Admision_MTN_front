@@ -132,9 +132,9 @@ const SharedCalendar: React.FC<SharedCalendarProps> = ({
   const loadUsers = async () => {
     try {
       // Obtener usuarios que pueden ser entrevistadores
-      const allUsers = await userService.getAllUsers(0, 100);
-      const interviewers = allUsers.users.filter(user => 
-        ['ADMIN', 'CYCLE_DIRECTOR', 'TEACHER_LANGUAGE', 'TEACHER_MATHEMATICS', 'TEACHER_ENGLISH', 'PSYCHOLOGIST']
+      const allUsers = await userService.getAllUsers({ page: 0, size: 100 });
+      const interviewers = allUsers.content.filter(user => 
+        ['ADMIN', 'CYCLE_DIRECTOR', 'TEACHER', 'COORDINATOR', 'PSYCHOLOGIST']
         .includes(user.role)
       );
       setUsers(interviewers);

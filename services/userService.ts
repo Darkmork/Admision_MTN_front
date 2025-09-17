@@ -9,6 +9,7 @@ import {
   UserRole,
   USER_ROLE_LABELS
 } from '../types/user';
+import { DataAdapter } from './dataAdapter';
 
 class UserService {
 
@@ -19,7 +20,7 @@ class UserService {
    */
   async getAllUsers(filters: UserFilters = {}): Promise<PagedResponse<User>> {
     try {
-      console.log('👥 Obteniendo usuarios:', filters);
+      console.log('👥 Obteniendo usuarios desde microservicio:', filters);
 
       const params = new URLSearchParams();
       
@@ -32,11 +33,16 @@ class UserService {
 
       const response = await api.get(`/api/users?${params.toString()}`);
       
-      console.log('✅ Usuarios obtenidos exitosamente');
-      return response.data;
+      console.log('✅ Respuesta cruda del microservicio:', response.data);
+      
+      // Usar el adaptador para convertir datos simples a estructura compleja
+      const adaptedResponse = DataAdapter.adaptUserApiResponse(response);
+      
+      console.log('✅ Usuarios adaptados exitosamente:', adaptedResponse.content.length);
+      return adaptedResponse;
 
     } catch (error: any) {
-      console.error('❌ Error obteniendo usuarios:', error);
+      console.error('❌ Error obteniendo usuarios del microservicio:', error);
       throw this.handleError(error, 'Error al obtener los usuarios');
     }
   }
@@ -238,7 +244,7 @@ class UserService {
    */
   async getSchoolStaffUsers(filters: UserFilters = {}): Promise<PagedResponse<User>> {
     try {
-      console.log('👨‍🏫 Obteniendo usuarios del colegio (staff)');
+      console.log('👨‍🏫 Obteniendo usuarios del colegio desde microservicio');
       
       // Filtrar en el backend excluyendo APODERADOS mediante parámetros
       const staffFilters = {
@@ -259,11 +265,16 @@ class UserService {
 
       const response = await api.get(`/api/users?${params.toString()}`);
       
-      console.log('✅ Usuarios del colegio obtenidos del backend');
-      return response.data;
+      console.log('✅ Respuesta cruda staff del microservicio:', response.data);
+      
+      // Usar el adaptador para convertir datos simples a estructura compleja
+      const adaptedResponse = DataAdapter.adaptUserApiResponse(response);
+      
+      console.log('✅ Usuarios staff adaptados exitosamente:', adaptedResponse.content.length);
+      return adaptedResponse;
 
     } catch (error: any) {
-      console.error('❌ Error obteniendo usuarios del colegio:', error);
+      console.error('❌ Error obteniendo usuarios staff del microservicio:', error);
       throw this.handleError(error, 'Error al obtener usuarios del colegio');
     }
   }

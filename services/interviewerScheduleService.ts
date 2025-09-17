@@ -234,11 +234,25 @@ export class InterviewerScheduleService {
      */
     async findAvailableInterviewers(date: string, time: string): Promise<User[]> {
         try {
-            const response = await axios.get(`${this.baseURL}/available`, {
-                params: { date, time },
-                headers: this.getAuthHeaders()
+            // Use the public endpoint with date and time parameters for real availability check
+            const response = await axios.get(`${API_BASE_URL}/interviews/public/interviewers`, {
+                params: {
+                    date: date,
+                    time: time
+                }
             });
-            return response.data;
+            
+            // The backend returns interviewers with their basic info
+            // Transform to match the User interface expected by the frontend
+            return response.data.map((interviewer: any) => ({
+                id: interviewer.id,
+                firstName: interviewer.name.split(' ')[0] || '',
+                lastName: interviewer.name.split(' ').slice(1).join(' ') || '',
+                email: `${interviewer.name.toLowerCase().replace(/\s+/g, '.')}@mtn.cl`, // Generate email for display
+                role: interviewer.role,
+                educationalLevel: interviewer.educationalLevel,
+                subject: interviewer.subject
+            }));
         } catch (error) {
             console.error('Error finding available interviewers:', error);
             throw new Error(axios.isAxiosError(error) ? 
