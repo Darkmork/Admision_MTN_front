@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { authService } from '../services/authService';
+import profileService, { type UserProfile } from '../services/profileService';
 
 interface User {
     id: string;

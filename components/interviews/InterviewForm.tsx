@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 import Badge from '../ui/Badge';
 import LoadingSpinner from '../ui/LoadingSpinner';
+import DayScheduleSelector from '../DayScheduleSelector';
 import {
   CalendarIcon,
   ClockIcon,
@@ -44,27 +46,38 @@ import {
   INTERVIEW_VALIDATION,
   INTERVIEW_CONFIG
 } from '../../types/interview';
+import { applicationService } from '../../services/applicationService';
+import interviewService from '../../services/interviewService';
+import InterviewerAvailability from './InterviewerAvailability';
 
-// Mock data para entrevistadores disponibles
-const mockInterviewers = [
-  { id: 5, name: 'María González', role: 'Psicóloga', available: true },
-  { id: 6, name: 'Roberto Silva', role: 'Director Académico', available: true },
-  { id: 7, name: 'Carmen Morales', role: 'Coordinadora', available: false },
-  { id: 8, name: 'Ana Castillo', role: 'Profesora', available: true }
-];
+// Interface para entrevistadores del backend
+interface BackendInterviewer {
+  id: number;
+  name: string;
+  role: string;
+  subject?: string;
+  educationalLevel?: string;
+  scheduleCount: number;
+}
 
 const InterviewForm: React.FC<InterviewFormProps> = ({
   interview,
   mode,
   onSubmit,
   onCancel,
+  onEdit,
   isSubmitting = false,
   className = ''
 }) => {
   
+  // Estado para entrevistadores del backend
+  const [interviewers, setInterviewers] = useState<BackendInterviewer[]>([]);
+  const [loadingInterviewers, setLoadingInterviewers] = useState(false);
+  const [interviewersError, setInterviewersError] = useState<string | null>(null);
+
   const [formData, setFormData] = useState({
-    applicationId: 0,
-    interviewerId: 0,
+    applicationId: '',
+    interviewerId: '',
     type: InterviewType.FAMILY,
     mode: InterviewMode.IN_PERSON,
     scheduledDate: '',
@@ -84,6 +97,44 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isDirty, setIsDirty] = useState(false);
+  const [applications, setApplications] = useState<any[]>([]);
+  const [selectedApplicationInfo, setSelectedApplicationInfo] = useState<{name: string, grade: string} | null>(null);
+  const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>(INTERVIEW_CONFIG.DEFAULT_TIME_SLOTS);
+  const [isLoadingSlots, setIsLoadingSlots] = useState(false);
+  const [conflictWarning, setConflictWarning] = useState<string | null>(null);
+
+  // Cargar entrevistadores disponibles al montar el componente
+  useEffect(() => {
+    const loadInterviewers = async () => {
+      setLoadingInterviewers(true);
+      setInterviewersError(null);
+      
+      try {
+        console.log('🔍 Cargando entrevistadores desde API...');
+        const response = await axios.get('http://localhost:8080/api/interviews/public/interviewers');
+        console.log('✅ Entrevistadores obtenidos:', response.data);
+        
+        // Mapear los datos del backend al formato esperado
+        const mappedInterviewers: BackendInterviewer[] = response.data.map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          role: item.role,
+          subject: item.subject,
+          educationalLevel: item.educationalLevel,
+          scheduleCount: item.scheduleCount
+        }));
+        
+        setInterviewers(mappedInterviewers);
+      } catch (error) {
+        console.error('❌ Error cargando entrevistadores:', error);
+        setInterviewersError('Error al cargar la lista de entrevistadores');
+      } finally {
+        setLoadingInterviewers(false);
+      }
+    };
+    
+    loadInterviewers();
+  }, []);
 
   useEffect(() => {
     if (interview && (mode === InterviewFormMode.EDIT || mode === InterviewFormMode.VIEW || mode === InterviewFormMode.COMPLETE)) {
@@ -106,8 +157,116 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
         followUpRequired: interview.followUpRequired,
         followUpNotes: interview.followUpNotes || ''
       });
+    } else if (interview && mode === InterviewFormMode.CREATE) {
+      // Pre-llenar con datos del contexto (desde la página del estudiante)
+      setFormData(prev => ({
+        ...prev,
+        applicationId: interview.applicationId || prev.applicationId,
+        type: interview.type || prev.type
+      }));
     }
   }, [interview, mode]);
+
+  // Cargar aplicaciones disponibles para el formulario de creación
+  useEffect(() => {
+    if (mode === InterviewFormMode.CREATE) {
+      loadApplications();
+    }
+  }, [mode]);
+
+  // Cargar información del estudiante si viene pre-llenado
+  useEffect(() => {
+    if (mode === InterviewFormMode.CREATE && formData.applicationId && applications.length > 0) {
+      const selectedApp = applications.find(app => app.id === parseInt(formData.applicationId));
+      if (selectedApp && selectedApp.student) {
+        setSelectedApplicationInfo({
+          name: `${selectedApp.student.firstName} ${selectedApp.student.lastName} ${selectedApp.student.maternalLastName || ''}`.trim(),
+          grade: selectedApp.student.gradeApplied || 'No especificado'
+        });
+      }
+    }
+  }, [mode, formData.applicationId, applications]);
+
+  const loadApplications = async () => {
+    try {
+      const response = await applicationService.getAllApplications();
+      setApplications(response);
+    } catch (error) {
+      console.error('Error loading applications:', error);
+    }
+  };
+
+  // Función para cargar horarios disponibles
+  const loadAvailableTimeSlots = async () => {
+    if (!formData.interviewerId || !formData.scheduledDate) {
+      setAvailableTimeSlots(INTERVIEW_CONFIG.DEFAULT_TIME_SLOTS);
+      return;
+    }
+
+    try {
+      setIsLoadingSlots(true);
+      const slots = await interviewService.getAvailableTimeSlots(
+        parseInt(formData.interviewerId as string),
+        formData.scheduledDate,
+        formData.duration
+      );
+      setAvailableTimeSlots(slots);
+      
+      // Si la hora actual ya no está disponible, limpiarla
+      if (formData.scheduledTime && !slots.includes(formData.scheduledTime)) {
+        setFormData(prev => ({ ...prev, scheduledTime: '' }));
+      }
+    } catch (error) {
+      console.error('Error loading available time slots:', error);
+      setAvailableTimeSlots(INTERVIEW_CONFIG.DEFAULT_TIME_SLOTS);
+    } finally {
+      setIsLoadingSlots(false);
+    }
+  };
+
+  // Efecto para recargar horarios cuando cambien los parámetros relevantes
+  useEffect(() => {
+    if (mode === InterviewFormMode.CREATE || mode === InterviewFormMode.EDIT) {
+      loadAvailableTimeSlots();
+    }
+  }, [formData.interviewerId, formData.scheduledDate, formData.duration, mode]);
+
+  // Función para manejar selección de horario desde el calendario
+  const handleTimeSlotSelect = (date: string, time: string) => {
+    setFormData(prev => ({ 
+      ...prev, 
+      scheduledDate: date, 
+      scheduledTime: time 
+    }));
+    setIsDirty(true);
+    
+    // Limpiar errores relacionados
+    setErrors(prev => ({ 
+      ...prev, 
+      scheduledDate: '', 
+      scheduledTime: '' 
+    }));
+  };
+
+  // Función para manejar selección de fecha y hora desde DayScheduleSelector
+  const handleDateTimeSelect = (date: string, time: string) => {
+    console.log(`📅 InterviewForm: handleDateTimeSelect llamado con fecha="${date}" y hora="${time}"`);
+    console.log(`📅 InterviewForm: Estado actual - fecha="${formData.scheduledDate}" y hora="${formData.scheduledTime}"`);
+    
+    setFormData(prev => ({ 
+      ...prev, 
+      scheduledDate: date, 
+      scheduledTime: time 
+    }));
+    setIsDirty(true);
+    
+    // Limpiar errores relacionados
+    setErrors(prev => ({ 
+      ...prev, 
+      scheduledDate: '', 
+      scheduledTime: '' 
+    }));
+  };
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -119,7 +278,18 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
     }
 
     // Lógica específica por campo
-    if (field === 'mode') {
+    if (field === 'applicationId') {
+      // Actualizar información del postulante seleccionado
+      const selectedApp = applications.find(app => app.id === parseInt(value));
+      if (selectedApp && selectedApp.student) {
+        setSelectedApplicationInfo({
+          name: `${selectedApp.student.firstName} ${selectedApp.student.lastName} ${selectedApp.student.maternalLastName || ''}`.trim(),
+          grade: selectedApp.student.gradeApplied || 'No especificado'
+        });
+      } else {
+        setSelectedApplicationInfo(null);
+      }
+    } else if (field === 'mode') {
       // Limpiar campos específicos de modalidad cuando cambia
       if (value === InterviewMode.VIRTUAL) {
         setFormData(prev => ({ ...prev, location: '' }));
@@ -134,6 +304,11 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
 
     // Validaciones para crear/editar
     if (mode === InterviewFormMode.CREATE || mode === InterviewFormMode.EDIT) {
+      // Validar selección de postulante en modo CREATE
+      if (mode === InterviewFormMode.CREATE && !formData.applicationId) {
+        newErrors.applicationId = 'Debe seleccionar un postulante';
+      }
+      
       if (!formData.scheduledDate) {
         newErrors.scheduledDate = 'La fecha es obligatoria';
       } else {
@@ -190,15 +365,49 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Validar conflictos de horarios antes de enviar
+  const validateTimeSlotConflicts = async (): Promise<boolean> => {
+    if (!formData.interviewerId || !formData.scheduledDate || !formData.scheduledTime) {
+      return true; // No se puede validar, pero otros validadores lo detectarán
+    }
+
+    // Temporalmente simplificado - solo validamos que haya datos básicos
+    // TODO: Re-implementar cuando el microservicio esté completo
+    try {
+      console.log('🔍 Validación básica de horarios:', {
+        interviewerId: formData.interviewerId,
+        date: formData.scheduledDate,
+        time: formData.scheduledTime,
+        duration: formData.duration
+      });
+
+      // Limpiar advertencias previas
+      setConflictWarning(null);
+      return true;
+      
+    } catch (error) {
+      console.error('Error validating time slot:', error);
+      // En caso de error, continuar pero mostrar advertencia
+      setConflictWarning('No se pudo validar el horario. Verifique manualmente.');
+      return true;
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateForm()) return;
 
+    // Validar conflictos de horarios
+    const hasNoConflicts = await validateTimeSlotConflicts();
+    if (!hasNoConflicts) {
+      return; // Detener si hay conflictos
+    }
+
     if (mode === InterviewFormMode.CREATE) {
       const createData: CreateInterviewRequest = {
-        applicationId: formData.applicationId,
-        interviewerId: formData.interviewerId,
+        applicationId: parseInt(formData.applicationId as string) || 0,
+        interviewerId: parseInt(formData.interviewerId as string) || 0,
         type: formData.type,
         mode: formData.mode,
         scheduledDate: formData.scheduledDate,
@@ -207,8 +416,10 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
         location: formData.location || undefined,
         virtualMeetingLink: formData.virtualMeetingLink || undefined,
         notes: formData.notes || undefined,
-        preparation: formData.preparation || undefined
+        preparation: formData.preparation || undefined,
+        status: InterviewStatus.SCHEDULED // Establecer estado como SCHEDULED al programar
       };
+      console.log('🔥 CREATING INTERVIEW WITH STATUS:', createData.status, 'Data:', createData);
       onSubmit(createData);
     } else if (mode === InterviewFormMode.EDIT) {
       const updateData: UpdateInterviewRequest = {
@@ -263,9 +474,16 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <CalendarIcon className="w-6 h-6 text-azul-monte-tabor" />
-            <h2 className="text-xl font-semibold text-azul-monte-tabor">
-              {getFormTitle()}
-            </h2>
+            <div>
+              <h2 className="text-xl font-semibold text-azul-monte-tabor">
+                {getFormTitle()}
+              </h2>
+              {interview && (
+                <p className="text-sm text-gray-600 mt-1">
+                  Para: <span className="font-medium text-azul-monte-tabor">{interview.studentName}</span>
+                </p>
+              )}
+            </div>
           </div>
           
           {interview && (
@@ -277,15 +495,67 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
           )}
         </div>
 
-        {/* Información del estudiante (solo en vista/completar) */}
-        {interview && (isViewMode || isCompleteMode) && (
-          <Card className="p-4 bg-blue-50 border-blue-200">
-            <div className="flex items-start gap-3">
-              <UserIcon className="w-5 h-5 text-blue-600 mt-0.5" />
+        {/* Información del estudiante - Siempre visible y destacada */}
+        {interview ? (
+          <Card className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 shadow-sm">
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-blue-100 rounded-full">
+                <UserIcon className="w-6 h-6 text-blue-600" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="text-xl font-bold text-blue-900 mb-1">
+                      {interview.studentName}
+                    </h3>
+                    <div className="flex items-center gap-3 mb-2">
+                      <Badge variant="blue" size="sm">
+                        {interview.gradeApplied}
+                      </Badge>
+                      <span className="text-sm text-blue-700">
+                        ID de Postulación: #{interview.applicationId}
+                      </span>
+                    </div>
+                    <div className="text-sm text-blue-600">
+                      <p className="font-medium">Padres: {interview.parentNames}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-blue-500 mb-1">Entrevista para</p>
+                    <Badge variant={InterviewUtils.getStatusColor(interview.status)} size="sm">
+                      {INTERVIEW_STATUS_LABELS[interview.status]}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
+        ) : mode === InterviewFormMode.CREATE && (
+          <Card className="p-6 bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 shadow-sm">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-green-100 rounded-full">
+                <UserIcon className="w-6 h-6 text-green-600" />
+              </div>
               <div>
-                <h3 className="font-medium text-blue-900">{interview.studentName}</h3>
-                <p className="text-sm text-blue-700">{interview.gradeApplied}</p>
-                <p className="text-xs text-blue-600">{interview.parentNames}</p>
+                <h3 className="text-lg font-semibold text-green-900 mb-1">
+                  Nueva Entrevista
+                  {selectedApplicationInfo && (
+                    <span className="text-base font-normal text-green-700 block">
+                      Para: {selectedApplicationInfo.name}
+                    </span>
+                  )}
+                </h3>
+                <p className="text-sm text-green-700">
+                  {selectedApplicationInfo ? 
+                    `Programar entrevista para ${selectedApplicationInfo.name} - ${selectedApplicationInfo.grade}` :
+                    'Complete el formulario para programar una nueva entrevista'
+                  }
+                </p>
+                <div className="mt-2">
+                  <span className="text-xs text-green-600">
+                    ID de Postulación: #{formData.applicationId || 'Por seleccionar'}
+                  </span>
+                </div>
               </div>
             </div>
           </Card>
@@ -297,26 +567,89 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
           <div className="space-y-4">
             <h3 className="text-lg font-medium text-gray-900">Información Básica</h3>
             
+            {/* Selección de Postulante - Solo si no está pre-llenado */}
+            {mode === InterviewFormMode.CREATE && !formData.applicationId && (
+              <div>
+                <label htmlFor="applicationId" className="block text-sm font-medium text-gray-700 mb-2">
+                  <FiUser className="inline w-4 h-4 mr-1" />
+                  Postulante *
+                </label>
+                <select
+                  id="applicationId"
+                  value={formData.applicationId}
+                  onChange={(e) => handleInputChange('applicationId', e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-azul-monte-tabor focus:border-transparent ${
+                    errors.applicationId ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                  }`}
+                  disabled={isViewMode || isCompleteMode}
+                >
+                  <option value="">Seleccionar postulante</option>
+                  {applications.map(app => (
+                    <option key={app.id} value={app.id}>
+                      {app.student ? 
+                        `${app.student.firstName} ${app.student.lastName} ${app.student.maternalLastName || ''}`.trim() + 
+                        ` - ${app.student.gradeApplied || 'Sin curso'}` :
+                        `ID: ${app.id} - Sin información de estudiante`
+                      }
+                    </option>
+                  ))}
+                </select>
+                {errors.applicationId && (
+                  <p className="mt-1 text-sm text-red-600">{errors.applicationId}</p>
+                )}
+                
+                {/* Mostrar información del postulante seleccionado */}
+                {selectedApplicationInfo && (
+                  <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                    <div className="flex items-center gap-2">
+                      <FiUser className="w-4 h-4 text-blue-600" />
+                      <span className="font-medium text-blue-900">{selectedApplicationInfo.name}</span>
+                    </div>
+                    <div className="text-sm text-blue-700 mt-1">
+                      Curso postulado: {selectedApplicationInfo.grade}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            
             {/* Tipo de entrevista */}
             <div>
               <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-2">
                 Tipo de Entrevista *
+                {(mode === InterviewFormMode.CREATE && interview?.type) && (
+                  <span className="text-sm text-blue-600 font-normal"> (Pre-seleccionado)</span>
+                )}
               </label>
-              <select
-                id="type"
-                value={formData.type}
-                onChange={(e) => handleInputChange('type', e.target.value as InterviewType)}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-azul-monte-tabor focus:border-transparent ${
-                  errors.type ? 'border-red-300 bg-red-50' : 'border-gray-300'
-                }`}
-                disabled={isViewMode || isCompleteMode}
-              >
-                {Object.values(InterviewType).map(type => (
-                  <option key={type} value={type}>
-                    {INTERVIEW_TYPE_LABELS[type]}
-                  </option>
-                ))}
-              </select>
+              
+              {/* Mostrar campo de solo lectura si viene pre-llenado desde ficha */}
+              {(mode === InterviewFormMode.CREATE && interview?.type) ? (
+                <div className="w-full px-3 py-2 border border-blue-300 rounded-md bg-blue-50 text-blue-900 font-medium">
+                  <span className="text-lg mr-2">
+                    {formData.type === 'FAMILY' ? '👨‍👩‍👧‍👦' : 
+                     formData.type === 'INDIVIDUAL' ? '👤' :
+                     formData.type === 'PSYCHOLOGICAL' ? '🧠' : 
+                     formData.type === 'ACADEMIC' ? '📚' : '➕'}
+                  </span>
+                  {INTERVIEW_TYPE_LABELS[formData.type]}
+                </div>
+              ) : (
+                <select
+                  id="type"
+                  value={formData.type}
+                  onChange={(e) => handleInputChange('type', e.target.value as InterviewType)}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-azul-monte-tabor focus:border-transparent ${
+                    errors.type ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                  }`}
+                  disabled={isViewMode || isCompleteMode}
+                >
+                  {Object.values(InterviewType).map(type => (
+                    <option key={type} value={type}>
+                      {INTERVIEW_TYPE_LABELS[type]}
+                    </option>
+                  ))}
+                </select>
+              )}
               {errors.type && (
                 <p className="mt-1 text-sm text-red-600">{errors.type}</p>
               )}
@@ -355,22 +688,28 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
               <select
                 id="interviewer"
                 value={formData.interviewerId}
-                onChange={(e) => handleInputChange('interviewerId', parseInt(e.target.value))}
+                onChange={(e) => handleInputChange('interviewerId', e.target.value)}
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-azul-monte-tabor focus:border-transparent ${
                   errors.interviewerId ? 'border-red-300 bg-red-50' : 'border-gray-300'
                 }`}
                 disabled={isViewMode || isCompleteMode}
               >
                 <option value="">Seleccionar entrevistador</option>
-                {mockInterviewers.map(interviewer => (
-                  <option 
-                    key={interviewer.id} 
-                    value={interviewer.id}
-                    disabled={!interviewer.available}
-                  >
-                    {interviewer.name} - {interviewer.role} {!interviewer.available ? '(No disponible)' : ''}
-                  </option>
-                ))}
+                {loadingInterviewers ? (
+                  <option disabled>Cargando entrevistadores...</option>
+                ) : interviewersError ? (
+                  <option disabled>Error al cargar entrevistadores</option>
+                ) : (
+                  interviewers.map(interviewer => (
+                    <option 
+                      key={interviewer.id} 
+                      value={interviewer.id}
+                      disabled={interviewer.scheduleCount === 0}
+                    >
+                      {interviewer.name} - {interviewer.role} {interviewer.scheduleCount === 0 ? '(Sin horarios)' : `(${interviewer.scheduleCount} horarios)`}
+                    </option>
+                  ))
+                )}
               </select>
               {errors.interviewerId && (
                 <p className="mt-1 text-sm text-red-600">{errors.interviewerId}</p>
@@ -382,52 +721,50 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
           <div className="space-y-4">
             <h3 className="text-lg font-medium text-gray-900">Programación</h3>
             
-            {/* Fecha */}
-            <div>
-              <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-2">
-                <FiCalendar className="inline w-4 h-4 mr-1" />
-                Fecha *
-              </label>
-              <input
-                id="date"
-                type="date"
-                value={formData.scheduledDate}
-                onChange={(e) => handleInputChange('scheduledDate', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-azul-monte-tabor focus:border-transparent ${
-                  errors.scheduledDate ? 'border-red-300 bg-red-50' : 'border-gray-300'
-                }`}
-                disabled={isViewMode || isCompleteMode}
-              />
-              {errors.scheduledDate && (
-                <p className="mt-1 text-sm text-red-600">{errors.scheduledDate}</p>
-              )}
-            </div>
+            {/* Selección Visual de Fecha y Hora */}
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  <FiCalendar className="inline w-4 h-4 mr-1" />
+                  Seleccionar Fecha y Hora *
+                </label>
+                {formData.interviewerId ? (
+                  <div>
+                    <DayScheduleSelector
+                      evaluatorId={parseInt(formData.interviewerId as string)}
+                      evaluatorName={
+                        interviewers.find(e => e.id === parseInt(formData.interviewerId as string))?.name || 
+                        'Evaluador'
+                      }
+                      selectedDate={formData.scheduledDate}
+                      selectedTime={formData.scheduledTime}
+                      onDateTimeSelect={handleDateTimeSelect}
+                      disabled={isViewMode || isCompleteMode}
+                    />
+                    {(errors.scheduledDate || errors.scheduledTime) && (
+                      <p className="mt-2 text-sm text-red-600">
+                        {errors.scheduledDate || errors.scheduledTime}
+                      </p>
+                    )}
 
-            {/* Hora */}
-            <div>
-              <label htmlFor="time" className="block text-sm font-medium text-gray-700 mb-2">
-                <FiClock className="inline w-4 h-4 mr-1" />
-                Hora *
-              </label>
-              <select
-                id="time"
-                value={formData.scheduledTime}
-                onChange={(e) => handleInputChange('scheduledTime', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-azul-monte-tabor focus:border-transparent ${
-                  errors.scheduledTime ? 'border-red-300 bg-red-50' : 'border-gray-300'
-                }`}
-                disabled={isViewMode || isCompleteMode}
-              >
-                <option value="">Seleccionar hora</option>
-                {INTERVIEW_CONFIG.DEFAULT_TIME_SLOTS.map(time => (
-                  <option key={time} value={time}>
-                    {time}
-                  </option>
-                ))}
-              </select>
-              {errors.scheduledTime && (
-                <p className="mt-1 text-sm text-red-600">{errors.scheduledTime}</p>
-              )}
+                    {/* Advertencia de conflictos */}
+                    {conflictWarning && (
+                      <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md">
+                        <p className="text-sm text-red-700">
+                          <FiClock className="inline w-4 h-4 mr-1" />
+                          <strong>⚠️ Conflicto de horarios:</strong> {conflictWarning}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="p-4 bg-gray-50 border border-gray-200 rounded-md">
+                    <p className="text-sm text-gray-600 text-center">
+                      👆 Primero seleccione un entrevistador para ver sus horarios disponibles
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Duración */}
@@ -435,25 +772,72 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
               <label htmlFor="duration" className="block text-sm font-medium text-gray-700 mb-2">
                 Duración (minutos) *
               </label>
-              <input
-                id="duration"
-                type="number"
-                min={INTERVIEW_VALIDATION.DURATION.MIN}
-                max={INTERVIEW_VALIDATION.DURATION.MAX}
-                step="15"
-                value={formData.duration}
-                onChange={(e) => handleInputChange('duration', parseInt(e.target.value))}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-azul-monte-tabor focus:border-transparent ${
-                  errors.duration ? 'border-red-300 bg-red-50' : 'border-gray-300'
-                }`}
-                disabled={isViewMode || isCompleteMode}
-              />
+              <div className="flex items-center space-x-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newValue = Math.max(INTERVIEW_VALIDATION.DURATION.MIN, formData.duration - 15);
+                    handleInputChange('duration', newValue);
+                  }}
+                  disabled={isViewMode || isCompleteMode || formData.duration <= INTERVIEW_VALIDATION.DURATION.MIN}
+                  className={`flex items-center justify-center w-10 h-10 rounded-full border transition-colors ${
+                    isViewMode || isCompleteMode || formData.duration <= INTERVIEW_VALIDATION.DURATION.MIN 
+                      ? 'bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed' 
+                      : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50 hover:border-gray-400'
+                  }`}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                  </svg>
+                </button>
+                
+                <div className={`flex items-center justify-center min-w-0 px-4 py-2 border rounded-md font-medium ${
+                  errors.duration ? 'border-red-300 bg-red-50 text-red-600' : 'border-gray-300 bg-gray-50 text-gray-900'
+                }`}>
+                  {formData.duration} min
+                </div>
+                
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newValue = Math.min(INTERVIEW_VALIDATION.DURATION.MAX, formData.duration + 15);
+                    handleInputChange('duration', newValue);
+                  }}
+                  disabled={isViewMode || isCompleteMode || formData.duration >= INTERVIEW_VALIDATION.DURATION.MAX}
+                  className={`flex items-center justify-center w-10 h-10 rounded-full border transition-colors ${
+                    isViewMode || isCompleteMode || formData.duration >= INTERVIEW_VALIDATION.DURATION.MAX 
+                      ? 'bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed' 
+                      : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50 hover:border-gray-400'
+                  }`}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                </button>
+              </div>
+              
+              <p className="mt-1 text-xs text-gray-500">
+                Use los botones + y - para ajustar la duración en incrementos de 15 minutos
+              </p>
+              
               {errors.duration && (
                 <p className="mt-1 text-sm text-red-600">{errors.duration}</p>
               )}
             </div>
           </div>
         </div>
+
+        {/* Calendario de disponibilidad semanal */}
+        {(mode === InterviewFormMode.CREATE || mode === InterviewFormMode.EDIT) && 
+         formData.interviewerId && 
+         parseInt(formData.interviewerId as string) > 0 && (
+          <InterviewerAvailability
+            interviewerId={parseInt(formData.interviewerId as string)}
+            selectedDate={formData.scheduledDate}
+            onTimeSlotSelect={handleTimeSlotSelect}
+            className="mt-6"
+          />
+        )}
 
         {/* Ubicación/Enlace */}
         <div>
@@ -701,14 +1085,32 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
         )}
 
         {isViewMode && (
-          <div className="flex justify-end pt-4 border-t">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onCancel}
-            >
-              Cerrar
-            </Button>
+          <div className="flex justify-between pt-4 border-t">
+            {/* Información adicional en modo vista */}
+            <div className="text-sm text-gray-500">
+              <p>Entrevista #{interview?.id} • Creada: {interview?.scheduledDate}</p>
+            </div>
+            
+            {/* Botones de acción */}
+            <div className="flex gap-3">
+              {onEdit && interview && (
+                <Button
+                  type="button"
+                  variant="primary"
+                  onClick={() => onEdit(interview)}
+                >
+                  <FiEdit className="w-4 h-4 mr-2" />
+                  Editar
+                </Button>
+              )}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onCancel}
+              >
+                Cerrar
+              </Button>
+            </div>
           </div>
         )}
       </form>

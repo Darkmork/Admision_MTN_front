@@ -196,6 +196,11 @@ const CycleDirectorReportForm: React.FC = () => {
                 message: 'El informe del Director de Ciclo ha sido guardado exitosamente'
             });
             
+            // Navegar de regreso al dashboard después de guardar exitosamente
+            setTimeout(() => {
+                navigate('/profesor/dashboard');
+            }, 1500);
+            
         } catch (error) {
             console.error('❌ Error al guardar informe:', error);
             addNotification({

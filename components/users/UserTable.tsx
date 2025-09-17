@@ -86,16 +86,16 @@ const UserTable: React.FC<UserTableProps> = ({
                     <div className="flex-shrink-0 h-10 w-10">
                       <div className="h-10 w-10 rounded-full bg-azul-monte-tabor bg-opacity-10 flex items-center justify-center">
                         <span className="text-sm font-medium text-azul-monte-tabor">
-                          {user.firstName.charAt(0)}{user.lastName.charAt(0)}
+                          {(user.firstName?.charAt(0) || '?')}{(user.lastName?.charAt(0) || '?')}
                         </span>
                       </div>
                     </div>
                     <div className="ml-4">
                       <div className="text-sm font-medium text-gray-900">
-                        {user.fullName}
+                        {user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Sin nombre'}
                       </div>
                       <div className="text-sm text-gray-500">
-                        RUT: {user.rut}
+                        RUT: {user.rut || 'No especificado'}
                       </div>
                     </div>
                   </div>
@@ -103,7 +103,7 @@ const UserTable: React.FC<UserTableProps> = ({
 
                 {/* Contacto */}
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">{user.email}</div>
+                  <div className="text-sm text-gray-900">{user.email || 'No especificado'}</div>
                   {user.phone && (
                     <div className="text-sm text-gray-500">{user.phone}</div>
                   )}

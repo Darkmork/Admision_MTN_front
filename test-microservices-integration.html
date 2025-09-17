@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Integración Microservicios</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-blue-800 mb-8">🧪 Test Integración Completa de Microservicios</h1>
+        
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-semibold mb-4">Estado de Integración Frontend-Backend</h2>
+            <button onclick="testFullIntegration()" class="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 text-lg">
+                🚀 Ejecutar Test Completo de Integración
+            </button>
+            <div id="integration-results" class="mt-6 space-y-4"></div>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-6">
+            <!-- Dashboard Test -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="text-lg font-semibold mb-4">Dashboard Test</h3>
+                <button onclick="testDashboard()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                    📊 Test Dashboard
+                </button>
+                <div id="dashboard-result" class="mt-4 p-3 bg-gray-50 rounded text-sm"></div>
+            </div>
+
+            <!-- Service Info Test -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="text-lg font-semibold mb-4">Service Info Test</h3>
+                <button onclick="testServiceInfo()" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                    ℹ️ Test Service Info
+                </button>
+                <div id="serviceinfo-result" class="mt-4 p-3 bg-gray-50 rounded text-sm"></div>
+            </div>
+        </div>
+
+        <!-- Access Links -->
+        <div class="mt-8 bg-blue-50 p-6 rounded-lg">
+            <h3 class="text-lg font-semibold text-blue-800 mb-4">🔗 Enlaces de Acceso</h3>
+            <div class="space-y-2">
+                <div>
+                    <a href="http://localhost:5176/admin/login" target="_blank" 
+                       class="text-blue-600 hover:text-blue-800 underline">
+                       👤 Login Admin - http://localhost:5176/admin/login
+                    </a>
+                </div>
+                <div>
+                    <a href="http://localhost:5176/admin" target="_blank" 
+                       class="text-blue-600 hover:text-blue-800 underline">
+                       🏗️ Dashboard Admin (directo) - http://localhost:5176/admin
+                    </a>
+                </div>
+                <div>
+                    <a href="http://localhost:5176/microservices-test.html" target="_blank" 
+                       class="text-blue-600 hover:text-blue-800 underline">
+                       🧪 Test Simple - http://localhost:5176/microservices-test.html
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'http://localhost:8080';
+
+        async function makeRequest(url, options = {}) {
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('Request error:', error);
+                throw error;
+            }
+        }
+
+        async function testFullIntegration() {
+            const resultsDiv = document.getElementById('integration-results');
+            resultsDiv.innerHTML = '<div class="text-blue-600 font-semibold">🔄 Ejecutando test completo de integración...</div>';
+            
+            const tests = [
+                { name: 'Gateway Health', fn: testGatewayHealth },
+                { name: 'All Services Health', fn: testAllServicesHealth },
+                { name: 'User Service Data', fn: testUserServiceData },
+                { name: 'Connection Test', fn: testConnectionTest },
+                { name: 'Service Statistics', fn: testServiceStats },
+                { name: 'Frontend Integration', fn: testFrontendIntegration }
+            ];
+
+            const results = [];
+            
+            for (const test of tests) {
+                try {
+                    const result = await test.fn();
+                    results.push(`✅ ${test.name}: PASSED`);
+                    console.log(`✅ ${test.name}:`, result);
+                } catch (error) {
+                    results.push(`❌ ${test.name}: FAILED - ${error.message}`);
+                    console.error(`❌ ${test.name}:`, error);
+                }
+            }
+            
+            resultsDiv.innerHTML = `
+                <div class="bg-white p-4 border rounded-lg">
+                    <div class="font-semibold text-lg mb-3">🎯 Resultados del Test Completo:</div>
+                    ${results.map(result => `<div class="text-sm py-1">${result}</div>`).join('')}
+                </div>
+                <div class="bg-green-50 p-4 border border-green-200 rounded-lg text-green-800">
+                    <div class="font-semibold">✅ Test de Integración Completado</div>
+                    <div class="text-sm mt-1">
+                        Total pruebas: ${tests.length} | 
+                        Exitosas: ${results.filter(r => r.includes('✅')).length} | 
+                        Fallidas: ${results.filter(r => r.includes('❌')).length}
+                    </div>
+                </div>
+            `;
+        }
+
+        async function testGatewayHealth() {
+            return await makeRequest(`${BACKEND_URL}/api/microservices-test/gateway/health`);
+        }
+
+        async function testAllServicesHealth() {
+            const services = [
+                'user-service', 'application-service', 'evaluation-service', 'notification-service'
+            ];
+            const results = {};
+            for (const service of services) {
+                results[service] = await makeRequest(`${BACKEND_URL}/api/microservices-test/${service}/health`);
+            }
+            return results;
+        }
+
+        async function testUserServiceData() {
+            return await makeRequest(`${BACKEND_URL}/api/microservices-test/user-service/demo-users`);
+        }
+
+        async function testConnectionTest() {
+            return await makeRequest(`${BACKEND_URL}/api/microservices-test/user-service/test-connection`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    from: 'Integration Test',
+                    timestamp: new Date().toISOString()
+                })
+            });
+        }
+
+        async function testServiceStats() {
+            return await makeRequest(`${BACKEND_URL}/api/microservices-test/user-service/stats`);
+        }
+
+        async function testFrontendIntegration() {
+            // Simular la carga del dashboard como lo haría React
+            const dashboard = await makeRequest(`${BACKEND_URL}/api/microservices-test/gateway/health`);
+            const users = await makeRequest(`${BACKEND_URL}/api/microservices-test/user-service/demo-users`);
+            const stats = await makeRequest(`${BACKEND_URL}/api/microservices-test/user-service/stats`);
+            
+            return {
+                dashboard,
+                usersCount: users.length,
+                stats: stats.totalUsers
+            };
+        }
+
+        async function testDashboard() {
+            const resultDiv = document.getElementById('dashboard-result');
+            resultDiv.innerHTML = '🔄 Simulando carga del dashboard...';
+            
+            try {
+                const result = await testFrontendIntegration();
+                resultDiv.innerHTML = `
+                    <div class="text-green-600 font-semibold">✅ Dashboard funcionando</div>
+                    <div class="text-xs mt-2 space-y-1">
+                        <div>Gateway: ${result.dashboard.status}</div>
+                        <div>Usuarios: ${result.usersCount} disponibles</div>
+                        <div>Stats: ${result.stats} usuarios totales</div>
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="text-red-600">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function testServiceInfo() {
+            const resultDiv = document.getElementById('serviceinfo-result');
+            resultDiv.innerHTML = '🔄 Obteniendo info del servicio...';
+            
+            try {
+                const info = await makeRequest(`${BACKEND_URL}/api/microservices-test/user-service/info`);
+                resultDiv.innerHTML = `
+                    <div class="text-green-600 font-semibold">✅ Service Info obtenida</div>
+                    <div class="text-xs mt-2 space-y-1">
+                        <div>Service: ${info.service}</div>
+                        <div>Version: ${info.version}</div>
+                        <div>Architecture: ${info.architecture}</div>
+                        <div>Endpoints: ${info.endpoints?.length || 0}</div>
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="text-red-600">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        window.onload = function() {
+            console.log('🧪 Test de Integración Completa cargado');
+            console.log('Backend URL:', BACKEND_URL);
+            console.log('Frontend URL: http://localhost:5176');
+        };
+    </script>
+</body>
+</html>

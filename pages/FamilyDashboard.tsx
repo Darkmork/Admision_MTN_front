@@ -4,7 +4,9 @@ import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import { ApplicationStatus, Document } from '../types';
-import { mockApplications } from '../services/mockData';
+import { applicationService } from '../services/applicationService';
+import { applicationWorkflowService } from '../services/applicationWorkflowService';
+import { useUserProfile } from '../hooks/useUserProfile';
 import { CheckCircleIcon, ClockIcon, FileTextIcon, XCircleIcon, CalendarIcon, UsersIcon, LogoIcon } from '../components/icons/Icons';
 import { 
   FiFileText, 
@@ -31,11 +33,15 @@ import {
   FiAlertCircle,
   FiInfo,
   FiCheck,
-  FiX
+  FiX,
+  FiLogOut
 } from 'react-icons/fi';
 import { useApplications } from '../context/AppContext';
 import { applicationService, Application } from '../services/applicationService';
 import { useAuth } from '../context/AuthContext';
+import useUserProfile from '../hooks/useUserProfile';
+import applicationWorkflowService, { type ApplicationDraft } from '../services/applicationWorkflowService';
+import documentGatewayService from '../services/documentGatewayService';
 import FamilyInterviews from '../components/family/FamilyInterviews';
 
 const sections = [
@@ -78,7 +84,8 @@ const FamilyDashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { applications } = useApplications();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
+  const { profile, loading: profileLoading, error: profileError } = useUserProfile();
   
   // Load real applications on component mount
   useEffect(() => {
@@ -189,6 +196,19 @@ const FamilyDashboard: React.FC = () => {
                   >
                     <FiBarChart2 className="w-4 h-4 mr-2" />
                   Cargar Datos
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="ml-2 text-white border-white hover:bg-red-500 hover:text-white hover:border-red-500"
+                    onClick={() => {
+                      if (window.confirm('¿Está seguro que desea cerrar sesión?')) {
+                        logout();
+                      }
+                    }}
+                  >
+                    <FiLogOut className="w-4 h-4 mr-2" />
+                    Cerrar Sesión
                   </Button>
                 </div>
               </div>

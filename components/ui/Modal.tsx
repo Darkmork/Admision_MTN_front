@@ -60,7 +60,12 @@ const Modal: React.FC<ModalProps> = ({
         <div className="fixed inset-0 z-50 overflow-y-auto">
             <div 
                 className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
-                onClick={onClose}
+                onClick={(e) => {
+                    // Solo cerrar si el clic es directamente en el overlay, no en elementos hijos
+                    if (e.target === e.currentTarget) {
+                        onClose();
+                    }
+                }}
             />
             <div className="flex min-h-full items-center justify-center p-4">
                 <div 

@@ -1,4 +1,5 @@
 import api from './api';
+import { DataAdapter } from './dataAdapter';
 
 export interface ApplicationRequest {
     // Datos del estudiante
@@ -120,65 +121,46 @@ export interface Application {
 
 class ApplicationService {
     
-    // Método mejorado para administradores: obtener todas las postulaciones desde la base de datos real
+    // Método mejorado para administradores: obtener todas las postulaciones desde microservicio
     async getAllApplications(): Promise<Application[]> {
         try {
-            console.log('📊 Admin: Obteniendo todas las postulaciones desde DB');
+            console.log('📊 Admin: Obteniendo postulaciones desde microservicio');
             
-            // TEMPORAL: Usar directamente el endpoint público que sabemos que funciona
+            // Usar endpoints reales del microservicio
             let response;
-            try {
-                console.log('🔄 Probando endpoint público que funciona...');
-                response = await api.get('/api/applications/public/all');
-                console.log('✅ Éxito con endpoint público:', response.data.length);
-            } catch (publicError) {
-                console.log('❌ Falló endpoint público:', publicError);
-                
-                // Intentar endpoints protegidos como fallback
-                const endpoints = [
-                    '/api/applications',
-                    '/api/applications/all',
-                    '/api/applications/admin',
-                    '/api/applications/admin/all'
-                ];
-                
-                for (const endpoint of endpoints) {
-                    try {
-                        response = await api.get(endpoint);
-                        console.log(`✅ Éxito con endpoint: ${endpoint}`);
-                        break;
-                    } catch (endpointError) {
-                        console.log(`❌ Falló endpoint: ${endpoint}`, endpointError.response?.status);
-                        continue;
-                    }
-                }
-                
-                if (!response) {
-                    throw new Error('Ningún endpoint de aplicaciones disponible');
+            const endpoints = [
+                '/api/applications/public/all',  // Endpoint que sabemos que funciona
+                '/api/applications',             // Endpoint principal
+                '/api/applications/all',         // Endpoint alternativo
+            ];
+            
+            for (const endpoint of endpoints) {
+                try {
+                    console.log(`🔄 Probando endpoint: ${endpoint}`);
+                    response = await api.get(endpoint);
+                    console.log(`✅ Éxito con endpoint: ${endpoint}`, response.data);
+                    break;
+                } catch (endpointError) {
+                    console.log(`❌ Falló endpoint: ${endpoint}`, endpointError.response?.status);
+                    continue;
                 }
             }
             
-            // Procesar la respuesta
-            let applications = [];
-            if (Array.isArray(response.data)) {
-                applications = response.data;
-            } else if (response.data && Array.isArray(response.data.content)) {
-                applications = response.data.content; // Para respuestas paginadas
-            } else if (response.data && response.data.applications) {
-                applications = response.data.applications;
-            } else {
-                console.warn('⚠️ Estructura de respuesta inesperada:', response.data);
-                applications = [];
+            if (!response) {
+                throw new Error('Ningún endpoint de aplicaciones disponible');
             }
             
-            console.log('✅ Admin: Postulaciones obtenidas desde DB:', applications.length);
-            console.log('📋 Primera postulación como ejemplo:', applications[0]);
-            return applications;
+            // Usar el adaptador para convertir datos simples a estructura compleja
+            const adaptedApplications = DataAdapter.adaptApplicationApiResponse(response);
+            
+            console.log('✅ Admin: Postulaciones adaptadas exitosamente:', adaptedApplications.length);
+            console.log('📋 Primera postulación adaptada:', adaptedApplications[0]);
+            return adaptedApplications;
             
         } catch (error: any) {
-            console.error('❌ Error obteniendo postulaciones desde DB:', error);
+            console.error('❌ Error obteniendo postulaciones desde microservicio:', error);
             
-            // Como fallback, devolver un array vacío en lugar de mock data
+            // Como fallback, devolver un array vacío
             console.log('🔄 Devolviendo array vacío como fallback');
             return [];
         }

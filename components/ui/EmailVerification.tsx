@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Input from './Input';
 import Button from './Button';
 import { useEmailVerification } from '../../hooks/useEmailVerification';
@@ -22,6 +22,7 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({
 }) => {
     const [verificationCode, setVerificationCode] = useState('');
     const [emailTouched, setEmailTouched] = useState(false);
+    const [lastNotifiedStatus, setLastNotifiedStatus] = useState<boolean | null>(null);
     
     const {
         isLoading,
@@ -39,10 +40,18 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({
         validateParentEmail
     } = useEmailVerification();
 
-    // Notificar al componente padre cuando se complete la verificación
+    // Notificar al componente padre cuando se complete la verificación - solo una vez por cambio
+    const notifyVerificationComplete = useCallback((isVerified: boolean) => {
+        if (lastNotifiedStatus !== isVerified) {
+            setLastNotifiedStatus(isVerified);
+            onVerificationComplete(isVerified);
+        }
+    }, [onVerificationComplete, lastNotifiedStatus]);
+
     useEffect(() => {
-        onVerificationComplete(isCodeValid === true);
-    }, [isCodeValid, onVerificationComplete]);
+        const currentStatus = isCodeValid === true;
+        notifyVerificationComplete(currentStatus);
+    }, [isCodeValid, notifyVerificationComplete]);
 
     // Validaciones del email
     const getEmailError = (): string => {
@@ -101,6 +110,7 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({
         if (verificationSent) {
             reset();
             setVerificationCode('');
+            setLastNotifiedStatus(null);
         }
     };
 
@@ -207,6 +217,7 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({
                                 reset();
                                 setVerificationCode('');
                                 setEmailTouched(false);
+                                setLastNotifiedStatus(null);
                             }}
                             className="text-sm text-gray-600 hover:text-gray-800 hover:underline"
                         >

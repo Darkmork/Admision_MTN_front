@@ -55,20 +55,36 @@ import { UserManagement } from '../components/users';
 import { InterviewManagement } from '../components/interviews';
 import SharedCalendar from '../components/admin/SharedCalendar';
 import { Application, applicationService } from '../services/applicationService';
-import { mockApplications, mockApplicationService } from '../services/mockApplicationService';
+// Mock service removido - usando applicationService real
 import { useAuth } from '../context/AuthContext';
 import ApplicationsTable from '../components/admin/ApplicationsTable';
 import SimpleToast from '../components/ui/SimpleToast';
-import { analyticsService, CompleteAnalytics } from '../services/analyticsService';
+import { microservicesAnalyticsService, CompleteAnalytics } from '../services/analyticsService.microservices';
 import AdminDataTables from '../components/admin/AdminDataTables';
 import InstitutionalEmailManager from '../components/admin/InstitutionalEmailManager';
-import UnifiedDashboard from '../components/dashboard/UnifiedDashboard';
-import { unifiedApiService, DashboardAPI } from '../services/unifiedApiService';
+import StudentDetailModal from '../components/admin/StudentDetailModal';
+import MicroservicesDashboard from '../components/admin/MicroservicesDashboard';
 
+// Componente para manejar navegación a reportes sin causar re-render issues
+const ReportesNavigation: React.FC = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    navigate('/reportes');
+  }, [navigate]);
+
+  return (
+    <div className="flex items-center justify-center py-8">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-azul-monte-tabor mx-auto mb-4"></div>
+        <p className="text-gray-600">Redirigiendo al dashboard de reportes...</p>
+      </div>
+    </div>
+  );
+};
 
 const sections = [
   { key: 'dashboard', label: 'Dashboard General' },
-  { key: 'unified-dashboard', label: '🎯 Dashboard Unificado' },
   { key: 'tablas', label: 'Tablas de Datos' },
   { key: 'postulaciones', label: 'Gestión de Postulaciones' },
   { key: 'evaluaciones', label: 'Gestión de Evaluaciones' },
@@ -79,6 +95,7 @@ const sections = [
   { key: 'analytics', label: 'Análisis de Datos' },
   { key: 'reportes', label: 'Reportes' },
   { key: 'usuarios', label: 'Gestión de Usuarios' },
+  { key: 'microservicios', label: '🏗️ Microservicios' },
   { key: 'notificaciones', label: 'Notificaciones' },
   { key: 'historial', label: 'Historial de Acciones' },
 
@@ -89,6 +106,8 @@ const AdminDashboard: React.FC = () => {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedPostulante, setSelectedPostulante] = useState<any>(null);
   const [dateFilter, setDateFilter] = useState({ start: '', end: '' });
   const [statusFilter, setStatusFilter] = useState('all');
   
@@ -158,10 +177,6 @@ const AdminDashboard: React.FC = () => {
     message: ''
   });
 
-  // Estados para dashboard unificado
-  const [unifiedDashboardData, setUnifiedDashboardData] = useState<any>(null);
-  const [isLoadingUnifiedDashboard, setIsLoadingUnifiedDashboard] = useState(false);
-  const [unifiedDashboardError, setUnifiedDashboardError] = useState<string | null>(null);
 
   useEffect(() => {
     loadApplications();
@@ -176,9 +191,6 @@ const AdminDashboard: React.FC = () => {
     }
     if (activeSection === 'analytics') {
       loadAnalyticsData();
-    }
-    if (activeSection === 'unified-dashboard') {
-      loadUnifiedDashboardData();
     }
   }, [activeSection]);
 
@@ -200,12 +212,12 @@ const AdminDashboard: React.FC = () => {
   const loadLocalApplications = async () => {
     try {
       setIsLoadingLocalApplications(true);
-      const apps = await mockApplicationService.getAllApplications();
+      const apps = await applicationService.getAllApplications();
       setLocalApplications(apps);
     } catch (error) {
       console.error('Error loading local applications:', error);
       // Fallback a datos estáticos
-      setLocalApplications(mockApplications);
+      // Fallback eliminado - solo datos reales del backend
     } finally {
       setIsLoadingLocalApplications(false);
     }
@@ -229,6 +241,85 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  // Transformar datos de Application a Postulante para el modal
+  const transformApplicationToPostulante = (app: Application): any => {
+    const birthDate = new Date(app.student.birthDate);
+    const today = new Date();
+    const age = today.getFullYear() - birthDate.getFullYear() - 
+               (today.getMonth() < birthDate.getMonth() || 
+                (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate()) ? 1 : 0);
+    
+    const nombreCompleto = `${app.student.firstName} ${app.student.lastName}${app.student.maternalLastName ? ' ' + app.student.maternalLastName : ''}`;
+    
+    return {
+      id: app.id,
+      // Datos básicos del estudiante
+      nombreCompleto,
+      nombres: app.student.firstName,
+      apellidoPaterno: app.student.lastName,
+      apellidoMaterno: app.student.maternalLastName || '',
+      rut: app.student.rut,
+      fechaNacimiento: app.student.birthDate,
+      edad: age,
+      
+      // Categorías especiales
+      esHijoFuncionario: app.student.isEmployeeChild || false,
+      nombrePadreFuncionario: app.student.employeeParentName,
+      esHijoExalumno: app.student.isAlumniChild || false,
+      anioEgresoExalumno: app.student.alumniParentYear,
+      esAlumnoInclusion: app.student.isInclusionStudent || false,
+      tipoInclusion: app.student.inclusionType,
+      notasInclusion: app.student.inclusionNotes,
+      
+      email: app.student.email,
+      direccion: app.student.address,
+      
+      // Datos académicos
+      cursoPostulado: app.student.gradeApplied,
+      colegioActual: app.student.currentSchool,
+      colegioDestino: (app.student.targetSchool || 'MONTE_TABOR'),
+      añoAcademico: '2025',
+      
+      // Estado de postulación
+      estadoPostulacion: app.status,
+      fechaPostulacion: app.submissionDate,
+      fechaActualizacion: app.submissionDate,
+      
+      // Contacto principal (usar apoderado como principal)
+      nombreContactoPrincipal: app.guardian?.fullName || 'No especificado',
+      emailContacto: app.guardian?.email || '',
+      telefonoContacto: app.guardian?.phone || '',
+      relacionContacto: app.guardian?.relationship || '',
+      
+      // Datos de padres
+      nombrePadre: app.father?.fullName,
+      emailPadre: app.father?.email,
+      telefonoPadre: app.father?.phone,
+      profesionPadre: app.father?.profession,
+      
+      nombreMadre: app.mother?.fullName,
+      emailMadre: app.mother?.email,
+      telefonoMadre: app.mother?.phone,
+      profesionMadre: app.mother?.profession,
+      
+      // Información académica y evaluaciones
+      documentosCompletos: app.documents ? app.documents.length > 0 : false,
+      cantidadDocumentos: app.documents ? app.documents.length : 0,
+      evaluacionPendiente: app.status === 'PENDING' || app.status === 'UNDER_REVIEW',
+      entrevistaProgramada: app.status === 'INTERVIEW_SCHEDULED',
+      fechaEntrevista: app.status === 'INTERVIEW_SCHEDULED' ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() : undefined,
+      
+      // Observaciones
+      necesidadesEspeciales: app.student.additionalNotes?.toLowerCase().includes('especial') || false,
+      observaciones: app.student.additionalNotes,
+      notasInternas: undefined,
+      
+      // Metadatos
+      creadoPor: app.applicantUser?.email || 'Sistema',
+      fechaCreacion: app.submissionDate
+    };
+  };
+
   const loadAdminApplications = async () => {
     try {
       setIsLoadingAdminApplications(true);
@@ -248,7 +339,7 @@ const AdminDashboard: React.FC = () => {
       setAnalyticsError(null);
       console.log('🔄 Cargando datos de analytics...');
       
-      const data = await analyticsService.getCompleteAnalytics();
+      const data = await microservicesAnalyticsService.getCompleteAnalytics();
       console.log('✅ Datos de analytics obtenidos:', data);
       
       setAnalyticsData(data);
@@ -267,33 +358,6 @@ const AdminDashboard: React.FC = () => {
       }
     } finally {
       setIsLoadingAnalytics(false);
-    }
-  };
-
-  const loadUnifiedDashboardData = async () => {
-    try {
-      setIsLoadingUnifiedDashboard(true);
-      setUnifiedDashboardError(null);
-      console.log('🎯 Cargando dashboard unificado...');
-      
-      // Un solo API call para obtener todos los datos del dashboard
-      const data = await DashboardAPI.getAdmin();
-      console.log('✅ Dashboard unificado obtenido:', data);
-      
-      setUnifiedDashboardData(data);
-    } catch (error: any) {
-      console.error('❌ Error cargando dashboard unificado:', error);
-      setUnifiedDashboardError(error.message || 'Error al cargar dashboard unificado');
-      
-      if (error.response?.status !== 401) {
-        addNotification({
-          type: 'error',
-          title: 'Error del Dashboard Unificado',
-          message: 'No se pudo cargar el dashboard: ' + error.message
-        });
-      }
-    } finally {
-      setIsLoadingUnifiedDashboard(false);
     }
   };
 
@@ -336,6 +400,18 @@ Esta acción:
     }
   };
 
+  // Funciones para manejar el modal de detalles
+  const handleViewApplicationDetail = (app: Application) => {
+    const postulante = transformApplicationToPostulante(app);
+    setSelectedPostulante(postulante);
+    setIsDetailModalOpen(true);
+  };
+
+  const handleCloseDetailModal = () => {
+    setIsDetailModalOpen(false);
+    setSelectedPostulante(null);
+  };
+
   const renderSection = () => {
     switch (activeSection) {
       case 'tablas':
@@ -345,103 +421,6 @@ Esta acción:
           </div>
         );
 
-      case 'unified-dashboard':
-        return (
-          <div className="space-y-6">
-            {/* Header con información del sistema consolidado */}
-            <Card className="p-6 bg-gradient-to-r from-green-500 to-blue-600 text-white">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold mb-2">
-                    🎯 Dashboard Unificado API v2.0
-                  </h2>
-                  <p className="text-green-100 mb-2">
-                    Sistema consolidado: 317 → 50 endpoints (~84% reducción)
-                  </p>
-                  <p className="text-green-200 text-sm">
-                    1 API call vs 8-15 calls tradicionales • Latencia reducida 75% • Mejor caching
-                  </p>
-                </div>
-                <div className="text-right">
-                  <Button 
-                    variant="outline" 
-                    className="text-white border-white hover:bg-white hover:text-green-600 mb-2"
-                    onClick={loadUnifiedDashboardData}
-                    disabled={isLoadingUnifiedDashboard}
-                  >
-                    <FiRefreshCw className={`w-4 h-4 mr-2 ${isLoadingUnifiedDashboard ? 'animate-spin' : ''}`} />
-                    {isLoadingUnifiedDashboard ? 'Cargando...' : 'Actualizar'}
-                  </Button>
-                  <p className="text-xs text-green-100">
-                    API Calls optimizadas
-                  </p>
-                </div>
-              </div>
-            </Card>
-
-            {/* Mostrar el componente UnifiedDashboard */}
-            <UnifiedDashboard />
-
-            {/* Métricas de performance del nuevo sistema */}
-            <Card className="p-6 bg-blue-50 border-blue-200">
-              <h3 className="text-lg font-semibold text-blue-900 mb-4 flex items-center">
-                <FiBarChart2 className="w-5 h-5 mr-2" />
-                Métricas de Performance del Sistema Unificado
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="text-center">
-                  <p className="text-3xl font-bold text-blue-600">84%</p>
-                  <p className="text-sm text-blue-700">Reducción de Endpoints</p>
-                  <p className="text-xs text-gray-600">317 → ~50 endpoints</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-3xl font-bold text-green-600">80%</p>
-                  <p className="text-sm text-green-700">Menos API Calls</p>
-                  <p className="text-xs text-gray-600">8-15 → 1-3 calls</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-3xl font-bold text-purple-600">75%</p>
-                  <p className="text-sm text-purple-700">Mejora Latencia</p>
-                  <p className="text-xs text-gray-600">~2000ms → ~500ms</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-3xl font-bold text-orange-600">60%</p>
-                  <p className="text-sm text-orange-700">Reducción Bandwidth</p>
-                  <p className="text-xs text-gray-600">Datos consolidados</p>
-                </div>
-              </div>
-            </Card>
-
-            {/* Comparación de arquitecturas */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="p-6 border-red-200 bg-red-50">
-                <h3 className="text-lg font-semibold text-red-800 mb-4">
-                  ❌ Arquitectura Anterior (Fragmentada)
-                </h3>
-                <ul className="space-y-2 text-sm text-red-700">
-                  <li>• 317 endpoints distribuidos en 37 controladores</li>
-                  <li>• 25 servicios frontend separados</li>
-                  <li>• 8-15 API calls por dashboard</li>
-                  <li>• Lógica duplicada en múltiples endpoints</li>
-                  <li>• Mantenimiento complejo con alta fragmentación</li>
-                </ul>
-              </Card>
-
-              <Card className="p-6 border-green-200 bg-green-50">
-                <h3 className="text-lg font-semibold text-green-800 mb-4">
-                  ✅ Nueva Arquitectura (Consolidada)
-                </h3>
-                <ul className="space-y-2 text-sm text-green-700">
-                  <li>• ~50 endpoints principales con parámetros dinámicos</li>
-                  <li>• 1 servicio unificado con métodos especializados</li>
-                  <li>• 1-3 API calls máximo por dashboard</li>
-                  <li>• Lógica centralizada y reutilizable</li>
-                  <li>• Mantenimiento simplificado con patrones estándar</li>
-                </ul>
-              </Card>
-            </div>
-          </div>
-        );
 
       case 'dashboard':
         return (
@@ -633,10 +612,7 @@ Esta acción:
               <ApplicationsTable
                 applications={adminApplications}
                 isLoading={isLoadingAdminApplications}
-                onView={(app) => {
-                  // TODO: Implementar vista detallada
-                  console.log('Ver postulación:', app);
-                }}
+                onView={handleViewApplicationDetail}
                 onArchive={confirmArchive}
               />
             </Card>
@@ -647,6 +623,13 @@ Esta acción:
         return (
           <div className="space-y-6">
             <UserManagement onBack={() => setActiveSection('dashboard')} />
+          </div>
+        );
+
+      case 'microservicios':
+        return (
+          <div className="space-y-6">
+            <MicroservicesDashboard />
           </div>
         );
 
@@ -676,9 +659,12 @@ Esta acción:
         );
 
       case 'reportes':
-        // Navegar al dashboard de reportes
-        navigate('/reportes');
-        return null;
+        // Navegar al dashboard de reportes usando useEffect para evitar navegación durante render
+        return (
+          <div className="space-y-6">
+            <ReportesNavigation />
+          </div>
+        );
 
       case 'analytics':
         return (
@@ -1171,6 +1157,25 @@ Esta acción:
           onClose={() => setApplicationToast(null)}
         />
       )}
+
+      {/* Modal de detalles del estudiante */}
+      <StudentDetailModal
+        isOpen={isDetailModalOpen}
+        onClose={handleCloseDetailModal}
+        postulante={selectedPostulante}
+        onEdit={(postulante) => {
+          handleCloseDetailModal();
+          // TODO: Implementar edición si se necesita
+        }}
+        onScheduleInterview={(postulante) => {
+          handleCloseDetailModal();
+          // TODO: Implementar programación de entrevista si se necesita
+        }}
+        onUpdateStatus={(postulante, status) => {
+          handleCloseDetailModal();
+          // TODO: Implementar actualización de estado si se necesita
+        }}
+      />
     </div>
   );
 };

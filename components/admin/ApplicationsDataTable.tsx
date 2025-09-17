@@ -5,6 +5,7 @@ import Button from '../ui/Button';
 import Modal from '../ui/Modal';
 import { FiEdit, FiEye, FiDownload, FiCalendar, FiFileText, FiUser } from 'react-icons/fi';
 import { useNotifications } from '../../context/AppContext';
+import { applicationService } from '../../services/applicationService';
 
 interface Application {
     id: number;
@@ -301,72 +302,43 @@ const ApplicationsDataTable: React.FC<ApplicationsDataTableProps> = ({
     const loadApplications = async (page = 1, size = 20) => {
         setLoading(true);
         try {
-            // Simular datos mientras se implementa la API real
-            const mockApplications: Application[] = [
-                {
-                    id: 1,
-                    studentName: 'Ana María García López',
-                    studentRut: '25.123.456-7',
-                    studentBirthDate: '2015-03-15',
-                    gradeApplied: '3° Básico',
-                    status: 'SUBMITTED',
-                    submissionDate: '2025-01-15',
-                    parentName: 'María López González',
-                    parentEmail: 'maria.lopez@email.com',
-                    parentPhone: '+56987654321',
-                    previousSchool: 'Colegio San José',
-                    hasSpecialNeeds: false,
-                    academicYear: '2025',
-                    evaluationStatus: 'PENDING',
-                    documentsComplete: true,
-                    createdAt: '2025-01-15T10:30:00'
-                },
-                {
-                    id: 2,
-                    studentName: 'Carlos Eduardo Pérez Silva',
-                    studentRut: '24.987.654-3',
-                    studentBirthDate: '2014-07-22',
-                    gradeApplied: '4° Básico',
-                    status: 'UNDER_REVIEW',
-                    submissionDate: '2025-01-12',
-                    parentName: 'Eduardo Pérez Martínez',
-                    parentEmail: 'eduardo.perez@email.com',
-                    parentPhone: '+56912345678',
-                    previousSchool: 'Escuela Municipal Las Flores',
-                    hasSpecialNeeds: true,
-                    specialNeedsDescription: 'Déficit atencional con hiperactividad',
-                    academicYear: '2025',
-                    evaluationStatus: 'IN_PROGRESS',
-                    documentsComplete: true,
-                    admissionScore: 85,
-                    createdAt: '2025-01-12T14:20:00'
-                },
-                {
-                    id: 3,
-                    studentName: 'Sofía Isabella Rodríguez Torres',
-                    studentRut: '25.555.888-0',
-                    studentBirthDate: '2015-11-08',
-                    gradeApplied: '2° Básico',
-                    status: 'INTERVIEW_SCHEDULED',
-                    submissionDate: '2025-01-10',
-                    parentName: 'Isabella Torres Vargas',
-                    parentEmail: 'isabella.torres@email.com',
-                    parentPhone: '+56923456789',
-                    hasSpecialNeeds: false,
-                    academicYear: '2025',
-                    evaluationStatus: 'IN_PROGRESS',
-                    interviewDate: '2025-02-05',
-                    documentsComplete: true,
-                    admissionScore: 92,
-                    createdAt: '2025-01-10T09:15:00'
-                }
-            ];
+            // Obtener aplicaciones reales del backend
+            const response = await applicationService.getAllApplications({
+                page: page - 1, // Backend usa 0-based indexing
+                size: size
+            });
+            
+            // Mapear datos del backend al formato esperado por el componente
+            const mappedApplications: Application[] = response.applications.map((app: any) => ({
+                id: app.id,
+                studentName: `${app.student.firstName} ${app.student.lastName}`,
+                studentRut: app.student.rut,
+                studentBirthDate: app.student.birthDate,
+                gradeApplied: app.student.grade,
+                status: app.status,
+                submissionDate: app.submissionDate || app.createdAt,
+                parentName: `${app.father?.firstName || ''} ${app.father?.lastName || ''}`.trim() || 
+                           `${app.mother?.firstName || ''} ${app.mother?.lastName || ''}`.trim() || 
+                           'No especificado',
+                parentEmail: app.father?.email || app.mother?.email || 'No especificado',
+                parentPhone: app.father?.phone || app.mother?.phone || 'No especificado',
+                previousSchool: app.student.currentSchool || 'No especificado',
+                hasSpecialNeeds: app.student.hasSpecialNeeds || false,
+                specialNeedsDescription: app.student.specialNeedsDescription || '',
+                academicYear: new Date().getFullYear().toString(),
+                evaluationStatus: app.evaluationStatus || 'PENDING',
+                interviewDate: app.interviewDate,
+                documentsComplete: app.documentsComplete || false,
+                admissionScore: app.admissionScore,
+                createdAt: app.createdAt,
+                updatedAt: app.updatedAt
+            }));
 
-            setApplications(mockApplications);
+            setApplications(mappedApplications);
             setPagination({
                 current: page,
                 pageSize: size,
-                total: mockApplications.length
+                total: response.totalElements
             });
         } catch (error: any) {
             console.error('Error cargando aplicaciones:', error);
