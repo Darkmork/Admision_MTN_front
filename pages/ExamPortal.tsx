@@ -39,7 +39,7 @@ const ExamPortal: React.FC = () => {
                     </h1>
                     <p className="text-xl text-gris-piedra max-w-3xl mx-auto leading-relaxed">
                         Bienvenido al portal de exámenes de admisión. Aquí encontrarás toda la información 
-                        sobre las asignaturas a evaluar, fechas de exámenes y material de estudio.
+                        sobre las asignaturas a evaluar y fechas de exámenes.
                     </p>
                 </div>
 
@@ -50,7 +50,7 @@ const ExamPortal: React.FC = () => {
                         <div>
                             <h3 className="font-bold text-azul-monte-tabor mb-2">Información Importante</h3>
                             <ul className="text-gris-piedra space-y-1 text-sm">
-                                <li>• Los exámenes se realizarán del 15 al 17 de agosto de 2024</li>
+                                <li>• Los exámenes tienen una duración de 1 hora y 20 minutos</li>
                                 <li>• Es obligatorio rendir las tres asignaturas para completar el proceso</li>
                                 <li>• Debes llegar 30 minutos antes de la hora programada</li>
                                 <li>• Trae tu cédula de identidad y materiales básicos (lápiz, goma)</li>
@@ -133,7 +133,7 @@ const ExamPortal: React.FC = () => {
                             {/* Action Button */}
                             <Link to={`/examenes/${subject.id.toLowerCase()}`}>
                                 <Button variant="primary" className="w-full">
-                                    Ver Detalles y Material de Estudio
+                                    Ver Detalles del Examen
                                 </Button>
                             </Link>
                         </Card>
@@ -151,27 +151,27 @@ const ExamPortal: React.FC = () => {
                         {[
                             {
                                 step: 1,
-                                title: "Revisión de Material",
-                                description: "Estudia el material proporcionado para cada asignatura",
-                                date: "Hasta el 14 de agosto"
+                                title: "Preparación",
+                                description: "Revisa los temas y requisitos para cada asignatura",
+                                date: "Previo al examen"
                             },
                             {
                                 step: 2,
                                 title: "Confirmación de Horarios",
                                 description: "Confirma tu asistencia a los horarios asignados",
-                                date: "13 de agosto"
+                                date: "Fecha fija"
                             },
                             {
                                 step: 3,
                                 title: "Rendir Exámenes",
-                                description: "Presenta los exámenes en las fechas programadas",
-                                date: "15-17 de agosto"
+                                description: "Presenta los exámenes - 31 preguntas en 80 minutos",
+                                date: "Fecha programada"
                             },
                             {
                                 step: 4,
                                 title: "Resultados",
-                                description: "Consulta tus resultados en el portal",
-                                date: "25 de agosto"
+                                description: "Consulta tus resultados en el portal (puntaje mínimo 60%)",
+                                date: "Posterior al examen"
                             }
                         ].map((item, index) => (
                             <div key={item.step} className={`flex items-center w-full mb-8 ${index % 2 === 0 ? 'justify-start' : 'justify-end'}`}>

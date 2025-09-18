@@ -40,12 +40,12 @@ class HttpClient {
         // Add timestamp for response time calculation
         (config as any).startTime = Date.now();
         
-        console.log(`🔄 API Request: ${config.method?.toUpperCase()} ${config.url}`);
+        // Request logging removed for security
         return config;
       },
       (error) => {
         this.metrics.errorCount++;
-        console.error('❌ Request Error:', error);
+        // Error details removed for security
         return Promise.reject(error);
       }
     );
@@ -57,7 +57,7 @@ class HttpClient {
         if (startTime) {
           const responseTime = Date.now() - startTime;
           this.metrics.responseTime.push(responseTime);
-          console.log(`✅ API Response: ${response.config.method?.toUpperCase()} ${response.config.url} (${responseTime}ms)`);
+          // Response logging removed for security
         }
         return response;
       },
@@ -67,7 +67,7 @@ class HttpClient {
         if (startTime) {
           const responseTime = Date.now() - startTime;
           this.metrics.responseTime.push(responseTime);
-          console.error(`❌ API Error: ${error.config?.method?.toUpperCase()} ${error.config?.url} (${responseTime}ms)`, error.response?.status);
+          // Error logging removed for security
         }
         return Promise.reject(error);
       }
@@ -106,7 +106,7 @@ class HttpClient {
 
   setRetryConfig(config: { attempts?: number; delay?: number; jitter?: boolean }) {
     // Simple retry logic - could be enhanced with exponential backoff
-    console.log('Retry config set:', config);
+    // Retry config logging removed for security
   }
 
   // Health check method
@@ -115,7 +115,7 @@ class HttpClient {
       const response = await this.axiosInstance.get('/health');
       return response.status === 200;
     } catch (error) {
-      console.error('Health check failed:', error);
+      // Health check error logging removed for security
       return false;
     }
   }

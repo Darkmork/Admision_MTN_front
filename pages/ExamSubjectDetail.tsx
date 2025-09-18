@@ -3,13 +3,11 @@ import { useParams, Link } from 'react-router-dom';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
-import { examSubjects, getTopicsByLevel, educationalLevels } from '../services/staticData';
+import { examSubjects, getTopicsByLevel, educationalLevelsForForm } from '../services/staticData';
 import { 
     ArrowLeft, 
     Clock, 
     BookOpen, 
-    Download, 
-    Play,
     Calendar,
     CheckCircle,
     Calculator,
@@ -59,23 +57,6 @@ const ExamSubjectDetail: React.FC = () => {
         return `${mins} minutos`;
     };
 
-    const getMaterialIcon = (type: string) => {
-        switch (type) {
-            case 'pdf':
-                return '📄';
-            case 'video':
-                return '🎥';
-            case 'link':
-                return '🔗';
-            default:
-                return '📋';
-        }
-    };
-
-    const handleDownloadMaterial = (material: any) => {
-        // Simulación de descarga
-        console.log(`Descargando: ${material.title}`);
-    };
 
     return (
         <div className="bg-gray-50 min-h-screen py-12">
@@ -155,7 +136,7 @@ const ExamSubjectDetail: React.FC = () => {
                         Los temas del examen se adaptan según tu nivel educativo actual.
                     </p>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        {educationalLevels.map((level) => (
+                        {educationalLevelsForForm.map((level) => (
                             <button
                                 key={level.value}
                                 onClick={() => setSelectedLevel(level.value)}
@@ -177,7 +158,7 @@ const ExamSubjectDetail: React.FC = () => {
                 {/* Topics */}
                 <Card className="p-6 mb-8">
                     <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">
-                        Temas a Evaluar - {educationalLevels.find(l => l.value === selectedLevel)?.label}
+                        Temas a Evaluar - {educationalLevelsForForm.find(l => l.value === selectedLevel)?.label}
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {getTopicsByLevel(subject.id, selectedLevel).map((topic, index) => (
@@ -191,61 +172,6 @@ const ExamSubjectDetail: React.FC = () => {
                     </div>
                 </Card>
 
-                {/* Study Materials */}
-                <Card className="p-6 mb-8">
-                    <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">
-                        Material de Estudio
-                    </h2>
-                    <div className="space-y-4">
-                        {subject.studyMaterials.map((material) => (
-                            <div key={material.id} className="border border-gray-200 rounded-lg p-4">
-                                <div className="flex items-start justify-between">
-                                    <div className="flex items-start gap-3 flex-1">
-                                        <div className="text-2xl">
-                                            {getMaterialIcon(material.type)}
-                                        </div>
-                                        <div className="flex-1">
-                                            <h3 className="font-semibold text-azul-monte-tabor mb-1">
-                                                {material.title}
-                                            </h3>
-                                            <p className="text-gris-piedra text-sm mb-2">
-                                                {material.description}
-                                            </p>
-                                            <Badge 
-                                                variant={material.type === 'video' ? 'warning' : 'info'}
-                                                size="sm"
-                                            >
-                                                {material.type.toUpperCase()}
-                                            </Badge>
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-2 ml-4">
-                                        {material.type === 'video' ? (
-                                            <Button 
-                                                size="sm" 
-                                                variant="outline"
-                                                leftIcon={<Play className="w-4 h-4" />}
-                                                onClick={() => handleDownloadMaterial(material)}
-                                            >
-                                                Ver
-                                            </Button>
-                                        ) : (
-                                            <Button 
-                                                size="sm" 
-                                                variant="outline"
-                                                leftIcon={<Download className="w-4 h-4" />}
-                                                onClick={() => handleDownloadMaterial(material)}
-                                                disabled={!material.downloadable}
-                                            >
-                                                Descargar
-                                            </Button>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </Card>
 
                 {/* Exam Schedule */}
                 <Card className="p-6">
@@ -287,7 +213,7 @@ const ExamSubjectDetail: React.FC = () => {
                                     <span className="text-sm text-gris-piedra"><strong>Lugar:</strong> {schedule.location}</span>
                                 </div>
                                 <div>
-                                    <span className="text-sm text-gris-piedra"><strong>Duración:</strong> 1 hora y 20 minutos</span>
+                                    <span className="text-sm text-gris-piedra"><strong>Duración:</strong> {formatDuration(subject.duration)}</span>
                                 </div>
                             </div>
                         ))}
