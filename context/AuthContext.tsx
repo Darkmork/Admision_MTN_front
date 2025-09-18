@@ -50,7 +50,7 @@ const mapBackendRole = (backendRole: string): User['role'] => {
         case 'TEACHER_ENGLISH':
             return 'TEACHER_ENGLISH';
         default:
-            console.warn(`Unknown backend role: ${backendRole}, defaulting to TEACHER`);
+            // Unknown role handling removed for security
             return 'TEACHER';
     }
 };
@@ -66,7 +66,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             try {
                 setUser(JSON.parse(savedUser));
             } catch (error) {
-                console.error('Error parsing saved user:', error);
+                // Error parsing logging removed for security
                 localStorage.removeItem('authenticated_user');
             }
         }
@@ -77,12 +77,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setIsLoading(true);
         
         try {
-            console.log('🚀 AuthContext: Attempting login for:', email);
+            // Login attempt logging removed for security
             const response = await authService.login({ email, password });
-            console.log('📥 AuthContext: Backend response:', response);
+            // Backend response logging removed for security
             
             if (response.success && response.token && response.email) {
-                console.log('✅ AuthContext: Login successful, saving token and user data');
+                // Login success logging removed for security
                 const userData: User = {
                     id: Date.now().toString(), // Temporal, el backend debería devolver el ID
                     email: response.email,
@@ -117,15 +117,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 // Guardar token y usuario
                 localStorage.setItem('auth_token', response.token);
                 localStorage.setItem('authenticated_user', JSON.stringify(userData));
-                console.log('💾 AuthContext: Token and user saved to localStorage');
+                // Token save logging removed for security
                 setUser(userData);
-                console.log('👤 AuthContext: User set in state, login complete');
+                // Login completion logging removed for security
             } else {
-                console.error('❌ AuthContext: Login response missing required fields:', response);
+                // Login error logging removed for security
                 throw new Error(response.message || 'Error en la autenticación');
             }
         } catch (error: any) {
-            console.error('❌ AuthContext: Login error:', error);
+            // Login error logging removed for security
             throw new Error(error.message || 'Error en la autenticación');
         } finally {
             setIsLoading(false);

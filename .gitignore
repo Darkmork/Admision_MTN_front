@@ -1,25 +1,161 @@
-# Logs
-logs
-*.log
+# =============================================================================
+# MTN Admission System - Frontend .gitignore
+# CRITICAL: Never commit sensitive data to version control
+# =============================================================================
+
+# Dependencies
+node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
+# Build outputs
+dist/
+dist-ssr/
+build/
+.next/
+out/
+.nuxt/
+.output/
+.cache/
+
+# Environment variables and secrets - NEVER COMMIT THESE
+.env*
+!.env.example
+.env.local
+.env.development
+.env.staging
+.env.production
+*.env
+
+# Private keys and certificates - SECURITY CRITICAL
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+.ssh/
+secrets/
+keys/
+
+# Database files and dumps
+*.sql
+*.db
+*.sqlite
+*.sqlite3
+database/
+dumps/
+
+# Logs and monitoring
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.npm
+.eslintcache
+coverage/
+.nyc_output
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+.cache/
 *.local
+
+# Operating system files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
 
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
-.idea
-.DS_Store
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-*
+.atom/
+
+# IDE and editor specific files
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
-.vercel
+
+# Deployment and hosting
+.vercel/
+.netlify/
+.firebase/
+.surge/
+now.json
+
+# Testing
+coverage/
+.nyc_output/
+.coverage/
+*.lcov
+
+# Package manager specific
+.yarn/
+.pnp.*
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.js
+
+# Backup files
+*.backup
+*.bak
+*.backup.*
+backup/
+
+# Terraform and infrastructure
+*.tfstate
+*.tfstate.*
+.terraform/
+terraform.tfvars
+
+# Docker and containers
+.dockerignore
+Dockerfile.prod
+docker-compose.override.yml
+
+# Archive files
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# Development tools
+.eslintcache
+.stylelintcache
+.parcel-cache/
+
+# Security scanning results
+.snyk
+security-report.*
+vulnerability-report.*
