@@ -54,63 +54,38 @@ const EvaluatorManagement: React.FC<EvaluatorManagementProps> = ({ applications 
   const loadAllEvaluators = async () => {
     setLoading(true);
     try {
-      console.log('🔄 Cargando evaluadores desde evaluation service...');
-
-      const evaluatorRoleMap = {
-        'TEACHER_LANGUAGE': 'TEACHER_LANGUAGE',
-        'TEACHER_MATHEMATICS': 'TEACHER_MATHEMATICS',
-        'TEACHER_ENGLISH': 'TEACHER_ENGLISH',
-        'CYCLE_DIRECTOR': 'CYCLE_DIRECTOR',
-        'PSYCHOLOGIST': 'PSYCHOLOGIST'
-      };
-
+      console.log('🔄 Cargando evaluadores reales del sistema...');
+      
+      // Obtener solo los usuarios del colegio (staff) que pueden ser evaluadores
+      const usersResponse = await userService.getSchoolStaffUsers();
+      const allStaff = usersResponse.content || [];
+      
+      // Definir qué roles pueden ser evaluadores
+      const evaluatorRoles = [
+        UserRole.TEACHER_LANGUAGE,
+        UserRole.TEACHER_MATHEMATICS, 
+        UserRole.TEACHER_ENGLISH,
+        UserRole.CYCLE_DIRECTOR,
+        UserRole.PSYCHOLOGIST
+      ];
+      
+      // Agrupar evaluadores por rol
       const evaluatorData: Record<string, EvaluatorWithSchedule[]> = {};
-
-      for (const [userRole, evaluationRole] of Object.entries(evaluatorRoleMap)) {
-        try {
-          console.log(`🔍 Cargando evaluadores para rol: ${evaluationRole}...`);
-
-          let roleEvaluators;
-          try {
-            roleEvaluators = await evaluatorService.getEvaluatorsByRole(evaluationRole);
-          } catch (authError) {
-            console.log(`⚠️ Auth error, usando endpoint público para ${evaluationRole}`);
-            roleEvaluators = await evaluatorService.getEvaluatorsByRolePublic(evaluationRole);
-          }
-
-          const evaluatorsWithSchedule: EvaluatorWithSchedule[] = roleEvaluators.map(evaluator => ({
-            ...evaluator,
-            role: userRole as UserRole,
-            hasSchedule: false,
-            totalSlots: 0,
-            activeSlots: 0,
-            nextAvailableSlot: 'Sin configurar'
-          }));
-
-          evaluatorData[userRole] = evaluatorsWithSchedule;
-
-          // Mapeo de labels personalizado para evaluadores especializados
-          const evaluatorLabels = {
-            'TEACHER_LANGUAGE': 'Profesor/a de Lenguaje',
-            'TEACHER_MATHEMATICS': 'Profesor/a de Matemáticas',
-            'TEACHER_ENGLISH': 'Profesor/a de Inglés',
-            'CYCLE_DIRECTOR': 'Director/a de Ciclo',
-            'PSYCHOLOGIST': 'Psicólogo/a'
-          };
-
-          console.log(`✅ ${evaluatorLabels[userRole as keyof typeof evaluatorLabels]}:`, evaluatorsWithSchedule.length, 'evaluadores cargados');
-
-        } catch (roleError) {
-          console.error(`❌ Error cargando rol ${evaluationRole}:`, roleError);
-          evaluatorData[userRole] = [];
-        }
-      }
-
+      
+      evaluatorRoles.forEach(role => {
+        const roleUsers = allStaff.filter(user => 
+          user.role === role && user.active && user.emailVerified
+        );
+        evaluatorData[role] = roleUsers;
+        console.log(`✅ Evaluadores ${USER_ROLE_LABELS[role]}:`, roleUsers.length);
+      });
+      
       setEvaluators(evaluatorData);
-      console.log('✅ Todos los evaluadores cargados exitosamente');
+      console.log('✅ Evaluadores cargados exitosamente:', evaluatorData);
 
     } catch (error) {
       console.error('❌ Error cargando evaluadores:', error);
+      // Fallback a datos vacíos
       setEvaluators({
         [UserRole.TEACHER_LANGUAGE]: [],
         [UserRole.TEACHER_MATHEMATICS]: [],
@@ -190,14 +165,14 @@ const EvaluatorManagement: React.FC<EvaluatorManagementProps> = ({ applications 
         console.warn('Auth failed, trying public endpoint');
         result = await evaluatorService.assignEvaluationsToApplicationPublic(applicationId);
       }
-
+      
       console.log('Evaluaciones asignadas:', result);
-
+      
       // Recargar las evaluaciones de la aplicación
       if (selectedApplication?.id === applicationId) {
         await loadApplicationEvaluations(applicationId);
       }
-
+      
       onRefresh?.();
       alert('Evaluaciones asignadas correctamente');
     } catch (error) {
@@ -210,7 +185,7 @@ const EvaluatorManagement: React.FC<EvaluatorManagementProps> = ({ applications 
 
   const handleSpecificAssignment = async () => {
     if (!selectedApplication || !selectedEvaluationType || !selectedEvaluator) return;
-
+    
     setLoading(true);
     try {
       await evaluatorService.assignSpecificEvaluation(
@@ -218,12 +193,12 @@ const EvaluatorManagement: React.FC<EvaluatorManagementProps> = ({ applications 
         selectedEvaluationType,
         selectedEvaluator
       );
-
+      
       await loadApplicationEvaluations(selectedApplication.id);
       setIsModalOpen(false);
       setSelectedEvaluationType('');
       setSelectedEvaluator(null);
-
+      
       alert('Evaluación asignada correctamente');
     } catch (error) {
       console.error('Error assigning specific evaluation:', error);
@@ -237,7 +212,7 @@ const EvaluatorManagement: React.FC<EvaluatorManagementProps> = ({ applications 
     try {
       const appEvaluations = await evaluatorService.getDetailedEvaluationsByApplication(applicationId);
       const appProgress = await evaluatorService.getEvaluationProgress(applicationId);
-
+      
       setEvaluations(appEvaluations);
       setProgress(appProgress);
     } catch (error) {
@@ -250,7 +225,7 @@ const EvaluatorManagement: React.FC<EvaluatorManagementProps> = ({ applications 
       alert('Selecciona al menos una aplicación');
       return;
     }
-
+    
     setLoading(true);
     try {
       let result;
@@ -260,7 +235,7 @@ const EvaluatorManagement: React.FC<EvaluatorManagementProps> = ({ applications 
         console.warn('Auth failed, trying public endpoint');
         result = await evaluatorService.assignBulkEvaluationsPublic({ applicationIds: bulkSelection });
       }
-
+      
       setBulkResults(result);
       setShowBulkResults(true);
       setBulkSelection([]);
@@ -278,7 +253,7 @@ const EvaluatorManagement: React.FC<EvaluatorManagementProps> = ({ applications 
   };
 
   const getActiveEvaluators = () => {
-    return Object.values(evaluators).reduce((total, roleEvaluators) =>
+    return Object.values(evaluators).reduce((total, roleEvaluators) => 
       total + roleEvaluators.filter(e => e.active).length, 0
     );
   };
@@ -295,7 +270,7 @@ const EvaluatorManagement: React.FC<EvaluatorManagementProps> = ({ applications 
             </div>
           </div>
         </Card>
-
+        
         <Card className="p-4">
           <div className="flex items-center">
             <CheckCircleIcon className="h-8 w-8 text-green-500 mr-3" />
@@ -305,7 +280,7 @@ const EvaluatorManagement: React.FC<EvaluatorManagementProps> = ({ applications 
             </div>
           </div>
         </Card>
-
+        
         <Card className="p-4">
           <div className="flex items-center">
             <ClockIcon className="h-8 w-8 text-yellow-500 mr-3" />
@@ -315,7 +290,7 @@ const EvaluatorManagement: React.FC<EvaluatorManagementProps> = ({ applications 
             </div>
           </div>
         </Card>
-
+        
         <Card className="p-4">
           <div className="flex items-center">
             <AlertTriangleIcon className="h-8 w-8 text-orange-500 mr-3" />
@@ -349,7 +324,7 @@ const EvaluatorManagement: React.FC<EvaluatorManagementProps> = ({ applications 
                       </span>
                       {evaluator.hasSchedule && (
                         <div className="text-xs text-gray-600 mt-1">
-                          📅 {evaluator.activeSlots + '/' + evaluator.totalSlots} horarios activos
+                          📅 {evaluator.activeSlots}/{evaluator.totalSlots} horarios activos
                         </div>
                       )}
                     </div>
@@ -377,7 +352,7 @@ const EvaluatorManagement: React.FC<EvaluatorManagementProps> = ({ applications 
     <div className="space-y-6">
       <Card className="p-6">
         <h3 className="text-lg font-semibold mb-4">Asignación Individual de Evaluaciones</h3>
-
+        
         {applications.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <p className="text-lg font-medium mb-2">No hay aplicaciones disponibles</p>
@@ -430,7 +405,6 @@ const EvaluatorManagement: React.FC<EvaluatorManagementProps> = ({ applications 
                   </Button>
                 </div>
               </div>
-            </div>
             ))}
           </div>
         )}
@@ -444,29 +418,19 @@ const EvaluatorManagement: React.FC<EvaluatorManagementProps> = ({ applications 
 
           {progress && (
             <div className="mb-4 p-3 bg-blue-50 rounded">
-              <h4 className="font-medium text-blue-800 mb-2">Progreso de Evaluaciones</h4>
-              <div className="space-y-2">
-                <div>
-                  <div className="flex justify-between text-sm">
-                    <span>Entrevista familiar: {progress.familyInterview ? '✅ Completa' : '⏳ Pendiente'}</span>
-                  </div>
-                </div>
-                <div>
-                  <p className="text-sm font-medium">
-                    Progreso: {progress.completedEvaluations}/{progress.totalEvaluations} completadas
-                    ({progress.completionPercentage}%)
-                  </p>
-                  <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                    <div
-                      className="bg-blue-600 h-2 rounded-full"
-                      style={{ width: `${progress.completionPercentage}%` }}
-                    ></div>
-                  </div>
-                </div>
+              <p className="text-sm font-medium">
+                Progreso: {progress.completedEvaluations}/{progress.totalEvaluations} completadas 
+                ({progress.completionPercentage}%)
+              </p>
+              <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                <div 
+                  className="bg-blue-600 h-2 rounded-full" 
+                  style={{ width: `${progress.completionPercentage}%` }}
+                ></div>
               </div>
             </div>
           )}
-
+          
           <div className="space-y-3">
             {evaluations.map(evaluation => (
               <div key={evaluation.id} className="border rounded p-3">
@@ -481,7 +445,7 @@ const EvaluatorManagement: React.FC<EvaluatorManagementProps> = ({ applications 
                       </p>
                     )}
                   </div>
-                  <Badge
+                  <Badge 
                     variant={
                       evaluation.status === 'COMPLETED' ? 'success' :
                       evaluation.status === 'IN_PROGRESS' ? 'warning' : 'default'
@@ -502,7 +466,7 @@ const EvaluatorManagement: React.FC<EvaluatorManagementProps> = ({ applications 
     <div className="space-y-6">
       <Card className="p-6">
         <h3 className="text-lg font-semibold mb-4">Asignación Masiva de Evaluaciones</h3>
-
+        
         <div className="mb-4">
           <p className="text-sm text-gray-600 mb-2">
             Selecciona las aplicaciones para asignar evaluaciones automáticamente:
@@ -539,14 +503,14 @@ const EvaluatorManagement: React.FC<EvaluatorManagementProps> = ({ applications 
 
         <div className="space-y-2">
           {applications.map(app => (
-            <div
+            <div 
               key={app.id}
               className={`border rounded p-3 cursor-pointer transition-colors ${
                 bulkSelection.includes(app.id) ? 'bg-blue-50 border-blue-300' : 'hover:bg-gray-50'
               }`}
               onClick={() => {
-                setBulkSelection(prev =>
-                  prev.includes(app.id)
+                setBulkSelection(prev => 
+                  prev.includes(app.id) 
                     ? prev.filter(id => id !== app.id)
                     : [...prev, app.id]
                 );
@@ -557,7 +521,7 @@ const EvaluatorManagement: React.FC<EvaluatorManagementProps> = ({ applications 
                   <input
                     type="checkbox"
                     checked={bulkSelection.includes(app.id)}
-                    onChange={() => {}}
+                    onChange={() => {}} // Manejado por el onClick del div
                     className="mr-3"
                   />
                   <div>
@@ -595,7 +559,7 @@ const EvaluatorManagement: React.FC<EvaluatorManagementProps> = ({ applications 
               <p className="text-sm text-gray-600">Fallidas</p>
             </div>
           </div>
-
+          
           {bulkResults.successful.length > 0 && (
             <div className="mb-4">
               <h4 className="font-medium text-green-600 mb-2">Asignaciones Exitosas:</h4>
@@ -604,7 +568,7 @@ const EvaluatorManagement: React.FC<EvaluatorManagementProps> = ({ applications 
               </div>
             </div>
           )}
-
+          
           {bulkResults.failed.length > 0 && (
             <div className="mb-4">
               <h4 className="font-medium text-red-600 mb-2">Asignaciones Fallidas:</h4>
@@ -613,9 +577,9 @@ const EvaluatorManagement: React.FC<EvaluatorManagementProps> = ({ applications 
               </div>
             </div>
           )}
-
-          <Button
-            size="sm"
+          
+          <Button 
+            size="sm" 
             variant="outline"
             onClick={() => setShowBulkResults(false)}
           >
@@ -812,8 +776,8 @@ const EvaluatorManagement: React.FC<EvaluatorManagementProps> = ({ applications 
       {activeTab === 'schedules' && renderSchedulesView()}
 
       {/* Modal for manual assignment */}
-      <Modal
-        isOpen={isModalOpen}
+      <Modal 
+        isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)}
         title="Asignación Manual de Evaluación"
       >
@@ -834,88 +798,37 @@ const EvaluatorManagement: React.FC<EvaluatorManagementProps> = ({ applications 
             </select>
           </div>
 
-          {selectedEvaluationType && (() => {
-            console.log('🔍 MODAL DEBUG - Rendering evaluator selector');
-            console.log('🔍 MODAL DEBUG - selectedEvaluationType:', selectedEvaluationType);
-            console.log('🔍 MODAL DEBUG - evaluators object keys:', Object.keys(evaluators));
-            console.log('🔍 MODAL DEBUG - evaluators object:', evaluators);
-            return (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Evaluador
-                </label>
-                <select
-                  value={selectedEvaluator || ''}
-                  onChange={(e) => setSelectedEvaluator(Number(e.target.value))}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2"
-                >
-                  <option value="">Seleccionar evaluador...</option>
-                  {/* Filtrar evaluadores por el rol requerido según el tipo de evaluación */}
-                  {(() => {
-                    console.log('🔍 MODAL DEBUG - Inside select options function');
-
-                    // Mapear tipo de evaluación al rol requerido
-                    let requiredRole: string | null = null;
-
-                    switch (selectedEvaluationType) {
-                      case 'LANGUAGE_EXAM':
-                        requiredRole = 'TEACHER_LANGUAGE';
-                        break;
-                      case 'MATHEMATICS_EXAM':
-                        requiredRole = 'TEACHER_MATHEMATICS';
-                        break;
-                      case 'ENGLISH_EXAM':
-                        requiredRole = 'TEACHER_ENGLISH';
-                        break;
-                      case 'CYCLE_DIRECTOR_REPORT':
-                      case 'CYCLE_DIRECTOR_INTERVIEW':
-                        requiredRole = 'CYCLE_DIRECTOR';
-                        break;
-                      case 'PSYCHOLOGICAL_INTERVIEW':
-                        requiredRole = 'PSYCHOLOGIST';
-                        break;
-                    }
-
-                    console.log('🔍 MODAL DEBUG - requiredRole after switch:', requiredRole);
-
-                    // Si no hay rol requerido, no mostrar evaluadores
-                    if (!requiredRole) {
-                      console.log('❌ MODAL DEBUG - No requiredRole, returning null');
-                      return null;
-                    }
-
-                    // Obtener solo los evaluadores del rol requerido
-                    const filteredEvaluators = evaluators[requiredRole] || [];
-                    console.log('🔍 MODAL DEBUG - filteredEvaluators:', filteredEvaluators);
-                    console.log('🔍 MODAL DEBUG - filteredEvaluators.length:', filteredEvaluators.length);
-
-                    // Si no hay evaluadores disponibles, mostrar mensaje
-                    if (filteredEvaluators.length === 0) {
-                      console.log('⚠️ MODAL DEBUG - No evaluators, returning message');
-                      return <option disabled>No hay evaluadores disponibles para este tipo</option>;
-                    }
-
-                    // Mostrar evaluadores filtrados
-                    console.log('✅ MODAL DEBUG - Returning filtered evaluators options');
-                    return filteredEvaluators.map(evaluator => (
-                      <option key={evaluator.id} value={evaluator.id}>
-                        {evaluator.firstName} {evaluator.lastName}
-                      </option>
-                    ));
-                  })()}
-                </select>
-              </div>
-            );
-          })()}
+          {selectedEvaluationType && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Evaluador
+              </label>
+              <select
+                value={selectedEvaluator || ''}
+                onChange={(e) => setSelectedEvaluator(Number(e.target.value))}
+                className="w-full border border-gray-300 rounded-md px-3 py-2"
+              >
+                <option value="">Seleccionar evaluador...</option>
+                {/* Aquí filtraremos por el rol requerido para el tipo de evaluación */}
+                {Object.entries(evaluators).map(([role, roleEvaluators]) => 
+                  roleEvaluators.map(evaluator => (
+                    <option key={evaluator.id} value={evaluator.id}>
+                      {evaluator.firstName} {evaluator.lastName} ({USER_ROLE_LABELS[role as UserRole]})
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+          )}
 
           <div className="flex justify-end space-x-2 pt-4">
-            <Button
-              variant="outline"
+            <Button 
+              variant="outline" 
               onClick={() => setIsModalOpen(false)}
             >
               Cancelar
             </Button>
-            <Button
+            <Button 
               onClick={handleSpecificAssignment}
               disabled={!selectedEvaluationType || !selectedEvaluator || loading}
             >

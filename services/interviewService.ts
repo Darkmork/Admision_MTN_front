@@ -94,6 +94,94 @@ class InterviewService {
     };
   }
 
+  // Convertir response simple del backend a formato frontend
+  private mapBackendResponse(backendData: any): Interview {
+    // Guardar la fecha/hora completa original
+    const fullScheduledDateTime = backendData.scheduledDate || '';
+
+    // Extraer fecha y hora por separado para compatibilidad
+    const scheduledDate = backendData.scheduledDate ? backendData.scheduledDate.split('T')[0] : '';
+    const scheduledTime = this.extractTimeFromDate(backendData.scheduledDate);
+
+    return {
+      id: parseInt(backendData.id) || 0,
+      applicationId: parseInt(backendData.applicationId) || 0,
+      studentName: backendData.studentName || 'Sin nombre',
+      parentNames: backendData.parentNames || 'Sin información de padres',
+      gradeApplied: backendData.gradeApplied || backendData.grade || 'Sin especificar',
+      interviewerId: parseInt(backendData.interviewerId) || 0,
+      interviewerName: backendData.interviewerName || 'Sin asignar',
+      status: backendData.status || InterviewStatus.SCHEDULED,
+      type: backendData.type || InterviewType.INDIVIDUAL,
+      mode: backendData.mode || InterviewMode.IN_PERSON,
+      scheduledDate: scheduledDate,
+      scheduledTime: scheduledTime,
+      // Agregar campo con fecha/hora completa para mostrar correctamente
+      fullScheduledDateTime: fullScheduledDateTime,
+      duration: backendData.duration || 60,
+      location: backendData.location || '',
+      virtualMeetingLink: backendData.virtualMeetingLink || '',
+      notes: backendData.notes || '',
+      preparation: backendData.preparation || '',
+      result: backendData.result,
+      score: backendData.score,
+      recommendations: backendData.recommendations || '',
+      followUpRequired: backendData.followUpRequired || false,
+      followUpNotes: backendData.followUpNotes || '',
+      createdAt: backendData.createdAt || '',
+      updatedAt: backendData.updatedAt || '',
+      completedAt: backendData.completedAt,
+      isUpcoming: this.isUpcomingInterview(backendData.scheduledDate, backendData.status),
+      isOverdue: this.isOverdueInterview(backendData.scheduledDate, backendData.status),
+      canBeCompleted: this.canBeCompleted(backendData.status),
+      canBeEdited: this.canBeEdited(backendData.status),
+      canBeCancelled: this.canBeCancelled(backendData.status)
+    };
+  }
+
+  // Métodos auxiliares para el mapeo
+  private extractTimeFromDate(dateString: string): string {
+    if (!dateString) return '';
+    try {
+      const date = new Date(dateString);
+      // Asegurar que la fecha sea válida
+      if (isNaN(date.getTime())) return '';
+
+      // Formatear hora en formato 24h (HH:MM)
+      const hours = date.getHours().toString().padStart(2, '0');
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+      return `${hours}:${minutes}`;
+    } catch {
+      return '';
+    }
+  }
+
+  private isUpcomingInterview(scheduledDate: string, status: string): boolean {
+    if (!scheduledDate || status === 'COMPLETED' || status === 'CANCELLED') return false;
+    const now = new Date();
+    const interviewDate = new Date(scheduledDate);
+    return interviewDate > now;
+  }
+
+  private isOverdueInterview(scheduledDate: string, status: string): boolean {
+    if (!scheduledDate || status === 'COMPLETED' || status === 'CANCELLED') return false;
+    const now = new Date();
+    const interviewDate = new Date(scheduledDate);
+    return interviewDate < now && status === 'SCHEDULED';
+  }
+
+  private canBeCompleted(status: string): boolean {
+    return status === 'SCHEDULED' || status === 'CONFIRMED' || status === 'IN_PROGRESS';
+  }
+
+  private canBeEdited(status: string): boolean {
+    return status === 'SCHEDULED' || status === 'CONFIRMED';
+  }
+
+  private canBeCancelled(status: string): boolean {
+    return status === 'SCHEDULED' || status === 'CONFIRMED';
+  }
+
   // CRUD básico
   async createInterview(request: CreateInterviewRequest): Promise<Interview> {
     // Asegurar que el status se establezca como SCHEDULED si no se especifica
@@ -124,131 +212,75 @@ class InterviewService {
     search?: string
   ): Promise<{ interviews: Interview[]; totalElements: number; totalPages: number }> {
     try {
-      console.log('🔄 Obtaining interviews from main backend...');
-      
-      // Use main backend endpoint (monolithic architecture on port 8080)
-      const response = await api.get<any>('http://localhost:8080/api/interviews');
-      
+      console.log('🔄 Obtaining interviews from backend...');
+
+      // Use correct API instance instead of hardcoded URL
+      const response = await api.get<any>(this.baseUrl);
+
       console.log('📋 Backend response:', response.data);
-      
-      // Main backend returns: { success: true, data: [...] }
+
+      // Backend returns: { success: true, data: [...], count: number }
       if (response.data && response.data.success && Array.isArray(response.data.data)) {
-        console.log('✅ Found interviews from main backend:', response.data.data.length);
+        console.log('✅ Found interviews from backend:', response.data.data.length);
+
+        // Apply search filter if provided
+        let interviews = response.data.data;
+        if (search && search.trim()) {
+          const searchLower = search.toLowerCase();
+          interviews = interviews.filter((interview: any) =>
+            interview.studentName?.toLowerCase().includes(searchLower) ||
+            interview.interviewerName?.toLowerCase().includes(searchLower) ||
+            interview.notes?.toLowerCase().includes(searchLower)
+          );
+        }
+
+        // Apply sorting
+        interviews.sort((a: any, b: any) => {
+          let aValue = a[sortBy];
+          let bValue = b[sortBy];
+
+          if (sortBy === 'scheduledDate') {
+            aValue = new Date(aValue).getTime();
+            bValue = new Date(bValue).getTime();
+          }
+
+          if (sortDir === 'desc') {
+            return bValue > aValue ? 1 : -1;
+          }
+          return aValue > bValue ? 1 : -1;
+        });
+
+        // Apply pagination
+        const totalElements = interviews.length;
+        const totalPages = Math.ceil(totalElements / size);
+        const startIndex = page * size;
+        const endIndex = startIndex + size;
+        const paginatedInterviews = interviews.slice(startIndex, endIndex);
+
+        const mappedInterviews = paginatedInterviews.map((item: any) => this.mapBackendResponse(item));
+        console.log('📋 Mapped interviews for frontend:', mappedInterviews);
+
         return {
-          interviews: response.data.data.map((item: any) => this.mapInterviewResponse(item)),
-          totalElements: response.data.data.length,
-          totalPages: 1
+          interviews: mappedInterviews,
+          totalElements,
+          totalPages
         };
       }
-      
-      console.log('⚠️ No valid response from main backend, trying fallback approaches...');
-      
-      // Fallback: try microservice format for backwards compatibility
-      try {
-        const microResponse = await api.get<PaginatedInterviewResponse>(`${this.baseUrl}/public/complete`);
-        console.log('📋 Microservice response:', microResponse.data);
-        
-        // Check if microservice response is a placeholder
-        if (microResponse.data && typeof microResponse.data === 'object' && 'error' in microResponse.data) {
-          console.log('⚠️ Interview microservice not implemented');
-          return {
-            interviews: [],
-            totalElements: 0,
-            totalPages: 0
-          };
-        }
-        
-        // Check paginated format
-        if (microResponse.data && microResponse.data.content && Array.isArray(microResponse.data.content)) {
-          return {
-            interviews: microResponse.data.content.map(item => this.mapInterviewResponse(item)),
-            totalElements: microResponse.data.totalElements || 0,
-            totalPages: microResponse.data.totalPages || 0
-          };
-        }
-        
-        // Check direct array format
-        if (Array.isArray(microResponse.data)) {
-          return {
-            interviews: microResponse.data.map(item => this.mapInterviewResponse(item)),
-            totalElements: microResponse.data.length,
-            totalPages: 1
-          };
-        }
-        
-      } catch (microError) {
-        console.log('⚠️ Microservice not available');
-      }
-      
-      console.log('❌ No valid response structure found, returning empty data');
+
+      console.log('⚠️ No valid response from backend, returning empty data');
       return {
         interviews: [],
         totalElements: 0,
         totalPages: 0
       };
-      
+
     } catch (error) {
-      console.error('❌ Error fetching interviews from microservicio:', error);
-      
-      try {
-        // Fallback al endpoint con autenticación si el público falla
-        const params = new URLSearchParams({
-          page: page.toString(),
-          size: size.toString(),
-          sortBy,
-          sortDir
-        });
-
-        if (search) {
-          params.append('search', search);
-        }
-
-        const response = await api.get<PaginatedInterviewResponse>(`${this.baseUrl}?${params}`);
-        
-        // Mismo manejo para el fallback
-        if (response.data && typeof response.data === 'object' && 'error' in response.data) {
-          console.log('⚠️ Interview service no implementado (fallback), devolviendo datos vacíos');
-          return {
-            interviews: [],
-            totalElements: 0,
-            totalPages: 0
-          };
-        }
-        
-        if (response.data && response.data.content && Array.isArray(response.data.content)) {
-          return {
-            interviews: response.data.content.map(item => this.mapInterviewResponse(item)),
-            totalElements: response.data.totalElements || 0,
-            totalPages: response.data.totalPages || 0
-          };
-        }
-        
-        // Si response.data es directamente un array (formato alternativo - fallback)
-        if (Array.isArray(response.data)) {
-          return {
-            interviews: response.data.map(item => this.mapInterviewResponse(item)),
-            totalElements: response.data.length,
-            totalPages: 1
-          };
-        }
-        
-        // Fallback final: devolver datos vacíos
-        console.log('⚠️ Fallback - devolviendo datos vacíos para entrevistas');
-        return {
-          interviews: [],
-          totalElements: 0,
-          totalPages: 0
-        };
-        
-      } catch (fallbackError) {
-        console.error('❌ Error en fallback de entrevistas:', fallbackError);
-        // Devolver datos vacíos en lugar de fallar
-        return {
-          interviews: [],
-          totalElements: 0,
-          totalPages: 0
-        };
-      }
+      console.error('❌ Error fetching interviews:', error);
+      return {
+        interviews: [],
+        totalElements: 0,
+        totalPages: 0
+      };
     }
   }
 
@@ -259,27 +291,85 @@ class InterviewService {
     sortBy: string = 'scheduledDate',
     sortDir: 'asc' | 'desc' = 'desc'
   ): Promise<{ interviews: Interview[]; totalElements: number; totalPages: number }> {
-    const params = new URLSearchParams({
-      page: page.toString(),
-      size: size.toString(),
-      sortBy,
-      sortDir
-    });
+    try {
+      console.log('🔄 Getting interviews with filters:', filters);
 
-    if (filters.status) params.append('status', filters.status);
-    if (filters.type) params.append('type', filters.type);
-    if (filters.mode) params.append('mode', filters.mode);
-    if (filters.interviewerId) params.append('interviewerId', filters.interviewerId.toString());
-    if (filters.startDate) params.append('startDate', filters.startDate);
-    if (filters.endDate) params.append('endDate', filters.endDate);
+      // Get all interviews first
+      const response = await api.get<any>(this.baseUrl);
 
-    const response = await api.get<PaginatedInterviewResponse>(`${this.baseUrl}/filter?${params}`);
-    
-    return {
-      interviews: response.data.content.map(item => this.mapInterviewResponse(item)),
-      totalElements: response.data.totalElements,
-      totalPages: response.data.totalPages
-    };
+      if (response.data && response.data.success && Array.isArray(response.data.data)) {
+        let interviews = response.data.data;
+
+        // Apply filters
+        if (filters.status) {
+          interviews = interviews.filter((interview: any) => interview.status === filters.status);
+        }
+        if (filters.type) {
+          interviews = interviews.filter((interview: any) => interview.type === filters.type);
+        }
+        if (filters.mode) {
+          interviews = interviews.filter((interview: any) => interview.mode === filters.mode);
+        }
+        if (filters.interviewerId) {
+          interviews = interviews.filter((interview: any) =>
+            parseInt(interview.interviewerId) === filters.interviewerId
+          );
+        }
+        if (filters.startDate) {
+          interviews = interviews.filter((interview: any) =>
+            new Date(interview.scheduledDate) >= new Date(filters.startDate!)
+          );
+        }
+        if (filters.endDate) {
+          interviews = interviews.filter((interview: any) =>
+            new Date(interview.scheduledDate) <= new Date(filters.endDate!)
+          );
+        }
+
+        // Apply sorting
+        interviews.sort((a: any, b: any) => {
+          let aValue = a[sortBy];
+          let bValue = b[sortBy];
+
+          if (sortBy === 'scheduledDate') {
+            aValue = new Date(aValue).getTime();
+            bValue = new Date(bValue).getTime();
+          }
+
+          if (sortDir === 'desc') {
+            return bValue > aValue ? 1 : -1;
+          }
+          return aValue > bValue ? 1 : -1;
+        });
+
+        // Apply pagination
+        const totalElements = interviews.length;
+        const totalPages = Math.ceil(totalElements / size);
+        const startIndex = page * size;
+        const endIndex = startIndex + size;
+        const paginatedInterviews = interviews.slice(startIndex, endIndex);
+
+        return {
+          interviews: paginatedInterviews.map((item: any) => this.mapBackendResponse(item)),
+          totalElements,
+          totalPages
+        };
+      }
+
+      return {
+        interviews: [],
+        totalElements: 0,
+        totalPages: 0
+      };
+
+    } catch (error) {
+      console.error('❌ Error fetching interviews with filters:', error);
+      return {
+        interviews: [],
+        totalElements: 0,
+        totalPages: 0
+      };
+    }
   }
 
   async updateInterview(id: number, request: UpdateInterviewRequest): Promise<Interview> {
@@ -370,9 +460,40 @@ class InterviewService {
     }
   }
 
-  async getInterviewsByApplication(applicationId: number): Promise<Interview[]> {
-    const response = await api.get<InterviewResponse[]>(`${this.baseUrl}/application/${applicationId}`);
-    return response.data.map(item => this.mapInterviewResponse(item));
+  async getInterviewsByApplication(applicationId: number): Promise<{ interviews: Interview[] }> {
+    try {
+      console.log('🔄 Getting interviews for application:', applicationId);
+
+      // Use query parameter for more efficient filtering
+      const response = await api.get<any>(`${this.baseUrl}?applicationId=${applicationId}`);
+
+      console.log(`📋 Direct response for application ${applicationId}:`, response.data);
+
+      if (response.data && response.data.success && Array.isArray(response.data.data)) {
+        console.log(`✅ Found ${response.data.data.length} interviews for application ${applicationId}`);
+
+        // Map each interview from backend to frontend format
+        const mappedInterviews = response.data.data.map((item: any) => {
+          console.log(`🔄 Mapping interview ${item.id}:`, item);
+          const mapped = this.mapBackendResponse(item);
+          console.log(`✅ Mapped interview:`, mapped);
+          return mapped;
+        });
+
+        console.log(`📋 Final mapped interviews for application ${applicationId}:`, mappedInterviews);
+
+        return {
+          interviews: mappedInterviews
+        };
+      }
+
+      console.log('⚠️ No valid response from backend for getInterviewsByApplication');
+      return { interviews: [] };
+
+    } catch (error) {
+      console.error('❌ Error fetching interviews by application:', error);
+      return { interviews: [] };
+    }
   }
 
   async getInterviewsByDateRange(startDate: string, endDate: string): Promise<Interview[]> {
@@ -386,8 +507,124 @@ class InterviewService {
 
   // Estadísticas
   async getInterviewStatistics(): Promise<InterviewStats> {
-    const response = await api.get<InterviewStats>(`${this.baseUrl}/statistics`);
-    return response.data;
+    try {
+      const response = await api.get<any>(`${this.baseUrl}/statistics`);
+
+      // Backend returns: { success: true, data: { overview: {...}, byType: {...}, ... } }
+      if (response.data && response.data.success && response.data.data) {
+        const statsData = response.data.data;
+
+        // Map backend statistics to frontend format
+        return {
+          totalInterviews: statsData.overview?.total || 0,
+          scheduledInterviews: statsData.overview?.scheduled || 0,
+          completedInterviews: statsData.overview?.completed || 0,
+          cancelledInterviews: statsData.overview?.cancelled || 0,
+          noShowInterviews: 0,
+          pendingInterviews: statsData.overview?.scheduled || 0,
+          positiveResults: 0,
+          neutralResults: 0,
+          negativeResults: 0,
+          pendingReviewResults: 0,
+          requiresFollowUpResults: 0,
+          averageScore: 0,
+          completionRate: parseFloat(statsData.overview?.completionRate) || 0,
+          cancellationRate: parseFloat(statsData.overview?.cancellationRate) || 0,
+          successRate: parseFloat(statsData.overview?.completionRate) || 0,
+          statusDistribution: {
+            'SCHEDULED': statsData.overview?.scheduled || 0,
+            'COMPLETED': statsData.overview?.completed || 0,
+            'CANCELLED': statsData.overview?.cancelled || 0
+          },
+          typeDistribution: {
+            'FAMILY': statsData.byType?.FAMILY || 0,
+            'PSYCHOLOGICAL': statsData.byType?.PSYCHOLOGICAL || 0,
+            'ACADEMIC': statsData.byType?.ACADEMIC || 0
+          },
+          modeDistribution: {
+            'IN_PERSON': statsData.byMode?.IN_PERSON || 0,
+            'VIRTUAL': statsData.byMode?.VIRTUAL || 0
+          },
+          resultDistribution: {},
+          monthlyTrends: statsData.monthlyTrends || {},
+          followUpRequired: 0,
+          upcomingInterviews: 0,
+          overdueInterviews: 0,
+          averageDuration: statsData.timeAnalysis?.averageDuration || 0,
+          popularTimeSlots: statsData.timeAnalysis?.popularTimeSlots || [],
+          interviewerPerformance: Object.entries(statsData.byInterviewer || {}).map(([id, data]: [string, any]) => ({
+            interviewerId: parseInt(id),
+            interviewerName: data.name,
+            totalInterviews: data.totalInterviews || 0,
+            completedInterviews: data.completed || 0,
+            averageScore: 0,
+            completionRate: data.totalInterviews > 0 ?
+              ((data.completed || 0) / data.totalInterviews * 100) : 0
+          }))
+        };
+      }
+
+      // Fallback stats if no data
+      return {
+        totalInterviews: 0,
+        scheduledInterviews: 0,
+        completedInterviews: 0,
+        cancelledInterviews: 0,
+        noShowInterviews: 0,
+        pendingInterviews: 0,
+        positiveResults: 0,
+        neutralResults: 0,
+        negativeResults: 0,
+        pendingReviewResults: 0,
+        requiresFollowUpResults: 0,
+        averageScore: 0,
+        completionRate: 0,
+        cancellationRate: 0,
+        successRate: 0,
+        statusDistribution: {},
+        typeDistribution: {},
+        modeDistribution: {},
+        resultDistribution: {},
+        monthlyTrends: {},
+        followUpRequired: 0,
+        upcomingInterviews: 0,
+        overdueInterviews: 0,
+        averageDuration: 0,
+        popularTimeSlots: [],
+        interviewerPerformance: []
+      };
+    } catch (error) {
+      console.error('Error fetching interview statistics:', error);
+      // Return empty stats instead of throwing error
+      return {
+        totalInterviews: 0,
+        scheduledInterviews: 0,
+        completedInterviews: 0,
+        cancelledInterviews: 0,
+        noShowInterviews: 0,
+        pendingInterviews: 0,
+        positiveResults: 0,
+        neutralResults: 0,
+        negativeResults: 0,
+        pendingReviewResults: 0,
+        requiresFollowUpResults: 0,
+        averageScore: 0,
+        completionRate: 0,
+        cancellationRate: 0,
+        successRate: 0,
+        statusDistribution: {},
+        typeDistribution: {},
+        modeDistribution: {},
+        resultDistribution: {},
+        monthlyTrends: {},
+        followUpRequired: 0,
+        upcomingInterviews: 0,
+        overdueInterviews: 0,
+        averageDuration: 0,
+        popularTimeSlots: [],
+        interviewerPerformance: []
+      };
+    }
   }
 
   // Para calendario

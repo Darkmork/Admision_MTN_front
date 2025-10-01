@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { interviewerScheduleService } from '../services/interviewerScheduleService';
 
 interface TimeSlot {
   id: string;
@@ -7,6 +8,9 @@ interface TimeSlot {
   startTime: string;
   endTime: string;
   isAvailable: boolean;
+  scheduleId?: number;
+  scheduleType?: 'RECURRING' | 'SPECIFIC_DATE' | 'EXCEPTION';
+  notes?: string;
 }
 
 const ScheduleManagement: React.FC = () => {
@@ -16,7 +20,11 @@ const ScheduleManagement: React.FC = () => {
   const [message, setMessage] = useState('');
 
   const daysOfWeek = [
-    'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'
+    { display: 'Lunes', api: 'MONDAY' },
+    { display: 'Martes', api: 'TUESDAY' },
+    { display: 'Miércoles', api: 'WEDNESDAY' },
+    { display: 'Jueves', api: 'THURSDAY' },
+    { display: 'Viernes', api: 'FRIDAY' }
   ];
 
   const timeOptions = [
@@ -26,27 +34,91 @@ const ScheduleManagement: React.FC = () => {
   ];
 
   useEffect(() => {
-    initializeDefaultSlots();
-  }, []);
+    loadExistingSchedules();
+  }, [user]);
+
+  const loadExistingSchedules = async () => {
+    if (!user?.id) return;
+
+    setIsLoading(true);
+    try {
+      const currentYear = new Date().getFullYear();
+      const schedules = await interviewerScheduleService.getInterviewerSchedulesByYear(user.id, currentYear);
+
+      console.log('📅 Horarios cargados:', schedules);
+
+      const transformedSlots: TimeSlot[] = schedules.map(schedule => ({
+        id: `schedule-${schedule.id}`,
+        day: translateDayToSpanish(schedule.dayOfWeek || ''),
+        startTime: schedule.startTime,
+        endTime: schedule.endTime,
+        isAvailable: schedule.isActive,
+        scheduleId: schedule.id,
+        scheduleType: schedule.scheduleType,
+        notes: schedule.notes
+      }));
+
+      setTimeSlots(transformedSlots);
+
+      if (transformedSlots.length === 0) {
+        initializeDefaultSlots();
+      }
+
+    } catch (error) {
+      console.error('❌ Error cargando horarios:', error);
+      setMessage('⚠️ Error al cargar horarios existentes. Creando horarios por defecto.');
+      initializeDefaultSlots();
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const translateDayToSpanish = (apiDay: string): string => {
+    const dayMap: Record<string, string> = {
+      'MONDAY': 'Lunes',
+      'TUESDAY': 'Martes',
+      'WEDNESDAY': 'Miércoles',
+      'THURSDAY': 'Jueves',
+      'FRIDAY': 'Viernes',
+      'SATURDAY': 'Sábado',
+      'SUNDAY': 'Domingo'
+    };
+    return dayMap[apiDay] || apiDay;
+  };
+
+  const translateDayToAPI = (spanishDay: string): string => {
+    const dayMap: Record<string, string> = {
+      'Lunes': 'MONDAY',
+      'Martes': 'TUESDAY',
+      'Miércoles': 'WEDNESDAY',
+      'Jueves': 'THURSDAY',
+      'Viernes': 'FRIDAY',
+      'Sábado': 'SATURDAY',
+      'Domingo': 'SUNDAY'
+    };
+    return dayMap[spanishDay] || spanishDay;
+  };
 
   const initializeDefaultSlots = () => {
     const defaultSlots: TimeSlot[] = [];
     daysOfWeek.forEach(day => {
       // Morning slots
       defaultSlots.push({
-        id: `${day}-morning`,
-        day,
+        id: `${day.display}-morning`,
+        day: day.display,
         startTime: '09:00',
         endTime: '12:00',
-        isAvailable: false
+        isAvailable: false,
+        scheduleType: 'RECURRING'
       });
       // Afternoon slots
       defaultSlots.push({
-        id: `${day}-afternoon`,
-        day,
+        id: `${day.display}-afternoon`,
+        day: day.display,
         startTime: '14:00',
         endTime: '17:00',
-        isAvailable: false
+        isAvailable: false,
+        scheduleType: 'RECURRING'
       });
     });
     setTimeSlots(defaultSlots);
@@ -65,13 +137,67 @@ const ScheduleManagement: React.FC = () => {
   };
 
   const handleSave = async () => {
+    if (!user?.id) {
+      setMessage('❌ Error: Usuario no identificado');
+      return;
+    }
+
     setIsLoading(true);
     try {
-      // Simulate API call - in real implementation, this would save to backend
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setMessage('✅ Horarios guardados exitosamente');
+      const currentYear = new Date().getFullYear();
+      const activeSlots = timeSlots.filter(slot => slot.isAvailable);
+
+      console.log('💾 Guardando horarios activos:', activeSlots);
+
+      // Delete existing schedules for this year first
+      try {
+        const existingSchedules = await interviewerScheduleService.getInterviewerSchedulesByYear(user.id, currentYear);
+        for (const schedule of existingSchedules) {
+          if (schedule.id) {
+            await interviewerScheduleService.deleteSchedule(schedule.id);
+          }
+        }
+      } catch (deleteError) {
+        console.log('⚠️ No se encontraron horarios existentes para eliminar');
+      }
+
+      // Create new schedules for active slots
+      const savedSchedules = [];
+      for (const slot of activeSlots) {
+        const scheduleData = {
+          interviewer: {
+            id: user.id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            role: user.role
+          },
+          dayOfWeek: translateDayToAPI(slot.day),
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+          year: currentYear,
+          scheduleType: (slot.scheduleType || 'RECURRING') as 'RECURRING' | 'SPECIFIC_DATE' | 'EXCEPTION',
+          isActive: true,
+          notes: slot.notes || ''
+        };
+
+        try {
+          const savedSchedule = await interviewerScheduleService.createSchedule(scheduleData);
+          savedSchedules.push(savedSchedule);
+          console.log('✅ Horario guardado:', savedSchedule);
+        } catch (createError) {
+          console.error('❌ Error creando horario individual:', createError);
+        }
+      }
+
+      setMessage(`✅ Horarios guardados exitosamente (${savedSchedules.length} horarios activos)`);
       setTimeout(() => setMessage(''), 3000);
+
+      // Reload schedules to reflect changes
+      await loadExistingSchedules();
+
     } catch (error) {
+      console.error('❌ Error guardando horarios:', error);
       setMessage('❌ Error al guardar los horarios');
       setTimeout(() => setMessage(''), 3000);
     } finally {
@@ -85,7 +211,8 @@ const ScheduleManagement: React.FC = () => {
       day: 'Lunes',
       startTime: '09:00',
       endTime: '10:00',
-      isAvailable: true
+      isAvailable: true,
+      scheduleType: 'RECURRING'
     };
     setTimeSlots(prev => [...prev, newSlot]);
   };
@@ -164,12 +291,14 @@ const ScheduleManagement: React.FC = () => {
                     <div className="flex items-center space-x-2">
                       <select
                         value={slot.day}
-                        onChange={(e) => handleTimeChange(slot.id, 'startTime', e.target.value)}
+                        onChange={(e) => setTimeSlots(prev => prev.map(s =>
+                          s.id === slot.id ? { ...s, day: e.target.value } : s
+                        ))}
                         className="border border-gray-300 rounded px-2 py-1"
                         disabled={!slot.isAvailable}
                       >
                         {daysOfWeek.map(day => (
-                          <option key={day} value={day}>{day}</option>
+                          <option key={day.display} value={day.display}>{day.display}</option>
                         ))}
                       </select>
                       <span className="text-gray-500">de</span>

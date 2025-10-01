@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import { FileText, Users, CheckCircle, Clock, Calendar, Calculator, BookOpen, Globe } from 'lucide-react';
-import TestProfessorLogin from '../components/TestProfessorLogin';
 
 const HomePage: React.FC = () => {
     const admissionSteps = [
@@ -141,12 +140,6 @@ const HomePage: React.FC = () => {
                 </div>
             </section>
 
-            {/* Componente de Prueba Temporal */}
-            <section className="py-16 bg-gray-50">
-                <div className="container mx-auto px-6">
-                    <TestProfessorLogin />
-                </div>
-            </section>
         </div>
     );
 };

@@ -39,11 +39,7 @@ function App() {
                         <Routes>
                             <Route path="/" element={<HomePage />} />
                             <Route path="/login" element={<LoginPage />} />
-                            <Route path="/postulacion" element={
-                                <ProtectedApoderadoRoute>
-                                    <ApplicationForm />
-                                </ProtectedApoderadoRoute>
-                            } />
+                            <Route path="/postulacion" element={<ApplicationForm />} />
                             <Route path="/apoderado/login" element={<ApoderadoLogin />} />
                             <Route path="/dashboard-apoderado" element={
                                 <ProtectedApoderadoRoute>

@@ -21,9 +21,9 @@ export const useEmailVerification = () => {
     });
 
     // Enviar código de verificación
-    const sendVerificationCode = useCallback(async (email: string, type: 'registration' | 'password_reset' | 'account_confirmation' = 'registration') => {
+    const sendVerificationCode = useCallback(async (email: string, type: 'registration' | 'password_reset' | 'account_confirmation' = 'registration', rut?: string) => {
         setState(prev => ({ ...prev, isLoading: true, verificationError: null }));
-        
+
         try {
             // Validar formato de email
             if (!emailVerificationService.isValidEmailFormat(email)) {
@@ -39,11 +39,32 @@ export const useEmailVerification = () => {
             try {
                 const emailExists = await emailVerificationService.checkEmailExists(email);
                 if (emailExists && emailExists.exists && type === 'registration') {
-                    throw new Error('Este email ya está registrado en el sistema');
+                    throw new Error('Ya existe una cuenta con este correo electrónico. Por favor, inicie sesión o use otro correo.');
                 }
-            } catch (emailCheckError) {
+            } catch (emailCheckError: any) {
+                // Si es un error de validación, lanzarlo
+                if (emailCheckError.message?.includes('cuenta') || emailCheckError.message?.includes('correo')) {
+                    throw emailCheckError;
+                }
                 console.warn('Could not check email existence, continuing...', emailCheckError);
                 // Continue even if check fails - maybe backend is down
+            }
+
+            // Verificar si el RUT ya existe (si se proporcionó)
+            if (rut && type === 'registration') {
+                try {
+                    const rutExists = await emailVerificationService.checkRutExists(rut);
+                    if (rutExists && rutExists.exists) {
+                        throw new Error('Ya existe una cuenta con este RUT. Por favor, inicie sesión o verifique el RUT ingresado.');
+                    }
+                } catch (rutCheckError: any) {
+                    // Si es un error de validación, lanzarlo
+                    if (rutCheckError.message?.includes('cuenta') || rutCheckError.message?.includes('RUT')) {
+                        throw rutCheckError;
+                    }
+                    console.warn('Could not check RUT existence, continuing...', rutCheckError);
+                    // Continue even if check fails - maybe backend is down
+                }
             }
 
             // Convertir tipo a enum apropiado

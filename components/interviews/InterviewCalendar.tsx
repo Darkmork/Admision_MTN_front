@@ -142,7 +142,8 @@ const InterviewCalendar: React.FC<InterviewCalendarProps> = ({
     }
   };
 
-  const formatTime = (time: string): string => {
+  const formatTime = (time: string | undefined): string => {
+    if (!time) return '--:--';
     return time.substring(0, 5); // HH:MM
   };
 

@@ -6,6 +6,8 @@ import Modal from '../ui/Modal';
 import { CreateUserRequest, UserRole } from '../../types/user';
 import { PsychologySpecialty, SupportStaffType, KinderLevel } from '../../types';
 import { useNotifications } from '../../context/AppContext';
+import { getDayOfWeekOptions, getTimeSlotOptions } from '../../services/interviewerScheduleService';
+import { FiClock, FiCalendar, FiPlus, FiTrash2 } from 'react-icons/fi';
 
 interface CreateUserFormProps {
     isOpen: boolean;
@@ -13,6 +15,13 @@ interface CreateUserFormProps {
     onSubmit: (userData: CreateUserRequest) => Promise<void>;
     initialData?: CreateUserRequest;
     isEditing?: boolean;
+}
+
+interface UserSchedule {
+    dayOfWeek: string;
+    startTime: string;
+    endTime: string;
+    notes?: string;
 }
 
 const CreateUserForm: React.FC<CreateUserFormProps> = ({ isOpen, onClose, onSubmit, initialData, isEditing = false }) => {
@@ -120,6 +129,40 @@ const CreateUserForm: React.FC<CreateUserFormProps> = ({ isOpen, onClose, onSubm
 
     const [errors, setErrors] = useState<{[key: string]: string}>({});
 
+    // Schedule management state
+    const [schedules, setSchedules] = useState<UserSchedule[]>([]);
+    const [useCustomSchedules, setUseCustomSchedules] = useState(false);
+
+    // Helper function to check if role can have schedules
+    const isEvaluatorRole = (role: UserRole): boolean => {
+        return ['TEACHER_LANGUAGE', 'TEACHER_MATHEMATICS', 'TEACHER_ENGLISH', 'CYCLE_DIRECTOR', 'PSYCHOLOGIST', 'ADMIN'].includes(role);
+    };
+
+    // Schedule management functions
+    const addSchedule = () => {
+        setSchedules(prev => [...prev, {
+            dayOfWeek: 'MONDAY',
+            startTime: '10:00',
+            endTime: '12:00',
+            notes: ''
+        }]);
+    };
+
+    const removeSchedule = (index: number) => {
+        setSchedules(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const updateSchedule = (index: number, field: keyof UserSchedule, value: string) => {
+        setSchedules(prev => prev.map((schedule, i) =>
+            i === index ? { ...schedule, [field]: value } : schedule
+        ));
+    };
+
+    const resetSchedules = () => {
+        setSchedules([]);
+        setUseCustomSchedules(false);
+    };
+
     const validateForm = (): boolean => {
         const newErrors: {[key: string]: string} = {};
 
@@ -177,9 +220,10 @@ const CreateUserForm: React.FC<CreateUserFormProps> = ({ isOpen, onClose, onSubm
                 email: formData.email,
                 password: formData.password,
                 role: formData.role,
-                phone: formData.phone || ''
+                phone: formData.phone || '',
+                customSchedules: useCustomSchedules && isEvaluatorRole(formData.role) ? schedules : undefined
             };
-            
+
             console.log('🚀 CreateUserForm - Llamando onSubmit con datos procesados:', processedFormData);
             await onSubmit(processedFormData);
             console.log('CreateUserForm - onSubmit completado');
@@ -190,6 +234,7 @@ const CreateUserForm: React.FC<CreateUserFormProps> = ({ isOpen, onClose, onSubm
                 message: `${formData.firstName} ${formData.lastName} ha sido creado exitosamente`
             });
             resetForm();
+            resetSchedules();
             onClose();
         } catch (error) {
             console.error('CreateUserForm - Error en onSubmit:', error);
@@ -671,6 +716,150 @@ const CreateUserForm: React.FC<CreateUserFormProps> = ({ isOpen, onClose, onSubm
                         </div>
                     )}
 
+                    {/* Schedule Management Section */}
+                    {!isEditing && isEvaluatorRole(formData.role) && (
+                        <div className="border-t pt-6">
+                            <div className="flex items-center gap-3 mb-4">
+                                <FiCalendar className="w-5 h-5 text-azul-monte-tabor" />
+                                <h3 className="text-lg font-semibold text-azul-monte-tabor">
+                                    Horarios de Entrevista
+                                </h3>
+                            </div>
+
+                            <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                <label className="flex items-center space-x-3">
+                                    <input
+                                        type="checkbox"
+                                        checked={useCustomSchedules}
+                                        onChange={(e) => setUseCustomSchedules(e.target.checked)}
+                                        className="text-azul-monte-tabor"
+                                    />
+                                    <div>
+                                        <span className="font-medium text-azul-monte-tabor">
+                                            Configurar horarios personalizados
+                                        </span>
+                                        <p className="text-sm text-gris-piedra mt-1">
+                                            Si no se selecciona, se crearán horarios por defecto (Lunes-Viernes 10:00-12:00 y 14:00-16:00)
+                                        </p>
+                                    </div>
+                                </label>
+                            </div>
+
+                            {useCustomSchedules && (
+                                <div className="space-y-4">
+                                    <div className="flex justify-between items-center">
+                                        <h4 className="font-medium text-gris-piedra">
+                                            Horarios Personalizados
+                                        </h4>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={addSchedule}
+                                            leftIcon={<FiPlus className="w-4 h-4" />}
+                                        >
+                                            Agregar Horario
+                                        </Button>
+                                    </div>
+
+                                    {schedules.length === 0 ? (
+                                        <div className="text-center py-6 border-2 border-dashed border-gray-300 rounded-lg">
+                                            <FiClock className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                                            <p className="text-gris-piedra">
+                                                No hay horarios configurados. Haz clic en "Agregar Horario" para comenzar.
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-3">
+                                            {schedules.map((schedule, index) => (
+                                                <div key={index} className="border border-gray-200 rounded-lg p-4">
+                                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-3">
+                                                        <div>
+                                                            <label className="block text-sm font-medium text-gris-piedra mb-1">
+                                                                Día de la Semana
+                                                            </label>
+                                                            <select
+                                                                value={schedule.dayOfWeek}
+                                                                onChange={(e) => updateSchedule(index, 'dayOfWeek', e.target.value)}
+                                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-azul-monte-tabor focus:border-azul-monte-tabor"
+                                                            >
+                                                                {getDayOfWeekOptions().map(option => (
+                                                                    <option key={option.value} value={option.value}>
+                                                                        {option.label}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
+
+                                                        <div>
+                                                            <label className="block text-sm font-medium text-gris-piedra mb-1">
+                                                                Hora de Inicio
+                                                            </label>
+                                                            <select
+                                                                value={schedule.startTime}
+                                                                onChange={(e) => updateSchedule(index, 'startTime', e.target.value)}
+                                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-azul-monte-tabor focus:border-azul-monte-tabor"
+                                                            >
+                                                                {getTimeSlotOptions().map(option => (
+                                                                    <option key={option.value} value={option.value}>
+                                                                        {option.label}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
+
+                                                        <div>
+                                                            <label className="block text-sm font-medium text-gris-piedra mb-1">
+                                                                Hora de Fin
+                                                            </label>
+                                                            <select
+                                                                value={schedule.endTime}
+                                                                onChange={(e) => updateSchedule(index, 'endTime', e.target.value)}
+                                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-azul-monte-tabor focus:border-azul-monte-tabor"
+                                                            >
+                                                                {getTimeSlotOptions().map(option => (
+                                                                    <option key={option.value} value={option.value}>
+                                                                        {option.label}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
+
+                                                        <div className="flex items-end">
+                                                            <Button
+                                                                type="button"
+                                                                variant="outline"
+                                                                size="sm"
+                                                                onClick={() => removeSchedule(index)}
+                                                                leftIcon={<FiTrash2 className="w-4 h-4" />}
+                                                                className="w-full border-red-300 text-red-600 hover:bg-red-50"
+                                                            >
+                                                                Eliminar
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gris-piedra mb-1">
+                                                            Notas (opcional)
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            value={schedule.notes || ''}
+                                                            onChange={(e) => updateSchedule(index, 'notes', e.target.value)}
+                                                            placeholder="Información adicional sobre este horario..."
+                                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-azul-monte-tabor focus:border-azul-monte-tabor"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
                     {/* Botones */}
                     <div className="flex gap-4 pt-6 border-t">
                         <Button
@@ -678,6 +867,7 @@ const CreateUserForm: React.FC<CreateUserFormProps> = ({ isOpen, onClose, onSubm
                             variant="outline"
                             onClick={() => {
                                 resetForm();
+                                resetSchedules();
                                 onClose();
                             }}
                             className="flex-1"

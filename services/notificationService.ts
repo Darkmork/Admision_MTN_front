@@ -316,7 +316,7 @@ class NotificationService {
     try {
       localStorage.setItem('interview_notifications', JSON.stringify(this.notifications));
     } catch (error) {
-      console.warn('No se pudo guardar las notificaciones:', error);
+      // No se pudo guardar las notificaciones
     }
   }
 
@@ -335,7 +335,7 @@ class NotificationService {
         }
       }
     } catch (error) {
-      console.warn('No se pudieron cargar las notificaciones:', error);
+      // No se pudieron cargar las notificaciones
       this.notifications = [];
     }
   }

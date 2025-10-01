@@ -3,10 +3,12 @@
  * Handles user profile management through API Gateway
  */
 
-import httpClient from './http';
+import api from './api';
 import { User } from '../src/api/users.types';
 
 export interface UserProfile extends User {
+  address?: string;
+  profession?: string;
   permissions: string[];
   lastLoginAt?: string;
   sessionInfo?: {
@@ -34,6 +36,8 @@ export interface UpdateProfileRequest {
   firstName?: string;
   lastName?: string;
   phone?: string;
+  address?: string;
+  profession?: string;
   preferences?: UserProfile['preferences'];
 }
 
@@ -51,15 +55,15 @@ class ProfileService {
    * Gateway extracts roles from JWT automatically
    */
   async getCurrentUser(): Promise<UserProfile> {
-    const response = await httpClient.get<{ data: UserProfile }>(`${this.basePath}/me`);
-    return response.data;
+    const response = await api.get<{ success: boolean; user: UserProfile }>(`${this.basePath}/me`);
+    return response.data.user;
   }
 
   /**
    * Update current user profile
    */
   async updateProfile(data: UpdateProfileRequest): Promise<UserProfile> {
-    const response = await httpClient.put<{ data: UserProfile }>(
+    const response = await api.put<{ data: UserProfile }>(
       `${this.basePath}/me`,
       data
     );
@@ -70,7 +74,7 @@ class ProfileService {
    * Change user password
    */
   async changePassword(data: ChangePasswordRequest): Promise<void> {
-    await httpClient.post<{ success: boolean }>(
+    await api.post<{ success: boolean }>(
       `${this.basePath}/me/change-password`,
       data
     );
@@ -82,8 +86,8 @@ class ProfileService {
   async uploadProfilePicture(file: File): Promise<{ profilePictureUrl: string }> {
     const formData = new FormData();
     formData.append('profilePicture', file);
-    
-    const response = await httpClient.post<{ data: { profilePictureUrl: string } }>(
+
+    const response = await api.post<{ data: { profilePictureUrl: string } }>(
       `${this.basePath}/me/profile-picture`,
       formData,
       {
@@ -92,7 +96,7 @@ class ProfileService {
         }
       }
     );
-    
+
     return response.data;
   }
 
@@ -100,7 +104,7 @@ class ProfileService {
    * Get user permissions (extracted from token)
    */
   async getPermissions(): Promise<string[]> {
-    const response = await httpClient.get<{ data: string[] }>(
+    const response = await api.get<{ data: string[] }>(
       `${this.basePath}/me/permissions`
     );
     return response.data;
@@ -110,7 +114,7 @@ class ProfileService {
    * Update user preferences
    */
   async updatePreferences(preferences: UserProfile['preferences']): Promise<UserProfile> {
-    const response = await httpClient.patch<{ data: UserProfile }>(
+    const response = await api.patch<{ data: UserProfile }>(
       `${this.basePath}/me/preferences`,
       { preferences }
     );
@@ -132,7 +136,7 @@ class ProfileService {
     ipAddress: string;
     userAgent: string;
   }>> {
-    const response = await httpClient.get<{ 
+    const response = await api.get<{
       data: Array<{
         id: string;
         action: string;
@@ -162,7 +166,7 @@ class ProfileService {
     isCurrentSession: boolean;
     expiresAt: string;
   }>> {
-    const response = await httpClient.get<{ 
+    const response = await api.get<{
       data: Array<{
         sessionId: string;
         deviceInfo: {
@@ -182,14 +186,14 @@ class ProfileService {
    * Revoke a specific session
    */
   async revokeSession(sessionId: string): Promise<void> {
-    await httpClient.delete(`${this.basePath}/me/sessions/${sessionId}`);
+    await api.delete(`${this.basePath}/me/sessions/${sessionId}`);
   }
 
   /**
    * Revoke all sessions except current
    */
   async revokeAllOtherSessions(): Promise<void> {
-    await httpClient.post(`${this.basePath}/me/sessions/revoke-others`);
+    await api.post(`${this.basePath}/me/sessions/revoke-others`);
   }
 
   /**
@@ -200,7 +204,7 @@ class ProfileService {
     backupCodes: string[];
     secret: string;
   }> {
-    const response = await httpClient.post<{ 
+    const response = await api.post<{
       data: {
         qrCodeUrl: string;
         backupCodes: string[];
@@ -214,7 +218,7 @@ class ProfileService {
    * Verify and enable two-factor authentication
    */
   async enableTwoFactor(token: string): Promise<{ backupCodes: string[] }> {
-    const response = await httpClient.post<{ data: { backupCodes: string[] } }>(
+    const response = await api.post<{ data: { backupCodes: string[] } }>(
       `${this.basePath}/me/2fa/enable`,
       { token }
     );
@@ -225,7 +229,7 @@ class ProfileService {
    * Disable two-factor authentication
    */
   async disableTwoFactor(password: string): Promise<void> {
-    await httpClient.post(`${this.basePath}/me/2fa/disable`, { password });
+    await api.post(`${this.basePath}/me/2fa/disable`, { password });
   }
 }
 

@@ -189,10 +189,24 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
 
   const loadApplications = async () => {
     try {
+      console.log('📋 InterviewForm: Cargando aplicaciones disponibles...');
       const response = await applicationService.getAllApplications();
-      setApplications(response);
+      console.log('📋 InterviewForm: Aplicaciones obtenidas:', response);
+
+      // Filtrar solo aplicaciones con datos válidos
+      const validApplications = response.filter(app =>
+        app &&
+        app.id &&
+        app.student &&
+        app.student.firstName &&
+        app.student.lastName
+      );
+
+      console.log('📋 InterviewForm: Aplicaciones válidas filtradas:', validApplications);
+      setApplications(validApplications);
     } catch (error) {
-      console.error('Error loading applications:', error);
+      console.error('❌ InterviewForm: Error loading applications:', error);
+      setApplications([]);
     }
   };
 

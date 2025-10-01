@@ -80,11 +80,8 @@ class TemporaryInterviewService {
     sortDir: 'asc' | 'desc' = 'desc',
     search?: string
   ): Promise<{ interviews: Interview[]; totalElements: number; totalPages: number }> {
-    console.log('🔄 TemporaryInterviewService: Obteniendo entrevistas desde endpoint público');
     
     const response = await api.get<PublicInterviewResponse>(this.publicUrl);
-    
-    console.log('✅ TemporaryInterviewService: Response recibida:', response.data);
     
     const interviews = response.data.interviews.map(interview => {
       const mappedInterview = this.mapPublicInterviewResponse(interview);
@@ -123,11 +120,9 @@ class TemporaryInterviewService {
   }
 
   async updateInterview(id: number, request: UpdateInterviewRequest): Promise<Interview> {
-    console.log('⚠️ TemporaryInterviewService: Guardando cambios localmente (no persiste en BD)');
     
     // Mostrar notificación al usuario
     if (typeof window !== 'undefined') {
-      console.warn('🟡 MODO DEMO: Los cambios se guardan solo en memoria y se perderán al recargar la página');
     }
     
     // Crear actualización local

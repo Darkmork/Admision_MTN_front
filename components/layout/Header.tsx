@@ -11,11 +11,16 @@ const Header: React.FC = () => {
     // Verificar si el usuario actual es admin
     useEffect(() => {
         const checkAdminStatus = () => {
+            // Verificar múltiples fuentes de autenticación
             const currentProfessor = localStorage.getItem('currentProfessor');
-            if (currentProfessor) {
+            const authToken = localStorage.getItem('auth_token');
+            const professorToken = localStorage.getItem('professor_token');
+
+            // Solo mostrar admin si hay un token válido Y datos de profesor admin
+            if ((authToken || professorToken) && currentProfessor) {
                 try {
                     const professorData = JSON.parse(currentProfessor);
-                    setIsAdmin(professorData.isAdmin || false);
+                    setIsAdmin(professorData.isAdmin === true);
                 } catch (error) {
                     setIsAdmin(false);
                 }
@@ -32,7 +37,7 @@ const Header: React.FC = () => {
         };
 
         window.addEventListener('storage', handleStorageChange);
-        
+
         // También verificar cuando cambie el contenido actual
         const interval = setInterval(checkAdminStatus, 1000);
 

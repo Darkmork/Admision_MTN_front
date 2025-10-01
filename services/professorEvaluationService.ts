@@ -45,21 +45,16 @@ class ProfessorEvaluationService {
      */
     async getMyEvaluations(): Promise<ProfessorEvaluation[]> {
         try {
-            console.log('📋 Obteniendo evaluaciones del profesor...');
             
             const response = await api.get('/api/evaluations/my-evaluations');
             const evaluations = response.data;
             
-            console.log('✅ Evaluaciones obtenidas del backend:', evaluations);
-            console.log('📊 Número de evaluaciones:', evaluations.length);
             
             const mappedEvaluations = this.mapToProfessorEvaluations(evaluations);
-            console.log('🔄 Evaluaciones mapeadas para el frontend:', mappedEvaluations);
             
             return mappedEvaluations;
             
         } catch (error: any) {
-            console.error('❌ Error obteniendo evaluaciones:', error);
             
             if (error.response?.status === 401) {
                 throw new Error('No tienes permisos para acceder a las evaluaciones. Verifica tu autenticación.');
@@ -78,16 +73,13 @@ class ProfessorEvaluationService {
      */
     async getMyPendingEvaluations(): Promise<ProfessorEvaluation[]> {
         try {
-            console.log('⏳ Obteniendo evaluaciones pendientes...');
             
             const response = await api.get('/api/evaluations/my-pending');
             const evaluations = response.data;
             
-            console.log('✅ Evaluaciones pendientes obtenidas:', evaluations.length);
             return this.mapToProfessorEvaluations(evaluations);
             
         } catch (error: any) {
-            console.error('❌ Error obteniendo evaluaciones pendientes:', error);
             
             if (error.response?.status === 401) {
                 throw new Error('No tienes permisos para acceder a las evaluaciones pendientes.');
@@ -125,7 +117,6 @@ class ProfessorEvaluationService {
             };
             
         } catch (error: any) {
-            console.error('❌ Error obteniendo estadísticas:', error);
             throw new Error('No se pudieron obtener las estadísticas de evaluaciones.');
         }
     }
@@ -135,16 +126,13 @@ class ProfessorEvaluationService {
      */
     async updateEvaluation(evaluationId: number, evaluationData: Partial<ProfessorEvaluation>): Promise<ProfessorEvaluation> {
         try {
-            console.log('💾 Actualizando evaluación:', evaluationId);
             
             const response = await api.put(`/api/evaluations/${evaluationId}`, evaluationData);
             const updatedEvaluation = response.data;
             
-            console.log('✅ Evaluación actualizada exitosamente');
             return this.mapToProfessorEvaluation(updatedEvaluation);
             
         } catch (error: any) {
-            console.error('❌ Error actualizando evaluación:', error);
             
             if (error.response?.status === 401) {
                 throw new Error('No tienes permisos para actualizar esta evaluación.');
@@ -163,16 +151,13 @@ class ProfessorEvaluationService {
      */
     async getEvaluationById(evaluationId: number): Promise<ProfessorEvaluation> {
         try {
-            console.log('🔍 Obteniendo evaluación específica:', evaluationId);
             
             const response = await api.get(`/api/evaluations/${evaluationId}`);
             const evaluation = response.data;
             
-            console.log('✅ Evaluación obtenida:', evaluation);
             return this.mapToProfessorEvaluation(evaluation);
             
         } catch (error: any) {
-            console.error('❌ Error obteniendo evaluación:', error);
             
             if (error.response?.status === 401) {
                 throw new Error('No tienes permisos para acceder a esta evaluación.');
@@ -192,22 +177,6 @@ class ProfessorEvaluationService {
     }
     
     private mapToProfessorEvaluation(apiEvaluation: any): ProfessorEvaluation {
-        console.log('🔄 Mapeando evaluación individual:', apiEvaluation);
-        console.log('🔍 Estructura de datos recibida:', {
-            id: apiEvaluation.id,
-            evaluationType: apiEvaluation.evaluationType,
-            application: apiEvaluation.application,
-            student: apiEvaluation.student
-        });
-        
-        // DEBUG: Verificar datos específicos del estudiante
-        console.log('🔍 DEBUG - Datos específicos del estudiante:');
-        console.log('📅 Fecha nacimiento directa:', apiEvaluation.student?.birthDate || apiEvaluation.student?.birth_date);
-        console.log('🏫 Colegio actual directo:', apiEvaluation.student?.currentSchool || apiEvaluation.student?.current_school);
-        if (apiEvaluation.application?.student) {
-            console.log('📅 Fecha nacimiento en application:', apiEvaluation.application.student.birthDate || apiEvaluation.application.student.birth_date);
-            console.log('🏫 Colegio actual en application:', apiEvaluation.application.student.currentSchool || apiEvaluation.application.student.current_school);
-        }
         
         const mappedEvaluation = {
             id: apiEvaluation.id || apiEvaluation.evaluationId,
@@ -233,7 +202,6 @@ class ProfessorEvaluationService {
             application: apiEvaluation.application
         };
         
-        console.log('✅ Evaluación mapeada:', mappedEvaluation);
         return mappedEvaluation;
     }
     

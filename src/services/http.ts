@@ -1,9 +1,17 @@
 /**
  * HTTP Client Service
  * Configured for MTN Microservices Architecture
+ *
+ * Features:
+ * - Automatic retry with exponential backoff (3 attempts)
+ * - 10 second timeout per request
+ * - Request/response interceptors
+ * - Metrics tracking (requests, errors, response times)
+ * - Retry on network errors and 5xx server errors
  */
 
 import axios, { AxiosInstance, AxiosResponse, AxiosError } from 'axios';
+import axiosRetry from 'axios-retry';
 
 class HttpClient {
   private axiosInstance: AxiosInstance;
@@ -17,14 +25,57 @@ class HttpClient {
   constructor() {
     // Get base URL from environment variables (API Gateway)
     const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
-    
+
     this.axiosInstance = axios.create({
       baseURL,
-      timeout: parseInt(import.meta.env.VITE_API_TIMEOUT) || 30000,
+      // Timeout set to 10s for better UX - prevents long waits on slow connections
+      timeout: parseInt(import.meta.env.VITE_API_TIMEOUT) || 10000,
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
+    });
+
+    // Configure retry logic with exponential backoff
+    axiosRetry(this.axiosInstance, {
+      retries: 3, // Maximum 3 retry attempts
+      retryDelay: (retryCount) => {
+        // Exponential backoff with jitter: 1s, 2s, 4s (±25%)
+        const baseDelay = Math.pow(2, retryCount - 1) * 1000;
+        const jitter = 0.75 + Math.random() * 0.5; // 0.75 to 1.25
+        const delay = Math.floor(baseDelay * jitter);
+        console.log(`[Retry] Attempt ${retryCount} - waiting ${delay}ms`);
+        return delay;
+      },
+      retryCondition: (error) => {
+        // CRITICAL FIX: Only retry idempotent methods (GET, HEAD, OPTIONS)
+        const method = error.config?.method?.toUpperCase();
+        const isIdempotent = ['GET', 'HEAD', 'OPTIONS'].includes(method || '');
+
+        // Don't retry if circuit breaker is open
+        const isCBOpen = error.response?.data?.error?.includes('circuit breaker') ||
+                         error.response?.data?.code === 'CIRCUIT_BREAKER_OPEN';
+
+        if (isCBOpen) {
+          console.error('[Retry] Circuit breaker OPEN - aborting retries');
+          return false;
+        }
+
+        // Only retry idempotent requests with network errors or 5xx (excluding CB open)
+        const isRetryable = isIdempotent && (
+          axiosRetry.isNetworkError(error) ||
+          (error.response && error.response.status >= 500 && error.response.status < 600)
+        );
+
+        if (isRetryable) {
+          console.warn(`[Retry] Retrying ${method} request due to: ${error.message}`);
+        } else if (!isIdempotent && error.response?.status >= 500) {
+          console.warn(`[Retry] NOT retrying ${method} (non-idempotent method)`);
+        }
+
+        return isRetryable;
+      },
+      shouldResetTimeout: true, // Reset timeout on each retry
     });
 
     this.setupInterceptors();
@@ -40,12 +91,12 @@ class HttpClient {
         // Add timestamp for response time calculation
         (config as any).startTime = Date.now();
         
-        console.log(`🔄 API Request: ${config.method?.toUpperCase()} ${config.url}`);
+        // Request logging removed for security
         return config;
       },
       (error) => {
         this.metrics.errorCount++;
-        console.error('❌ Request Error:', error);
+        // Error details removed for security
         return Promise.reject(error);
       }
     );
@@ -57,7 +108,7 @@ class HttpClient {
         if (startTime) {
           const responseTime = Date.now() - startTime;
           this.metrics.responseTime.push(responseTime);
-          console.log(`✅ API Response: ${response.config.method?.toUpperCase()} ${response.config.url} (${responseTime}ms)`);
+          // Response logging removed for security
         }
         return response;
       },
@@ -67,7 +118,7 @@ class HttpClient {
         if (startTime) {
           const responseTime = Date.now() - startTime;
           this.metrics.responseTime.push(responseTime);
-          console.error(`❌ API Error: ${error.config?.method?.toUpperCase()} ${error.config?.url} (${responseTime}ms)`, error.response?.status);
+          // Error logging removed for security
         }
         return Promise.reject(error);
       }
@@ -105,8 +156,29 @@ class HttpClient {
   }
 
   setRetryConfig(config: { attempts?: number; delay?: number; jitter?: boolean }) {
-    // Simple retry logic - could be enhanced with exponential backoff
-    console.log('Retry config set:', config);
+    // Update retry configuration dynamically
+    axiosRetry(this.axiosInstance, {
+      retries: config.attempts || 3,
+      retryDelay: (retryCount) => {
+        const baseDelay = config.delay || 1000;
+        let delay = Math.pow(2, retryCount - 1) * baseDelay;
+
+        // Add jitter if enabled (randomize ±25% to prevent thundering herd)
+        if (config.jitter) {
+          const jitterFactor = 0.75 + Math.random() * 0.5; // 0.75 to 1.25
+          delay = delay * jitterFactor;
+        }
+
+        return delay;
+      },
+      retryCondition: (error) => {
+        return axiosRetry.isNetworkOrIdempotentRequestError(error) ||
+          (error.response && error.response.status >= 500);
+      },
+      shouldResetTimeout: true,
+    });
+
+    console.log('[HTTP Client] Retry configuration updated:', config);
   }
 
   // Health check method
@@ -115,25 +187,27 @@ class HttpClient {
       const response = await this.axiosInstance.get('/health');
       return response.status === 200;
     } catch (error) {
-      console.error('Health check failed:', error);
+      // Health check error logging removed for security
       return false;
     }
   }
 
   // Metrics methods
   getMetrics() {
-    const avgResponseTime = this.metrics.responseTime.length > 0 
-      ? this.metrics.responseTime.reduce((a, b) => a + b, 0) / this.metrics.responseTime.length 
+    const avgResponseTime = this.metrics.responseTime.length > 0
+      ? this.metrics.responseTime.reduce((a, b) => a + b, 0) / this.metrics.responseTime.length
       : 0;
 
     return {
       requestCount: this.metrics.requestCount,
       errorCount: this.metrics.errorCount,
-      successRate: this.metrics.requestCount > 0 
-        ? ((this.metrics.requestCount - this.metrics.errorCount) / this.metrics.requestCount) * 100 
+      successRate: this.metrics.requestCount > 0
+        ? ((this.metrics.requestCount - this.metrics.errorCount) / this.metrics.requestCount) * 100
         : 0,
       averageResponseTime: Math.round(avgResponseTime),
       lastRequestTime: this.metrics.lastRequestTime,
+      retryEnabled: true, // Indicate retry is configured
+      retryAttempts: 3, // Max retry attempts
     };
   }
 

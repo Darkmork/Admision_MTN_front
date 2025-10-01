@@ -4,7 +4,8 @@ import { DataAdapter } from './dataAdapter';
 export interface ApplicationRequest {
     // Datos del estudiante
     firstName: string;
-    lastName: string;
+    paternalLastName: string;
+    maternalLastName: string;
     rut: string;
     birthDate: string;
     studentEmail?: string;
@@ -61,6 +62,7 @@ export interface Application {
     student: {
         firstName: string;
         lastName: string;
+        paternalLastName?: string;
         maternalLastName?: string;
         rut: string;
         birthDate: string;
@@ -125,41 +127,45 @@ class ApplicationService {
     async getAllApplications(): Promise<Application[]> {
         try {
             console.log('📊 Admin: Obteniendo postulaciones desde microservicio');
-            
-            // Usar endpoints reales del microservicio
-            let response;
-            const endpoints = [
-                '/api/applications/public/all',  // Endpoint que sabemos que funciona
-                '/api/applications',             // Endpoint principal
-                '/api/applications/all',         // Endpoint alternativo
-            ];
-            
-            for (const endpoint of endpoints) {
-                try {
-                    console.log(`🔄 Probando endpoint: ${endpoint}`);
-                    response = await api.get(endpoint);
-                    console.log(`✅ Éxito con endpoint: ${endpoint}`, response.data);
-                    break;
-                } catch (endpointError) {
-                    console.log(`❌ Falló endpoint: ${endpoint}`, endpointError.response?.status);
-                    continue;
-                }
+
+            // Primero intentar el endpoint principal que devuelve la estructura completa
+            try {
+                console.log('🔄 Probando endpoint principal: /api/applications');
+                const response = await api.get('/api/applications');
+                console.log('✅ Éxito con endpoint principal:', response.data?.length, 'aplicaciones');
+
+                // El endpoint /api/applications ya devuelve la estructura correcta
+                // No necesitamos adaptador, solo filtrar las aplicaciones válidas
+                const validApplications = (response.data || []).filter((app: any) =>
+                    app &&
+                    app.id &&
+                    app.student &&
+                    app.student.firstName &&
+                    app.student.lastName &&
+                    app.student.firstName !== null &&
+                    app.student.lastName !== null
+                );
+
+                console.log('✅ Aplicaciones válidas filtradas:', validApplications.length);
+                console.log('📋 Primera aplicación:', validApplications[0]?.student);
+                return validApplications;
+
+            } catch (mainError) {
+                console.log('❌ Falló endpoint principal, intentando público...');
+
+                // Como fallback, usar el endpoint público con adaptador si es necesario
+                const response = await api.get('/api/applications/public/all');
+                console.log('✅ Éxito con endpoint público:', response.data);
+
+                // Este endpoint devuelve formato diferente, usar adaptador
+                const adaptedApplications = DataAdapter.adaptApplicationApiResponse(response);
+                console.log('✅ Aplicaciones adaptadas desde público:', adaptedApplications.length);
+                return adaptedApplications;
             }
-            
-            if (!response) {
-                throw new Error('Ningún endpoint de aplicaciones disponible');
-            }
-            
-            // Usar el adaptador para convertir datos simples a estructura compleja
-            const adaptedApplications = DataAdapter.adaptApplicationApiResponse(response);
-            
-            console.log('✅ Admin: Postulaciones adaptadas exitosamente:', adaptedApplications.length);
-            console.log('📋 Primera postulación adaptada:', adaptedApplications[0]);
-            return adaptedApplications;
-            
+
         } catch (error: any) {
             console.error('❌ Error obteniendo postulaciones desde microservicio:', error);
-            
+
             // Como fallback, devolver un array vacío
             console.log('🔄 Devolviendo array vacío como fallback');
             return [];
@@ -358,6 +364,128 @@ class ApplicationService {
             }
             
             throw new Error('Error al archivar la postulación');
+        }
+    }
+
+    // Función principal para enviar aplicaciones
+    async submitApplication(data: ApplicationRequest): Promise<ApplicationResponse> {
+        try {
+            console.log('📝 Enviando postulación:', data);
+
+            // Validar datos antes de enviar
+            if (!data.firstName || !data.paternalLastName || !data.maternalLastName) {
+                throw new Error('Faltan datos obligatorios del estudiante');
+            }
+
+            if (!data.rut || !data.birthDate || !data.grade) {
+                throw new Error('Faltan datos básicos del estudiante');
+            }
+
+            // Enviar al backend
+            const response = await api.post('/api/applications', data);
+
+            console.log('✅ Postulación enviada exitosamente:', response.data);
+
+            return {
+                success: true,
+                message: response.data.message || 'Postulación enviada exitosamente',
+                id: response.data.id,
+                studentName: response.data.studentName,
+                grade: response.data.grade
+            };
+
+        } catch (error: any) {
+            console.error('❌ Error enviando postulación:', error);
+
+            // Manejo específico de errores HTTP
+            if (error.response) {
+                const status = error.response.status;
+                const data = error.response.data;
+
+                switch (status) {
+                    case 400:
+                        throw new Error(data.message || 'Datos de la postulación inválidos');
+                    case 401:
+                        throw new Error('No estás autorizado para enviar postulaciones');
+                    case 403:
+                        throw new Error('No tienes permisos para realizar esta acción');
+                    case 409:
+                        throw new Error(data.message || 'Ya existe una postulación con estos datos');
+                    case 422:
+                        // Errores de validación específicos
+                        if (data.errors && Array.isArray(data.errors)) {
+                            throw new Error(data.errors.join(', '));
+                        }
+                        throw new Error(data.message || 'Error de validación en los datos');
+                    case 500:
+                        throw new Error('Error interno del servidor. Intenta nuevamente.');
+                    default:
+                        throw new Error(data.message || 'Error desconocido al enviar la postulación');
+                }
+            } else if (error.request) {
+                throw new Error('No se pudo conectar con el servidor. Verifica tu conexión.');
+            } else {
+                throw new Error(error.message || 'Error inesperado al enviar la postulación');
+            }
+        }
+    }
+
+    // Función para subir documentos
+    async uploadDocument(applicationId: number, file: File, documentType: string): Promise<any> {
+        try {
+            console.log(`📎 Subiendo documento ${documentType} para aplicación ${applicationId}`);
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('documentType', documentType);
+            formData.append('applicationId', applicationId.toString());
+
+            const response = await api.post('/api/applications/documents', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+
+            console.log('✅ Documento subido exitosamente:', response.data);
+            return response.data;
+
+        } catch (error: any) {
+            console.error('❌ Error subiendo documento:', error);
+
+            if (error.response) {
+                const status = error.response.status;
+                const data = error.response.data;
+
+                switch (status) {
+                    case 400:
+                        throw new Error(data.message || 'Archivo o tipo de documento inválido');
+                    case 401:
+                        throw new Error('No estás autorizado para subir documentos');
+                    case 413:
+                        throw new Error('El archivo es demasiado grande');
+                    case 415:
+                        throw new Error('Tipo de archivo no permitido');
+                    case 422:
+                        throw new Error(data.message || 'Error de validación del documento');
+                    default:
+                        throw new Error(data.message || 'Error al subir el documento');
+                }
+            }
+
+            throw new Error('Error de conexión al subir el documento');
+        }
+    }
+
+    async getApplicationDocuments(applicationId: number): Promise<any> {
+        try {
+            const response = await api.get(`/api/applications/${applicationId}/documents`);
+            return response.data;
+        } catch (error: any) {
+            if (error.response?.data) {
+                const data = error.response.data;
+                throw new Error(data.message || data.error || 'Error al cargar documentos');
+            }
+            throw new Error('Error de conexión al cargar documentos');
         }
     }
 }

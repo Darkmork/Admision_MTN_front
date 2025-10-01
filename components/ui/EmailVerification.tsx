@@ -7,6 +7,7 @@ interface EmailVerificationProps {
     email: string;
     onEmailChange: (email: string) => void;
     onVerificationComplete: (isVerified: boolean) => void;
+    rut?: string;  // RUT para validación previa
     isRequired?: boolean;
     placeholder?: string;
     className?: string;
@@ -16,6 +17,7 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({
     email,
     onEmailChange,
     onVerificationComplete,
+    rut,
     isRequired = true,
     placeholder = "correo@ejemplo.com",
     className = ""
@@ -74,9 +76,9 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({
     // Manejar envío de código
     const handleSendCode = async () => {
         if (!isEmailValid) return;
-        
+
         try {
-            await sendVerificationCode(email, 'registration');
+            await sendVerificationCode(email, 'registration', rut);
         } catch (error) {
             // El error ya se maneja en el hook
         }

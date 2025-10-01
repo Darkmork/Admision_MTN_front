@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { interviewService } from '../services/interviewService';
 import { FiCalendar, FiClock, FiCheck } from 'react-icons/fi';
-
-// Utility function to create a local date from YYYY-MM-DD string
-// Prevents timezone issues when parsing date strings
-const parseLocalDate = (dateString: string): Date => {
-  const [year, month, day] = dateString.split('-').map(Number);
-  return new Date(year, month - 1, day);
-};
+import {
+  createSantiagoDate,
+  formatSantiagoDate,
+  getTodayInSantiago,
+  addDaysInSantiago,
+  CHILE_DATE_OPTIONS
+} from '../utils/timezone';
 
 interface DayScheduleSelectorProps {
   evaluatorId: number;
@@ -118,27 +118,19 @@ const DayScheduleSelector: React.FC<DayScheduleSelectorProps> = ({
   };
 
   const getMinDate = () => {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
+    return getTodayInSantiago();
   };
 
   const getMaxDate = () => {
-    const maxDate = new Date();
-    maxDate.setDate(maxDate.getDate() + 90); // 3 meses adelante
-    return maxDate.toISOString().split('T')[0];
+    return addDaysInSantiago(getTodayInSantiago(), 90); // 3 meses adelante
   };
 
   const formatSelectedDateTime = () => {
     if (!selectedDate || !selectedTime) return null;
-    
-    const date = parseLocalDate(selectedDate);
+
+    const date = createSantiagoDate(selectedDate);
     return {
-      dateText: date.toLocaleDateString('es-CL', { 
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-      }),
+      dateText: formatSantiagoDate(date, CHILE_DATE_OPTIONS),
       timeText: selectedTime
     };
   };
@@ -166,12 +158,7 @@ const DayScheduleSelector: React.FC<DayScheduleSelectorProps> = ({
         />
         {selectedDate && (
           <p className="mt-1 text-sm text-gray-600">
-            Fecha seleccionada: {parseLocalDate(selectedDate).toLocaleDateString('es-CL', { 
-              weekday: 'long', 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
-            })}
+            Fecha seleccionada: {formatSantiagoDate(selectedDate, CHILE_DATE_OPTIONS)}
           </p>
         )}
       </div>

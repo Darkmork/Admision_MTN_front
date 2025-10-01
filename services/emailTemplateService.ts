@@ -54,7 +54,6 @@ export class EmailTemplateService {
       
       // If backend returns empty array, use mock templates for now
       if (Array.isArray(response.data) && response.data.length === 0) {
-        console.log('⚠️ No templates from backend, using mock data');
         return {
           success: true,
           data: this.getMockTemplates()

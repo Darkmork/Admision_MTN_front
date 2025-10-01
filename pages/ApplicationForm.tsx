@@ -6,6 +6,7 @@ import Select from '../components/ui/Select';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import EmailVerification from '../components/ui/EmailVerification';
+import ErrorModal from '../components/ui/ErrorModal';
 import { CheckCircleIcon, LogoIcon, UploadIcon } from '../components/icons/Icons';
 import { useApplications, useNotifications } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
@@ -13,6 +14,7 @@ import { educationalLevelsForForm as educationalLevels } from '../services/stati
 import api from '../services/api';
 import { applicationService } from '../services/applicationService';
 import { documentService, DOCUMENT_TYPES } from '../services/documentService';
+import profileService from '../services/profileService';
 
 const steps = [
   "Datos del Postulante",
@@ -86,6 +88,14 @@ const ApplicationForm: React.FC = () => {
     const [authError, setAuthError] = useState('');
     const [submittedApplicationId, setSubmittedApplicationId] = useState<number | null>(null);
     const [uploadedDocuments, setUploadedDocuments] = useState<Map<string, File>>(new Map());
+
+    // Estado para el modal de errores
+    const [showErrorModal, setShowErrorModal] = useState(false);
+    const [errorModalData, setErrorModalData] = useState({
+        title: '',
+        message: '',
+        errors: [] as string[]
+    });
     
     const { addApplication } = useApplications();
     const { addNotification } = useNotifications();
@@ -103,11 +113,17 @@ const ApplicationForm: React.FC = () => {
         lastName: '',
         phone: '',
         rut: '',
-        confirmPassword: ''
+        confirmPassword: '',
+        address: '',
+        profession: ''
     });
     
     // Estado para verificación de email
     const [isEmailVerified, setIsEmailVerified] = useState(false);
+
+    // Estado para cargar perfil del usuario
+    const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+    const [userProfile, setUserProfile] = useState<any>(null);
     
     // Helper function to convert to uppercase for text fields
     const toUpperCase = (value: string) => {
@@ -140,31 +156,32 @@ const ApplicationForm: React.FC = () => {
     
     // Función para actualizar datos de autenticación
     const updateAuthField = useCallback((name: string, value: string) => {
-        // Apply uppercase transformation for names
-        const processedValue = (name === 'firstName' || name === 'lastName') 
+        // Apply uppercase transformation for names, address, and profession
+        const processedValue = (name === 'firstName' || name === 'lastName' || name === 'address' || name === 'profession')
             ? value.toUpperCase()
             : value;
-        
+
         setAuthData(prev => ({ ...prev, [name]: processedValue }));
     }, []);
     
     // Función para manejar login
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
+        console.log('🔐 ApplicationForm - handleLogin: Starting login process');
         setAuthLoading(true);
         setAuthError('');
 
         try {
+            console.log('🔐 ApplicationForm - handleLogin: Calling login with:', authData.email);
             await login(authData.email, authData.password, 'apoderado');
+            console.log('✅ ApplicationForm - handleLogin: Login successful, hiding auth form');
             setShowAuthForm(false);
-            // Pre-llenar el formulario con datos del usuario si están disponibles
-            if (user) {
-                updateField('parent1Email', user.email);
-                updateField('parent1Name', `${user.firstName} ${user.lastName}`);
-                updateField('parent1Phone', user.phone || '');
-                updateField('parent1Rut', user.rut || '');
-            }
+
+            // Pre-llenar el formulario con datos del usuario autenticado
+            await loadUserProfileAndPopulate();
+            console.log('✅ ApplicationForm - handleLogin: Profile loaded and populated');
         } catch (err) {
+            console.error('❌ ApplicationForm - handleLogin: Login failed:', err);
             setAuthError('Credenciales inválidas. Verifique su email y contraseña.');
         } finally {
             setAuthLoading(false);
@@ -174,11 +191,13 @@ const ApplicationForm: React.FC = () => {
     // Función para manejar registro
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
+        console.log('📝 ApplicationForm - handleRegister: Starting registration process');
         setAuthLoading(true);
         setAuthError('');
 
         // Validar verificación de email
         if (!isEmailVerified) {
+            console.warn('⚠️ ApplicationForm - handleRegister: Email not verified');
             setAuthError('Debe verificar su dirección de correo electrónico antes de continuar');
             setAuthLoading(false);
             return;
@@ -198,31 +217,149 @@ const ApplicationForm: React.FC = () => {
         }
 
         try {
+            // Registrar usuario con información básica
+            console.log('📝 ApplicationForm - handleRegister: Calling register with:', authData.email);
             await register(authData, 'apoderado');
+            console.log('✅ ApplicationForm - handleRegister: Registration successful, hiding auth form');
             setShowAuthForm(false);
-            // Pre-llenar el formulario con datos del usuario
-            updateField('parent1Email', authData.email);
-            updateField('parent1Name', `${authData.firstName} ${authData.lastName}`);
-            updateField('parent1Phone', authData.phone);
-            updateField('parent1Rut', authData.rut);
-        } catch (err) {
-            setAuthError('Error al crear la cuenta. Intente nuevamente.');
+
+            // Intentar actualizar el perfil con información adicional
+            if (authData.address || authData.profession) {
+                try {
+                    await profileService.updateProfile({
+                        address: authData.address,
+                        profession: authData.profession
+                    });
+                } catch (profileError) {
+                    console.warn('No se pudo actualizar el perfil con información adicional:', profileError);
+                }
+            }
+
+            // Pre-llenar el formulario con datos del registro
+            populateParentFields({
+                email: authData.email,
+                firstName: authData.firstName,
+                lastName: authData.lastName,
+                phone: authData.phone,
+                rut: authData.rut,
+                address: authData.address,
+                profession: authData.profession
+            });
+        } catch (err: any) {
+            console.error('Error en registro:', err);
+
+            // Determinar el mensaje de error específico
+            let errorMessage = 'No se pudo crear la cuenta. Por favor, intente nuevamente.';
+            let errorDetails: string[] = [];
+
+            if (err.response?.data) {
+                const backendError = err.response.data;
+
+                // Errores comunes del backend
+                if (backendError.message) {
+                    errorMessage = backendError.message;
+                }
+
+                // Errores específicos
+                if (backendError.message?.includes('ya existe') || backendError.message?.includes('already exists')) {
+                    errorMessage = 'Ya existe una cuenta con estos datos';
+                    errorDetails.push('El correo electrónico ya está registrado en el sistema');
+                    errorDetails.push('Si olvidó su contraseña, use la opción "Iniciar Sesión" y luego "Recuperar Contraseña"');
+                } else if (backendError.message?.includes('RUT') || backendError.message?.includes('rut')) {
+                    errorMessage = 'Problema con el RUT ingresado';
+                    errorDetails.push('El RUT ya está registrado o tiene un formato inválido');
+                    errorDetails.push('Verifique que el RUT esté correctamente escrito (ej: 12.345.678-5)');
+                } else if (backendError.message?.includes('email') || backendError.message?.includes('correo')) {
+                    errorMessage = 'Problema con el correo electrónico';
+                    errorDetails.push('El correo ingresado ya está en uso');
+                    errorDetails.push('Use otro correo electrónico o inicie sesión con su cuenta existente');
+                } else if (backendError.errors && Array.isArray(backendError.errors)) {
+                    errorDetails = backendError.errors;
+                }
+            } else if (err.message) {
+                errorMessage = err.message;
+            }
+
+            // Mostrar modal de error
+            setErrorModalData({
+                title: '❌ Error al Crear Cuenta',
+                message: errorMessage,
+                errors: errorDetails
+            });
+            setShowErrorModal(true);
+            setAuthError(errorMessage);
         } finally {
             setAuthLoading(false);
         }
     };
     
-    // Verificar si el usuario ya está autenticado
-    useEffect(() => {
-        if (isAuthenticated && user) {
-            setShowAuthForm(false);
-            // Pre-llenar algunos campos con datos del usuario
-            updateField('parent1Email', user.email);
-            updateField('parent1Name', `${user.firstName} ${user.lastName}`);
-            updateField('parent1Phone', user.phone || '');
-            updateField('parent1Rut', user.rut || '');
+    // Función para cargar perfil del usuario y popular campos
+    const loadUserProfileAndPopulate = useCallback(async () => {
+        if (!isAuthenticated || !user) return;
+
+        setIsLoadingProfile(true);
+        try {
+            // Intentar obtener perfil completo del usuario
+            const profile = await profileService.getCurrentUser();
+            setUserProfile(profile);
+
+            // Popular campos con información del perfil completo
+            populateParentFields({
+                email: profile.email || user.email,
+                firstName: profile.firstName || user.firstName,
+                lastName: profile.lastName || user.lastName,
+                phone: profile.phone || user.phone || '',
+                rut: profile.rut || user.rut || '',
+                address: profile.address || '',
+                profession: profile.profession || ''
+            });
+        } catch (error) {
+            console.warn('No se pudo cargar el perfil completo, usando datos básicos:', error);
+            // Fallback: usar datos básicos del usuario autenticado
+            populateParentFields({
+                email: user.email,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                phone: user.phone || '',
+                rut: user.rut || '',
+                address: '',
+                profession: ''
+            });
+        } finally {
+            setIsLoadingProfile(false);
         }
     }, [isAuthenticated, user]);
+
+    // Función helper para popular campos del padre
+    const populateParentFields = useCallback((userData: {
+        email: string;
+        firstName: string;
+        lastName: string;
+        phone: string;
+        rut: string;
+        address: string;
+        profession: string;
+    }) => {
+        updateField('parent1Email', userData.email);
+        updateField('parent1Name', `${userData.firstName} ${userData.lastName}`.toUpperCase());
+        updateField('parent1Phone', userData.phone);
+        updateField('parent1Rut', userData.rut);
+        updateField('parent1Address', userData.address.toUpperCase());
+        updateField('parent1Profession', userData.profession.toUpperCase());
+    }, [updateField]);
+
+    // Verificar si el usuario ya está autenticado
+    useEffect(() => {
+        console.log('🔍 ApplicationForm - Auth Status Changed:', { isAuthenticated, user: user ? { email: user.email, role: user.role } : null, showAuthForm });
+        if (isAuthenticated && user) {
+            console.log('✅ ApplicationForm - User authenticated, hiding auth form');
+            setShowAuthForm(false);
+            // Cargar perfil completo y popular campos
+            loadUserProfileAndPopulate();
+        } else {
+            console.log('❌ ApplicationForm - User not authenticated, should show auth form');
+        }
+    }, [isAuthenticated, user, loadUserProfileAndPopulate]);
     
     // Inicializar el año de postulación con año actual + 1
     useEffect(() => {
@@ -419,7 +556,7 @@ const ApplicationForm: React.FC = () => {
                     
                     // Enviar a la API real
                     console.log('Enviando postulación:', applicationRequest);
-                    const response = await applicationService.createApplication(applicationRequest);
+                    const response = await applicationService.submitApplication(applicationRequest);
                     
                     // Guardar el ID de la aplicación para subir documentos
                     setSubmittedApplicationId(response.id);
@@ -430,12 +567,7 @@ const ApplicationForm: React.FC = () => {
                         console.log(`Subiendo ${uploadedDocuments.size} documentos para la aplicación ${response.id}`);
                         
                         const uploadPromises = Array.from(uploadedDocuments.entries()).map(([docType, file]) => {
-                            const isRequired = ['BIRTH_CERTIFICATE', 'GRADES_2023', 'GRADES_2024', 'GRADES_2025_SEMESTER_1', 'PERSONALITY_REPORT_2024', 'PERSONALITY_REPORT_2025_SEMESTER_1'].includes(docType);
-                            return documentService.uploadDocument(response.id, {
-                                file,
-                                documentType: docType,
-                                isRequired
-                            });
+                            return applicationService.uploadDocument(response.id, file, docType);
                         });
 
                         await Promise.all(uploadPromises);
@@ -481,10 +613,48 @@ const ApplicationForm: React.FC = () => {
                     setCurrentStep(nextStepIndex);
                 } catch (error: any) {
                     console.error('Error al enviar postulación:', error);
+
+                    // Determinar el mensaje de error específico
+                    let errorMessage = 'No se pudo enviar la postulación. Por favor, intente nuevamente.';
+                    let errorDetails: string[] = [];
+
+                    if (error.response?.data) {
+                        const backendError = error.response.data;
+
+                        if (backendError.message) {
+                            errorMessage = backendError.message;
+                        }
+
+                        // Errores específicos de postulación
+                        if (backendError.message?.includes('RUT')) {
+                            errorDetails.push('El RUT del estudiante ya está registrado en otra postulación');
+                            errorDetails.push('Verifique que el RUT sea correcto o contacte a admisiones');
+                        } else if (backendError.message?.includes('duplicada') || backendError.message?.includes('duplicate')) {
+                            errorDetails.push('Ya existe una postulación para este estudiante');
+                            errorDetails.push('Revise su dashboard para ver el estado de las postulaciones existentes');
+                        } else if (backendError.message?.includes('año') || backendError.message?.includes('year')) {
+                            errorDetails.push('El año de postulación no es válido');
+                            errorDetails.push('Verifique que el año académico sea correcto');
+                        } else if (backendError.errors && Array.isArray(backendError.errors)) {
+                            errorDetails = backendError.errors;
+                        }
+                    } else if (error.message) {
+                        errorMessage = error.message;
+                    }
+
+                    // Mostrar modal de error
+                    setErrorModalData({
+                        title: '❌ Error al Enviar Postulación',
+                        message: errorMessage,
+                        errors: errorDetails
+                    });
+                    setShowErrorModal(true);
+
+                    // También mostrar notificación para consistencia
                     addNotification({
                         type: 'error',
                         title: 'Error',
-                        message: error.message || 'No se pudo enviar la postulación. Intente nuevamente.'
+                        message: errorMessage
                     });
                 } finally {
                     setIsSubmitting(false);
@@ -686,6 +856,7 @@ const ApplicationForm: React.FC = () => {
 
                                 <EmailVerification
                                     email={authData.email}
+                                    rut={authData.rut}
                                     onEmailChange={(email) => updateAuthField('email', email)}
                                     onVerificationComplete={setIsEmailVerified}
                                     placeholder="apoderado@ejemplo.com"
@@ -699,6 +870,24 @@ const ApplicationForm: React.FC = () => {
                                     placeholder="+569 1234 5678"
                                     value={authData.phone}
                                     onChange={(e) => updateAuthField('phone', e.target.value)}
+                                    isRequired
+                                />
+
+                                <Input
+                                    id="address"
+                                    label="Dirección"
+                                    placeholder="Av. Providencia 1234, Providencia, Santiago"
+                                    value={authData.address}
+                                    onChange={(e) => updateAuthField('address', e.target.value)}
+                                    isRequired
+                                />
+
+                                <Input
+                                    id="profession"
+                                    label="Profesión"
+                                    placeholder="Ingeniero Comercial"
+                                    value={authData.profession}
+                                    onChange={(e) => updateAuthField('profession', e.target.value)}
                                     isRequired
                                 />
 
@@ -940,6 +1129,20 @@ const ApplicationForm: React.FC = () => {
                     <div className="space-y-6">
                         <div>
                             <h3 className="text-xl font-bold text-azul-monte-tabor mb-4">Información del Padre</h3>
+                            {isLoadingProfile && (
+                                <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+                                    <p className="text-sm text-azul-monte-tabor">
+                                        📋 Cargando datos del perfil para completar automáticamente...
+                                    </p>
+                                </div>
+                            )}
+                            {!isLoadingProfile && userProfile && (
+                                <div className="mb-4 p-3 bg-green-50 rounded-lg">
+                                    <p className="text-sm text-green-800">
+                                        ✅ Datos completados automáticamente desde su perfil. Puede editarlos si es necesario.
+                                    </p>
+                                </div>
+                            )}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <Input 
                                     id="parent1-name" 
@@ -1408,9 +1611,12 @@ const ApplicationForm: React.FC = () => {
     };
 
     // Si no está autenticado, mostrar formulario de autenticación
+    console.log('🎯 ApplicationForm - Render Decision:', { showAuthForm, isAuthenticated, willShowAuthForm: showAuthForm || !isAuthenticated });
     if (showAuthForm || !isAuthenticated) {
+        console.log('📝 ApplicationForm - Rendering auth form');
         return renderAuthForm();
     }
+    console.log('📋 ApplicationForm - Rendering application form (user is authenticated)');
 
     return (
         <div className="bg-gray-50 py-16">
@@ -1489,6 +1695,15 @@ const ApplicationForm: React.FC = () => {
                     </div>
                 )}
             </div>
+
+            {/* Modal de errores */}
+            <ErrorModal
+                isOpen={showErrorModal}
+                onClose={() => setShowErrorModal(false)}
+                title={errorModalData.title}
+                message={errorModalData.message}
+                errors={errorModalData.errors}
+            />
         </div>
     );
 };
