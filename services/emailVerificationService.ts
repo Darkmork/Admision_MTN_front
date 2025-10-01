@@ -77,11 +77,31 @@ class EmailVerificationService {
       const response = await api.get('/api/email/check-exists', {
         params: { email }
       });
-      
+
       return response.data;
 
     } catch (error: any) {
       console.error('❌ Error verificando email (backend may be down):', error);
+      // Return null to indicate check failed rather than false
+      return null;
+    }
+  }
+
+  /**
+   * Verificar si un RUT ya existe en el sistema
+   */
+  async checkRutExists(rut: string): Promise<any> {
+    try {
+      console.log('🔎 Verificando si RUT existe:', rut);
+
+      const response = await api.get('/api/users/check-rut', {
+        params: { rut }
+      });
+
+      return response.data;
+
+    } catch (error: any) {
+      console.error('❌ Error verificando RUT (backend may be down):', error);
       // Return null to indicate check failed rather than false
       return null;
     }

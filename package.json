@@ -16,6 +16,7 @@
   "dependencies": {
     "@heroicons/react": "^2.2.0",
     "axios": "^1.11.0",
+    "axios-retry": "^4.5.0",
     "lucide-react": "^0.540.0",
     "oidc-client-ts": "^3.3.0",
     "react": "^19.1.0",

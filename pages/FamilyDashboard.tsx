@@ -50,9 +50,7 @@ const sections = [
   { key: 'documentos', label: 'Documentos' },
   { key: 'calendario', label: 'Mi Calendario' },
   { key: 'entrevistas', label: 'Mis Entrevistas' },
-  { key: 'notificaciones', label: 'Notificaciones' },
   { key: 'historial', label: 'Historial de Acciones' },
-  { key: 'cuenta', label: 'Opciones de Cuenta' },
   { key: 'ayuda', label: 'Ayuda y Soporte' },
 ];
 
@@ -81,6 +79,27 @@ const getDocumentStatusIcon = (status: Document['status']) => {
 const FamilyDashboard: React.FC = () => {
   const [activeSection, setActiveSection] = useState('resumen');
   const [realApplications, setRealApplications] = useState<Application[]>([]);
+  const [documents, setDocuments] = useState<any[]>([]);
+  const [loadingDocuments, setLoadingDocuments] = useState(false);
+
+  // Function to download/view document
+  const handleViewDocument = (documentId: number, documentName: string) => {
+    // Try to get token from different possible storage keys
+    const token = localStorage.getItem('apoderado_token') ||
+                  localStorage.getItem('auth_token') ||
+                  localStorage.getItem('professor_token');
+
+    if (!token) {
+      alert('No se encontró el token de autenticación. Por favor, inicia sesión nuevamente.');
+      return;
+    }
+
+    // Create URL with token in query parameter for download
+    const downloadUrl = `http://localhost:8080/api/documents/${documentId}/download?token=${encodeURIComponent(token)}`;
+
+    // Open in new tab for viewing (browser will handle display based on content type)
+    window.open(downloadUrl, '_blank');
+  };
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { applications } = useApplications();
@@ -119,11 +138,31 @@ const FamilyDashboard: React.FC = () => {
     
     loadApplications();
   }, [isAuthenticated, user]);
-  
+
+  // Load documents when application is available
+  useEffect(() => {
+    const loadDocuments = async () => {
+      if (!hasRealApplication || !realApplications[0]?.id) return;
+
+      try {
+        setLoadingDocuments(true);
+        const response = await applicationService.getApplicationDocuments(realApplications[0].id);
+        setDocuments(response.documents || []);
+      } catch (error) {
+        console.error('Error loading documents:', error);
+        setDocuments([]);
+      } finally {
+        setLoadingDocuments(false);
+      }
+    };
+
+    loadDocuments();
+  }, [realApplications]);
+
   // Use real applications if available, otherwise fallback to context or mock data
   const hasRealApplication = Array.isArray(realApplications) && realApplications.length > 0;
-  const myApplication = hasRealApplication 
-    ? realApplications[0] 
+  const myApplication = hasRealApplication
+    ? realApplications[0]
     : (applications.length > 0 ? applications[0] : null);
 
   const renderSection = () => {
@@ -487,36 +526,59 @@ const FamilyDashboard: React.FC = () => {
         return (
           <Card className="p-6">
             <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">Documentos</h2>
-            <div className="space-y-3">
-              {myApplication.documents.map(doc => (
-                <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <FileTextIcon className="w-5 h-5 text-dorado-nazaret" />
-                    <span className="font-medium">{doc.name}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {getDocumentStatusIcon(doc.status)}
-                    <Badge 
-                      variant={doc.status === 'approved' ? 'success' : 
-                              doc.status === 'rejected' ? 'error' : 
-                              doc.status === 'submitted' ? 'info' : 'neutral'}
-                      size="sm"
-                    >
-                      {doc.status === 'approved' ? 'Aprobado' : 
-                       doc.status === 'rejected' ? 'Rechazado' : 
-                       doc.status === 'submitted' ? 'En Revisión' : 'Pendiente'}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-            {myApplication.documents.some(doc => doc.status === 'pending') && (
-              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                <p className="text-sm text-azul-monte-tabor">
-                  <strong>Nota:</strong> Algunos documentos aún están pendientes de revisión. 
-                  El equipo de admisiones los revisará pronto.
+
+            {loadingDocuments ? (
+              <div className="text-center py-8">
+                <FiRefreshCw className="w-8 h-8 animate-spin mx-auto text-azul-monte-tabor mb-2" />
+                <p className="text-gris-piedra">Cargando documentos...</p>
+              </div>
+            ) : documents.length === 0 ? (
+              <div className="text-center py-8">
+                <FiFile className="w-12 h-12 mx-auto text-gris-piedra mb-3" />
+                <p className="text-gris-piedra mb-2">No hay documentos subidos aún</p>
+                <p className="text-sm text-gris-piedra">
+                  Los documentos que subas durante el proceso de postulación aparecerán aquí
                 </p>
               </div>
+            ) : (
+              <>
+                <div className="space-y-3">
+                  {documents.map(doc => (
+                    <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <FileTextIcon className="w-5 h-5 text-dorado-nazaret" />
+                        <div>
+                          <span className="font-medium block">{doc.document_type || doc.name}</span>
+                          <span className="text-xs text-gris-piedra">
+                            Subido: {new Date(doc.created_at || doc.upload_date).toLocaleDateString('es-CL')}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleViewDocument(doc.id, doc.original_name)}
+                          className="flex items-center gap-2 px-3 py-1.5 text-sm bg-azul-monte-tabor text-white rounded-lg hover:bg-opacity-90 transition-colors"
+                          title="Ver documento"
+                        >
+                          <FiEye className="w-4 h-4" />
+                          Ver
+                        </button>
+                        <Badge
+                          variant="success"
+                          size="sm"
+                        >
+                          Subido
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                  <p className="text-sm text-azul-monte-tabor">
+                    <strong>Total de documentos:</strong> {documents.length}
+                  </p>
+                </div>
+              </>
             )}
           </Card>
         );
@@ -527,96 +589,28 @@ const FamilyDashboard: React.FC = () => {
               <CalendarIcon className="w-6 h-6" />
               Mi Calendario Personal
             </h2>
-            
-            <div className="space-y-6">
-              {/* Próximos Eventos */}
-              <div>
-                <h3 className="font-semibold text-azul-monte-tabor mb-3">Próximos Eventos</h3>
-                <div className="space-y-3">
-                  <div className="border-l-4 border-l-azul-monte-tabor bg-blue-50 p-4 rounded-r-lg">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="font-medium text-azul-monte-tabor">Entrevista Familiar</h4>
-                        <p className="text-sm text-gris-piedra">Reunión con el equipo de admisiones</p>
-                        <p className="text-sm font-medium mt-1">📅 15 de Octubre, 2024 - 🕐 10:00 AM</p>
-                      </div>
-                      <Badge variant="info" size="sm">Confirmada</Badge>
-                    </div>
-                  </div>
-                  
-                  <div className="border-l-4 border-l-dorado-nazaret bg-yellow-50 p-4 rounded-r-lg">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="font-medium text-azul-monte-tabor">Examen de Matemática</h4>
-                        <p className="text-sm text-gris-piedra">
-                          Evaluación para {hasRealApplication ? myApplication.student.firstName : myApplication.applicant?.firstName}
-                        </p>
-                        <p className="text-sm font-medium mt-1">📅 20 de Octubre, 2024 - 🕐 9:00 AM</p>
-                      </div>
-                      <Badge variant="warning" size="sm">Programado</Badge>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Fechas Importantes */}
-              <div>
-                <h3 className="font-semibold text-azul-monte-tabor mb-3">Fechas Importantes del Proceso</h3>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="font-medium flex items-center gap-2">
-                      <FiList className="w-4 h-4" />
-                      Cierre de Documentos:
-                    </p>
-                      <p className="text-gris-piedra">30 de Septiembre, 2024</p>
-                    </div>
-                    <div>
-                      <p className="font-medium flex items-center gap-2">
-                      <FiFile className="w-4 h-4" />
-                      Publicación de Resultados:
-                    </p>
-                      <p className="text-gris-piedra">1 de Noviembre, 2024</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+
+            <div className="text-center py-12">
+              <CalendarIcon className="w-16 h-16 mx-auto text-gris-piedra mb-4" />
+              <h3 className="text-lg font-semibold text-azul-monte-tabor mb-2">
+                No hay eventos programados
+              </h3>
+              <p className="text-gris-piedra mb-4">
+                Cuando el equipo de admisiones programe entrevistas o eventos, aparecerán aquí.
+              </p>
+              <p className="text-sm text-gris-piedra">
+                💡 Recibirás una notificación por correo electrónico cuando se programe un evento
+              </p>
             </div>
           </Card>
         );
       case 'entrevistas':
         return <FamilyInterviews />;
-      case 'notificaciones':
-        return (
-          <Card className="p-6">
-                                <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">Notificaciones</h2>
-                                <ul className="space-y-3">
-              <li className="text-sm text-gris-piedra">(Aquí aparecerán notificaciones importantes para la familia.)</li>
-            </ul>
-          </Card>
-        );
-      case 'citas':
-        return (
-          <Card className="p-6">
-            <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">Próximas Citas</h2>
-            <p className="text-gris-piedra">(Aquí se mostrarán las entrevistas y reuniones agendadas.)</p>
-          </Card>
-        );
       case 'historial':
         return (
           <Card className="p-6">
             <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">Historial de Acciones</h2>
             <p className="text-gris-piedra">(Aquí se mostrará el historial de acciones realizadas por la familia en el sistema.)</p>
-          </Card>
-        );
-      case 'cuenta':
-        return (
-          <Card className="p-6">
-            <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">Opciones de Cuenta</h2>
-            <ul className="space-y-3">
-              <li><button className="text-azul-monte-tabor hover:underline">Cambiar contraseña</button></li>
-              <li><button className="text-azul-monte-tabor hover:underline">Cerrar sesión</button></li>
-                                </ul>
           </Card>
         );
       case 'ayuda':

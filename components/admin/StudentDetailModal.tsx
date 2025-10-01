@@ -2,14 +2,16 @@ import React, { useState, useEffect } from 'react';
 import Modal from '../ui/Modal';
 import Badge from '../ui/Badge';
 import Button from '../ui/Button';
-import { 
-    FiUser, FiPhone, FiMail, FiMapPin, FiHome, FiBookOpen, FiCalendar, 
-    FiFileText, FiEdit, FiDownload, FiClock, FiCheckCircle, FiAlertCircle, 
+import {
+    FiUser, FiPhone, FiMail, FiMapPin, FiHome, FiBookOpen, FiCalendar,
+    FiFileText, FiEdit, FiDownload, FiClock, FiCheckCircle, FiAlertCircle,
     FiUsers, FiBriefcase, FiHeart, FiStar, FiEye,
-    FiX, FiChevronRight, FiInfo, FiMessageSquare, FiAward
+    FiX, FiChevronRight, FiInfo, FiMessageSquare, FiAward, FiRefreshCw
 } from 'react-icons/fi';
 import { useNotifications } from '../../context/AppContext';
 import { applicationService, Application } from '../../services/applicationService';
+import interviewService from '../../services/interviewService';
+import { Interview, InterviewStatus, INTERVIEW_TYPE_LABELS } from '../../types/interview';
 
 interface Postulante {
     id: number;
@@ -60,13 +62,22 @@ interface Postulante {
     fechaCreacion: string;
 }
 
+// Tipos de entrevistas requeridas
+const REQUIRED_INTERVIEW_TYPES = [
+  { type: 'FAMILY', title: 'Familiar', icon: '👨‍👩‍👧‍👦', required: true },
+  { type: 'INDIVIDUAL', title: 'Individual', icon: '👤', required: true },
+  { type: 'PSYCHOLOGICAL', title: 'Psicológica', icon: '🧠', required: true },
+  { type: 'ACADEMIC', title: 'Académica', icon: '📚', required: true },
+  { type: 'OTHER', title: 'Adicional', icon: '➕', required: false }
+];
+
 interface StudentDetailModalProps {
     isOpen: boolean;
     onClose: () => void;
     postulante?: Postulante;
     onEdit?: (postulante: Postulante) => void;
     onUpdateStatus?: (postulante: Postulante, newStatus: string) => void;
-    onScheduleInterview?: (postulante: Postulante) => void;
+    onScheduleInterview?: (postulante: Postulante, interviewType?: string) => void;
 }
 
 const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
@@ -77,21 +88,24 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
     onUpdateStatus,
     onScheduleInterview
 }) => {
-    const [activeTab, setActiveTab] = useState<'info' | 'familia' | 'academico' | 'documentos' | 'historial'>('info');
+    const [activeTab, setActiveTab] = useState<'info' | 'familia' | 'academico' | 'entrevistas' | 'documentos' | 'historial'>('info');
     const [fullApplication, setFullApplication] = useState<Application | null>(null);
+    const [interviews, setInterviews] = useState<Interview[]>([]);
     const [loading, setLoading] = useState(false);
+    const [interviewsLoading, setInterviewsLoading] = useState(false);
     const { addNotification } = useNotifications();
 
-    // Cargar información completa de la aplicación
+    // Cargar información completa de la aplicación y entrevistas
     useEffect(() => {
         if (postulante && isOpen) {
             loadFullApplication();
+            loadInterviews();
         }
     }, [postulante, isOpen]);
 
     const loadFullApplication = async () => {
         if (!postulante) return;
-        
+
         setLoading(true);
         try {
             const app = await applicationService.getApplicationById(postulante.id);
@@ -106,6 +120,25 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
         } finally {
             setLoading(false);
         }
+    };
+
+    const loadInterviews = async () => {
+        if (!postulante) return;
+
+        setInterviewsLoading(true);
+        try {
+            const response = await interviewService.getInterviewsByApplication(postulante.id);
+            setInterviews(response.interviews || []);
+        } catch (error) {
+            console.error('Error loading interviews:', error);
+            setInterviews([]);
+        } finally {
+            setInterviewsLoading(false);
+        }
+    };
+
+    const refreshData = async () => {
+        await Promise.all([loadFullApplication(), loadInterviews()]);
     };
 
     if (!postulante) return null;
@@ -474,6 +507,177 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
         </div>
     );
 
+    const renderEntrevistasTab = () => {
+        const requiredTypes = REQUIRED_INTERVIEW_TYPES.filter(t => t.required);
+        const completedInterviews = interviews.filter(i => i.status === InterviewStatus.COMPLETED).length;
+        const scheduledInterviews = interviews.filter(i =>
+            i.status === InterviewStatus.SCHEDULED || i.status === InterviewStatus.CONFIRMED
+        ).length;
+        const missingInterviews = requiredTypes.filter(type =>
+            !interviews.some(interview => interview.type === type.type)
+        ).length;
+
+        const progress = Math.round(((completedInterviews + scheduledInterviews) / requiredTypes.length) * 100);
+
+        return (
+            <div className="space-y-6">
+                {/* Header con refresh */}
+                <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                        <FiCalendar className="w-5 h-5" />
+                        Sistema de 4 Entrevistas
+                    </h3>
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={loadInterviews}
+                        disabled={interviewsLoading}
+                    >
+                        <FiRefreshCw className={`w-4 h-4 mr-1 ${interviewsLoading ? 'animate-spin' : ''}`} />
+                        Actualizar
+                    </Button>
+                </div>
+
+                {/* Progreso general */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-gray-700">Progreso de Entrevistas Obligatorias</span>
+                        <span className="text-sm text-gray-600">{completedInterviews + scheduledInterviews} de {requiredTypes.length}</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+                        <div
+                            className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${progress}%` }}
+                        ></div>
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-600">
+                        <span>{completedInterviews} completadas</span>
+                        <span>{scheduledInterviews} programadas</span>
+                        <span>{missingInterviews} pendientes</span>
+                    </div>
+                </div>
+
+                {/* Estado de cada tipo de entrevista */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {REQUIRED_INTERVIEW_TYPES.map(type => {
+                        const interview = interviews.find(i => i.type === type.type);
+                        const hasInterview = !!interview;
+                        const isCompleted = interview?.status === InterviewStatus.COMPLETED;
+                        const isScheduled = interview?.status === InterviewStatus.SCHEDULED ||
+                                          interview?.status === InterviewStatus.CONFIRMED;
+
+                        return (
+                            <div key={type.type} className={`p-4 rounded-lg border-2 ${
+                                isCompleted ? 'border-green-200 bg-green-50' :
+                                isScheduled ? 'border-blue-200 bg-blue-50' :
+                                type.required ? 'border-orange-200 bg-orange-50' :
+                                'border-gray-200 bg-gray-50'
+                            }`}>
+                                <div className="flex items-center justify-between mb-2">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-lg">{type.icon}</span>
+                                        <span className="font-medium text-gray-900">{type.title}</span>
+                                        {type.required && <span className="text-red-500 text-xs">*</span>}
+                                    </div>
+                                    <Badge
+                                        variant="neutral"
+                                        size="sm"
+                                        className={`text-xs ${
+                                            isCompleted ? 'text-green-700 bg-green-100' :
+                                            isScheduled ? 'text-blue-700 bg-blue-100' :
+                                            type.required ? 'text-orange-700 bg-orange-100' :
+                                            'text-gray-600 bg-gray-100'
+                                        }`}
+                                    >
+                                        {isCompleted ? 'Completada' :
+                                         isScheduled ? 'Programada' :
+                                         type.required ? 'Requerida' : 'Opcional'}
+                                    </Badge>
+                                </div>
+
+                                {interview && (
+                                    <div className="space-y-1 text-xs text-gray-600">
+                                        <p>📅 {new Date(interview.scheduledDate).toLocaleDateString('es-CL')}</p>
+                                        <p>🕐 {interview.scheduledTime}</p>
+                                        <p>👤 {interview.interviewerName}</p>
+                                        {interview.status === InterviewStatus.COMPLETED && interview.score && (
+                                            <p className="text-green-600 font-medium">⭐ {interview.score}/10</p>
+                                        )}
+                                    </div>
+                                )}
+
+                                <div className="mt-3">
+                                    {hasInterview ? (
+                                        <Button size="sm" variant="outline" className="w-full text-xs">
+                                            <FiEye className="w-3 h-3 mr-1" />
+                                            Ver Detalles
+                                        </Button>
+                                    ) : (
+                                        <Button
+                                            size="sm"
+                                            variant="primary"
+                                            className="w-full text-xs"
+                                            onClick={() => onScheduleInterview?.(postulante, type.type)}
+                                        >
+                                            <FiCalendar className="w-3 h-3 mr-1" />
+                                            Programar
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+
+                {/* Lista de entrevistas */}
+                {interviews.length > 0 && (
+                    <div>
+                        <h4 className="font-medium text-gray-900 mb-3">Historial de Entrevistas ({interviews.length})</h4>
+                        <div className="space-y-3">
+                            {interviews.map(interview => (
+                                <div key={interview.id} className="border rounded-lg p-3 bg-white">
+                                    <div className="flex items-start justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-base">
+                                                {REQUIRED_INTERVIEW_TYPES.find(t => t.type === interview.type)?.icon || '📋'}
+                                            </span>
+                                            <div>
+                                                <h5 className="font-medium text-gray-900">
+                                                    {INTERVIEW_TYPE_LABELS[interview.type as keyof typeof INTERVIEW_TYPE_LABELS] || interview.type}
+                                                </h5>
+                                                <p className="text-sm text-gray-600">{interview.interviewerName}</p>
+                                            </div>
+                                        </div>
+                                        <Badge variant="info" size="sm">
+                                            {interview.status === InterviewStatus.COMPLETED ? 'Completada' :
+                                             interview.status === InterviewStatus.SCHEDULED ? 'Programada' :
+                                             interview.status === InterviewStatus.CONFIRMED ? 'Confirmada' :
+                                             interview.status}
+                                        </Badge>
+                                    </div>
+                                    <div className="mt-2 text-sm text-gray-600">
+                                        📅 {new Date(interview.scheduledDate).toLocaleDateString('es-CL')}
+                                        🕐 {interview.scheduledTime}
+                                        {interview.status === InterviewStatus.COMPLETED && interview.score && (
+                                            <span className="ml-2 text-green-600 font-medium">⭐ {interview.score}/10</span>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {interviewsLoading && (
+                    <div className="text-center py-4">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+                        <p className="text-sm text-gray-600 mt-2">Cargando entrevistas...</p>
+                    </div>
+                )}
+            </div>
+        );
+    };
+
     const renderDocumentosTab = () => (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -591,6 +795,7 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
         { key: 'info', label: 'Información General', icon: FiUser },
         { key: 'familia', label: 'Familia', icon: FiUsers },
         { key: 'academico', label: 'Académico', icon: FiAward },
+        { key: 'entrevistas', label: 'Entrevistas', icon: FiCalendar },
         { key: 'documentos', label: 'Documentos', icon: FiFileText },
         { key: 'historial', label: 'Historial', icon: FiClock }
     ];
@@ -635,6 +840,7 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                             {activeTab === 'info' && renderInfoTab()}
                             {activeTab === 'familia' && renderFamiliaTab()}
                             {activeTab === 'academico' && renderAcademicoTab()}
+                            {activeTab === 'entrevistas' && renderEntrevistasTab()}
                             {activeTab === 'documentos' && renderDocumentosTab()}
                             {activeTab === 'historial' && renderHistorialTab()}
                         </>

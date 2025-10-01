@@ -378,12 +378,29 @@ class UserService {
   }
 
 
+  /**
+   * Obtener usuarios del colegio sin autenticación (público)
+   */
+  async getSchoolStaffUsersPublic(): Promise<PagedResponse<User>> {
+    try {
+      console.log('👨‍🏫 Obteniendo usuarios del colegio desde endpoint público');
+
+      const response = await api.get('/api/users/public/school-staff');
+
+      console.log('✅ Respuesta del endpoint público:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error obteniendo usuarios del colegio (público):', error);
+      throw this.handleError(error, 'Error al obtener usuarios del colegio');
+    }
+  }
+
   // ============= MANEJO DE ERRORES =============
 
   private handleError(error: any, defaultMessage: string): Error {
-    const message = error.response?.data?.message || 
-                   error.response?.data?.error || 
-                   error.message || 
+    const message = error.response?.data?.message ||
+                   error.response?.data?.error ||
+                   error.message ||
                    defaultMessage;
 
     return new Error(message);

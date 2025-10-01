@@ -66,7 +66,9 @@ class HttpClient {
     this.client.interceptors.request.use(
       async (config) => {
         const correlationId = crypto.randomUUID();
-        
+
+        console.log('📤 http.ts - Making request to:', config.url);
+
         // Agregar headers de autenticación y correlación
         const token = await this.getAccessToken();
         if (token) {
@@ -74,6 +76,9 @@ class HttpClient {
             ...config.headers,
             'Authorization': `Bearer ${token}`,
           };
+          console.log('✅ http.ts - Authorization header added');
+        } else {
+          console.warn('⚠️ http.ts - No token available, request will be sent without auth');
         }
 
         config.headers = {
@@ -90,16 +95,10 @@ class HttpClient {
           correlationId,
         });
 
-        console.log(`🌐 HTTP Request: ${config.method?.toUpperCase()} ${config.url}`, {
-          correlationId,
-          headers: this.sanitizeHeaders(config.headers),
-          retryAttempt: (config as any)._retryAttempt || 0,
-        });
 
         return config;
       },
       (error) => {
-        console.error('❌ Request Interceptor Error:', error);
         return Promise.reject(error);
       }
     );
@@ -115,12 +114,6 @@ class HttpClient {
           metrics.endTime = Date.now();
           metrics.duration = metrics.endTime - metrics.startTime;
           
-          console.log(`✅ HTTP Success: ${response.status} ${response.config.method?.toUpperCase()} ${response.config.url}`, {
-            correlationId,
-            status: response.status,
-            duration: metrics.duration,
-            retryAttempt: metrics.retryAttempt,
-          });
           
           this.metrics.delete(correlationId);
         }
@@ -135,9 +128,26 @@ class HttpClient {
 
   private async getAccessToken(): Promise<string | null> {
     try {
-      return oidcService.getAccessToken();
+      // Primero intentar obtener el token de usuario regular (apoderado)
+      let token = localStorage.getItem('auth_token');
+      console.log('🔑 http.ts - auth_token:', token ? `${token.substring(0, 20)}...` : 'NOT FOUND');
+
+      // Si no hay token de usuario regular, intentar con token de profesor
+      if (!token) {
+        token = localStorage.getItem('professor_token');
+        console.log('🔑 http.ts - professor_token:', token ? `${token.substring(0, 20)}...` : 'NOT FOUND');
+      }
+
+      // Si aún no hay token, intentar OIDC como fallback
+      if (!token) {
+        token = oidcService.getAccessToken();
+        console.log('🔑 http.ts - oidc token:', token ? `${token.substring(0, 20)}...` : 'NOT FOUND');
+      }
+
+      console.log('🔑 http.ts - Final token to use:', token ? 'FOUND' : 'NULL');
+      return token;
     } catch (error) {
-      console.warn('⚠️ No se pudo obtener token de acceso:', error);
+      console.error('❌ http.ts - Error getting token:', error);
       return null;
     }
   }
@@ -162,13 +172,6 @@ class HttpClient {
       metrics.endTime = Date.now();
       metrics.duration = metrics.endTime - metrics.startTime;
       
-      console.error(`❌ HTTP Error: ${error.response?.status} ${error.config?.method?.toUpperCase()} ${error.config?.url}`, {
-        correlationId,
-        status: error.response?.status,
-        duration: metrics.duration,
-        retryAttempt: metrics.retryAttempt,
-        errorMessage: error.message,
-      });
     }
 
     // Verificar si es reintentable
@@ -212,12 +215,6 @@ class HttpClient {
     const jitter = this.retryConfig.jitter ? Math.random() * 0.1 : 0;
     const delay = baseDelay + (baseDelay * jitter);
 
-    console.log(`🔄 Reintentando request (${retryAttempt}/${this.retryConfig.attempts}) en ${Math.round(delay)}ms`, {
-      url: config.url,
-      method: config.method,
-      status: error.response?.status,
-      correlationId: config.headers['X-Correlation-Id'],
-    });
 
     // Esperar antes de reintentar
     await new Promise(resolve => setTimeout(resolve, delay));
@@ -229,28 +226,20 @@ class HttpClient {
   }
 
   private async handle401Error(error: AxiosError): Promise<void> {
-    console.warn('🔒 Error 401: Token inválido o expirado, intentando renovar...');
     
     try {
       // Intentar renovar el token
       const newUser = await oidcService.renewToken();
       
       if (!newUser) {
-        console.error('❌ No se pudo renovar el token, redirigiendo al login');
         this.redirectToLogin();
       }
     } catch (renewError) {
-      console.error('❌ Error renovando token:', renewError);
       this.redirectToLogin();
     }
   }
 
   private handle403Error(error: AxiosError): void {
-    console.warn('🚫 Error 403: Acceso denegado', {
-      url: error.config?.url,
-      method: error.config?.method,
-      correlationId: error.config?.headers?.['X-Correlation-Id'],
-    });
 
     // Mostrar página de acceso denegado
     if (window.location.pathname !== '/unauthorized') {
@@ -329,7 +318,6 @@ class HttpClient {
       await this.get('/actuator/health');
       return true;
     } catch (error) {
-      console.error('❌ Health check failed:', error);
       return false;
     }
   }

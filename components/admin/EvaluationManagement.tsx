@@ -9,6 +9,7 @@ import {
   UserRole,
   USER_ROLE_LABELS
 } from '../../services/evaluationService';
+import { evaluatorService } from '../../services/evaluatorService';
 import { userService } from '../../services/userService';
 import { User, UserRole as SystemUserRole, USER_ROLE_LABELS as SystemRoleLabels } from '../../types/user';
 import {
@@ -51,57 +52,92 @@ interface EvaluatorAssignment {
   evaluatorName: string;
 }
 
+interface EvaluatorCache {
+  [key: string]: any[];
+}
+
 const EvaluationManagement: React.FC<EvaluationManagementProps> = ({
   applications,
   onRefresh
 }) => {
-  const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
-  const [evaluators, setEvaluators] = useState<User[]>([]);
+  const [evaluators, setEvaluators] = useState<any[]>([]);
+  const [evaluatorCache, setEvaluatorCache] = useState<EvaluatorCache>({});
+  const [isLoading, setIsLoading] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
   const [showAssignModal, setShowAssignModal] = useState(false);
-  const [showProgressModal, setShowProgressModal] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [bulkOperations, setBulkOperations] = useState<{
-    selectedApplications: number[];
-    operation: string;
-  }>({
-    selectedApplications: [],
-    operation: ''
-  });
-
   const { addNotification } = useNotifications();
 
   useEffect(() => {
     loadEvaluators();
   }, []);
 
+  // NUEVA FUNCIÓN QUE SOLO CARGA USUARIOS REALES
   const loadEvaluators = async () => {
     try {
-      console.log('🔄 Cargando evaluadores reales para gestión de evaluaciones...');
-      
-      // Obtener solo los usuarios del colegio (staff) que pueden ser evaluadores
-      const usersResponse = await userService.getSchoolStaffUsers();
+      console.log('🔄 NUEVA FUNCIÓN - Cargando SOLO usuarios reales...');
+
+      // Cargar usuarios reales desde el endpoint público
+      const usersResponse = await userService.getSchoolStaffUsersPublic();
       const allStaff = usersResponse.content || [];
-      
-      // Definir qué roles pueden ser evaluadores
-      const evaluatorRoles = [
-        SystemUserRole.TEACHER,      // Profesores generales con especialización
-        SystemUserRole.COORDINATOR,  // Coordinadores de asignatura
-        SystemUserRole.CYCLE_DIRECTOR,
-        SystemUserRole.PSYCHOLOGIST
-      ];
-      
-      // Filtrar solo los evaluadores activos y verificados
-      const activeEvaluators = allStaff.filter(user => 
-        evaluatorRoles.includes(user.role) && user.active && user.emailVerified
+
+      console.log('📊 Total staff encontrado:', allStaff.length);
+      console.log('👥 Usuarios encontrados:', allStaff.map(u => `${u.firstName} ${u.lastName} - ${u.role} - ${u.subject}`));
+
+      // Filtrar usuarios por especialización
+      console.log('🎯 FILTROS DE ESPECIALIZACIÓN:');
+
+      const languageTeachers = allStaff.filter(user =>
+        (user.role === 'TEACHER' || user.role === 'COORDINATOR') &&
+        user.subject === 'LANGUAGE' && user.active && user.emailVerified
       );
-      
-      setEvaluators(activeEvaluators);
-      console.log('✅ Evaluadores cargados para gestión:', activeEvaluators.length);
-      
+      console.log('📚 LANGUAGE teachers:', languageTeachers.map(u => `${u.firstName} ${u.lastName}`));
+
+      const mathTeachers = allStaff.filter(user =>
+        (user.role === 'TEACHER' || user.role === 'COORDINATOR') &&
+        user.subject === 'MATHEMATICS' && user.active && user.emailVerified
+      );
+      console.log('🧮 MATHEMATICS teachers:', mathTeachers.map(u => `${u.firstName} ${u.lastName}`));
+
+      const englishTeachers = allStaff.filter(user =>
+        (user.role === 'TEACHER' || user.role === 'COORDINATOR') &&
+        user.subject === 'ENGLISH' && user.active && user.emailVerified
+      );
+      console.log('🇺🇸 ENGLISH teachers:', englishTeachers.map(u => `${u.firstName} ${u.lastName}`));
+
+      const cycleDirectors = allStaff.filter(user =>
+        user.role === 'CYCLE_DIRECTOR' && user.active && user.emailVerified
+      );
+      console.log('👥 CYCLE_DIRECTOR:', cycleDirectors.map(u => `${u.firstName} ${u.lastName}`));
+
+      const psychologists = allStaff.filter(user =>
+        user.role === 'PSYCHOLOGIST' && user.active && user.emailVerified
+      );
+      console.log('🧠 PSYCHOLOGIST:', psychologists.map(u => `${u.firstName} ${u.lastName}`));
+
+      const cache: EvaluatorCache = {
+        'TEACHER_LANGUAGE': languageTeachers,
+        'TEACHER_MATHEMATICS': mathTeachers,
+        'TEACHER_ENGLISH': englishTeachers,
+        'CYCLE_DIRECTOR': cycleDirectors,
+        'PSYCHOLOGIST': psychologists
+      };
+
+      console.log('🔍 Filtros aplicados por rol:');
+      Object.entries(cache).forEach(([role, users]) => {
+        console.log(`📝 ${role}:`, users.map(u => `${u.firstName} ${u.lastName} (${u.subject})`));
+      });
+
+      const allEvaluators = Object.values(cache).flat();
+
+      setEvaluatorCache(cache);
+      setEvaluators(allEvaluators);
+      console.log('✅ Solo usuarios reales cargados:', allEvaluators.length);
+
     } catch (error) {
-      console.error('❌ Error cargando evaluadores:', error);
+      console.error('❌ Error cargando usuarios reales:', error);
+      addNotification('Error al cargar evaluadores. Por favor, intenta de nuevo.', 'error');
       setEvaluators([]);
+      setEvaluatorCache({});
     }
   };
 
@@ -109,21 +145,11 @@ const EvaluationManagement: React.FC<EvaluationManagementProps> = ({
     try {
       setIsLoading(true);
       await evaluationService.assignEvaluationsToApplication(applicationId);
-      
-      addNotification({
-        type: 'success',
-        title: 'Evaluaciones Asignadas',
-        message: 'Se han asignado automáticamente todas las evaluaciones requeridas'
-      });
-      
+      addNotification('Evaluaciones asignadas automáticamente', 'success');
       onRefresh();
     } catch (error) {
       console.error('Error assigning evaluations:', error);
-      addNotification({
-        type: 'error',
-        title: 'Error',
-        message: 'Error al asignar evaluaciones automáticamente'
-      });
+      addNotification('Error al asignar evaluaciones', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -132,289 +158,214 @@ const EvaluationManagement: React.FC<EvaluationManagementProps> = ({
   const handleCustomAssignment = async (applicationId: number, assignments: EvaluatorAssignment[]) => {
     try {
       setIsLoading(true);
-      
+
       for (const assignment of assignments) {
-        await evaluationService.assignSpecificEvaluation(
-          applicationId,
-          assignment.evaluationType,
-          assignment.evaluatorId
-        );
+        if (assignment.evaluatorId > 0) {
+          await evaluationService.assignSpecificEvaluation(
+            applicationId,
+            assignment.evaluationType,
+            assignment.evaluatorId
+          );
+        }
       }
 
-      addNotification({
-        type: 'success',
-        title: 'Asignación Personalizada',
-        message: 'Se han asignado las evaluaciones con los evaluadores específicos'
-      });
-
+      addNotification('Evaluadores asignados correctamente', 'success');
       setShowAssignModal(false);
+      setSelectedApplication(null);
       onRefresh();
     } catch (error) {
-      console.error('Error with custom assignment:', error);
-      addNotification({
-        type: 'error',
-        title: 'Error',
-        message: 'Error en la asignación personalizada'
-      });
+      console.error('Error assigning evaluators:', error);
+      addNotification('Error al asignar evaluadores', 'error');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleBulkAssignEvaluations = async () => {
-    try {
-      setIsLoading(true);
-      
-      for (const applicationId of bulkOperations.selectedApplications) {
-        await evaluationService.assignEvaluationsToApplication(applicationId);
-      }
-
-      addNotification({
-        type: 'success',
-        title: 'Asignación Masiva',
-        message: `Se asignaron evaluaciones a ${bulkOperations.selectedApplications.length} postulaciones`
-      });
-
-      setBulkOperations({ selectedApplications: [], operation: '' });
-      onRefresh();
-    } catch (error) {
-      console.error('Error with bulk assignment:', error);
-      addNotification({
-        type: 'error',
-        title: 'Error',
-        message: 'Error en la asignación masiva'
-      });
-    } finally {
-      setIsLoading(false);
-    }
+  const handleOpenCustomAssignment = (application: Application) => {
+    setSelectedApplication(application);
+    setShowAssignModal(true);
   };
-
-  const getApplicationEvaluationStats = async (applicationId: number) => {
-    try {
-      return await evaluationService.getEvaluationProgress(applicationId);
-    } catch (error) {
-      console.error('Error getting evaluation stats:', error);
-      return null;
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'UNDER_REVIEW':
-        return <ClockIcon className="w-5 h-5 text-yellow-500" />;
-      case 'APPROVED':
-        return <CheckCircleIcon className="w-5 h-5 text-green-500" />;
-      case 'REJECTED':
-        return <ExclamationTriangleIcon className="w-5 h-5 text-red-500" />;
-      default:
-        return <ClockIcon className="w-5 h-5 text-gray-500" />;
-    }
-  };
-
-  const getRequiredEvaluations = () => [
-    EvaluationType.LANGUAGE_EXAM,
-    EvaluationType.MATHEMATICS_EXAM,
-    EvaluationType.ENGLISH_EXAM,
-    EvaluationType.CYCLE_DIRECTOR_REPORT,
-    EvaluationType.PSYCHOLOGICAL_INTERVIEW
-  ];
 
   const getEvaluatorsByType = (evaluationType: EvaluationType) => {
-    // Mapeo de tipos de evaluación a criterios de filtrado
-    const getEvaluatorCriteria = (type: EvaluationType) => {
+    // Mapeo directo de tipos de evaluación a roles del evaluatorService
+    const getEvaluatorServiceRole = (type: EvaluationType) => {
       switch (type) {
         case EvaluationType.LANGUAGE_EXAM:
-          return (evaluator: User) => 
-            (evaluator.role === SystemUserRole.TEACHER || evaluator.role === SystemUserRole.COORDINATOR) &&
-            evaluator.subject === 'LANGUAGE';
-            
+          return 'TEACHER_LANGUAGE';
         case EvaluationType.MATHEMATICS_EXAM:
-          return (evaluator: User) => 
-            (evaluator.role === SystemUserRole.TEACHER || evaluator.role === SystemUserRole.COORDINATOR) &&
-            evaluator.subject === 'MATHEMATICS';
-            
+          return 'TEACHER_MATHEMATICS';
         case EvaluationType.ENGLISH_EXAM:
-          return (evaluator: User) => 
-            (evaluator.role === SystemUserRole.TEACHER || evaluator.role === SystemUserRole.COORDINATOR) &&
-            evaluator.subject === 'ENGLISH';
-            
+          return 'TEACHER_ENGLISH';
         case EvaluationType.CYCLE_DIRECTOR_REPORT:
         case EvaluationType.CYCLE_DIRECTOR_INTERVIEW:
-          return (evaluator: User) => evaluator.role === SystemUserRole.CYCLE_DIRECTOR;
-          
+          return 'CYCLE_DIRECTOR';
         case EvaluationType.PSYCHOLOGICAL_INTERVIEW:
-          return (evaluator: User) => evaluator.role === SystemUserRole.PSYCHOLOGIST;
-          
+          return 'PSYCHOLOGIST';
         default:
-          return () => false;
+          return null;
       }
     };
 
-    const criteria = getEvaluatorCriteria(evaluationType);
-    return evaluators.filter(criteria);
+    const serviceRole = getEvaluatorServiceRole(evaluationType);
+    if (!serviceRole) {
+      console.log(`❌ getEvaluatorsByType(${evaluationType}) -> Sin role mapping`);
+      return [];
+    }
+
+    // Usar cache si está disponible
+    const availableEvaluators = evaluatorCache[serviceRole] || [];
+    console.log(`🔍 getEvaluatorsByType(${evaluationType}) -> serviceRole: ${serviceRole}`);
+    console.log(`📊 Cache disponible:`, Object.keys(evaluatorCache));
+    console.log(`📋 Evaluadores disponibles para ${serviceRole}:`, availableEvaluators.map(e => `${e.firstName} ${e.lastName} (${e.subject})`));
+
+    if (evaluationType === EvaluationType.MATHEMATICS_EXAM) {
+      console.log(`🧮 MATEMÁTICAS - Evaluadores:`, availableEvaluators);
+    }
+
+    return availableEvaluators;
   };
+
+  const applicationsWithEvaluations = applications.map(app => {
+    const pendingEvaluations = app.evaluations?.filter(
+      evaluation => evaluation.status === EvaluationStatus.PENDING
+    ).length || 0;
+
+    const completedEvaluations = app.evaluations?.filter(
+      evaluation => evaluation.status === EvaluationStatus.COMPLETED
+    ).length || 0;
+
+    return {
+      ...app,
+      pendingEvaluations,
+      completedEvaluations,
+      totalEvaluations: app.evaluations?.length || 0
+    };
+  });
 
   return (
     <div className="space-y-6">
-      {/* Header with bulk operations */}
       <Card className="p-6">
-        <div className="flex justify-between items-start mb-4">
-          <div>
-            <h2 className="text-xl font-bold text-azul-monte-tabor mb-2 flex items-center gap-2">
-              <BarChart3 className="w-6 h-6" />
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-3">
+            <BarChart3 className="w-6 h-6 text-azul-monte-tabor" />
+            <h2 className="text-xl font-semibold text-gray-900">
               Gestión de Evaluaciones
             </h2>
-            <p className="text-gris-piedra">
-              Administra las evaluaciones de todas las postulaciones
-            </p>
           </div>
 
-          {bulkOperations.selectedApplications.length > 0 && (
-            <div className="flex gap-2">
-              <Badge variant="info" size="sm">
-                {bulkOperations.selectedApplications.length} seleccionadas
-              </Badge>
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={handleBulkAssignEvaluations}
-                disabled={isLoading}
-              >
-                <Plus className="w-4 h-4 mr-1" />
-                Asignar Evaluaciones
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setBulkOperations({ selectedApplications: [], operation: '' })}
-              >
-                <X className="w-4 h-4 mr-1" />
-                Cancelar
-              </Button>
-            </div>
-          )}
+          <div className="flex items-center space-x-2">
+            <Badge variant="info" size="sm">
+              {evaluators.length} evaluadores disponibles
+            </Badge>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={loadEvaluators}
+              disabled={isLoading}
+            >
+              🔄 Actualizar
+            </Button>
+          </div>
         </div>
 
-        <div className="text-sm text-gris-piedra">
-          <p>
-            • <strong>Asignación Automática:</strong> Asigna evaluadores disponibles automáticamente
-          </p>
-          <p>
-            • <strong>Asignación Personalizada:</strong> Selecciona evaluadores específicos
-          </p>
-          <p>
-            • <strong>Seguimiento:</strong> Monitorea el progreso de cada evaluación
-          </p>
-        </div>
-      </Card>
-
-      {/* Applications list with evaluation management */}
-      <Card className="p-6">
-        <div className="space-y-4">
-          {applications.map(application => {
-            const isSelected = bulkOperations.selectedApplications.includes(application.id);
-            
-            return (
-              <div
-                key={application.id}
-                className={`border rounded-lg p-4 transition-colors ${
-                  isSelected ? 'border-azul-monte-tabor bg-blue-50' : 'border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-4">
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setBulkOperations(prev => ({
-                            ...prev,
-                            selectedApplications: [...prev.selectedApplications, application.id]
-                          }));
-                        } else {
-                          setBulkOperations(prev => ({
-                            ...prev,
-                            selectedApplications: prev.selectedApplications.filter(id => id !== application.id)
-                          }));
-                        }
-                      }}
-                      className="mt-1"
-                    />
-
-                    <div className="flex items-center gap-3">
-                      {getStatusIcon(application.status)}
-                      <div>
-                        <h4 className="font-semibold text-azul-monte-tabor">
-                          {application.student.firstName} {application.student.lastName}
-                        </h4>
-                        <p className="text-sm text-gris-piedra">
-                          {application.student.rut} • {application.student.gradeApplied}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          Postulación creada: {new Date(application.createdAt).toLocaleDateString('es-CL')}
-                        </p>
+        <div className="overflow-x-auto">
+          <table className="min-w-full table-auto">
+            <thead>
+              <tr className="border-b border-gray-200">
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">
+                  Estudiante
+                </th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">
+                  Estado
+                </th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">
+                  Evaluaciones
+                </th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">
+                  Progreso
+                </th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">
+                  Acciones
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {applicationsWithEvaluations.map((application) => (
+                <tr key={application.id} className="border-b border-gray-100 hover:bg-gray-50">
+                  <td className="px-4 py-4">
+                    <div>
+                      <div className="font-medium text-gray-900">
+                        {application.student?.firstName} {application.student?.lastName}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {application.student?.gradeApplied}
                       </div>
                     </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
+                  </td>
+                  <td className="px-4 py-4">
+                    <Badge
+                      variant={application.status === 'APPROVED' ? 'success' :
+                              application.status === 'REJECTED' ? 'error' : 'warning'}
                       size="sm"
-                      onClick={async () => {
-                        const stats = await getApplicationEvaluationStats(application.id);
-                        if (stats) {
-                          addNotification({
-                            type: 'info',
-                            title: 'Progreso de Evaluaciones',
-                            message: `${stats.completedEvaluations}/${stats.totalEvaluations} completadas (${stats.completionPercentage}%)`
-                          });
-                        }
-                      }}
                     >
-                      <ChartBarIcon className="w-4 h-4 mr-1" />
-                      Progreso
-                    </Button>
-
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => handleAssignEvaluations(application.id)}
-                      disabled={isLoading}
-                    >
-                      <Bot className="w-4 h-4 mr-1" />
-                      Auto-Asignar
-                    </Button>
-
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedApplication(application);
-                        setShowAssignModal(true);
-                      }}
-                    >
-                      <UserIcon className="w-4 h-4 mr-1" />
-                      Personalizada
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-
-          {applications.length === 0 && (
-            <div className="text-center py-8">
-              <BarChart3 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gris-piedra">No hay postulaciones disponibles</p>
-            </div>
-          )}
+                      {application.status}
+                    </Badge>
+                  </td>
+                  <td className="px-4 py-4">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-gray-600">
+                        {application.completedEvaluations}/{application.totalEvaluations}
+                      </span>
+                      {application.pendingEvaluations > 0 && (
+                        <Badge variant="warning" size="sm">
+                          {application.pendingEvaluations} pendientes
+                        </Badge>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-4 py-4">
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-azul-monte-tabor h-2 rounded-full"
+                        style={{
+                          width: `${application.totalEvaluations > 0
+                            ? (application.completedEvaluations / application.totalEvaluations) * 100
+                            : 0}%`
+                        }}
+                      ></div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-4">
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleAssignEvaluations(application.id)}
+                        disabled={isLoading}
+                      >
+                        <Bot className="w-4 h-4 mr-1" />
+                        Auto
+                      </Button>
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => handleOpenCustomAssignment(application)}
+                        disabled={isLoading}
+                      >
+                        <Users className="w-4 h-4 mr-1" />
+                        Manual
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </Card>
 
-      {/* Custom Assignment Modal */}
-      {selectedApplication && (
+      {/* Modal de Asignación Manual */}
+      {showAssignModal && selectedApplication && (
         <CustomAssignmentModal
           application={selectedApplication}
           evaluators={evaluators}
@@ -476,7 +427,8 @@ const CustomAssignmentModal: React.FC<CustomAssignmentModalProps> = ({
 
   const updateAssignment = (evaluationType: EvaluationType, evaluatorId: number) => {
     const evaluator = evaluators.find(e => e.id === evaluatorId);
-    setAssignments(prev => prev.map(assignment => 
+
+    setAssignments(prev => prev.map(assignment =>
       assignment.evaluationType === evaluationType
         ? {
             ...assignment,
@@ -490,30 +442,32 @@ const CustomAssignmentModal: React.FC<CustomAssignmentModalProps> = ({
   const handleSubmit = () => {
     const validAssignments = assignments.filter(a => a.evaluatorId > 0);
     if (validAssignments.length === 0) {
+      alert('Debe asignar al menos un evaluador');
       return;
     }
     onAssign(application.id, validAssignments);
   };
 
-  if (!isOpen) return null;
-
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Asignación Personalizada de Evaluadores">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Asignación Manual de Evaluadores"
+      size="lg"
+    >
       <div className="space-y-6">
-        {/* Application info */}
-        <Card className="p-4 bg-blue-50 border-blue-200">
-          <h4 className="font-semibold text-azul-monte-tabor mb-2">
-                            {application.student.firstName} {application.student.lastName}
+        <div className="bg-blue-50 p-4 rounded-lg">
+          <h4 className="font-medium text-blue-800 mb-2">
+            Estudiante: {application.student?.firstName} {application.student?.lastName}
           </h4>
-          <p className="text-sm text-gris-piedra">
-            RUT: {application.student.rut} • Curso: {application.student.gradeApplied}
+          <p className="text-blue-600 text-sm">
+            Curso aplicado: {application.student?.gradeApplied}
           </p>
-        </Card>
+        </div>
 
-        {/* Evaluation assignments */}
         <div className="space-y-4">
-          <h4 className="font-semibold text-azul-monte-tabor flex items-center gap-2">
-            <Users className="w-5 h-5" />
+          <h4 className="flex items-center font-medium text-gray-900">
+            <Users className="w-5 h-5 mr-2" />
             Asignar Evaluadores
           </h4>
 
@@ -546,9 +500,8 @@ const CustomAssignmentModal: React.FC<CustomAssignmentModalProps> = ({
                 </select>
 
                 {availableEvaluators.length === 0 && (
-                  <p className="text-sm text-red-600 mt-2 flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4" />
-                    No hay evaluadores disponibles para este tipo
+                  <p className="text-red-500 text-sm mt-2">
+                    No hay evaluadores disponibles para este tipo de evaluación
                   </p>
                 )}
               </div>
@@ -556,28 +509,21 @@ const CustomAssignmentModal: React.FC<CustomAssignmentModalProps> = ({
           })}
         </div>
 
-        {/* Action buttons */}
-        <div className="flex gap-3 pt-4 border-t">
+        <div className="flex justify-end space-x-3 pt-4 border-t">
           <Button
             variant="outline"
             onClick={onClose}
             disabled={isLoading}
-            className="flex-1"
           >
             Cancelar
           </Button>
           <Button
             variant="primary"
             onClick={handleSubmit}
-            disabled={isLoading || assignments.filter(a => a.evaluatorId > 0).length === 0}
-            className="flex-1"
+            disabled={isLoading}
+            isLoading={isLoading}
           >
-            {isLoading ? 'Asignando...' : (
-              <>
-                <CheckCircle className="w-4 h-4 mr-1" />
-                Asignar Evaluadores
-              </>
-            )}
+            Asignar Evaluadores
           </Button>
         </div>
       </div>

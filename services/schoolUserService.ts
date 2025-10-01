@@ -17,7 +17,6 @@ export interface SchoolUserStats {
 class SchoolUserService {
 
   async createUser(userData: CreateUserRequest): Promise<User> {
-    console.log('📝 Creando usuario:', userData);
     
     const requestBody = {
       firstName: userData.firstName,
@@ -61,16 +60,12 @@ class SchoolUserService {
       })
     };
 
-    console.log('🚀 Request body:', requestBody);
-    console.log('🌐 URL:', SCHOOL_USERS_ENDPOINT);
 
     try {
       const response = await api.post(SCHOOL_USERS_ENDPOINT, requestBody);
-      console.log('✅ Response data:', response.data);
       
       return this.convertBackendUserToFrontendUser(response.data);
     } catch (error) {
-      console.error('❌ Error en createUser:', error);
       throw error;
     }
   }
@@ -224,7 +219,6 @@ class SchoolUserService {
     try {
       await api.post('/api/school-users/update-subjects-mapping');
     } catch (error) {
-      console.error('Error updating subjects mapping:', error);
       throw error;
     }
   }
