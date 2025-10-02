@@ -22,6 +22,7 @@ import {
 import { ExamStatus, StudentExam, StudentProfile } from '../types';
 import { Link, useNavigate } from 'react-router-dom';
 import { professorEvaluationService, ProfessorEvaluation, ProfessorEvaluationStats } from '../services/professorEvaluationService';
+import { professorAuthService } from '../services/professorAuthService';
 import { EvaluationStatus, EvaluationType } from '../types/evaluation';
 import { FiRefreshCw, FiBarChart2 } from 'react-icons/fi';
 
@@ -66,38 +67,72 @@ const ProfessorDashboard: React.FC = () => {
     
 
     // Cargar evaluaciones del profesor - SOLO UNA VEZ al montar
+    // Cargar datos actualizados del profesor desde el backend
+    useEffect(() => {
+        const updateProfessorData = async () => {
+            try {
+                console.log('🔄 Llamando a getCurrentProfessor()...');
+                const professorData = await professorAuthService.getCurrentProfessor();
+                console.log('📦 Datos recibidos del backend:', professorData);
+
+                if (professorData) {
+                    // Actualizar localStorage con los datos frescos del backend
+                    const updatedProfessor = {
+                        ...currentProfessor,
+                        id: professorData.id,
+                        subject: professorData.subject,
+                        firstName: professorData.firstName,
+                        lastName: professorData.lastName,
+                        email: professorData.email,
+                        role: professorData.role
+                    };
+                    localStorage.setItem('currentProfessor', JSON.stringify(updatedProfessor));
+                    setCurrentProfessor(updatedProfessor);
+                    console.log('✅ Datos del profesor actualizados desde backend:', updatedProfessor);
+                    console.log('✅ Subject guardado:', updatedProfessor.subject);
+                } else {
+                    console.warn('⚠️ getCurrentProfessor() retornó null');
+                }
+            } catch (error) {
+                console.error('❌ Error actualizando datos del profesor:', error);
+            }
+        };
+
+        updateProfessorData();
+    }, []); // Solo al montar el componente
+
     useEffect(() => {
         console.log('🔄 useEffect ejecutándose...');
         console.log('👤 currentProfessor:', currentProfessor);
-        
+
         const loadEvaluations = async () => {
             if (!currentProfessor) {
                 console.log('❌ No hay currentProfessor, saltando loadEvaluations');
                 return;
             }
-            
+
             try {
                 setIsLoading(true);
                 console.log('🔄 Cargando evaluaciones del profesor...');
                 console.log('🆔 ID del profesor:', currentProfessor.id);
-                
+
                 const [evaluationsData, statsData] = await Promise.all([
                     professorEvaluationService.getMyEvaluations(),
                     professorEvaluationService.getMyEvaluationStats()
                 ]);
-                
+
                 console.log('✅ Evaluaciones obtenidas del servicio:', evaluationsData);
                 console.log('📊 Stats obtenidos del servicio:', statsData);
-                
+
                 setEvaluations(evaluationsData);
                 setEvaluationStats(statsData);
-                
+
                 console.log('✅ Estado actualizado - evaluations:', evaluationsData.length);
                 console.log('✅ Estado actualizado - evaluationStats:', statsData);
-                
+
             } catch (error: any) {
                 console.error('❌ Error cargando evaluaciones:', error);
-                
+
                 // Si no hay evaluaciones asignadas, mostrar estado vacío
                 if (error.message.includes('No se encontraron evaluaciones')) {
                     setEvaluations([]);
@@ -143,9 +178,13 @@ const ProfessorDashboard: React.FC = () => {
 
     const getSubjectName = (subjectId: string) => {
         const names: { [key: string]: string } = {
+            'MATHEMATICS': 'Matemática',
             'MATH': 'Matemática',
+            'LANGUAGE': 'Lenguaje y Comunicación',
             'SPANISH': 'Lenguaje',
-            'ENGLISH': 'Inglés'
+            'ENGLISH': 'Inglés',
+            'GENERAL': 'General',
+            'ALL_SUBJECTS': 'Todas las Asignaturas'
         };
         return names[subjectId] || subjectId;
     };
@@ -196,10 +235,10 @@ const ProfessorDashboard: React.FC = () => {
                     Bienvenido/a, {currentProfessor?.firstName} {currentProfessor?.lastName}
                 </h1>
                 <p className="text-blue-100">
-                    Departamento de {currentProfessor?.department}
+                    Profesor/a de {currentProfessor?.subject ? getSubjectName(currentProfessor.subject) : 'Asignatura no especificada'}
                 </p>
                 <p className="text-blue-100 text-sm mt-1">
-                    Asignaturas: {currentProfessor?.subjects.map(getSubjectName).join(', ')}
+                    Rol: {currentProfessor?.role === 'TEACHER' ? 'Docente' : currentProfessor?.role}
                 </p>
             </Card>
 
@@ -225,7 +264,7 @@ const ProfessorDashboard: React.FC = () => {
                 
                 <Card className="p-6 text-center">
                     <UsersIcon className="w-8 h-8 text-azul-monte-tabor mx-auto mb-3" />
-                    <div className="text-2xl font-bold text-azul-monte-tabor">{evaluationStats.averageScore}%</div>
+                    <div className="text-2xl font-bold text-azul-monte-tabor">{evaluationStats.averageScore} pts</div>
                     <div className="text-sm text-gris-piedra">Promedio General</div>
                 </Card>
             </div>
@@ -321,20 +360,12 @@ const ProfessorDashboard: React.FC = () => {
                 key: 'actions' as keyof ProfessorEvaluation,
                 header: 'Acciones',
                 render: (value: any, evaluation: ProfessorEvaluation) => (
-                    <Button 
-                        size="sm" 
+                    <Button
+                        size="sm"
                         variant="primary"
-                        onClick={() => navigate(
-                            evaluation.evaluationType === 'CYCLE_DIRECTOR_INTERVIEW'
-                                ? `/profesor/entrevista-director/${evaluation.id}`
-                                : evaluation.evaluationType === 'CYCLE_DIRECTOR_REPORT'
-                                ? `/profesor/informe-director/${evaluation.id}`
-                                : `/profesor/informe/${evaluation.id}`
-                        )}
+                        onClick={() => navigate(`/profesor/informe/${evaluation.id}`)}
                     >
-                        {evaluation.evaluationType === 'CYCLE_DIRECTOR_INTERVIEW' 
-                            ? (evaluation.status === EvaluationStatus.COMPLETED ? "Ver Entrevista" : "Crear Entrevista")
-                            : (evaluation.status === EvaluationStatus.COMPLETED ? "Ver Informe" : "Crear Informe")}
+                        {evaluation.status === EvaluationStatus.COMPLETED ? "Ver Informe" : "Completar Informe"}
                     </Button>
                 )
             }
@@ -615,7 +646,7 @@ const ProfessorDashboard: React.FC = () => {
                             <div className="text-sm text-gris-piedra">Pendientes</div>
                         </div>
                         <div className="bg-purple-50 p-4 rounded-lg text-center">
-                            <div className="text-2xl font-bold text-azul-monte-tabor">{evaluationStats.averageScore}</div>
+                            <div className="text-2xl font-bold text-azul-monte-tabor">{evaluationStats.averageScore} pts</div>
                             <div className="text-sm text-gris-piedra">Promedio General</div>
                         </div>
                     </div>
@@ -762,16 +793,16 @@ const ProfessorDashboard: React.FC = () => {
                                 <span className="font-medium">{currentProfessor?.firstName} {currentProfessor?.lastName}</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-gris-piedra">Departamento:</span>
-                                <span className="font-medium">{currentProfessor?.department}</span>
+                                <span className="text-gris-piedra">Asignatura:</span>
+                                <span className="font-medium">{currentProfessor?.subject ? getSubjectName(currentProfessor.subject) : 'No especificada'}</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-gris-piedra">Asignaturas:</span>
-                                <span className="font-medium">{currentProfessor?.subjects.map(getSubjectName).join(', ')}</span>
+                                <span className="text-gris-piedra">Total de Estudiantes:</span>
+                                <span className="font-medium">{new Set(evaluations.map(e => e.applicationId)).size}</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-gris-piedra">Total estudiantes:</span>
-                                <span className="font-medium">{new Set(evaluations.map(e => e.studentId)).size}</span>
+                                <span className="text-gris-piedra">Evaluaciones Asignadas:</span>
+                                <span className="font-medium">{evaluations.length}</span>
                             </div>
                         </div>
                     </Card>
@@ -810,7 +841,8 @@ const ProfessorDashboard: React.FC = () => {
                                 <h3 className="font-semibold text-azul-monte-tabor mb-2">Información Personal</h3>
                                 <p><strong>Nombre:</strong> {currentProfessor?.firstName} {currentProfessor?.lastName}</p>
                                 <p><strong>Email:</strong> {currentProfessor?.email}</p>
-                                <p><strong>Departamento:</strong> {currentProfessor?.department}</p>
+                                <p><strong>Asignatura:</strong> {currentProfessor?.subject ? getSubjectName(currentProfessor.subject) : 'No especificada'}</p>
+                                <p><strong>Rol:</strong> {currentProfessor?.role === 'TEACHER' ? 'Docente' : currentProfessor?.role}</p>
                                 {currentProfessor?.isAdmin && (
                                     <p className="text-dorado-nazaret"><strong>Permisos:</strong> Administrador</p>
                                 )}

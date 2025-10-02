@@ -238,17 +238,26 @@ class ProfessorEvaluationService {
     }
     
     private getStudentGrade(apiEvaluation: any): string {
-        // Primero intentar obtener del estudiante directo
+        // Primero intentar obtener del campo directo grade (lo que retorna /my-evaluations)
+        if (apiEvaluation.grade) return apiEvaluation.grade;
+
+        // Luego intentar student_grade (snake_case del backend)
+        if (apiEvaluation.student_grade) return apiEvaluation.student_grade;
+        if (apiEvaluation.studentGrade) return apiEvaluation.studentGrade;
+
+        // Luego intentar obtener del estudiante directo
         if (apiEvaluation.student?.grade) return apiEvaluation.student.grade;
-        
+        if (apiEvaluation.student?.grade_applied) return apiEvaluation.student.grade_applied;
+        if (apiEvaluation.student?.gradeApplied) return apiEvaluation.student.gradeApplied;
+
         // Luego intentar obtener del estudiante anidado en application
         if (apiEvaluation.application?.student?.gradeApplied) return apiEvaluation.application.student.gradeApplied;
+        if (apiEvaluation.application?.student?.grade_applied) return apiEvaluation.application.student.grade_applied;
         if (apiEvaluation.application?.student?.grade) return apiEvaluation.application.student.grade;
-        
+
         // Finalmente intentar de otros campos
         if (apiEvaluation.gradeLevel) return apiEvaluation.gradeLevel;
-        if (apiEvaluation.studentGrade) return apiEvaluation.studentGrade;
-        
+
         return 'Grado no especificado';
     }
     

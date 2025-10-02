@@ -14,6 +14,7 @@ export interface ProfessorAuthResponse {
     firstName?: string;
     lastName?: string;
     role?: string;
+    subject?: string;
 }
 
 export interface ProfessorUser {
@@ -22,6 +23,7 @@ export interface ProfessorUser {
     lastName: string;
     email: string;
     role: string;
+    subject?: string;
     active: boolean;
     emailVerified: boolean;
 }
@@ -44,7 +46,8 @@ class ProfessorAuthService {
                     email: data.email,
                     firstName: data.firstName,
                     lastName: data.lastName,
-                    role: data.role
+                    role: data.role,
+                    subject: data.subject
                 }));
             }
             
@@ -71,15 +74,16 @@ class ProfessorAuthService {
             if (!token) {
                 return null;
             }
-            
+
             // Configurar el token en el header
             const config = {
                 headers: { Authorization: `Bearer ${token}` }
             };
-            
+
             const response = await api.get('/api/users/me', config);
-            return response.data;
-            
+            // El backend retorna { success: true, user: {...} }
+            return response.data.user || response.data;
+
         } catch (error: any) {
             console.error('❌ Error obteniendo profesor actual:', error);
             // Si hay error de autenticación, limpiar datos

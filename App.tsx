@@ -19,6 +19,7 @@ import ProfessorLoginPage from './pages/ProfessorLoginPage';
 import AdmissionReportForm from './components/evaluations/AdmissionReportForm';
 import CycleDirectorReportForm from './components/evaluations/CycleDirectorReportForm';
 import CycleDirectorInterviewForm from './components/evaluations/CycleDirectorInterviewForm';
+import EvaluationForm from './pages/EvaluationForm';
 import StudentProfile from './pages/StudentProfile';
 import ProtectedProfessorRoute from './components/auth/ProtectedProfessorRoute';
 import ProtectedAdminRoute from './components/auth/ProtectedAdminRoute';
@@ -59,6 +60,11 @@ function App() {
                             <Route path="/profesor" element={
                                 <ProtectedProfessorRoute>
                                     <ProfessorDashboard />
+                                </ProtectedProfessorRoute>
+                            } />
+                            <Route path="/profesor/evaluacion/:evaluationId" element={
+                                <ProtectedProfessorRoute>
+                                    <EvaluationForm />
                                 </ProtectedProfessorRoute>
                             } />
                             <Route path="/profesor/informe/:examId" element={
