@@ -71,9 +71,9 @@ const ProfessorLoginPage: React.FC = () => {
                         firstName: response.firstName || '',
                         lastName: response.lastName || '',
                         email: response.email || '',
+                        subject: response.subject || null, // Campo subject del backend
                         subjects: getSubjectsByRole(response.role),
                         assignedGrades: ['prekinder', 'kinder', '1basico', '2basico', '3basico', '4basico', '5basico', '6basico', '7basico', '8basico', '1medio', '2medio', '3medio', '4medio'],
-                        department: getDepartmentByRole(response.role),
                         isAdmin: response.role === 'ADMIN'
                     }));
 

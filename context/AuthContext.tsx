@@ -98,9 +98,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                         firstName: response.firstName || '',
                         lastName: response.lastName || '',
                         email: response.email || '',
+                        subject: response.subject || 'ALL_SUBJECTS', // Campo subject del backend
                         subjects: ['MATH', 'SPANISH', 'ENGLISH', 'PSYCHOLOGY'],
                         assignedGrades: ['prekinder', 'kinder', '1basico', '2basico', '3basico', '4basico', '5basico', '6basico', '7basico', '8basico', '1medio', '2medio', '3medio', '4medio'],
-                        department: 'Administración',
                         isAdmin: true
                     }));
                     
