@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import Card from '../ui/Card';
-import Button from '../ui/Button';
-import Badge from '../ui/Badge';
-import LoadingSpinner from '../ui/LoadingSpinner';
-import { 
-  FiUser, 
+import { Logger } from '../src/utils/logger';import Card from '../ui/Card';
+import { Logger } from '../src/utils/logger';import Button from '../ui/Button';
+import { Logger } from '../src/utils/logger';import Badge from '../ui/Badge';
+import { Logger } from '../src/utils/logger';import LoadingSpinner from '../ui/LoadingSpinner';
+import { Logger } from '../src/utils/logger';import { 
+import { Logger } from '../src/utils/logger';  FiUser, 
   FiCalendar, 
   FiClock, 
   FiCheck, 
@@ -19,9 +19,9 @@ import {
   FiEdit
 } from 'react-icons/fi';
 import { Interview, InterviewType, INTERVIEW_TYPE_LABELS, INTERVIEW_CONFIG } from '../../types/interview';
-import { User, UserRole } from '../../types/user';
-import { userService } from '../../services/userService';
-
+import { Logger } from '../src/utils/logger';import { User, UserRole } from '../../types/user';
+import { Logger } from '../src/utils/logger';import { userService } from '../../services/userService';
+import { Logger } from '../src/utils/logger';
 interface InterviewerSchedule {
   userId: number;
   userName: string;
@@ -111,7 +111,7 @@ const InterviewerAvailabilityView: React.FC<InterviewerAvailabilityViewProps> = 
       
       setInterviewers(interviewerUsers);
     } catch (error) {
-      console.error('Error cargando entrevistadores:', error);
+      Logger.error('Error cargando entrevistadores:', error);
     } finally {
       setIsLoading(false);
     }

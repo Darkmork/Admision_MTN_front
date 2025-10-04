@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import Card from '../ui/Card';
-import Button from '../ui/Button';
-import Badge from '../ui/Badge';
-import LoadingSpinner from '../ui/LoadingSpinner';
-import DocumentUploader from './DocumentUploader';
-import {
-  Document,
+import { Logger } from '../src/utils/logger';import Card from '../ui/Card';
+import { Logger } from '../src/utils/logger';import Button from '../ui/Button';
+import { Logger } from '../src/utils/logger';import Badge from '../ui/Badge';
+import { Logger } from '../src/utils/logger';import LoadingSpinner from '../ui/LoadingSpinner';
+import { Logger } from '../src/utils/logger';import DocumentUploader from './DocumentUploader';
+import { Logger } from '../src/utils/logger';import {
+import { Logger } from '../src/utils/logger';  Document,
   DocumentType,
   DOCUMENT_TYPE_LABELS,
   REQUIRED_DOCUMENTS,
@@ -13,8 +13,8 @@ import {
   DocumentUtils
 } from '../../types/document';
 import { documentService } from '../../services/documentService';
-import { CheckCircleIcon, XCircleIcon, DocumentIcon, AlertTriangleIcon } from '../icons/Icons';
-
+import { Logger } from '../src/utils/logger';import { CheckCircleIcon, XCircleIcon, DocumentIcon, AlertTriangleIcon } from '../icons/Icons';
+import { Logger } from '../src/utils/logger';
 interface DocumentManagerProps {
   applicationId: number;
   disabled?: boolean;
@@ -78,7 +78,7 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({
       const status = await documentService.getDocumentStatus(applicationId);
       setProgress(status);
     } catch (err) {
-      console.error('Error updating document progress:', err);
+      Logger.error('Error updating document progress:', err);
     }
   };
 

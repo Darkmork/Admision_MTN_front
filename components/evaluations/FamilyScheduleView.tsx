@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import Card from '../ui/Card';
-import Button from '../ui/Button';
-import Badge from '../ui/Badge';
-import LoadingSpinner from '../ui/LoadingSpinner';
-import EvaluationScheduleCard from './EvaluationScheduleCard';
-import {
-  EvaluationSchedule,
+import { Logger } from '../src/utils/logger';import Card from '../ui/Card';
+import { Logger } from '../src/utils/logger';import Button from '../ui/Button';
+import { Logger } from '../src/utils/logger';import Badge from '../ui/Badge';
+import { Logger } from '../src/utils/logger';import LoadingSpinner from '../ui/LoadingSpinner';
+import { Logger } from '../src/utils/logger';import EvaluationScheduleCard from './EvaluationScheduleCard';
+import { Logger } from '../src/utils/logger';import {
+import { Logger } from '../src/utils/logger';  EvaluationSchedule,
   ScheduleUtils,
   ScheduleStatus,
   SCHEDULE_STATUS_LABELS
 } from '../../types/evaluation';
 import { evaluationService } from '../../services/evaluationService';
-import { 
-  CalendarIcon, 
+import { Logger } from '../src/utils/logger';import { 
+import { Logger } from '../src/utils/logger';  CalendarIcon, 
   ClockIcon, 
   CheckCircleIcon, 
   ExclamationTriangleIcon,
@@ -54,7 +54,7 @@ const FamilyScheduleView: React.FC<FamilyScheduleViewProps> = ({
       try {
         familySchedules = await evaluationService.getFamilySchedules(applicationId);
       } catch (apiError) {
-        console.warn('API no disponible, usando datos mock:', apiError);
+        Logger.warn('API no disponible, usando datos mock:', apiError);
         // Usar datos mock locales
         familySchedules = evaluationService.createLocalMockSchedules(applicationId);
       }

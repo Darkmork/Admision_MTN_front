@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import Card from '../ui/Card';
-import Button from '../ui/Button';
-import Badge from '../ui/Badge';
-import LoadingSpinner from '../ui/LoadingSpinner';
-import Modal from '../ui/Modal';
-import {
-  CalendarIcon,
+import { Logger } from '../src/utils/logger';import Card from '../ui/Card';
+import { Logger } from '../src/utils/logger';import Button from '../ui/Button';
+import { Logger } from '../src/utils/logger';import Badge from '../ui/Badge';
+import { Logger } from '../src/utils/logger';import LoadingSpinner from '../ui/LoadingSpinner';
+import { Logger } from '../src/utils/logger';import Modal from '../ui/Modal';
+import { Logger } from '../src/utils/logger';import {
+import { Logger } from '../src/utils/logger';  CalendarIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   ClockIcon,
@@ -13,7 +13,7 @@ import {
   FilterIcon
 } from '../icons/Icons';
 import { 
-  FiCalendar, 
+import { Logger } from '../src/utils/logger';  FiCalendar, 
   FiChevronLeft, 
   FiChevronRight, 
   FiClock, 
@@ -26,7 +26,7 @@ import {
   FiRefreshCw
 } from 'react-icons/fi';
 import {
-  Interview,
+import { Logger } from '../src/utils/logger';  Interview,
   InterviewStatus,
   InterviewType,
   InterviewMode,
@@ -37,8 +37,8 @@ import {
   INTERVIEW_CONFIG
 } from '../../types/interview';
 import interviewService from '../../services/interviewService';
-import { userService } from '../../services/userService';
-
+import { Logger } from '../src/utils/logger';import { userService } from '../../services/userService';
+import { Logger } from '../src/utils/logger';
 const DAYS_OF_WEEK = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 const MONTHS = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -123,7 +123,7 @@ const SharedCalendar: React.FC<SharedCalendarProps> = ({
 
       setInterviews(calendarInterviews);
     } catch (error) {
-      console.error('Error cargando calendario:', error);
+      Logger.error('Error cargando calendario:', error);
     } finally {
       setIsLoading(false);
     }
@@ -139,7 +139,7 @@ const SharedCalendar: React.FC<SharedCalendarProps> = ({
       );
       setUsers(interviewers);
     } catch (error) {
-      console.error('Error cargando usuarios:', error);
+      Logger.error('Error cargando usuarios:', error);
     }
   };
 

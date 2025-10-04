@@ -6,9 +6,9 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { searchClient } from '../../api/search.client';
-import type {
-  AdvancedSearchParams,
+import { Logger } from '@/utils/logger';import { searchClient } from '../../api/search.client';
+import { Logger } from '@/utils/logger';import type {
+import { Logger } from '@/utils/logger';  AdvancedSearchParams,
   SearchResult,
   SearchResponse,
   SavedSearch
@@ -46,7 +46,7 @@ export const AdvancedSearchView: React.FC = () => {
       const response = await searchClient.advancedSearch(searchParams);
       setResults(response);
     } catch (err: any) {
-      console.error('Search error:', err);
+      Logger.error('Search error:', err);
       setError(err.message || 'Error al realizar la búsqueda');
     } finally {
       setLoading(false);

@@ -1,5 +1,5 @@
 import api from './api';
-
+import { Logger } from '../src/utils/logger';
 export interface WeeklyInterviews {
   total: number;
   scheduled: number;
@@ -54,7 +54,7 @@ class DashboardService {
       );
       return response.data;
     } catch (error: any) {
-      console.error('Error fetching detailed dashboard stats:', error);
+      Logger.error('Error fetching detailed dashboard stats:', error);
       throw new Error(
         error.response?.data?.message || 'Error al obtener estadísticas del dashboard'
       );
@@ -69,7 +69,7 @@ class DashboardService {
       const stats = await this.getDetailedStats();
       return stats.data.availableYears;
     } catch (error) {
-      console.error('Error fetching available years:', error);
+      Logger.error('Error fetching available years:', error);
       // Fallback: retornar años por defecto
       const currentYear = new Date().getFullYear();
       return [currentYear, currentYear + 1, currentYear + 2];

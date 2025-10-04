@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { interviewerScheduleService } from '../services/interviewerScheduleService';
-
+import { Logger } from '../src/utils/logger';import { useAuth } from '../context/AuthContext';
+import { Logger } from '../src/utils/logger';import { interviewerScheduleService } from '../services/interviewerScheduleService';
+import { Logger } from '../src/utils/logger';
 interface TimeSlot {
   id: string;
   day: string;
@@ -45,7 +45,7 @@ const ScheduleManagement: React.FC = () => {
       const currentYear = new Date().getFullYear();
       const schedules = await interviewerScheduleService.getInterviewerSchedulesByYear(user.id, currentYear);
 
-      console.log('📅 Horarios cargados:', schedules);
+      Logger.info('📅 Horarios cargados:', schedules);
 
       const transformedSlots: TimeSlot[] = schedules.map(schedule => ({
         id: `schedule-${schedule.id}`,
@@ -65,7 +65,7 @@ const ScheduleManagement: React.FC = () => {
       }
 
     } catch (error) {
-      console.error('❌ Error cargando horarios:', error);
+      Logger.error('❌ Error cargando horarios:', error);
       setMessage('⚠️ Error al cargar horarios existentes. Creando horarios por defecto.');
       initializeDefaultSlots();
     } finally {
@@ -147,7 +147,7 @@ const ScheduleManagement: React.FC = () => {
       const currentYear = new Date().getFullYear();
       const activeSlots = timeSlots.filter(slot => slot.isAvailable);
 
-      console.log('💾 Guardando horarios activos:', activeSlots);
+      Logger.info('💾 Guardando horarios activos:', activeSlots);
 
       // Delete existing schedules for this year first
       try {
@@ -158,7 +158,7 @@ const ScheduleManagement: React.FC = () => {
           }
         }
       } catch (deleteError) {
-        console.log('⚠️ No se encontraron horarios existentes para eliminar');
+        Logger.info('⚠️ No se encontraron horarios existentes para eliminar');
       }
 
       // Create new schedules for active slots
@@ -184,9 +184,9 @@ const ScheduleManagement: React.FC = () => {
         try {
           const savedSchedule = await interviewerScheduleService.createSchedule(scheduleData);
           savedSchedules.push(savedSchedule);
-          console.log('✅ Horario guardado:', savedSchedule);
+          Logger.info('✅ Horario guardado:', savedSchedule);
         } catch (createError) {
-          console.error('❌ Error creando horario individual:', createError);
+          Logger.error('❌ Error creando horario individual:', createError);
         }
       }
 
@@ -197,7 +197,7 @@ const ScheduleManagement: React.FC = () => {
       await loadExistingSchedules();
 
     } catch (error) {
-      console.error('❌ Error guardando horarios:', error);
+      Logger.error('❌ Error guardando horarios:', error);
       setMessage('❌ Error al guardar los horarios');
       setTimeout(() => setMessage(''), 3000);
     } finally {

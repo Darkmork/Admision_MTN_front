@@ -1,6 +1,6 @@
 import api from './api';
-import { API_ENDPOINTS } from './config';
-
+import { Logger } from '../src/utils/logger';import { API_ENDPOINTS } from './config';
+import { Logger } from '../src/utils/logger';
 export interface EvaluationSchedule {
   id: number;
   evaluationType: string;
@@ -71,7 +71,7 @@ class ScheduleService {
       const response = await api.get(`${API_ENDPOINTS.SCHEDULES}/family/${applicationId}`);
       return response.data;
     } catch (error: any) {
-      console.error('Error fetching family schedules:', error);
+      Logger.error('Error fetching family schedules:', error);
       
       // Si no hay citas o es un error 404, devolver array vacío
       if (error.response?.status === 404) {
@@ -80,12 +80,12 @@ class ScheduleService {
       
       // Intentar endpoint público como fallback
       if (error.code === 'ECONNREFUSED' || error.response?.status === 500) {
-        console.log('🔄 Intentando endpoint público como fallback...');
+        Logger.info('🔄 Intentando endpoint público como fallback...');
         try {
           const response = await api.get(`${API_ENDPOINTS.SCHEDULES}/public/mock-schedules/${applicationId}`);
           return response.data;
         } catch (publicError) {
-          console.log('🔄 Generando datos mock locales para demostración...');
+          Logger.info('🔄 Generando datos mock locales para demostración...');
           return this.generateMockFamilySchedules(applicationId);
         }
       }
@@ -102,11 +102,11 @@ class ScheduleService {
       });
       return response.data;
     } catch (error: any) {
-      console.error('Error confirming schedule:', error);
+      Logger.error('Error confirming schedule:', error);
       
       // Para demostración, simular confirmación exitosa si el backend no está disponible
       if (error.code === 'ECONNREFUSED' || error.response?.status >= 500) {
-        console.log('🔄 Simulando confirmación exitosa para demostración...');
+        Logger.info('🔄 Simulando confirmación exitosa para demostración...');
         const mockConfirmedSchedule = this.generateMockFamilySchedules(1)
           .find(s => s.id === scheduleId);
         
@@ -129,7 +129,7 @@ class ScheduleService {
       const response = await api.post(`${API_ENDPOINTS.SCHEDULES}/generic`, request);
       return response.data;
     } catch (error: any) {
-      console.error('Error creating generic schedule:', error);
+      Logger.error('Error creating generic schedule:', error);
       throw new Error('Error al crear la programación genérica');
     }
   }
@@ -140,7 +140,7 @@ class ScheduleService {
       const response = await api.post(`${API_ENDPOINTS.SCHEDULES}/individual`, request);
       return response.data;
     } catch (error: any) {
-      console.error('Error creating individual schedule:', error);
+      Logger.error('Error creating individual schedule:', error);
       throw new Error('Error al crear la programación individual');
     }
   }
@@ -153,7 +153,7 @@ class ScheduleService {
       });
       return response.data;
     } catch (error: any) {
-      console.error('Error fetching evaluator schedule:', error);
+      Logger.error('Error fetching evaluator schedule:', error);
       throw new Error('Error al obtener el calendario del evaluador');
     }
   }
@@ -164,7 +164,7 @@ class ScheduleService {
       const response = await api.put(`${API_ENDPOINTS.SCHEDULES}/${scheduleId}/reschedule`, request);
       return response.data;
     } catch (error: any) {
-      console.error('Error rescheduling appointment:', error);
+      Logger.error('Error rescheduling appointment:', error);
       throw new Error('Error al reprogramar la cita');
     }
   }
@@ -175,7 +175,7 @@ class ScheduleService {
       const response = await api.put(`${API_ENDPOINTS.SCHEDULES}/${scheduleId}/complete`);
       return response.data;
     } catch (error: any) {
-      console.error('Error marking as completed:', error);
+      Logger.error('Error marking as completed:', error);
       throw new Error('Error al marcar la cita como completada');
     }
   }
@@ -186,7 +186,7 @@ class ScheduleService {
       const response = await api.get(`${API_ENDPOINTS.SCHEDULES}/pending-confirmations`);
       return response.data;
     } catch (error: any) {
-      console.error('Error fetching pending confirmations:', error);
+      Logger.error('Error fetching pending confirmations:', error);
       throw new Error('Error al obtener las citas pendientes de confirmación');
     }
   }

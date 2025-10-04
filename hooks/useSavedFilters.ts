@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { FilterCondition } from '../components/ui/AdvancedFilters';
-import { SavedFilter } from '../components/ui/SavedFilters';
-
+import { Logger } from '../src/utils/logger';import { FilterCondition } from '../components/ui/AdvancedFilters';
+import { Logger } from '../src/utils/logger';import { SavedFilter } from '../components/ui/SavedFilters';
+import { Logger } from '../src/utils/logger';
 interface UseSavedFiltersOptions {
   storageKey?: string;
   onFiltersLoad?: (filters: FilterCondition[]) => void;
@@ -42,7 +42,7 @@ export const useSavedFilters = ({
         setSavedFilters(Array.isArray(filters) ? filters : []);
       }
     } catch (error) {
-      console.error('Error loading saved filters:', error);
+      Logger.error('Error loading saved filters:', error);
       setSavedFilters([]);
     }
   }, [storageKey]);
@@ -52,7 +52,7 @@ export const useSavedFilters = ({
     try {
       localStorage.setItem(storageKey, JSON.stringify(filters));
     } catch (error) {
-      console.error('Error saving filters to localStorage:', error);
+      Logger.error('Error saving filters to localStorage:', error);
     }
   }, [storageKey]);
 
@@ -196,7 +196,7 @@ export const useSavedFilters = ({
         saveFiltersToStorage(updatedFilters);
       }
     } catch (error) {
-      console.error('Error importing filters:', error);
+      Logger.error('Error importing filters:', error);
       throw new Error('Formato de archivo inválido');
     }
   }, [savedFilters, saveFiltersToStorage]);

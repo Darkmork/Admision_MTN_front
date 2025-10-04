@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { interviewService } from '../services/interviewService';
-import { FiCalendar, FiClock, FiCheck } from 'react-icons/fi';
-import {
-  createSantiagoDate,
+import { Logger } from '../src/utils/logger';import { interviewService } from '../services/interviewService';
+import { Logger } from '../src/utils/logger';import { FiCalendar, FiClock, FiCheck } from 'react-icons/fi';
+import { Logger } from '../src/utils/logger';import {
+import { Logger } from '../src/utils/logger';  createSantiagoDate,
   formatSantiagoDate,
   getTodayInSantiago,
   addDaysInSantiago,
@@ -32,7 +32,7 @@ const DayScheduleSelector: React.FC<DayScheduleSelectorProps> = ({
 
   // Cargar horarios cuando se selecciona una fecha
   useEffect(() => {
-    console.log(`📅 DayScheduleSelector useEffect: selectedDate="${selectedDate}", evaluatorId="${evaluatorId}"`);
+    Logger.info(`📅 DayScheduleSelector useEffect: selectedDate="${selectedDate}", evaluatorId="${evaluatorId}"`);
     if (selectedDate && evaluatorId) {
       loadDaySlots(selectedDate);
     } else {
@@ -45,11 +45,11 @@ const DayScheduleSelector: React.FC<DayScheduleSelectorProps> = ({
     setError(null);
     
     try {
-      console.log(`🔍 Cargando horarios para evaluador ${evaluatorId} (tipo: ${typeof evaluatorId}) en fecha ${date}`);
+      Logger.info(`🔍 Cargando horarios para evaluador ${evaluatorId} (tipo: ${typeof evaluatorId}) en fecha ${date}`);
       
       // Validar que tenemos un evaluadorId válido
       if (!evaluatorId || evaluatorId <= 0) {
-        console.warn(`⚠️ EvaluatorId inválido: ${evaluatorId}`);
+        Logger.warn(`⚠️ EvaluatorId inválido: ${evaluatorId}`);
         setAvailableSlots([]);
         return;
       }
@@ -61,35 +61,35 @@ const DayScheduleSelector: React.FC<DayScheduleSelectorProps> = ({
         60 // duración por defecto de 60 minutos
       );
       
-      console.log(`✅ Horarios obtenidos:`, slots);
-      console.log(`🔍 Tipo de slots:`, Array.isArray(slots), typeof slots);
+      Logger.info(`✅ Horarios obtenidos:`, slots);
+      Logger.info(`🔍 Tipo de slots:`, Array.isArray(slots), typeof slots);
       
       // Validar que slots sea un array
       if (!Array.isArray(slots)) {
-        console.error(`❌ Los slots no son un array:`, slots);
+        Logger.error(`❌ Los slots no son un array:`, slots);
         setAvailableSlots([]);
         return;
       }
       
       // Validación defensiva: asegurar que tenemos strings
       const validSlots = slots.map((slot, index) => {
-        console.log(`🔍 Slot ${index}:`, slot, typeof slot);
+        Logger.info(`🔍 Slot ${index}:`, slot, typeof slot);
         if (typeof slot === 'string') {
           return slot;
         } else if (typeof slot === 'object' && slot !== null) {
           // Si es un objeto, intentar extraer el tiempo como string
           const extracted = slot.time || slot.slot || slot.value || String(slot);
-          console.log(`🔧 Slot objeto convertido:`, extracted);
+          Logger.info(`🔧 Slot objeto convertido:`, extracted);
           return extracted;
         } else {
           // Fallback para otros tipos
           const fallback = String(slot);
-          console.log(`🔧 Slot fallback:`, fallback);
+          Logger.info(`🔧 Slot fallback:`, fallback);
           return fallback;
         }
       }).filter(slot => slot && typeof slot === 'string');
       
-      console.log(`✅ Slots válidos finales:`, validSlots);
+      Logger.info(`✅ Slots válidos finales:`, validSlots);
       setAvailableSlots(validSlots);
       
       // Si el horario previamente seleccionado ya no está disponible, limpiarlo
@@ -98,7 +98,7 @@ const DayScheduleSelector: React.FC<DayScheduleSelectorProps> = ({
       }
       
     } catch (error) {
-      console.error('Error cargando horarios del día:', error);
+      Logger.error('Error cargando horarios del día:', error);
       setError('Error al cargar horarios disponibles');
       setAvailableSlots([]);
     } finally {
@@ -107,7 +107,7 @@ const DayScheduleSelector: React.FC<DayScheduleSelectorProps> = ({
   };
 
   const handleDateChange = (date: string) => {
-    console.log(`📅 DayScheduleSelector: Cambio de fecha de "${selectedDate}" a "${date}"`);
+    Logger.info(`📅 DayScheduleSelector: Cambio de fecha de "${selectedDate}" a "${date}"`);
     onDateTimeSelect(date, ''); // Limpiar hora cuando cambia la fecha
   };
 
@@ -148,7 +148,7 @@ const DayScheduleSelector: React.FC<DayScheduleSelectorProps> = ({
           type="date"
           value={selectedDate || ''}
           onChange={(e) => {
-            console.log(`📅 Input onChange: valor actual="${selectedDate}", nuevo valor="${e.target.value}"`);
+            Logger.info(`📅 Input onChange: valor actual="${selectedDate}", nuevo valor="${e.target.value}"`);
             handleDateChange(e.target.value);
           }}
           min={getMinDate()}

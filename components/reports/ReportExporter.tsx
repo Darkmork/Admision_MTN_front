@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import Card from '../ui/Card';
-import Button from '../ui/Button';
-import Modal from '../ui/Modal';
-import LoadingSpinner from '../ui/LoadingSpinner';
-import { 
-  FiDownload, 
+import { Logger } from '../src/utils/logger';import Card from '../ui/Card';
+import { Logger } from '../src/utils/logger';import Button from '../ui/Button';
+import { Logger } from '../src/utils/logger';import Modal from '../ui/Modal';
+import { Logger } from '../src/utils/logger';import LoadingSpinner from '../ui/LoadingSpinner';
+import { Logger } from '../src/utils/logger';import { 
+import { Logger } from '../src/utils/logger';  FiDownload, 
   FiFileText, 
   FiBarChart2, 
   FiCalendar,
@@ -14,9 +14,9 @@ import {
   FiX
 } from 'react-icons/fi';
 import { Interview, InterviewStats } from '../../types/interview';
-import { reportExportService, ExportOptions, ReportData } from '../../services/reportExportService';
-import { useAuth } from '../../context/AuthContext';
-
+import { Logger } from '../src/utils/logger';import { reportExportService, ExportOptions, ReportData } from '../../services/reportExportService';
+import { Logger } from '../src/utils/logger';import { useAuth } from '../../context/AuthContext';
+import { Logger } from '../src/utils/logger';
 interface ReportExporterProps {
   interviews: Interview[];
   stats?: InterviewStats;
@@ -171,7 +171,7 @@ const ReportExporter: React.FC<ReportExporterProps> = ({ interviews, stats, clas
       }, 2000);
 
     } catch (error: any) {
-      console.error('Error en exportación:', error);
+      Logger.error('Error en exportación:', error);
       setExportStatus(`❌ Error: ${error.message}`);
     } finally {
       setIsExporting(false);

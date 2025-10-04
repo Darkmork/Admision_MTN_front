@@ -4,8 +4,8 @@
  */
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { oidcService, type MTNUser, type AuthState } from '../services/oidcService';
-
+import { Logger } from '../src/utils/logger';import { oidcService, type MTNUser, type AuthState } from '../services/oidcService';
+import { Logger } from '../src/utils/logger';
 interface OidcContextType {
   // Estado de autenticación
   authState: AuthState;
@@ -51,7 +51,7 @@ export const OidcProvider: React.FC<OidcProviderProps> = ({ children }) => {
 
   // Listener para cambios de estado de autenticación
   const handleAuthStateChange = useCallback((newState: AuthState) => {
-    console.log('🔄 Estado de autenticación actualizado:', {
+    Logger.info('🔄 Estado de autenticación actualizado:', {
       isAuthenticated: newState.isAuthenticated,
       roles: newState.roles,
       user: newState.user?.profile?.email,
@@ -66,7 +66,7 @@ export const OidcProvider: React.FC<OidcProviderProps> = ({ children }) => {
 
     const initializeOidc = async () => {
       try {
-        console.log('🚀 Inicializando servicio OIDC...');
+        Logger.info('🚀 Inicializando servicio OIDC...');
         
         // Agregar listener para cambios de estado
         oidcService.addAuthStateListener(handleAuthStateChange);
@@ -88,14 +88,14 @@ export const OidcProvider: React.FC<OidcProviderProps> = ({ children }) => {
           setAuthState(initialState);
           setIsInitialized(true);
           
-          console.log('✅ OIDC inicializado correctamente:', {
+          Logger.info('✅ OIDC inicializado correctamente:', {
             isAuthenticated: isAuth,
             user: currentUser?.profile?.email,
             roles: oidcService.getUserRoles(),
           });
         }
       } catch (error) {
-        console.error('❌ Error inicializando OIDC:', error);
+        Logger.error('❌ Error inicializando OIDC:', error);
         
         if (isMounted) {
           setAuthState({
@@ -129,18 +129,18 @@ export const OidcProvider: React.FC<OidcProviderProps> = ({ children }) => {
       const hasAuthCallback = urlParams.has('code') && urlParams.has('state');
 
       if (hasAuthCallback) {
-        console.log('🔄 Procesando callback de autenticación...');
+        Logger.info('🔄 Procesando callback de autenticación...');
         
         setAuthState(prev => ({ ...prev, isLoading: true }));
         
         try {
           const user = await oidcService.handleCallback();
-          console.log('✅ Callback de autenticación exitoso:', user?.profile?.email);
+          Logger.info('✅ Callback de autenticación exitoso:', user?.profile?.email);
           
           // Limpiar parámetros de la URL
           window.history.replaceState({}, document.title, window.location.pathname);
         } catch (error) {
-          console.error('❌ Error en callback de autenticación:', error);
+          Logger.error('❌ Error en callback de autenticación:', error);
           
           setAuthState(prev => ({
             ...prev,
@@ -157,13 +157,13 @@ export const OidcProvider: React.FC<OidcProviderProps> = ({ children }) => {
   // Acciones de autenticación
   const login = useCallback(async (role?: 'admin' | 'user') => {
     try {
-      console.log(`🔐 Iniciando login${role ? ` como ${role}` : ''}...`);
+      Logger.info(`🔐 Iniciando login${role ? ` como ${role}` : ''}...`);
       
       setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
       
       await oidcService.login(role);
     } catch (error) {
-      console.error('❌ Error en login:', error);
+      Logger.error('❌ Error en login:', error);
       
       setAuthState(prev => ({
         ...prev,
@@ -177,13 +177,13 @@ export const OidcProvider: React.FC<OidcProviderProps> = ({ children }) => {
 
   const logout = useCallback(async () => {
     try {
-      console.log('🚪 Cerrando sesión...');
+      Logger.info('🚪 Cerrando sesión...');
       
       setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
       
       await oidcService.logout();
     } catch (error) {
-      console.error('❌ Error en logout:', error);
+      Logger.error('❌ Error en logout:', error);
       
       setAuthState(prev => ({
         ...prev,
@@ -197,19 +197,19 @@ export const OidcProvider: React.FC<OidcProviderProps> = ({ children }) => {
 
   const renewToken = useCallback(async () => {
     try {
-      console.log('🔄 Renovando token...');
+      Logger.info('🔄 Renovando token...');
       
       const user = await oidcService.renewToken();
       
       if (user) {
-        console.log('✅ Token renovado exitosamente');
+        Logger.info('✅ Token renovado exitosamente');
       } else {
-        console.warn('⚠️ No se pudo renovar el token');
+        Logger.warn('⚠️ No se pudo renovar el token');
       }
       
       return user;
     } catch (error) {
-      console.error('❌ Error renovando token:', error);
+      Logger.error('❌ Error renovando token:', error);
       return null;
     }
   }, []);

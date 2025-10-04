@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { useNotifications } from '../../context/AppContext';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
-import Button from '../ui/Button';
-import { 
-  evaluationService
+import { Logger } from '../src/utils/logger';import { useNotifications } from '../../context/AppContext';
+import { Logger } from '../src/utils/logger';import Card from '../ui/Card';
+import { Logger } from '../src/utils/logger';import Badge from '../ui/Badge';
+import { Logger } from '../src/utils/logger';import Button from '../ui/Button';
+import { Logger } from '../src/utils/logger';import { 
+import { Logger } from '../src/utils/logger';  evaluationService
 } from '../../services/evaluationService';
 import {
-  EVALUATION_TYPE_LABELS,
+import { Logger } from '../src/utils/logger';  EVALUATION_TYPE_LABELS,
   EVALUATION_STATUS_LABELS
 } from '../../types/evaluation';
 import { 
-  ChartBarIcon,
+import { Logger } from '../src/utils/logger';  ChartBarIcon,
   ClockIcon,
   CheckCircleIcon,
   UserIcon,
@@ -46,7 +46,7 @@ const EvaluationStatistics: React.FC = () => {
       const data = await evaluationService.getEvaluationStatistics();
       setStats(data);
     } catch (error) {
-      console.error('Error loading evaluation statistics:', error);
+      Logger.error('Error loading evaluation statistics:', error);
       addNotification({
         type: 'error',
         title: 'Error',

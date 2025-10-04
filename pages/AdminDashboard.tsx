@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Card from '../components/ui/Card';
-import Button from '../components/ui/Button';
-import Badge from '../components/ui/Badge';
-import Modal from '../components/ui/Modal';
-import { DashboardIcon, FileTextIcon, UsersIcon, BarChartIcon, CheckCircleIcon, ClockIcon, UserIcon } from '../components/icons/Icons';
-import { 
-  FiFileText, 
+import { Logger } from '../src/utils/logger';import { useNavigate } from 'react-router-dom';
+import { Logger } from '../src/utils/logger';import Card from '../components/ui/Card';
+import { Logger } from '../src/utils/logger';import Button from '../components/ui/Button';
+import { Logger } from '../src/utils/logger';import Badge from '../components/ui/Badge';
+import { Logger } from '../src/utils/logger';import Modal from '../components/ui/Modal';
+import { Logger } from '../src/utils/logger';import { DashboardIcon, FileTextIcon, UsersIcon, BarChartIcon, CheckCircleIcon, ClockIcon, UserIcon } from '../components/icons/Icons';
+import { Logger } from '../src/utils/logger';import { 
+import { Logger } from '../src/utils/logger';  FiFileText, 
   FiBarChart2, 
   FiFile, 
   FiKey, 
@@ -34,34 +34,34 @@ import {
   FiSearch
 } from 'react-icons/fi';
 import CreateUserForm from '../components/admin/CreateUserForm';
-import { CreateUserRequest, UserRole, User } from '../types/user';
-import { useApplications, useNotifications, useAppContext } from '../context/AppContext';
-import { userService } from '../services/userService';
-import { 
-  evaluationService
+import { Logger } from '../src/utils/logger';import { CreateUserRequest, UserRole, User } from '../types/user';
+import { Logger } from '../src/utils/logger';import { useApplications, useNotifications, useAppContext } from '../context/AppContext';
+import { Logger } from '../src/utils/logger';import { userService } from '../services/userService';
+import { Logger } from '../src/utils/logger';import { 
+import { Logger } from '../src/utils/logger';  evaluationService
 } from '../services/evaluationService';
 import {
-  Evaluation, 
+import { Logger } from '../src/utils/logger';  Evaluation, 
   EvaluationType, 
   EvaluationStatus,
   EVALUATION_TYPE_LABELS,
   EVALUATION_STATUS_LABELS 
 } from '../types/evaluation';
 import EvaluationManagement from '../components/admin/EvaluationManagement';
-import EvaluationStatistics from '../components/admin/EvaluationStatistics';
-import EvaluationReports from '../components/admin/EvaluationReports';
-import EvaluatorManagement from '../components/admin/EvaluatorManagement';
-import { UserManagement } from '../components/users';
-import { InterviewManagement } from '../components/interviews';
-import SharedCalendar from '../components/admin/SharedCalendar';
-import { Application, applicationService } from '../services/applicationService';
-// Mock service removido - usando applicationService real
+import { Logger } from '../src/utils/logger';import EvaluationStatistics from '../components/admin/EvaluationStatistics';
+import { Logger } from '../src/utils/logger';import EvaluationReports from '../components/admin/EvaluationReports';
+import { Logger } from '../src/utils/logger';import EvaluatorManagement from '../components/admin/EvaluatorManagement';
+import { Logger } from '../src/utils/logger';import { UserManagement } from '../components/users';
+import { Logger } from '../src/utils/logger';import { InterviewManagement } from '../components/interviews';
+import { Logger } from '../src/utils/logger';import SharedCalendar from '../components/admin/SharedCalendar';
+import { Logger } from '../src/utils/logger';import { Application, applicationService } from '../services/applicationService';
+import { Logger } from '../src/utils/logger';// Mock service removido - usando applicationService real
 import { useAuth } from '../context/AuthContext';
-import ApplicationsTable from '../components/admin/ApplicationsTable';
-import SimpleToast from '../components/ui/SimpleToast';
-import AdminDataTables from '../components/admin/AdminDataTables';
-import StudentDetailModal from '../components/admin/StudentDetailModal';
-
+import { Logger } from '../src/utils/logger';import ApplicationsTable from '../components/admin/ApplicationsTable';
+import { Logger } from '../src/utils/logger';import SimpleToast from '../components/ui/SimpleToast';
+import { Logger } from '../src/utils/logger';import AdminDataTables from '../components/admin/AdminDataTables';
+import { Logger } from '../src/utils/logger';import StudentDetailModal from '../components/admin/StudentDetailModal';
+import { Logger } from '../src/utils/logger';
 const sections = [
   { key: 'dashboard', label: 'Dashboard General' },
   { key: 'tablas', label: 'Tablas de Datos' },
@@ -166,7 +166,7 @@ const AdminDashboard: React.FC = () => {
       const applications = await applicationService.getAllApplications();
       dispatch({ type: 'SET_APPLICATIONS', payload: applications });
     } catch (error) {
-      console.error('Error loading applications:', error);
+      Logger.error('Error loading applications:', error);
       // applicationService already handles fallbacks, but set empty array if it fails completely
       dispatch({ type: 'SET_APPLICATIONS', payload: [] });
     } finally {
@@ -180,7 +180,7 @@ const AdminDashboard: React.FC = () => {
       const apps = await applicationService.getAllApplications();
       setLocalApplications(apps);
     } catch (error) {
-      console.error('Error loading local applications:', error);
+      Logger.error('Error loading local applications:', error);
       // Fallback a datos estáticos
       // Fallback eliminado - solo datos reales del backend
     } finally {
@@ -195,7 +195,7 @@ const AdminDashboard: React.FC = () => {
       // userService devuelve PagedResponse, necesitamos solo el contenido (solo staff del colegio)
       setUsers(usersData.content || []);
     } catch (error) {
-      console.error('Error cargando usuarios:', error);
+      Logger.error('Error cargando usuarios:', error);
       addNotification({
         type: 'error',
         title: 'Error',
@@ -291,7 +291,7 @@ const AdminDashboard: React.FC = () => {
       const appsData = await applicationService.getAllApplications();
       setAdminApplications(appsData || []);
     } catch (error) {
-      console.error('Error cargando postulaciones admin:', error);
+      Logger.error('Error cargando postulaciones admin:', error);
       showApplicationToast('No se pudieron cargar las postulaciones', 'error');
     } finally {
       setIsLoadingAdminApplications(false);
@@ -339,12 +339,12 @@ Esta acción:
 
   // Funciones para manejar el modal de detalles
   const handleViewApplicationDetail = (app: Application) => {
-    console.log('🔍 handleViewApplicationDetail called with app:', app);
+    Logger.info('🔍 handleViewApplicationDetail called with app:', app);
     const postulante = transformApplicationToPostulante(app);
-    console.log('✅ Transformed postulante:', postulante);
+    Logger.info('✅ Transformed postulante:', postulante);
     setSelectedPostulante(postulante);
     setIsDetailModalOpen(true);
-    console.log('📖 Modal state set to open');
+    Logger.info('📖 Modal state set to open');
   };
 
   const handleCloseDetailModal = () => {

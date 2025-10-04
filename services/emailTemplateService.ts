@@ -1,5 +1,5 @@
 import api from './api';
-
+import { Logger } from '../src/utils/logger';
 export interface EmailTemplate {
   id: number;
   name: string;
@@ -65,10 +65,10 @@ export class EmailTemplateService {
         data: response.data
       };
     } catch (error: any) {
-      console.error('Error fetching email templates:', error);
+      Logger.error('Error fetching email templates:', error);
       
       // Fallback to mock data if API fails
-      console.log('📧 Using mock templates as fallback');
+      Logger.info('📧 Using mock templates as fallback');
       return {
         success: true,
         data: this.getMockTemplates(),
@@ -85,7 +85,7 @@ export class EmailTemplateService {
         data: response.data
       };
     } catch (error: any) {
-      console.error('Error fetching templates by category:', error);
+      Logger.error('Error fetching templates by category:', error);
       return {
         success: false,
         data: [],
@@ -102,7 +102,7 @@ export class EmailTemplateService {
         data: response.data
       };
     } catch (error: any) {
-      console.error('Error fetching template by ID:', error);
+      Logger.error('Error fetching template by ID:', error);
       return {
         success: false,
         data: {} as EmailTemplate,
@@ -113,7 +113,7 @@ export class EmailTemplateService {
 
   async createTemplate(templateData: CreateTemplateRequest): Promise<SingleTemplateResponse> {
     try {
-      console.log('🎨 Creando nuevo template:', templateData.templateKey);
+      Logger.info('🎨 Creando nuevo template:', templateData.templateKey);
       const response = await api.post(`${this.baseUrl}/create`, templateData);
       return {
         success: true,
@@ -121,11 +121,11 @@ export class EmailTemplateService {
         message: 'Template creado exitosamente'
       };
     } catch (error: any) {
-      console.error('Error creating template:', error);
+      Logger.error('Error creating template:', error);
       
       // Si el backend no está disponible, simular creación local
       if (error.response?.status === 404 || error.code === 'ERR_NETWORK') {
-        console.log('📝 Backend no disponible, simulando creación de template...');
+        Logger.info('📝 Backend no disponible, simulando creación de template...');
         const newTemplate: EmailTemplate = {
           id: Date.now(),
           ...templateData,
@@ -160,7 +160,7 @@ export class EmailTemplateService {
         message: 'Template actualizado exitosamente'
       };
     } catch (error: any) {
-      console.error('Error updating template:', error);
+      Logger.error('Error updating template:', error);
       return {
         success: false,
         data: {} as EmailTemplate,
@@ -177,7 +177,7 @@ export class EmailTemplateService {
         message: 'Template eliminado exitosamente'
       };
     } catch (error: any) {
-      console.error('Error deleting template:', error);
+      Logger.error('Error deleting template:', error);
       return {
         success: false,
         message: error.response?.data?.message || 'Error al eliminar template'
@@ -198,7 +198,7 @@ export class EmailTemplateService {
         queueId: response.data.queueId
       };
     } catch (error: any) {
-      console.error('Error sending templated email:', error);
+      Logger.error('Error sending templated email:', error);
       return {
         success: false,
         message: error.response?.data?.message || 'Error al enviar email con template'

@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
-import Button from '../ui/Button';
-import Input from '../ui/Input';
-import Card from '../ui/Card';
-import Modal from '../ui/Modal';
-import { CreateUserRequest, UserRole } from '../../types/user';
-import { PsychologySpecialty, SupportStaffType, KinderLevel } from '../../types';
-import { useNotifications } from '../../context/AppContext';
-import { getDayOfWeekOptions, getTimeSlotOptions } from '../../services/interviewerScheduleService';
-import { FiClock, FiCalendar, FiPlus, FiTrash2 } from 'react-icons/fi';
-
+import { Logger } from '../src/utils/logger';import Button from '../ui/Button';
+import { Logger } from '../src/utils/logger';import Input from '../ui/Input';
+import { Logger } from '../src/utils/logger';import Card from '../ui/Card';
+import { Logger } from '../src/utils/logger';import Modal from '../ui/Modal';
+import { Logger } from '../src/utils/logger';import { CreateUserRequest, UserRole } from '../../types/user';
+import { Logger } from '../src/utils/logger';import { PsychologySpecialty, SupportStaffType, KinderLevel } from '../../types';
+import { Logger } from '../src/utils/logger';import { useNotifications } from '../../context/AppContext';
+import { Logger } from '../src/utils/logger';import { getDayOfWeekOptions, getTimeSlotOptions } from '../../services/interviewerScheduleService';
+import { Logger } from '../src/utils/logger';import { FiClock, FiCalendar, FiPlus, FiTrash2 } from 'react-icons/fi';
+import { Logger } from '../src/utils/logger';
 interface CreateUserFormProps {
     isOpen: boolean;
     onClose: () => void;
@@ -52,7 +52,7 @@ const CreateUserForm: React.FC<CreateUserFormProps> = ({ isOpen, onClose, onSubm
                             // Si aún no encuentra, devolver el original
                             return subject;
                         } catch (error) {
-                            console.warn('Error mapeando materia:', subject, error);
+                            Logger.warn('Error mapeando materia:', subject, error);
                             return subject;
                         }
                     }) || [],
@@ -73,7 +73,7 @@ const CreateUserForm: React.FC<CreateUserFormProps> = ({ isOpen, onClose, onSubm
                     canManageSchedules: initialData.canManageSchedules || false
                 };
             } catch (error) {
-                console.error('Error inicializando formulario con datos existentes:', error);
+                Logger.error('Error inicializando formulario con datos existentes:', error);
                 // Si hay error, devolver datos por defecto
                 return {
                     firstName: '',
@@ -166,7 +166,7 @@ const CreateUserForm: React.FC<CreateUserFormProps> = ({ isOpen, onClose, onSubm
     const validateForm = (): boolean => {
         const newErrors: {[key: string]: string} = {};
 
-        console.log('Validando formulario con rol:', formData.role);
+        Logger.info('Validando formulario con rol:', formData.role);
 
         // Validaciones básicas
         if (!formData.firstName.trim()) newErrors.firstName = 'Nombre es requerido';
@@ -180,28 +180,28 @@ const CreateUserForm: React.FC<CreateUserFormProps> = ({ isOpen, onClose, onSubm
         // Validaciones específicas por rol (simplificadas para backend actual)
         switch (formData.role) {
             case UserRole.PSYCHOLOGIST:
-                console.log('Validando PSYCHOLOGIST');
+                Logger.info('Validando PSYCHOLOGIST');
                 // Solo validaciones básicas por ahora
                 break;
             
             default:
                 // Para otros roles, solo validaciones básicas
-                console.log('Validando rol:', formData.role);
+                Logger.info('Validando rol:', formData.role);
                 break;
         }
 
-        console.log('Errores encontrados:', newErrors);
+        Logger.info('Errores encontrados:', newErrors);
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        console.log('CreateUserForm - handleSubmit llamado');
-        console.log('CreateUserForm - formData:', formData);
+        Logger.info('CreateUserForm - handleSubmit llamado');
+        Logger.info('CreateUserForm - formData:', formData);
         
         if (!validateForm()) {
-            console.log('CreateUserForm - Validación falló');
+            Logger.info('CreateUserForm - Validación falló');
             addNotification({
                 type: 'error',
                 title: 'Error de validación',
@@ -210,7 +210,7 @@ const CreateUserForm: React.FC<CreateUserFormProps> = ({ isOpen, onClose, onSubm
             return;
         }
 
-        console.log('CreateUserForm - Validación exitosa, enviando...');
+        Logger.info('CreateUserForm - Validación exitosa, enviando...');
         setIsSubmitting(true);
         try {
             // Enviar solo los campos básicos que el backend necesita
@@ -224,9 +224,9 @@ const CreateUserForm: React.FC<CreateUserFormProps> = ({ isOpen, onClose, onSubm
                 customSchedules: useCustomSchedules && isEvaluatorRole(formData.role) ? schedules : undefined
             };
 
-            console.log('🚀 CreateUserForm - Llamando onSubmit con datos procesados:', processedFormData);
+            Logger.info('🚀 CreateUserForm - Llamando onSubmit con datos procesados:', processedFormData);
             await onSubmit(processedFormData);
-            console.log('CreateUserForm - onSubmit completado');
+            Logger.info('CreateUserForm - onSubmit completado');
             
             addNotification({
                 type: 'success',
@@ -237,7 +237,7 @@ const CreateUserForm: React.FC<CreateUserFormProps> = ({ isOpen, onClose, onSubm
             resetSchedules();
             onClose();
         } catch (error) {
-            console.error('CreateUserForm - Error en onSubmit:', error);
+            Logger.error('CreateUserForm - Error en onSubmit:', error);
             addNotification({
                 type: 'error',
                 title: 'Error',

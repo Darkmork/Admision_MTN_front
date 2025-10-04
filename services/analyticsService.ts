@@ -1,5 +1,5 @@
 import api from './api';
-
+import { Logger } from '../src/utils/logger';
 export interface DashboardMetrics {
   totalApplications: number;
   applicationsThisMonth: number;
@@ -79,12 +79,12 @@ class AnalyticsService {
    */
   async getDashboardMetrics(): Promise<DashboardMetrics> {
     try {
-      console.log('📊 Obteniendo métricas del dashboard...');
+      Logger.info('📊 Obteniendo métricas del dashboard...');
       const response = await api.get('/api/analytics/dashboard-metrics');
-      console.log('✅ Métricas del dashboard obtenidas:', response.data);
+      Logger.info('✅ Métricas del dashboard obtenidas:', response.data);
       return response.data;
     } catch (error: any) {
-      console.error('❌ Error obteniendo métricas del dashboard:', error);
+      Logger.error('❌ Error obteniendo métricas del dashboard:', error);
       throw new Error('Error al obtener métricas del dashboard: ' + error.message);
     }
   }
@@ -94,12 +94,12 @@ class AnalyticsService {
    */
   async getStatusDistribution(): Promise<StatusDistribution> {
     try {
-      console.log('📈 Obteniendo distribución por estado...');
+      Logger.info('📈 Obteniendo distribución por estado...');
       const response = await api.get('/api/analytics/status-distribution');
-      console.log('✅ Distribución por estado obtenida:', response.data);
+      Logger.info('✅ Distribución por estado obtenida:', response.data);
       return response.data;
     } catch (error: any) {
-      console.error('❌ Error obteniendo distribución por estado:', error);
+      Logger.error('❌ Error obteniendo distribución por estado:', error);
       throw new Error('Error al obtener distribución por estado: ' + error.message);
     }
   }
@@ -109,12 +109,12 @@ class AnalyticsService {
    */
   async getGradeDistribution(): Promise<GradeDistribution> {
     try {
-      console.log('📚 Obteniendo distribución por grado...');
+      Logger.info('📚 Obteniendo distribución por grado...');
       const response = await api.get('/api/analytics/grade-distribution');
-      console.log('✅ Distribución por grado obtenida:', response.data);
+      Logger.info('✅ Distribución por grado obtenida:', response.data);
       return response.data;
     } catch (error: any) {
-      console.error('❌ Error obteniendo distribución por grado:', error);
+      Logger.error('❌ Error obteniendo distribución por grado:', error);
       throw new Error('Error al obtener distribución por grado: ' + error.message);
     }
   }
@@ -124,12 +124,12 @@ class AnalyticsService {
    */
   async getEvaluatorAnalysis(): Promise<EvaluatorAnalysis> {
     try {
-      console.log('👥 Obteniendo análisis de evaluadores...');
+      Logger.info('👥 Obteniendo análisis de evaluadores...');
       const response = await api.get('/api/analytics/evaluator-analysis');
-      console.log('✅ Análisis de evaluadores obtenido:', response.data);
+      Logger.info('✅ Análisis de evaluadores obtenido:', response.data);
       return response.data;
     } catch (error: any) {
-      console.error('❌ Error obteniendo análisis de evaluadores:', error);
+      Logger.error('❌ Error obteniendo análisis de evaluadores:', error);
       throw new Error('Error al obtener análisis de evaluadores: ' + error.message);
     }
   }
@@ -139,12 +139,12 @@ class AnalyticsService {
    */
   async getTemporalTrends(): Promise<TemporalTrends> {
     try {
-      console.log('📅 Obteniendo tendencias temporales...');
+      Logger.info('📅 Obteniendo tendencias temporales...');
       const response = await api.get('/api/analytics/temporal-trends');
-      console.log('✅ Tendencias temporales obtenidas:', response.data);
+      Logger.info('✅ Tendencias temporales obtenidas:', response.data);
       return response.data;
     } catch (error: any) {
-      console.error('❌ Error obteniendo tendencias temporales:', error);
+      Logger.error('❌ Error obteniendo tendencias temporales:', error);
       throw new Error('Error al obtener tendencias temporales: ' + error.message);
     }
   }
@@ -154,12 +154,12 @@ class AnalyticsService {
    */
   async getPerformanceMetrics(): Promise<PerformanceMetrics> {
     try {
-      console.log('⚡ Obteniendo métricas de rendimiento...');
+      Logger.info('⚡ Obteniendo métricas de rendimiento...');
       const response = await api.get('/api/analytics/performance-metrics');
-      console.log('✅ Métricas de rendimiento obtenidas:', response.data);
+      Logger.info('✅ Métricas de rendimiento obtenidas:', response.data);
       return response.data;
     } catch (error: any) {
-      console.error('❌ Error obteniendo métricas de rendimiento:', error);
+      Logger.error('❌ Error obteniendo métricas de rendimiento:', error);
       throw new Error('Error al obtener métricas de rendimiento: ' + error.message);
     }
   }
@@ -169,12 +169,12 @@ class AnalyticsService {
    */
   async getInsights(): Promise<Insights> {
     try {
-      console.log('💡 Obteniendo insights y recomendaciones...');
+      Logger.info('💡 Obteniendo insights y recomendaciones...');
       const response = await api.get('/api/analytics/insights');
-      console.log('✅ Insights obtenidos:', response.data);
+      Logger.info('✅ Insights obtenidos:', response.data);
       return response.data;
     } catch (error: any) {
-      console.error('❌ Error obteniendo insights:', error);
+      Logger.error('❌ Error obteniendo insights:', error);
       throw new Error('Error al obtener insights: ' + error.message);
     }
   }
@@ -184,12 +184,12 @@ class AnalyticsService {
    */
   async getCompleteAnalytics(): Promise<CompleteAnalytics> {
     try {
-      console.log('🎯 Obteniendo análisis completo...');
+      Logger.info('🎯 Obteniendo análisis completo...');
       const response = await api.get('/api/analytics/complete-analytics');
-      console.log('✅ Análisis completo obtenido:', response.data);
+      Logger.info('✅ Análisis completo obtenido:', response.data);
       return response.data;
     } catch (error: any) {
-      console.error('❌ Error obteniendo análisis completo:', error);
+      Logger.error('❌ Error obteniendo análisis completo:', error);
       throw new Error('Error al obtener análisis completo: ' + error.message);
     }
   }
@@ -199,7 +199,7 @@ class AnalyticsService {
    */
   async getAllAnalyticsSeparately(): Promise<CompleteAnalytics> {
     try {
-      console.log('🔄 Obteniendo análisis por partes...');
+      Logger.info('🔄 Obteniendo análisis por partes...');
       
       const [
         dashboardMetrics,
@@ -230,11 +230,11 @@ class AnalyticsService {
         generatedAt: new Date().toISOString()
       };
 
-      console.log('✅ Análisis combinado exitosamente');
+      Logger.info('✅ Análisis combinado exitosamente');
       return completeAnalytics;
       
     } catch (error: any) {
-      console.error('❌ Error obteniendo análisis por partes:', error);
+      Logger.error('❌ Error obteniendo análisis por partes:', error);
       throw new Error('Error al obtener análisis: ' + error.message);
     }
   }
@@ -244,12 +244,12 @@ class AnalyticsService {
    */
   async testConnection(): Promise<boolean> {
     try {
-      console.log('🔍 Verificando conectividad con analytics API...');
+      Logger.info('🔍 Verificando conectividad con analytics API...');
       const response = await api.get('/api/analytics/dashboard-metrics');
-      console.log('✅ Conectividad verificada');
+      Logger.info('✅ Conectividad verificada');
       return true;
     } catch (error: any) {
-      console.error('❌ Error de conectividad:', error);
+      Logger.error('❌ Error de conectividad:', error);
       return false;
     }
   }

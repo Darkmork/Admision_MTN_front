@@ -1,6 +1,6 @@
 import api from './api';
-import { 
-  Evaluation, 
+import { Logger } from '../src/utils/logger';import { 
+import { Logger } from '../src/utils/logger';  Evaluation, 
   AcademicEvaluation, 
   PsychologicalEvaluation, 
   CycleDirectorEvaluation,
@@ -16,7 +16,7 @@ export const evaluationApiService = {
       const response = await api.get(`/evaluations/${evaluationId}`);
       return response.data;
     } catch (error) {
-      console.error('Error getting evaluation by ID:', error);
+      Logger.error('Error getting evaluation by ID:', error);
       throw error;
     }
   },
@@ -59,7 +59,7 @@ export const evaluationApiService = {
       const response = await api.put(`/evaluations/${evaluationId}`, filteredData);
       return response.data;
     } catch (error) {
-      console.error('Error updating evaluation:', error);
+      Logger.error('Error updating evaluation:', error);
       throw error;
     }
   },
@@ -70,7 +70,7 @@ export const evaluationApiService = {
       const response = await api.get('/evaluations/my-evaluations');
       return response.data;
     } catch (error) {
-      console.error('Error getting my evaluations:', error);
+      Logger.error('Error getting my evaluations:', error);
       throw error;
     }
   },
@@ -81,7 +81,7 @@ export const evaluationApiService = {
       const response = await api.get('/evaluations/my-pending');
       return response.data;
     } catch (error) {
-      console.error('Error getting my pending evaluations:', error);
+      Logger.error('Error getting my pending evaluations:', error);
       throw error;
     }
   },
@@ -92,7 +92,7 @@ export const evaluationApiService = {
       const response = await api.get(`/evaluations/application/${applicationId}`);
       return response.data;
     } catch (error) {
-      console.error('Error getting evaluations by application:', error);
+      Logger.error('Error getting evaluations by application:', error);
       throw error;
     }
   },
@@ -152,13 +152,13 @@ export const evaluationApiService = {
       const response = await api.get('/evaluations/statistics');
       return response.data;
     } catch (error) {
-      console.error('Error getting evaluation statistics:', error);
+      Logger.error('Error getting evaluation statistics:', error);
       // Intentar endpoint público como fallback
       try {
         const fallbackResponse = await api.get('/evaluations/public/statistics');
         return fallbackResponse.data;
       } catch (fallbackError) {
-        console.error('Error with fallback statistics:', fallbackError);
+        Logger.error('Error with fallback statistics:', fallbackError);
         throw error;
       }
     }

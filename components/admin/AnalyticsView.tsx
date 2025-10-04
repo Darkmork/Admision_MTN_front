@@ -4,11 +4,11 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { FiTrendingUp, FiUsers, FiAward, FiClock } from 'react-icons/fi';
-import Card from '../ui/Card';
-import { BarChart, Bar, LineChart, Line, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { dashboardClient } from '../../src/api/dashboard.client';
-
+import { Logger } from '../src/utils/logger';import { FiTrendingUp, FiUsers, FiAward, FiClock } from 'react-icons/fi';
+import { Logger } from '../src/utils/logger';import Card from '../ui/Card';
+import { Logger } from '../src/utils/logger';import { BarChart, Bar, LineChart, Line, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Logger } from '../src/utils/logger';import { dashboardClient } from '../../src/api/dashboard.client';
+import { Logger } from '../src/utils/logger';
 export const AnalyticsView: React.FC = () => {
     const [evaluatorData, setEvaluatorData] = useState<any[]>([]);
     const [performanceData, setPerformanceData] = useState<any>(null);
@@ -37,7 +37,7 @@ export const AnalyticsView: React.FC = () => {
             setPerformanceData(performanceMetrics);
             setInsights(analyticsInsights);
         } catch (error) {
-            console.error('Error loading analytics:', error);
+            Logger.error('Error loading analytics:', error);
         } finally {
             setLoading(false);
         }

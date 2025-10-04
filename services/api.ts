@@ -1,5 +1,5 @@
 import axios from 'axios';
-
+import { Logger } from '../src/utils/logger';
 // Configuración base de axios - Using nginx gateway for microservices
 const api = axios.create({
     baseURL: 'http://localhost:8080',
@@ -34,7 +34,7 @@ api.interceptors.request.use(
         const url = config.url || '';
         const isPublic = isPublicRoute(url);
         
-        console.log(`🔍 API Request: ${url} - Is Public: ${isPublic}`);
+        Logger.info(`🔍 API Request: ${url} - Is Public: ${isPublic}`);
         
         // Solo agregar token de autenticación si NO es una ruta pública
         if (!isPublic) {
@@ -48,12 +48,12 @@ api.interceptors.request.use(
             
             if (token) {
                 config.headers.Authorization = `Bearer ${token}`;
-                console.log(`🔑 Added auth token for private route`);
+                Logger.info(`🔑 Added auth token for private route`);
             } else {
-                console.log(`❓ No token found for private route`);
+                Logger.info(`❓ No token found for private route`);
             }
         } else {
-            console.log(`🌐 Public route - no auth required`);
+            Logger.info(`🌐 Public route - no auth required`);
         }
         return config;
     },
@@ -66,18 +66,18 @@ api.interceptors.request.use(
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        console.error('API Error:', error);
+        Logger.error('API Error:', error);
         
         if (error.response) {
             // El servidor respondió con un código de estado fuera del rango 2xx
-            console.error('Error response:', error.response.data);
-            console.error('Error status:', error.response.status);
-            console.error('Error headers:', error.response.headers);
-            console.error('Request data:', error.config.data);
+            Logger.error('Error response:', error.response.data);
+            Logger.error('Error status:', error.response.status);
+            Logger.error('Error headers:', error.response.headers);
+            Logger.error('Request data:', error.config.data);
             
             // Si es 401, limpiar la sesión correspondiente y redirigir
             if (error.response.status === 401) {
-                console.warn('🔐 JWT token expired or invalid - cleaning session');
+                Logger.warn('🔐 JWT token expired or invalid - cleaning session');
                 
                 // Limpiar token de usuario regular
                 localStorage.removeItem('auth_token');
@@ -97,7 +97,7 @@ api.interceptors.response.use(
                                      requestUrl.includes('/api/auth/register');
                 
                 if (!isLoginPage && !isPublicRoute) {
-                    console.warn('🔄 Redirecting to login due to expired token');
+                    Logger.warn('🔄 Redirecting to login due to expired token');
                     // Usar setTimeout para evitar problemas con el contexto de React
                     setTimeout(() => {
                         if (currentPath.includes('/admin') || currentPath.includes('/profesor')) {
@@ -110,10 +110,10 @@ api.interceptors.response.use(
             }
         } else if (error.request) {
             // La petición fue hecha pero no se recibió respuesta
-            console.error('No response received:', error.request);
+            Logger.error('No response received:', error.request);
         } else {
             // Algo pasó al configurar la petición
-            console.error('Request setup error:', error.message);
+            Logger.error('Request setup error:', error.message);
         }
         
         return Promise.reject(error);

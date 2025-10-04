@@ -1,6 +1,6 @@
 import api from './api';
-import { DataAdapter } from './dataAdapter';
-
+import { Logger } from '../src/utils/logger';import { DataAdapter } from './dataAdapter';
+import { Logger } from '../src/utils/logger';
 export interface ApplicationRequest {
     // Datos del estudiante
     firstName: string;
@@ -126,13 +126,13 @@ class ApplicationService {
     // Método mejorado para administradores: obtener todas las postulaciones desde microservicio
     async getAllApplications(): Promise<Application[]> {
         try {
-            console.log('📊 Admin: Obteniendo postulaciones desde microservicio');
+            Logger.info('📊 Admin: Obteniendo postulaciones desde microservicio');
 
             // Primero intentar el endpoint principal que devuelve la estructura completa
             try {
-                console.log('🔄 Probando endpoint principal: /api/applications');
+                Logger.info('🔄 Probando endpoint principal: /api/applications');
                 const response = await api.get('/api/applications');
-                console.log('✅ Éxito con endpoint principal:', response.data?.length, 'aplicaciones');
+                Logger.info('✅ Éxito con endpoint principal:', response.data?.length, 'aplicaciones');
 
                 // El endpoint /api/applications ya devuelve la estructura correcta
                 // No necesitamos adaptador, solo filtrar las aplicaciones válidas
@@ -146,28 +146,28 @@ class ApplicationService {
                     app.student.lastName !== null
                 );
 
-                console.log('✅ Aplicaciones válidas filtradas:', validApplications.length);
-                console.log('📋 Primera aplicación:', validApplications[0]?.student);
+                Logger.info('✅ Aplicaciones válidas filtradas:', validApplications.length);
+                Logger.info('📋 Primera aplicación:', validApplications[0]?.student);
                 return validApplications;
 
             } catch (mainError) {
-                console.log('❌ Falló endpoint principal, intentando público...');
+                Logger.info('❌ Falló endpoint principal, intentando público...');
 
                 // Como fallback, usar el endpoint público con adaptador si es necesario
                 const response = await api.get('/api/applications/public/all');
-                console.log('✅ Éxito con endpoint público:', response.data);
+                Logger.info('✅ Éxito con endpoint público:', response.data);
 
                 // Este endpoint devuelve formato diferente, usar adaptador
                 const adaptedApplications = DataAdapter.adaptApplicationApiResponse(response);
-                console.log('✅ Aplicaciones adaptadas desde público:', adaptedApplications.length);
+                Logger.info('✅ Aplicaciones adaptadas desde público:', adaptedApplications.length);
                 return adaptedApplications;
             }
 
         } catch (error: any) {
-            console.error('❌ Error obteniendo postulaciones desde microservicio:', error);
+            Logger.error('❌ Error obteniendo postulaciones desde microservicio:', error);
 
             // Como fallback, devolver un array vacío
-            console.log('🔄 Devolviendo array vacío como fallback');
+            Logger.info('🔄 Devolviendo array vacío como fallback');
             return [];
         }
     }
@@ -180,7 +180,7 @@ class ApplicationService {
         recentApplications: Application[];
     }> {
         try {
-            console.log('📊 Admin: Obteniendo estadísticas del dashboard');
+            Logger.info('📊 Admin: Obteniendo estadísticas del dashboard');
             
             const applications = await this.getAllApplications();
             
@@ -211,7 +211,7 @@ class ApplicationService {
             };
             
         } catch (error: any) {
-            console.error('❌ Error obteniendo estadísticas admin:', error);
+            Logger.error('❌ Error obteniendo estadísticas admin:', error);
             return {
                 totalApplications: 0,
                 applicationsByStatus: {},
@@ -223,15 +223,15 @@ class ApplicationService {
     
     async createApplication(request: ApplicationRequest): Promise<ApplicationResponse> {
         try {
-            console.log('📝 Enviando postulación:', request);
+            Logger.info('📝 Enviando postulación:', request);
             
             const response = await api.post('/api/applications', request);
             
-            console.log('✅ Postulación enviada exitosamente');
+            Logger.info('✅ Postulación enviada exitosamente');
             return response.data;
             
         } catch (error: any) {
-            console.error('❌ Error enviando postulación:', error);
+            Logger.error('❌ Error enviando postulación:', error);
             
             if (error.response?.status === 400) {
                 const message = error.response?.data?.message || 'Datos de postulación inválidos';
@@ -248,37 +248,37 @@ class ApplicationService {
     
     async getMyApplications(): Promise<Application[]> {
         try {
-            console.log('📋 Obteniendo mis postulaciones');
+            Logger.info('📋 Obteniendo mis postulaciones');
             
             const response = await api.get('/api/applications/my-applications');
-            console.log('📋 Respuesta del servidor:', response);
-            console.log('📋 response.data:', response.data);
-            console.log('📋 Tipo de response.data:', typeof response.data);
-            console.log('📋 Es array?', Array.isArray(response.data));
+            Logger.info('📋 Respuesta del servidor:', response);
+            Logger.info('📋 response.data:', response.data);
+            Logger.info('📋 Tipo de response.data:', typeof response.data);
+            Logger.info('📋 Es array?', Array.isArray(response.data));
             
             if (!Array.isArray(response.data)) {
-                console.error('❌ Error: response.data no es un array:', response.data);
+                Logger.error('❌ Error: response.data no es un array:', response.data);
                 return [];
             }
             
             return response.data;
             
         } catch (error: any) {
-            console.error('❌ Error obteniendo postulaciones:', error);
+            Logger.error('❌ Error obteniendo postulaciones:', error);
             throw new Error('Error al obtener las postulaciones');
         }
     }
     
     async getApplicationById(id: number): Promise<Application> {
         try {
-            console.log('📄 Obteniendo postulación:', id);
+            Logger.info('📄 Obteniendo postulación:', id);
 
             const response = await api.get(`/api/applications/${id}`);
 
             return response.data.data;
             
         } catch (error: any) {
-            console.error('❌ Error obteniendo postulación:', error);
+            Logger.error('❌ Error obteniendo postulación:', error);
             throw new Error('Error al obtener la postulación');
         }
     }
@@ -289,41 +289,41 @@ class ApplicationService {
         primaryApplication?: Application;
     }> {
         try {
-            console.log('📊 Obteniendo datos del dashboard');
+            Logger.info('📊 Obteniendo datos del dashboard');
             
             // Primero intentar obtener las aplicaciones del usuario autenticado
             let applications: Application[] = [];
             
             try {
                 applications = await this.getMyApplications();
-                console.log('📋 Aplicaciones del usuario obtenidas:', applications);
+                Logger.info('📋 Aplicaciones del usuario obtenidas:', applications);
             } catch (authError) {
-                console.log('⚠️ Usuario no autenticado, intentando obtener datos públicos...');
+                Logger.info('⚠️ Usuario no autenticado, intentando obtener datos públicos...');
                 
                 // Si falla la autenticación, intentar obtener datos públicos (solo para desarrollo)
                 try {
                     const publicResponse = await api.get('/api/applications/public/all');
                     applications = publicResponse.data || [];
-                    console.log('📋 Datos públicos obtenidos:', applications);
+                    Logger.info('📋 Datos públicos obtenidos:', applications);
                 } catch (publicError) {
-                    console.log('⚠️ No se pudieron obtener datos públicos, intentando datos mock...');
+                    Logger.info('⚠️ No se pudieron obtener datos públicos, intentando datos mock...');
                     
                     // Si falla, intentar obtener datos mock
                     try {
                         const mockResponse = await api.get('/api/applications/public/mock-applications');
                         applications = mockResponse.data || [];
-                        console.log('📋 Datos mock obtenidos:', applications);
+                        Logger.info('📋 Datos mock obtenidos:', applications);
                     } catch (mockError) {
-                        console.log('⚠️ No se pudieron obtener datos mock:', mockError);
+                        Logger.info('⚠️ No se pudieron obtener datos mock:', mockError);
                     }
                 }
             }
             
-            console.log('📋 Tipo de applications:', typeof applications);
-            console.log('📋 Es array?', Array.isArray(applications));
+            Logger.info('📋 Tipo de applications:', typeof applications);
+            Logger.info('📋 Es array?', Array.isArray(applications));
             
             if (!Array.isArray(applications)) {
-                console.error('❌ Error: applications no es un array:', applications);
+                Logger.error('❌ Error: applications no es un array:', applications);
                 return {
                     applications: [],
                     hasApplications: false
@@ -337,7 +337,7 @@ class ApplicationService {
             };
             
         } catch (error: any) {
-            console.error('❌ Error obteniendo datos del dashboard:', error);
+            Logger.error('❌ Error obteniendo datos del dashboard:', error);
             return {
                 applications: [],
                 hasApplications: false
@@ -348,14 +348,14 @@ class ApplicationService {
     // Método para administradores: archivar postulación
     async archiveApplication(id: number): Promise<void> {
         try {
-            console.log('📂 Admin: Archivando postulación:', id);
+            Logger.info('📂 Admin: Archivando postulación:', id);
 
             await api.put(`/api/applications/${id}/archive`);
 
-            console.log('✅ Admin: Postulación archivada exitosamente');
+            Logger.info('✅ Admin: Postulación archivada exitosamente');
 
         } catch (error: any) {
-            console.error('❌ Error archivando postulación:', error);
+            Logger.error('❌ Error archivando postulación:', error);
 
             if (error.response?.status === 404) {
                 throw new Error('Postulación no encontrada');
@@ -374,19 +374,19 @@ class ApplicationService {
         changeNote?: string
     ): Promise<{ success: boolean; message: string; data: any }> {
         try {
-            console.log('🔄 Admin: Cambiando estado de postulación:', { id, newStatus, changeNote });
+            Logger.info('🔄 Admin: Cambiando estado de postulación:', { id, newStatus, changeNote });
 
             const response = await api.patch(`/api/applications/${id}/status`, {
                 newStatus,
                 changeNote
             });
 
-            console.log('✅ Admin: Estado actualizado exitosamente:', response.data);
+            Logger.info('✅ Admin: Estado actualizado exitosamente:', response.data);
 
             return response.data;
 
         } catch (error: any) {
-            console.error('❌ Error actualizando estado:', error);
+            Logger.error('❌ Error actualizando estado:', error);
 
             if (error.response?.status === 404) {
                 throw new Error('Postulación no encontrada');
@@ -403,16 +403,16 @@ class ApplicationService {
     // US-9: Get status change history for an application
     async getApplicationStatusHistory(id: number): Promise<any[]> {
         try {
-            console.log('📜 Admin: Obteniendo historial de estados:', id);
+            Logger.info('📜 Admin: Obteniendo historial de estados:', id);
 
             const response = await api.get(`/api/applications/${id}/status-history`);
 
-            console.log('✅ Admin: Historial obtenido:', response.data);
+            Logger.info('✅ Admin: Historial obtenido:', response.data);
 
             return response.data.data || [];
 
         } catch (error: any) {
-            console.error('❌ Error obteniendo historial:', error);
+            Logger.error('❌ Error obteniendo historial:', error);
 
             if (error.response?.status === 404) {
                 throw new Error('Postulación no encontrada');
@@ -425,7 +425,7 @@ class ApplicationService {
     // Función principal para enviar aplicaciones
     async submitApplication(data: ApplicationRequest): Promise<ApplicationResponse> {
         try {
-            console.log('📝 Enviando postulación:', data);
+            Logger.info('📝 Enviando postulación:', data);
 
             // Validar datos antes de enviar
             if (!data.firstName || !data.paternalLastName || !data.maternalLastName) {
@@ -439,7 +439,7 @@ class ApplicationService {
             // Enviar al backend
             const response = await api.post('/api/applications', data);
 
-            console.log('✅ Postulación enviada exitosamente:', response.data);
+            Logger.info('✅ Postulación enviada exitosamente:', response.data);
 
             return {
                 success: true,
@@ -450,7 +450,7 @@ class ApplicationService {
             };
 
         } catch (error: any) {
-            console.error('❌ Error enviando postulación:', error);
+            Logger.error('❌ Error enviando postulación:', error);
 
             // Manejo específico de errores HTTP
             if (error.response) {
@@ -488,7 +488,7 @@ class ApplicationService {
     // Función para subir documentos
     async uploadDocument(applicationId: number, file: File, documentType: string): Promise<any> {
         try {
-            console.log(`📎 Subiendo documento ${documentType} para aplicación ${applicationId}`);
+            Logger.info(`📎 Subiendo documento ${documentType} para aplicación ${applicationId}`);
 
             const formData = new FormData();
             formData.append('file', file);
@@ -501,11 +501,11 @@ class ApplicationService {
                 },
             });
 
-            console.log('✅ Documento subido exitosamente:', response.data);
+            Logger.info('✅ Documento subido exitosamente:', response.data);
             return response.data;
 
         } catch (error: any) {
-            console.error('❌ Error subiendo documento:', error);
+            Logger.error('❌ Error subiendo documento:', error);
 
             if (error.response) {
                 const status = error.response.status;

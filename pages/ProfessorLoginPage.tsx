@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Card from '../components/ui/Card';
-import Button from '../components/ui/Button';
-import Input from '../components/ui/Input';
-import { LogoIcon, UserIcon } from '../components/icons/Icons';
-import { useFormValidation } from '../hooks/useFormValidation';
-import { useNotifications } from '../context/AppContext';
-import { professorAuthService } from '../services/professorAuthService';
-import { useAuth } from '../context/AuthContext';
-
+import { Logger } from '../src/utils/logger';import { useNavigate } from 'react-router-dom';
+import { Logger } from '../src/utils/logger';import Card from '../components/ui/Card';
+import { Logger } from '../src/utils/logger';import Button from '../components/ui/Button';
+import { Logger } from '../src/utils/logger';import Input from '../components/ui/Input';
+import { Logger } from '../src/utils/logger';import { LogoIcon, UserIcon } from '../components/icons/Icons';
+import { Logger } from '../src/utils/logger';import { useFormValidation } from '../hooks/useFormValidation';
+import { Logger } from '../src/utils/logger';import { useNotifications } from '../context/AppContext';
+import { Logger } from '../src/utils/logger';import { professorAuthService } from '../services/professorAuthService';
+import { Logger } from '../src/utils/logger';import { useAuth } from '../context/AuthContext';
+import { Logger } from '../src/utils/logger';
 const ProfessorLoginPage: React.FC = () => {
     const navigate = useNavigate();
     const { addNotification } = useNotifications();
@@ -47,7 +47,7 @@ const ProfessorLoginPage: React.FC = () => {
         setIsLoggingIn(true);
 
         try {
-            console.log('🔐 Iniciando login para profesor:', data.email);
+            Logger.info('🔐 Iniciando login para profesor:', data.email);
             
             // Usar el servicio de autenticación real
             const response = await professorAuthService.login({
@@ -61,7 +61,7 @@ const ProfessorLoginPage: React.FC = () => {
                     
                     // ✅ Si es admin, registrar en AuthContext principal
                     if (response.role === 'ADMIN') {
-                        console.log('🔑 Usuario admin detectado, registrando en AuthContext principal...');
+                        Logger.info('🔑 Usuario admin detectado, registrando en AuthContext principal...');
                         await loginWithAuth(data.email, data.password, 'ADMIN');
                     }
                     
@@ -83,14 +83,14 @@ const ProfessorLoginPage: React.FC = () => {
                         message: `Hola ${response.firstName} ${response.lastName}`
                     });
 
-                    console.log('✅ Login exitoso, redirigiendo al dashboard...');
+                    Logger.info('✅ Login exitoso, redirigiendo al dashboard...');
                     
                     // ✅ Redirigir según el rol del usuario
                     if (response.role === 'ADMIN') {
-                        console.log('🔑 Usuario admin detectado, redirigiendo al panel de administración...');
+                        Logger.info('🔑 Usuario admin detectado, redirigiendo al panel de administración...');
                         navigate('/admin');
                     } else {
-                        console.log('👨‍🏫 Usuario profesor detectado, redirigiendo al dashboard de profesor...');
+                        Logger.info('👨‍🏫 Usuario profesor detectado, redirigiendo al dashboard de profesor...');
                         navigate('/profesor');
                     }
                     
@@ -109,7 +109,7 @@ const ProfessorLoginPage: React.FC = () => {
                 });
             }
         } catch (error: any) {
-            console.error('❌ Error en login:', error);
+            Logger.error('❌ Error en login:', error);
             addNotification({
                 type: 'error',
                 title: 'Error del sistema',

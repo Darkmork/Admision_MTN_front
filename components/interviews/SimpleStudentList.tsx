@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import Card from '../ui/Card';
-import Button from '../ui/Button';
-import LoadingSpinner from '../ui/LoadingSpinner';
-import { FiUser, FiSearch, FiRefreshCw, FiChevronRight } from 'react-icons/fi';
-import { applicationService } from '../../services/applicationService';
-
+import { Logger } from '../src/utils/logger';import Card from '../ui/Card';
+import { Logger } from '../src/utils/logger';import Button from '../ui/Button';
+import { Logger } from '../src/utils/logger';import LoadingSpinner from '../ui/LoadingSpinner';
+import { Logger } from '../src/utils/logger';import { FiUser, FiSearch, FiRefreshCw, FiChevronRight } from 'react-icons/fi';
+import { Logger } from '../src/utils/logger';import { applicationService } from '../../services/applicationService';
+import { Logger } from '../src/utils/logger';
 interface Student {
   applicationId: number;
   name: string;
@@ -65,7 +65,7 @@ const SimpleStudentList: React.FC<SimpleStudentListProps> = ({
       setFilteredStudents(studentList);
 
     } catch (err: any) {
-      console.error('Error loading students:', err);
+      Logger.error('Error loading students:', err);
       setError('Error al cargar la lista de estudiantes');
     } finally {
       setIsLoading(false);

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import Card from '../ui/Card';
-import Button from '../ui/Button';
-import Badge from '../ui/Badge';
-import Modal from '../ui/Modal';
-import { 
-  FiBell, 
+import { Logger } from '../src/utils/logger';import Card from '../ui/Card';
+import { Logger } from '../src/utils/logger';import Button from '../ui/Button';
+import { Logger } from '../src/utils/logger';import Badge from '../ui/Badge';
+import { Logger } from '../src/utils/logger';import Modal from '../ui/Modal';
+import { Logger } from '../src/utils/logger';import { 
+import { Logger } from '../src/utils/logger';  FiBell, 
   FiBellOff,
   FiCheck, 
   FiX, 
@@ -18,7 +18,7 @@ import {
   FiRefreshCw
 } from 'react-icons/fi';
 import { PushNotification, useNotifications, notificationService } from '../../services/notificationService';
-
+import { Logger } from '../src/utils/logger';
 interface NotificationCenterProps {
   className?: string;
 }
@@ -45,7 +45,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ className = '' 
     removeNotification = notificationHook.removeNotification;
     clearAll = notificationHook.clearAll;
   } catch (err: any) {
-    console.error('Error in useNotifications hook:', err);
+    Logger.error('Error in useNotifications hook:', err);
     setError(err.message || 'Error al cargar notificaciones');
   }
 

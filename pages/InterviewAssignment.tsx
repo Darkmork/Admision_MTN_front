@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
-import EvaluatorScheduleDisplay from '../components/EvaluatorScheduleDisplay';
-import { userService } from '../services/userService';
-import { applicationService } from '../services/applicationService';
-import { interviewService } from '../services/interviewService';
-import { User } from '../types/user';
-import { Application } from '../types/application';
-import { Interview } from '../types/interview';
-
+import { Logger } from '../src/utils/logger';import { useAuth } from '../context/AuthContext';
+import { Logger } from '../src/utils/logger';import EvaluatorScheduleDisplay from '../components/EvaluatorScheduleDisplay';
+import { Logger } from '../src/utils/logger';import { userService } from '../services/userService';
+import { Logger } from '../src/utils/logger';import { applicationService } from '../services/applicationService';
+import { Logger } from '../src/utils/logger';import { interviewService } from '../services/interviewService';
+import { Logger } from '../src/utils/logger';import { User } from '../types/user';
+import { Logger } from '../src/utils/logger';import { Application } from '../types/application';
+import { Logger } from '../src/utils/logger';import { Interview } from '../types/interview';
+import { Logger } from '../src/utils/logger';
 const InterviewAssignment: React.FC = () => {
   const { user } = useAuth();
   const [evaluators, setEvaluators] = useState<User[]>([]);
@@ -43,12 +43,12 @@ const InterviewAssignment: React.FC = () => {
         setSelectedEvaluator(evaluatorUsers[0]);
       }
 
-      console.log('✅ Datos iniciales cargados:', { 
+      Logger.info('✅ Datos iniciales cargados:', { 
         evaluators: evaluatorUsers.length, 
         pendingApplications: pending.length 
       });
     } catch (error) {
-      console.error('Error loading data:', error);
+      Logger.error('Error loading data:', error);
       setMessage('❌ Error cargando datos iniciales');
       // Establecer valores por defecto para evitar errores
       setEvaluators([]);
@@ -90,7 +90,7 @@ const InterviewAssignment: React.FC = () => {
       
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
-      console.error('Error assigning interview:', error);
+      Logger.error('Error assigning interview:', error);
       setMessage('❌ Error asignando la entrevista');
       setTimeout(() => setMessage(''), 3000);
     } finally {

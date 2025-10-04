@@ -1,3 +1,4 @@
+import { Logger } from '../../src/utils/logger';
 /**
  * Data Adapter Service
  * 
@@ -195,7 +196,7 @@ export class DataAdapter {
       .filter(app => {
         // Filtrar aplicaciones con datos mínimos requeridos
         if (!app || typeof app !== 'object') {
-          console.warn('Aplicación inválida filtrada:', app);
+          Logger.warn('Aplicación inválida filtrada:', app);
           return false;
         }
         return true;
@@ -204,7 +205,7 @@ export class DataAdapter {
         try {
           return this.adaptApplication(app);
         } catch (error) {
-          console.error('Error adaptando aplicación:', app, error);
+          Logger.error('Error adaptando aplicación:', app, error);
           // Retornar una aplicación por defecto en caso de error
           return {
             id: 0,

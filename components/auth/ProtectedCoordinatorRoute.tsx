@@ -4,8 +4,8 @@
  */
 
 import React, { ReactNode } from 'react';
-import { Navigate } from 'react-router-dom';
-
+import { Logger } from '../src/utils/logger';import { Navigate } from 'react-router-dom';
+import { Logger } from '../src/utils/logger';
 interface ProtectedCoordinatorRouteProps {
   children: ReactNode;
 }
@@ -32,7 +32,7 @@ const ProtectedCoordinatorRoute: React.FC<ProtectedCoordinatorRouteProps> = ({ c
       const allowedRoles = ['ADMIN', 'COORDINATOR', 'CYCLE_DIRECTOR'];
       hasPermission = allowedRoles.includes(user.role?.toUpperCase());
     } catch (e) {
-      console.error('Error parsing user from localStorage:', e);
+      Logger.error('Error parsing user from localStorage:', e);
     }
   }
 

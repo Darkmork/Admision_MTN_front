@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import Card from '../components/ui/Card';
-import Button from '../components/ui/Button';
-import Input from '../components/ui/Input';
-import Badge from '../components/ui/Badge';
-import { FiSave, FiArrowLeft, FiCheckCircle, FiPaperclip, FiDownload, FiTrash2, FiUpload, FiClock } from 'react-icons/fi';
-import { professorEvaluationService } from '../services/professorEvaluationService';
-
+import { Logger } from '../src/utils/logger';import { useParams, useNavigate } from 'react-router-dom';
+import { Logger } from '../src/utils/logger';import Card from '../components/ui/Card';
+import { Logger } from '../src/utils/logger';import Button from '../components/ui/Button';
+import { Logger } from '../src/utils/logger';import Input from '../components/ui/Input';
+import { Logger } from '../src/utils/logger';import Badge from '../components/ui/Badge';
+import { Logger } from '../src/utils/logger';import { FiSave, FiArrowLeft, FiCheckCircle, FiPaperclip, FiDownload, FiTrash2, FiUpload, FiClock } from 'react-icons/fi';
+import { Logger } from '../src/utils/logger';import { professorEvaluationService } from '../services/professorEvaluationService';
+import { Logger } from '../src/utils/logger';
 interface EvaluationData {
   id: number;
   application_id: number;
@@ -89,7 +89,7 @@ const EvaluationForm: React.FC = () => {
         setInterviewData(data.interview);
       }
     } catch (error) {
-      console.error('Error loading interview data:', error);
+      Logger.error('Error loading interview data:', error);
     }
   };
 
@@ -121,7 +121,7 @@ const EvaluationForm: React.FC = () => {
 
       setError(null);
     } catch (err: any) {
-      console.error('Error loading evaluation:', err);
+      Logger.error('Error loading evaluation:', err);
       setError(err.message || 'Error al cargar la evaluación');
     } finally {
       setLoading(false);
@@ -166,7 +166,7 @@ const EvaluationForm: React.FC = () => {
       // Navigate back to dashboard
       navigate('/profesor/dashboard');
     } catch (err: any) {
-      console.error('Error saving evaluation:', err);
+      Logger.error('Error saving evaluation:', err);
       setError(err.message || 'Error al guardar la evaluación');
     } finally {
       setSaving(false);
@@ -202,7 +202,7 @@ const EvaluationForm: React.FC = () => {
 
       navigate('/profesor/dashboard');
     } catch (err: any) {
-      console.error('Error saving draft:', err);
+      Logger.error('Error saving draft:', err);
       setError(err.message || 'Error al guardar el borrador');
     } finally {
       setSaving(false);
@@ -226,7 +226,7 @@ const EvaluationForm: React.FC = () => {
         setAttachments(data.attachments || []);
       }
     } catch (error) {
-      console.error('Error loading attachments:', error);
+      Logger.error('Error loading attachments:', error);
     } finally {
       setLoadingAttachments(false);
     }
@@ -261,7 +261,7 @@ const EvaluationForm: React.FC = () => {
         setError(errorData.error || 'Error al subir el archivo');
       }
     } catch (error) {
-      console.error('Error uploading file:', error);
+      Logger.error('Error uploading file:', error);
       setError('Error al subir el archivo');
     } finally {
       setUploadingFile(false);
@@ -286,7 +286,7 @@ const EvaluationForm: React.FC = () => {
         setError('Error al eliminar el archivo');
       }
     } catch (error) {
-      console.error('Error deleting attachment:', error);
+      Logger.error('Error deleting attachment:', error);
       setError('Error al eliminar el archivo');
     }
   };
@@ -322,7 +322,7 @@ const EvaluationForm: React.FC = () => {
         }
       }
     } catch (error) {
-      console.error('Error loading student history:', error);
+      Logger.error('Error loading student history:', error);
     } finally {
       setLoadingHistory(false);
     }

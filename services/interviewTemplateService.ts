@@ -1,6 +1,6 @@
 // Servicio de Templates Predefinidos para Entrevistas
 import { InterviewType, InterviewMode, CreateInterviewRequest } from '../types/interview';
-
+import { Logger } from '../src/utils/logger';
 export interface InterviewTemplate {
   id: string;
   name: string;
@@ -897,7 +897,7 @@ ENFOQUE POSITIVO:
         this.usageStats = new Map(statsArray);
       }
     } catch (error) {
-      console.warn('Error cargando estadísticas de templates:', error);
+      Logger.warn('Error cargando estadísticas de templates:', error);
     }
   }
 
@@ -907,7 +907,7 @@ ENFOQUE POSITIVO:
       const statsArray = Array.from(this.usageStats.entries());
       localStorage.setItem('interview_template_stats', JSON.stringify(statsArray));
     } catch (error) {
-      console.warn('Error guardando estadísticas de templates:', error);
+      Logger.warn('Error guardando estadísticas de templates:', error);
     }
   }
 

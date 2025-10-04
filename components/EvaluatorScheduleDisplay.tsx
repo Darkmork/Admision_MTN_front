@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { interviewService } from '../services/interviewService';
-
+import { Logger } from '../src/utils/logger';import { interviewService } from '../services/interviewService';
+import { Logger } from '../src/utils/logger';
 interface TimeSlot {
   time: string;
   isAvailable: boolean;
@@ -84,7 +84,7 @@ const EvaluatorScheduleDisplay: React.FC<EvaluatorScheduleDisplayProps> = ({
 
       // Si no hay disponibilidad (servicio no implementado), generar horarios por defecto
       if (availability.length === 0) {
-        console.log('🔧 Generando horarios por defecto para evaluador', evaluatorId);
+        Logger.info('🔧 Generando horarios por defecto para evaluador', evaluatorId);
         availability = weekDates.map(date => ({
           date,
           availableSlots: ['09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30']
@@ -96,7 +96,7 @@ const EvaluatorScheduleDisplay: React.FC<EvaluatorScheduleDisplayProps> = ({
       try {
         interviews = await interviewService.getInterviewsByInterviewer(evaluatorId);
       } catch (error) {
-        console.log('⚠️ No se pudieron obtener entrevistas del evaluador, usando array vacío');
+        Logger.info('⚠️ No se pudieron obtener entrevistas del evaluador, usando array vacío');
         interviews = [];
       }
       
@@ -136,7 +136,7 @@ const EvaluatorScheduleDisplay: React.FC<EvaluatorScheduleDisplayProps> = ({
 
       setWeekSchedule(schedule);
     } catch (error) {
-      console.error('Error loading evaluator schedule:', error);
+      Logger.error('Error loading evaluator schedule:', error);
       // Crear schedule vacío para mostrar algo
       const weekDates = generateWeekDates(currentWeekStart);
       const emptySchedule: DaySchedule[] = weekDates.map((date, index) => ({

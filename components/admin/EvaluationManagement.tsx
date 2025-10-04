@@ -1,27 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { useNotifications } from '../../context/AppContext';
-import Card from '../ui/Card';
-import Button from '../ui/Button';
-import Badge from '../ui/Badge';
-import Modal from '../ui/Modal';
-import {
-  evaluationService,
+import { Logger } from '../src/utils/logger';import { useNotifications } from '../../context/AppContext';
+import { Logger } from '../src/utils/logger';import Card from '../ui/Card';
+import { Logger } from '../src/utils/logger';import Button from '../ui/Button';
+import { Logger } from '../src/utils/logger';import Badge from '../ui/Badge';
+import { Logger } from '../src/utils/logger';import Modal from '../ui/Modal';
+import { Logger } from '../src/utils/logger';import {
+import { Logger } from '../src/utils/logger';  evaluationService,
   UserRole,
   USER_ROLE_LABELS
 } from '../../services/evaluationService';
 import { evaluatorService } from '../../services/evaluatorService';
-import { userService } from '../../services/userService';
-import { User, UserRole as SystemUserRole, USER_ROLE_LABELS as SystemRoleLabels } from '../../types/user';
-import {
-  Evaluation,
+import { Logger } from '../src/utils/logger';import { userService } from '../../services/userService';
+import { Logger } from '../src/utils/logger';import { User, UserRole as SystemUserRole, USER_ROLE_LABELS as SystemRoleLabels } from '../../types/user';
+import { Logger } from '../src/utils/logger';import {
+import { Logger } from '../src/utils/logger';  Evaluation,
   EvaluationType,
   EvaluationStatus,
   EVALUATION_TYPE_LABELS,
   EVALUATION_STATUS_LABELS
 } from '../../types/evaluation';
 import { Application } from '../../services/applicationService';
-import {
-  UserIcon,
+import { Logger } from '../src/utils/logger';import {
+import { Logger } from '../src/utils/logger';  UserIcon,
   ClockIcon,
   CheckCircleIcon,
   ExclamationTriangleIcon,
@@ -30,7 +30,7 @@ import {
   EyeIcon
 } from '../icons/Icons';
 import { 
-  BarChart3, 
+import { Logger } from '../src/utils/logger';  BarChart3, 
   Bot, 
   Users, 
   Clock, 
@@ -74,45 +74,45 @@ const EvaluationManagement: React.FC<EvaluationManagementProps> = ({
   // NUEVA FUNCIÓN QUE SOLO CARGA USUARIOS REALES
   const loadEvaluators = async () => {
     try {
-      console.log('🔄 NUEVA FUNCIÓN - Cargando SOLO usuarios reales...');
+      Logger.info('🔄 NUEVA FUNCIÓN - Cargando SOLO usuarios reales...');
 
       // Cargar usuarios reales desde el endpoint público
       const usersResponse = await userService.getSchoolStaffUsersPublic();
       const allStaff = usersResponse.content || [];
 
-      console.log('📊 Total staff encontrado:', allStaff.length);
-      console.log('👥 Usuarios encontrados:', allStaff.map(u => `${u.firstName} ${u.lastName} - ${u.role} - ${u.subject}`));
+      Logger.info('📊 Total staff encontrado:', allStaff.length);
+      Logger.info('👥 Usuarios encontrados:', allStaff.map(u => `${u.firstName} ${u.lastName} - ${u.role} - ${u.subject}`));
 
       // Filtrar usuarios por especialización
-      console.log('🎯 FILTROS DE ESPECIALIZACIÓN:');
+      Logger.info('🎯 FILTROS DE ESPECIALIZACIÓN:');
 
       const languageTeachers = allStaff.filter(user =>
         (user.role === 'TEACHER' || user.role === 'COORDINATOR') &&
         user.subject === 'LANGUAGE' && user.active && user.emailVerified
       );
-      console.log('📚 LANGUAGE teachers:', languageTeachers.map(u => `${u.firstName} ${u.lastName}`));
+      Logger.info('📚 LANGUAGE teachers:', languageTeachers.map(u => `${u.firstName} ${u.lastName}`));
 
       const mathTeachers = allStaff.filter(user =>
         (user.role === 'TEACHER' || user.role === 'COORDINATOR') &&
         user.subject === 'MATHEMATICS' && user.active && user.emailVerified
       );
-      console.log('🧮 MATHEMATICS teachers:', mathTeachers.map(u => `${u.firstName} ${u.lastName}`));
+      Logger.info('🧮 MATHEMATICS teachers:', mathTeachers.map(u => `${u.firstName} ${u.lastName}`));
 
       const englishTeachers = allStaff.filter(user =>
         (user.role === 'TEACHER' || user.role === 'COORDINATOR') &&
         user.subject === 'ENGLISH' && user.active && user.emailVerified
       );
-      console.log('🇺🇸 ENGLISH teachers:', englishTeachers.map(u => `${u.firstName} ${u.lastName}`));
+      Logger.info('🇺🇸 ENGLISH teachers:', englishTeachers.map(u => `${u.firstName} ${u.lastName}`));
 
       const cycleDirectors = allStaff.filter(user =>
         user.role === 'CYCLE_DIRECTOR' && user.active && user.emailVerified
       );
-      console.log('👥 CYCLE_DIRECTOR:', cycleDirectors.map(u => `${u.firstName} ${u.lastName}`));
+      Logger.info('👥 CYCLE_DIRECTOR:', cycleDirectors.map(u => `${u.firstName} ${u.lastName}`));
 
       const psychologists = allStaff.filter(user =>
         user.role === 'PSYCHOLOGIST' && user.active && user.emailVerified
       );
-      console.log('🧠 PSYCHOLOGIST:', psychologists.map(u => `${u.firstName} ${u.lastName}`));
+      Logger.info('🧠 PSYCHOLOGIST:', psychologists.map(u => `${u.firstName} ${u.lastName}`));
 
       const cache: EvaluatorCache = {
         'TEACHER_LANGUAGE': languageTeachers,
@@ -122,19 +122,19 @@ const EvaluationManagement: React.FC<EvaluationManagementProps> = ({
         'PSYCHOLOGIST': psychologists
       };
 
-      console.log('🔍 Filtros aplicados por rol:');
+      Logger.info('🔍 Filtros aplicados por rol:');
       Object.entries(cache).forEach(([role, users]) => {
-        console.log(`📝 ${role}:`, users.map(u => `${u.firstName} ${u.lastName} (${u.subject})`));
+        Logger.info(`📝 ${role}:`, users.map(u => `${u.firstName} ${u.lastName} (${u.subject})`));
       });
 
       const allEvaluators = Object.values(cache).flat();
 
       setEvaluatorCache(cache);
       setEvaluators(allEvaluators);
-      console.log('✅ Solo usuarios reales cargados:', allEvaluators.length);
+      Logger.info('✅ Solo usuarios reales cargados:', allEvaluators.length);
 
     } catch (error) {
-      console.error('❌ Error cargando usuarios reales:', error);
+      Logger.error('❌ Error cargando usuarios reales:', error);
       addNotification('Error al cargar evaluadores. Por favor, intenta de nuevo.', 'error');
       setEvaluators([]);
       setEvaluatorCache({});
@@ -148,7 +148,7 @@ const EvaluationManagement: React.FC<EvaluationManagementProps> = ({
       addNotification('Evaluaciones asignadas automáticamente', 'success');
       onRefresh();
     } catch (error) {
-      console.error('Error assigning evaluations:', error);
+      Logger.error('Error assigning evaluations:', error);
       addNotification('Error al asignar evaluaciones', 'error');
     } finally {
       setIsLoading(false);
@@ -174,7 +174,7 @@ const EvaluationManagement: React.FC<EvaluationManagementProps> = ({
       setSelectedApplication(null);
       onRefresh();
     } catch (error) {
-      console.error('Error assigning evaluators:', error);
+      Logger.error('Error assigning evaluators:', error);
       addNotification('Error al asignar evaluadores', 'error');
     } finally {
       setIsLoading(false);
@@ -208,18 +208,18 @@ const EvaluationManagement: React.FC<EvaluationManagementProps> = ({
 
     const serviceRole = getEvaluatorServiceRole(evaluationType);
     if (!serviceRole) {
-      console.log(`❌ getEvaluatorsByType(${evaluationType}) -> Sin role mapping`);
+      Logger.info(`❌ getEvaluatorsByType(${evaluationType}) -> Sin role mapping`);
       return [];
     }
 
     // Usar cache si está disponible
     const availableEvaluators = evaluatorCache[serviceRole] || [];
-    console.log(`🔍 getEvaluatorsByType(${evaluationType}) -> serviceRole: ${serviceRole}`);
-    console.log(`📊 Cache disponible:`, Object.keys(evaluatorCache));
-    console.log(`📋 Evaluadores disponibles para ${serviceRole}:`, availableEvaluators.map(e => `${e.firstName} ${e.lastName} (${e.subject})`));
+    Logger.info(`🔍 getEvaluatorsByType(${evaluationType}) -> serviceRole: ${serviceRole}`);
+    Logger.info(`📊 Cache disponible:`, Object.keys(evaluatorCache));
+    Logger.info(`📋 Evaluadores disponibles para ${serviceRole}:`, availableEvaluators.map(e => `${e.firstName} ${e.lastName} (${e.subject})`));
 
     if (evaluationType === EvaluationType.MATHEMATICS_EXAM) {
-      console.log(`🧮 MATEMÁTICAS - Evaluadores:`, availableEvaluators);
+      Logger.info(`🧮 MATEMÁTICAS - Evaluadores:`, availableEvaluators);
     }
 
     return availableEvaluators;

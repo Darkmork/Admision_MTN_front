@@ -1,7 +1,7 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-
+import { Logger } from '../src/utils/logger';import { Navigate } from 'react-router-dom';
+import { Logger } from '../src/utils/logger';import { useAuth } from '../../context/AuthContext';
+import { Logger } from '../src/utils/logger';
 interface ProtectedApoderadoRouteProps {
     children: React.ReactNode;
 }
@@ -9,19 +9,19 @@ interface ProtectedApoderadoRouteProps {
 const ProtectedApoderadoRoute: React.FC<ProtectedApoderadoRouteProps> = ({ children }) => {
     const { user, isAuthenticated } = useAuth();
 
-    console.log('🛡️ ProtectedApoderadoRoute: Check access -', { isAuthenticated, user: user ? { role: user.role, email: user.email } : null });
+    Logger.info('🛡️ ProtectedApoderadoRoute: Check access -', { isAuthenticated, user: user ? { role: user.role, email: user.email } : null });
 
     if (!isAuthenticated || !user) {
-        console.log('❌ ProtectedApoderadoRoute: Not authenticated, redirecting to login');
+        Logger.info('❌ ProtectedApoderadoRoute: Not authenticated, redirecting to login');
         return <Navigate to="/apoderado/login" replace />;
     }
 
     if (user.role !== 'APODERADO') {
-        console.log('❌ ProtectedApoderadoRoute: Wrong role', user.role, '!== APODERADO, redirecting');
+        Logger.info('❌ ProtectedApoderadoRoute: Wrong role', user.role, '!== APODERADO, redirecting');
         return <Navigate to="/apoderado/login" replace />;
     }
 
-    console.log('✅ ProtectedApoderadoRoute: Access granted');
+    Logger.info('✅ ProtectedApoderadoRoute: Access granted');
     return <>{children}</>;
 };
 

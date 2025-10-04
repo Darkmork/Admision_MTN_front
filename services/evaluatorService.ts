@@ -1,5 +1,5 @@
 import api from './api';
-
+import { Logger } from '../src/utils/logger';
 export interface Evaluator {
   id: number;
   firstName: string;
@@ -82,7 +82,7 @@ export const evaluatorService = {
       const response = await api.get(`/api/evaluations/evaluators/${role}`);
       return response.data;
     } catch (error) {
-      console.error('Error getting evaluators by role:', error);
+      Logger.error('Error getting evaluators by role:', error);
       throw error;
     }
   },
@@ -93,7 +93,7 @@ export const evaluatorService = {
       const response = await api.get(`/api/evaluations/public/evaluators/${role}`);
       return response.data;
     } catch (error) {
-      console.error('Error getting evaluators by role (public):', error);
+      Logger.error('Error getting evaluators by role (public):', error);
       throw error;
     }
   },
@@ -104,7 +104,7 @@ export const evaluatorService = {
       const response = await api.post(`/api/evaluations/assign/${applicationId}`);
       return response.data;
     } catch (error) {
-      console.error('Error assigning evaluations to application:', error);
+      Logger.error('Error assigning evaluations to application:', error);
       throw error;
     }
   },
@@ -115,7 +115,7 @@ export const evaluatorService = {
       const response = await api.post(`/api/evaluations/public/assign/${applicationId}`);
       return response.data;
     } catch (error) {
-      console.error('Error assigning evaluations (public):', error);
+      Logger.error('Error assigning evaluations (public):', error);
       throw error;
     }
   },
@@ -130,7 +130,7 @@ export const evaluatorService = {
       const response = await api.post(`/api/evaluations/assign/${applicationId}/${evaluationType}/${evaluatorId}`);
       return response.data;
     } catch (error) {
-      console.error('Error assigning specific evaluation:', error);
+      Logger.error('Error assigning specific evaluation:', error);
       throw error;
     }
   },
@@ -141,7 +141,7 @@ export const evaluatorService = {
       const response = await api.get(`/api/evaluations/application/${applicationId}`);
       return response.data;
     } catch (error) {
-      console.error('Error getting evaluations by application:', error);
+      Logger.error('Error getting evaluations by application:', error);
       throw error;
     }
   },
@@ -152,7 +152,7 @@ export const evaluatorService = {
       const response = await api.get(`/api/evaluations/application/${applicationId}/detailed`);
       return response.data;
     } catch (error) {
-      console.error('Error getting detailed evaluations by application:', error);
+      Logger.error('Error getting detailed evaluations by application:', error);
       throw error;
     }
   },
@@ -163,7 +163,7 @@ export const evaluatorService = {
       const response = await api.get(`/api/evaluations/application/${applicationId}/progress`);
       return response.data;
     } catch (error) {
-      console.error('Error getting evaluation progress:', error);
+      Logger.error('Error getting evaluation progress:', error);
       throw error;
     }
   },
@@ -174,7 +174,7 @@ export const evaluatorService = {
       const response = await api.get('/api/evaluations/my-evaluations');
       return response.data;
     } catch (error) {
-      console.error('Error getting my evaluations:', error);
+      Logger.error('Error getting my evaluations:', error);
       throw error;
     }
   },
@@ -185,7 +185,7 @@ export const evaluatorService = {
       const response = await api.get('/api/evaluations/my-pending');
       return response.data;
     } catch (error) {
-      console.error('Error getting my pending evaluations:', error);
+      Logger.error('Error getting my pending evaluations:', error);
       throw error;
     }
   },
@@ -196,7 +196,7 @@ export const evaluatorService = {
       const response = await api.put(`/api/evaluations/${evaluationId}`, evaluationData);
       return response.data;
     } catch (error) {
-      console.error('Error updating evaluation:', error);
+      Logger.error('Error updating evaluation:', error);
       throw error;
     }
   },
@@ -207,7 +207,7 @@ export const evaluatorService = {
       const response = await api.put(`/api/evaluations/${evaluationId}`, evaluationData);
       return response.data;
     } catch (error) {
-      console.error('Error updating evaluation with types:', error);
+      Logger.error('Error updating evaluation with types:', error);
       throw error;
     }
   },
@@ -218,7 +218,7 @@ export const evaluatorService = {
       const response = await api.get(`/api/evaluations/${evaluationId}`);
       return response.data;
     } catch (error) {
-      console.error('Error getting evaluation by ID:', error);
+      Logger.error('Error getting evaluation by ID:', error);
       throw error;
     }
   },
@@ -229,7 +229,7 @@ export const evaluatorService = {
       const response = await api.post('/api/evaluations/assign/bulk', request);
       return response.data;
     } catch (error) {
-      console.error('Error assigning bulk evaluations:', error);
+      Logger.error('Error assigning bulk evaluations:', error);
       throw error;
     }
   },
@@ -240,7 +240,7 @@ export const evaluatorService = {
       const response = await api.post('/api/evaluations/public/assign/bulk', request);
       return response.data;
     } catch (error) {
-      console.error('Error assigning bulk evaluations (public):', error);
+      Logger.error('Error assigning bulk evaluations (public):', error);
       throw error;
     }
   },
@@ -251,7 +251,7 @@ export const evaluatorService = {
       const response = await api.put(`/api/evaluations/${evaluationId}/reassign/${newEvaluatorId}`);
       return response.data;
     } catch (error) {
-      console.error('Error reassigning evaluation:', error);
+      Logger.error('Error reassigning evaluation:', error);
       throw error;
     }
   },
@@ -262,7 +262,7 @@ export const evaluatorService = {
       const response = await api.get('/api/evaluations/statistics');
       return response.data;
     } catch (error) {
-      console.error('Error getting evaluation statistics:', error);
+      Logger.error('Error getting evaluation statistics:', error);
       throw error;
     }
   },
@@ -273,7 +273,7 @@ export const evaluatorService = {
       const response = await api.get('/api/evaluations/public/statistics');
       return response.data;
     } catch (error) {
-      console.error('Error getting evaluation statistics (public):', error);
+      Logger.error('Error getting evaluation statistics (public):', error);
       throw error;
     }
   }

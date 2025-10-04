@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import Card from '../ui/Card';
-import Button from '../ui/Button';
-import Badge from '../ui/Badge';
-import Modal from '../ui/Modal';
-import LoadingSpinner from '../ui/LoadingSpinner';
-import Table from '../ui/Table';
-import { UsersIcon, CheckCircleIcon, ClockIcon, AlertTriangleIcon } from '../icons/Icons';
-import { FiRefreshCw } from 'react-icons/fi';
-import { evaluatorService, Evaluator, Evaluation, EvaluationProgress, USER_ROLES, EVALUATION_TYPES } from '../../services/evaluatorService';
-import { applicationService, Application } from '../../services/applicationService';
-import { userService } from '../../services/userService';
-import { User, UserRole, USER_ROLE_LABELS } from '../../types/user';
-import { interviewerScheduleService, InterviewerSchedule } from '../../services/interviewerScheduleService';
-
+import { Logger } from '../src/utils/logger';import Card from '../ui/Card';
+import { Logger } from '../src/utils/logger';import Button from '../ui/Button';
+import { Logger } from '../src/utils/logger';import Badge from '../ui/Badge';
+import { Logger } from '../src/utils/logger';import Modal from '../ui/Modal';
+import { Logger } from '../src/utils/logger';import LoadingSpinner from '../ui/LoadingSpinner';
+import { Logger } from '../src/utils/logger';import Table from '../ui/Table';
+import { Logger } from '../src/utils/logger';import { UsersIcon, CheckCircleIcon, ClockIcon, AlertTriangleIcon } from '../icons/Icons';
+import { Logger } from '../src/utils/logger';import { FiRefreshCw } from 'react-icons/fi';
+import { Logger } from '../src/utils/logger';import { evaluatorService, Evaluator, Evaluation, EvaluationProgress, USER_ROLES, EVALUATION_TYPES } from '../../services/evaluatorService';
+import { Logger } from '../src/utils/logger';import { applicationService, Application } from '../../services/applicationService';
+import { Logger } from '../src/utils/logger';import { userService } from '../../services/userService';
+import { Logger } from '../src/utils/logger';import { User, UserRole, USER_ROLE_LABELS } from '../../types/user';
+import { Logger } from '../src/utils/logger';import { interviewerScheduleService, InterviewerSchedule } from '../../services/interviewerScheduleService';
+import { Logger } from '../src/utils/logger';
 interface EvaluatorManagementProps {
   applications?: Application[];
   onRefresh?: () => void;
@@ -54,7 +54,7 @@ const EvaluatorManagement: React.FC<EvaluatorManagementProps> = ({ applications 
   const loadAllEvaluators = async () => {
     setLoading(true);
     try {
-      console.log('🔄 Cargando evaluadores desde evaluation service...');
+      Logger.info('🔄 Cargando evaluadores desde evaluation service...');
 
       const evaluatorRoleMap = {
         'TEACHER_LANGUAGE': 'TEACHER_LANGUAGE',
@@ -68,13 +68,13 @@ const EvaluatorManagement: React.FC<EvaluatorManagementProps> = ({ applications 
 
       for (const [userRole, evaluationRole] of Object.entries(evaluatorRoleMap)) {
         try {
-          console.log(`🔍 Cargando evaluadores para rol: ${evaluationRole}...`);
+          Logger.info(`🔍 Cargando evaluadores para rol: ${evaluationRole}...`);
 
           let roleEvaluators;
           try {
             roleEvaluators = await evaluatorService.getEvaluatorsByRole(evaluationRole);
           } catch (authError) {
-            console.log(`⚠️ Auth error, usando endpoint público para ${evaluationRole}`);
+            Logger.info(`⚠️ Auth error, usando endpoint público para ${evaluationRole}`);
             roleEvaluators = await evaluatorService.getEvaluatorsByRolePublic(evaluationRole);
           }
 
@@ -98,19 +98,19 @@ const EvaluatorManagement: React.FC<EvaluatorManagementProps> = ({ applications 
             'PSYCHOLOGIST': 'Psicólogo/a'
           };
 
-          console.log(`✅ ${evaluatorLabels[userRole as keyof typeof evaluatorLabels]}:`, evaluatorsWithSchedule.length, 'evaluadores cargados');
+          Logger.info(`✅ ${evaluatorLabels[userRole as keyof typeof evaluatorLabels]}:`, evaluatorsWithSchedule.length, 'evaluadores cargados');
 
         } catch (roleError) {
-          console.error(`❌ Error cargando rol ${evaluationRole}:`, roleError);
+          Logger.error(`❌ Error cargando rol ${evaluationRole}:`, roleError);
           evaluatorData[userRole] = [];
         }
       }
 
       setEvaluators(evaluatorData);
-      console.log('✅ Todos los evaluadores cargados exitosamente');
+      Logger.info('✅ Todos los evaluadores cargados exitosamente');
 
     } catch (error) {
-      console.error('❌ Error cargando evaluadores:', error);
+      Logger.error('❌ Error cargando evaluadores:', error);
       setEvaluators({
         [UserRole.TEACHER_LANGUAGE]: [],
         [UserRole.TEACHER_MATHEMATICS]: [],
@@ -125,7 +125,7 @@ const EvaluatorManagement: React.FC<EvaluatorManagementProps> = ({ applications 
 
   const loadEvaluatorSchedules = async () => {
     try {
-      console.log('🔄 Cargando horarios de evaluadores...');
+      Logger.info('🔄 Cargando horarios de evaluadores...');
       const currentYear = new Date().getFullYear();
       const scheduleData: Record<number, InterviewerSchedule[]> = {};
       const updatedEvaluators: Record<string, EvaluatorWithSchedule[]> = {};
@@ -154,7 +154,7 @@ const EvaluatorManagement: React.FC<EvaluatorManagementProps> = ({ applications 
 
             evaluatorsWithSchedule.push(evaluatorWithSchedule);
           } catch (error) {
-            console.warn(`⚠️ No se pudieron cargar horarios para evaluador ${evaluator.id}:`, error);
+            Logger.warn(`⚠️ No se pudieron cargar horarios para evaluador ${evaluator.id}:`, error);
             // Agregar sin datos de horario
             const evaluatorWithSchedule: EvaluatorWithSchedule = {
               ...evaluator,
@@ -172,10 +172,10 @@ const EvaluatorManagement: React.FC<EvaluatorManagementProps> = ({ applications 
 
       setSchedules(scheduleData);
       setEvaluators(updatedEvaluators);
-      console.log('✅ Horarios de evaluadores cargados exitosamente');
+      Logger.info('✅ Horarios de evaluadores cargados exitosamente');
 
     } catch (error) {
-      console.error('❌ Error cargando horarios de evaluadores:', error);
+      Logger.error('❌ Error cargando horarios de evaluadores:', error);
     }
   };
 
@@ -187,11 +187,11 @@ const EvaluatorManagement: React.FC<EvaluatorManagementProps> = ({ applications 
       try {
         result = await evaluatorService.assignEvaluationsToApplication(applicationId);
       } catch (authError) {
-        console.warn('Auth failed, trying public endpoint');
+        Logger.warn('Auth failed, trying public endpoint');
         result = await evaluatorService.assignEvaluationsToApplicationPublic(applicationId);
       }
 
-      console.log('Evaluaciones asignadas:', result);
+      Logger.info('Evaluaciones asignadas:', result);
 
       // Recargar las evaluaciones de la aplicación
       if (selectedApplication?.id === applicationId) {
@@ -201,7 +201,7 @@ const EvaluatorManagement: React.FC<EvaluatorManagementProps> = ({ applications 
       onRefresh?.();
       alert('Evaluaciones asignadas correctamente');
     } catch (error) {
-      console.error('Error assigning evaluations:', error);
+      Logger.error('Error assigning evaluations:', error);
       alert('Error al asignar evaluaciones');
     } finally {
       setLoading(false);
@@ -226,7 +226,7 @@ const EvaluatorManagement: React.FC<EvaluatorManagementProps> = ({ applications 
 
       alert('Evaluación asignada correctamente');
     } catch (error) {
-      console.error('Error assigning specific evaluation:', error);
+      Logger.error('Error assigning specific evaluation:', error);
       alert('Error al asignar evaluación específica');
     } finally {
       setLoading(false);
@@ -241,7 +241,7 @@ const EvaluatorManagement: React.FC<EvaluatorManagementProps> = ({ applications 
       setEvaluations(appEvaluations);
       setProgress(appProgress);
     } catch (error) {
-      console.error('Error loading application evaluations:', error);
+      Logger.error('Error loading application evaluations:', error);
     }
   };
 
@@ -257,7 +257,7 @@ const EvaluatorManagement: React.FC<EvaluatorManagementProps> = ({ applications 
       try {
         result = await evaluatorService.assignBulkEvaluations({ applicationIds: bulkSelection });
       } catch (authError) {
-        console.warn('Auth failed, trying public endpoint');
+        Logger.warn('Auth failed, trying public endpoint');
         result = await evaluatorService.assignBulkEvaluationsPublic({ applicationIds: bulkSelection });
       }
 
@@ -266,7 +266,7 @@ const EvaluatorManagement: React.FC<EvaluatorManagementProps> = ({ applications 
       setBulkSelection([]);
       onRefresh?.();
     } catch (error) {
-      console.error('Error in bulk assignment:', error);
+      Logger.error('Error in bulk assignment:', error);
       alert('Error en asignación masiva');
     } finally {
       setLoading(false);
@@ -835,10 +835,10 @@ const EvaluatorManagement: React.FC<EvaluatorManagementProps> = ({ applications 
           </div>
 
           {selectedEvaluationType && (() => {
-            console.log('🔍 MODAL DEBUG - Rendering evaluator selector');
-            console.log('🔍 MODAL DEBUG - selectedEvaluationType:', selectedEvaluationType);
-            console.log('🔍 MODAL DEBUG - evaluators object keys:', Object.keys(evaluators));
-            console.log('🔍 MODAL DEBUG - evaluators object:', evaluators);
+            Logger.info('🔍 MODAL DEBUG - Rendering evaluator selector');
+            Logger.info('🔍 MODAL DEBUG - selectedEvaluationType:', selectedEvaluationType);
+            Logger.info('🔍 MODAL DEBUG - evaluators object keys:', Object.keys(evaluators));
+            Logger.info('🔍 MODAL DEBUG - evaluators object:', evaluators);
             return (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -852,7 +852,7 @@ const EvaluatorManagement: React.FC<EvaluatorManagementProps> = ({ applications 
                   <option value="">Seleccionar evaluador...</option>
                   {/* Filtrar evaluadores por el rol requerido según el tipo de evaluación */}
                   {(() => {
-                    console.log('🔍 MODAL DEBUG - Inside select options function');
+                    Logger.info('🔍 MODAL DEBUG - Inside select options function');
 
                     // Mapear tipo de evaluación al rol requerido
                     let requiredRole: string | null = null;
@@ -876,27 +876,27 @@ const EvaluatorManagement: React.FC<EvaluatorManagementProps> = ({ applications 
                         break;
                     }
 
-                    console.log('🔍 MODAL DEBUG - requiredRole after switch:', requiredRole);
+                    Logger.info('🔍 MODAL DEBUG - requiredRole after switch:', requiredRole);
 
                     // Si no hay rol requerido, no mostrar evaluadores
                     if (!requiredRole) {
-                      console.log('❌ MODAL DEBUG - No requiredRole, returning null');
+                      Logger.info('❌ MODAL DEBUG - No requiredRole, returning null');
                       return null;
                     }
 
                     // Obtener solo los evaluadores del rol requerido
                     const filteredEvaluators = evaluators[requiredRole] || [];
-                    console.log('🔍 MODAL DEBUG - filteredEvaluators:', filteredEvaluators);
-                    console.log('🔍 MODAL DEBUG - filteredEvaluators.length:', filteredEvaluators.length);
+                    Logger.info('🔍 MODAL DEBUG - filteredEvaluators:', filteredEvaluators);
+                    Logger.info('🔍 MODAL DEBUG - filteredEvaluators.length:', filteredEvaluators.length);
 
                     // Si no hay evaluadores disponibles, mostrar mensaje
                     if (filteredEvaluators.length === 0) {
-                      console.log('⚠️ MODAL DEBUG - No evaluators, returning message');
+                      Logger.info('⚠️ MODAL DEBUG - No evaluators, returning message');
                       return <option disabled>No hay evaluadores disponibles para este tipo</option>;
                     }
 
                     // Mostrar evaluadores filtrados
-                    console.log('✅ MODAL DEBUG - Returning filtered evaluators options');
+                    Logger.info('✅ MODAL DEBUG - Returning filtered evaluators options');
                     return filteredEvaluators.map(evaluator => (
                       <option key={evaluator.id} value={evaluator.id}>
                         {evaluator.firstName} {evaluator.lastName}

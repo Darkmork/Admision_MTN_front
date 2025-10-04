@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import Card from '../ui/Card';
-import Button from '../ui/Button';
-import Input from '../ui/Input';
-import { ArrowLeftIcon, SaveIcon, FileTextIcon, PrinterIcon } from '../icons/Icons';
-import { useNotifications } from '../../context/AppContext';
-import { professorEvaluationService, ProfessorEvaluation } from '../../services/professorEvaluationService';
-import { EvaluationType } from '../../types/evaluation';
-
+import { Logger } from '../src/utils/logger';import { useParams, useNavigate } from 'react-router-dom';
+import { Logger } from '../src/utils/logger';import Card from '../ui/Card';
+import { Logger } from '../src/utils/logger';import Button from '../ui/Button';
+import { Logger } from '../src/utils/logger';import Input from '../ui/Input';
+import { Logger } from '../src/utils/logger';import { ArrowLeftIcon, SaveIcon, FileTextIcon, PrinterIcon } from '../icons/Icons';
+import { Logger } from '../src/utils/logger';import { useNotifications } from '../../context/AppContext';
+import { Logger } from '../src/utils/logger';import { professorEvaluationService, ProfessorEvaluation } from '../../services/professorEvaluationService';
+import { Logger } from '../src/utils/logger';import { EvaluationType } from '../../types/evaluation';
+import { Logger } from '../src/utils/logger';
 interface AdmissionReportData {
     studentName: string;
     birthDate: string;
@@ -71,7 +71,7 @@ const AdmissionReportForm: React.FC = () => {
 
             try {
                 setIsLoading(true);
-                console.log('🔄 Cargando evaluación para informe:', examId);
+                Logger.info('🔄 Cargando evaluación para informe:', examId);
 
                 // Cargar desde el backend real
                 const response = await fetch(`http://localhost:8080/api/evaluations/${examId}`, {
@@ -83,7 +83,7 @@ const AdmissionReportForm: React.FC = () => {
                 if (!response.ok) throw new Error('Error al cargar evaluación');
 
                 const evaluationData = await response.json();
-                console.log('✅ Evaluación cargada desde backend:', evaluationData);
+                Logger.info('✅ Evaluación cargada desde backend:', evaluationData);
 
                 if (evaluationData) {
                     setEvaluation(evaluationData);
@@ -126,9 +126,9 @@ const AdmissionReportForm: React.FC = () => {
                         areasToWork: evaluationData.areas_for_improvement || ''
                     }));
 
-                    console.log('✅ Informe cargado con datos:', evaluationData);
+                    Logger.info('✅ Informe cargado con datos:', evaluationData);
                 } else {
-                    console.error('❌ Evaluación no encontrada');
+                    Logger.error('❌ Evaluación no encontrada');
                     addNotification({
                         type: 'error',
                         title: 'Error',
@@ -137,7 +137,7 @@ const AdmissionReportForm: React.FC = () => {
                 }
                 
             } catch (error: any) {
-                console.error('❌ Error cargando evaluación:', error);
+                Logger.error('❌ Error cargando evaluación:', error);
                 addNotification({
                     type: 'error',
                     title: 'Error',
@@ -245,7 +245,7 @@ const AdmissionReportForm: React.FC = () => {
             }, 1500);
             
         } catch (error) {
-            console.error('❌ Error al guardar informe:', error);
+            Logger.error('❌ Error al guardar informe:', error);
             addNotification({
                 type: 'error',
                 title: 'Error al guardar',

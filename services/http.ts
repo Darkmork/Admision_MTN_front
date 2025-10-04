@@ -5,6 +5,7 @@
 
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 import { oidcService } from './oidcService';
+import { Logger } from '../src/utils/logger';
 
 // Tipos
 interface RetryConfig {
@@ -67,7 +68,7 @@ class HttpClient {
       async (config) => {
         const correlationId = crypto.randomUUID();
 
-        console.log('📤 http.ts - Making request to:', config.url);
+        Logger.debug('Making request to:', config.url);
 
         // Agregar headers de autenticación y correlación
         const token = await this.getAccessToken();
@@ -76,9 +77,9 @@ class HttpClient {
             ...config.headers,
             'Authorization': `Bearer ${token}`,
           };
-          console.log('✅ http.ts - Authorization header added');
+          Logger.debug('Authorization header added');
         } else {
-          console.warn('⚠️ http.ts - No token available, request will be sent without auth');
+          Logger.warn('No token available, request will be sent without auth');
         }
 
         config.headers = {
@@ -130,24 +131,20 @@ class HttpClient {
     try {
       // Primero intentar obtener el token de usuario regular (apoderado)
       let token = localStorage.getItem('auth_token');
-      console.log('🔑 http.ts - auth_token:', token ? `${token.substring(0, 20)}...` : 'NOT FOUND');
 
       // Si no hay token de usuario regular, intentar con token de profesor
       if (!token) {
         token = localStorage.getItem('professor_token');
-        console.log('🔑 http.ts - professor_token:', token ? `${token.substring(0, 20)}...` : 'NOT FOUND');
       }
 
       // Si aún no hay token, intentar OIDC como fallback
       if (!token) {
         token = oidcService.getAccessToken();
-        console.log('🔑 http.ts - oidc token:', token ? `${token.substring(0, 20)}...` : 'NOT FOUND');
       }
 
-      console.log('🔑 http.ts - Final token to use:', token ? 'FOUND' : 'NULL');
       return token;
     } catch (error) {
-      console.error('❌ http.ts - Error getting token:', error);
+      Logger.error('Error getting access token:', error);
       return null;
     }
   }

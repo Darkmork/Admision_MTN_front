@@ -1,6 +1,6 @@
 // Servicio de Recordatorios WhatsApp/SMS para Entrevistas
 import { Interview } from '../types/interview';
-
+import { Logger } from '../src/utils/logger';
 export interface WhatsAppConfig {
   enabled: boolean;
   apiUrl: string;
@@ -297,7 +297,7 @@ Disculpas por las molestias.
     } catch (error: any) {
       reminder.status = 'failed';
       reminder.errorMessage = error.message;
-      console.error(`Error enviando recordatorio ${reminderId}:`, error);
+      Logger.error(`Error enviando recordatorio ${reminderId}:`, error);
     } finally {
       // Limpiar timeout programado
       this.scheduledReminders.delete(reminderId);
@@ -522,7 +522,7 @@ Disculpas por las molestias.
   // Enviar SMS via AWS SNS
   private async sendAWSSMS(phone: string, message: string): Promise<void> {
     // Implementación AWS SNS requeriría AWS SDK
-    console.log('AWS SNS no implementado aún');
+    Logger.info('AWS SNS no implementado aún');
     throw new Error('AWS SNS no disponible');
   }
 

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import Card from '../ui/Card';
-import Button from '../ui/Button';
-import { 
-  AcademicEvaluation, 
+import { Logger } from '../src/utils/logger';import Card from '../ui/Card';
+import { Logger } from '../src/utils/logger';import Button from '../ui/Button';
+import { Logger } from '../src/utils/logger';import { 
+import { Logger } from '../src/utils/logger';  AcademicEvaluation, 
   EvaluationType, 
   EvaluationStatus,
   EVALUATION_TYPE_LABELS,
@@ -106,7 +106,7 @@ const AcademicEvaluationForm: React.FC<AcademicEvaluationFormProps> = ({
       await onSave(updateData);
       setIsDirty(false);
     } catch (error) {
-      console.error('Error saving evaluation:', error);
+      Logger.error('Error saving evaluation:', error);
     }
   };
 
@@ -120,7 +120,7 @@ const AcademicEvaluationForm: React.FC<AcademicEvaluationFormProps> = ({
       await onSave(updateData);
       setIsDirty(false);
     } catch (error) {
-      console.error('Error saving draft:', error);
+      Logger.error('Error saving draft:', error);
     }
   };
 

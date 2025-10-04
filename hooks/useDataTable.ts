@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useNotifications } from '../context/AppContext';
-
+import { Logger } from '../src/utils/logger';import { useNotifications } from '../context/AppContext';
+import { Logger } from '../src/utils/logger';
 interface DataTableState<T> {
     data: T[];
     loading: boolean;
@@ -68,7 +68,7 @@ export const useDataTable = <T>(
         }));
 
         try {
-            console.log(`📊 Loading data: page ${page}, size ${size}`);
+            Logger.info(`📊 Loading data: page ${page}, size ${size}`);
             
             const rawData = await dataLoaderRef.current(page, size);
             
@@ -87,10 +87,10 @@ export const useDataTable = <T>(
                 }
             }));
 
-            console.log(`✅ Data loaded successfully: ${finalData.length} items`);
+            Logger.info(`✅ Data loaded successfully: ${finalData.length} items`);
 
         } catch (error: any) {
-            console.error('❌ Error loading data:', error);
+            Logger.error('❌ Error loading data:', error);
             
             const errorMessage = error.response?.data?.message || 
                                error.message || 

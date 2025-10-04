@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba de Microservicios - MTN</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-blue-800 mb-8">🏗️ Prueba de Microservicios - Sistema MTN</h1>
+        
+        <div class="grid md:grid-cols-2 gap-6">
+            <!-- Gateway Health -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h2 class="text-xl font-semibold mb-4">API Gateway</h2>
+                <button onclick="testGateway()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    🔄 Probar Gateway
+                </button>
+                <div id="gateway-result" class="mt-4 p-3 bg-gray-50 rounded text-sm"></div>
+            </div>
+
+            <!-- User Service -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h2 class="text-xl font-semibold mb-4">User Service</h2>
+                <button onclick="testUserService()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                    👥 Probar Usuarios
+                </button>
+                <div id="user-result" class="mt-4 p-3 bg-gray-50 rounded text-sm"></div>
+            </div>
+
+            <!-- Connection Test -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h2 class="text-xl font-semibold mb-4">Test Conexión</h2>
+                <button onclick="testConnection()" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                    🧪 Probar Conexión
+                </button>
+                <div id="connection-result" class="mt-4 p-3 bg-gray-50 rounded text-sm"></div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h2 class="text-xl font-semibold mb-4">Estadísticas</h2>
+                <button onclick="testStats()" class="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600">
+                    📊 Ver Stats
+                </button>
+                <div id="stats-result" class="mt-4 p-3 bg-gray-50 rounded text-sm"></div>
+            </div>
+        </div>
+
+        <!-- All Services Test -->
+        <div class="mt-8 bg-white p-6 rounded-lg shadow">
+            <h2 class="text-xl font-semibold mb-4">Prueba Completa de Todos los Servicios</h2>
+            <button onclick="testAllServices()" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+                🚀 Probar Todos los Servicios
+            </button>
+            <div id="all-services-result" class="mt-4 p-3 bg-gray-50 rounded text-sm"></div>
+        </div>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'http://localhost:8080';
+
+        async function makeRequest(url, options = {}) {
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('Request error:', error);
+                throw error;
+            }
+        }
+
+        async function testGateway() {
+            const resultDiv = document.getElementById('gateway-result');
+            resultDiv.innerHTML = '🔄 Probando Gateway...';
+            
+            try {
+                const result = await makeRequest(`${BACKEND_URL}/api/microservices-test/gateway/health`);
+                resultDiv.innerHTML = `
+                    <div class="text-green-600 font-semibold">✅ Gateway funcionando</div>
+                    <div>Status: ${result.status}</div>
+                    <div>Service: ${result.service}</div>
+                    <div>Message: ${result.message}</div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="text-red-600">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function testUserService() {
+            const resultDiv = document.getElementById('user-result');
+            resultDiv.innerHTML = '🔄 Obteniendo usuarios...';
+            
+            try {
+                const users = await makeRequest(`${BACKEND_URL}/api/microservices-test/user-service/demo-users`);
+                resultDiv.innerHTML = `
+                    <div class="text-green-600 font-semibold">✅ ${users.length} usuarios encontrados</div>
+                    ${users.map(user => `<div class="text-xs mt-1">👤 ${user.name} - ${user.role}</div>`).join('')}
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="text-red-600">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function testConnection() {
+            const resultDiv = document.getElementById('connection-result');
+            resultDiv.innerHTML = '🔄 Probando conexión...';
+            
+            try {
+                const result = await makeRequest(`${BACKEND_URL}/api/microservices-test/user-service/test-connection`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        from: 'HTML Test Page',
+                        timestamp: new Date().toISOString(),
+                        testData: 'Frontend integration test'
+                    })
+                });
+                
+                resultDiv.innerHTML = `
+                    <div class="text-green-600 font-semibold">✅ Conexión exitosa</div>
+                    <div>Status: ${result.status}</div>
+                    <div>Service: ${result.service}</div>
+                    <div>Timestamp: ${result.timestamp}</div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="text-red-600">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function testStats() {
+            const resultDiv = document.getElementById('stats-result');
+            resultDiv.innerHTML = '🔄 Obteniendo estadísticas...';
+            
+            try {
+                const stats = await makeRequest(`${BACKEND_URL}/api/microservices-test/user-service/stats`);
+                resultDiv.innerHTML = `
+                    <div class="text-green-600 font-semibold">✅ Estadísticas obtenidas</div>
+                    <div>Total Users: ${stats.totalUsers}</div>
+                    <div>Active Users: ${stats.activeUsers}</div>
+                    <div>Architecture: ${stats.architecture}</div>
+                    <div>Database: ${stats.database}</div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="text-red-600">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function testAllServices() {
+            const resultDiv = document.getElementById('all-services-result');
+            resultDiv.innerHTML = '🔄 Probando todos los servicios...';
+            
+            const services = [
+                { name: 'Gateway', url: '/api/microservices-test/gateway/health' },
+                { name: 'User Service', url: '/api/microservices-test/user-service/health' },
+                { name: 'Application Service', url: '/api/microservices-test/application-service/health' },
+                { name: 'Evaluation Service', url: '/api/microservices-test/evaluation-service/health' },
+                { name: 'Notification Service', url: '/api/microservices-test/notification-service/health' }
+            ];
+            
+            const results = [];
+            
+            for (const service of services) {
+                try {
+                    const result = await makeRequest(`${BACKEND_URL}${service.url}`);
+                    results.push(`✅ ${service.name}: ${result.status} - ${result.message}`);
+                } catch (error) {
+                    results.push(`❌ ${service.name}: ERROR - ${error.message}`);
+                }
+            }
+            
+            resultDiv.innerHTML = `
+                <div class="text-blue-600 font-semibold">🚀 Resultados de todos los servicios:</div>
+                ${results.map(result => `<div class="text-xs mt-1">${result}</div>`).join('')}
+            `;
+        }
+
+        // Ejecutar prueba automática al cargar
+        window.onload = function() {
+            console.log('🏗️ Página de prueba de microservicios cargada');
+            console.log('Backend URL:', BACKEND_URL);
+        };
+    </script>
+</body>
+</html>

@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import Card from '../ui/Card';
-import Button from '../ui/Button';
-import Input from '../ui/Input';
-import { ArrowLeftIcon, SaveIcon, PrinterIcon } from '../icons/Icons';
-import { useNotifications } from '../../context/AppContext';
-import { professorEvaluationService, ProfessorEvaluation } from '../../services/professorEvaluationService';
-
+import { Logger } from '../src/utils/logger';import { useParams, useNavigate } from 'react-router-dom';
+import { Logger } from '../src/utils/logger';import Card from '../ui/Card';
+import { Logger } from '../src/utils/logger';import Button from '../ui/Button';
+import { Logger } from '../src/utils/logger';import Input from '../ui/Input';
+import { Logger } from '../src/utils/logger';import { ArrowLeftIcon, SaveIcon, PrinterIcon } from '../icons/Icons';
+import { Logger } from '../src/utils/logger';import { useNotifications } from '../../context/AppContext';
+import { Logger } from '../src/utils/logger';import { professorEvaluationService, ProfessorEvaluation } from '../../services/professorEvaluationService';
+import { Logger } from '../src/utils/logger';
 interface CycleDirectorInterviewData {
     // Datos básicos del estudiante (auto-rellenados)
     studentName: string;
@@ -112,7 +112,7 @@ const CycleDirectorInterviewForm: React.FC = () => {
             
             try {
                 setIsLoading(true);
-                console.log('🔄 Cargando evaluación para entrevista director de ciclo:', examId);
+                Logger.info('🔄 Cargando evaluación para entrevista director de ciclo:', examId);
                 
                 const foundEvaluation = await professorEvaluationService.getEvaluationById(parseInt(examId));
                 
@@ -147,9 +147,9 @@ const CycleDirectorInterviewForm: React.FC = () => {
                         // Aquí podríamos mapear otros campos si ya existen en la evaluación
                     }));
                     
-                    console.log('✅ Evaluación cargada para entrevista:', foundEvaluation);
+                    Logger.info('✅ Evaluación cargada para entrevista:', foundEvaluation);
                 } else {
-                    console.error('❌ Evaluación no encontrada');
+                    Logger.error('❌ Evaluación no encontrada');
                     addNotification({
                         type: 'error',
                         title: 'Error',
@@ -158,7 +158,7 @@ const CycleDirectorInterviewForm: React.FC = () => {
                 }
                 
             } catch (error: any) {
-                console.error('❌ Error cargando evaluación:', error);
+                Logger.error('❌ Error cargando evaluación:', error);
                 addNotification({
                     type: 'error',
                     title: 'Error',
@@ -241,7 +241,7 @@ Entrevistador: ${currentProfessor?.firstName} ${currentProfessor?.lastName}`,
             }, 1500);
             
         } catch (error) {
-            console.error('❌ Error al guardar entrevista:', error);
+            Logger.error('❌ Error al guardar entrevista:', error);
             addNotification({
                 type: 'error',
                 title: 'Error al guardar',

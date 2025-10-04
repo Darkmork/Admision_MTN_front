@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import Button from '../ui/Button';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
-import LoadingSpinner from '../ui/LoadingSpinner';
-import {
-  User,
+import { Logger } from '../src/utils/logger';import Button from '../ui/Button';
+import { Logger } from '../src/utils/logger';import Card from '../ui/Card';
+import { Logger } from '../src/utils/logger';import Badge from '../ui/Badge';
+import { Logger } from '../src/utils/logger';import LoadingSpinner from '../ui/LoadingSpinner';
+import { Logger } from '../src/utils/logger';import {
+import { Logger } from '../src/utils/logger';  User,
   CreateUserRequest,
   UpdateUserRequest,
   UserFormMode,
@@ -19,7 +19,7 @@ import {
   USER_VALIDATION_ERRORS
 } from '../../types/user';
 import {
-  UserIcon,
+import { Logger } from '../src/utils/logger';  UserIcon,
   EnvelopeIcon,
   PhoneIcon,
   IdentificationIcon,
@@ -30,7 +30,7 @@ import {
   BookOpenIcon
 } from '../icons/Icons';
 import WeeklyCalendar from '../schedule/WeeklyCalendar';
-
+import { Logger } from '../src/utils/logger';
 const UserForm: React.FC<UserFormProps> = ({
   user,
   mode,
@@ -207,10 +207,10 @@ const UserForm: React.FC<UserFormProps> = ({
   // Determinar si el usuario puede realizar entrevistas (necesita gestión de horarios)
   const canInterview = formData.role === UserRole.PSYCHOLOGIST || formData.role === UserRole.CYCLE_DIRECTOR || formData.role === UserRole.COORDINATOR;
   
-  console.log(`👤 UserForm - Usuario: ${formData.firstName} ${formData.lastName}`);
-  console.log(`🏷️ UserForm - Role: ${formData.role}`);
-  console.log(`📅 UserForm - canInterview: ${canInterview}`);
-  console.log(`🆔 UserForm - userForSchedule.id: ${user?.id || 0}`);
+  Logger.info(`👤 UserForm - Usuario: ${formData.firstName} ${formData.lastName}`);
+  Logger.info(`🏷️ UserForm - Role: ${formData.role}`);
+  Logger.info(`📅 UserForm - canInterview: ${canInterview}`);
+  Logger.info(`🆔 UserForm - userForSchedule.id: ${user?.id || 0}`);
   
   // Para el InterviewerScheduleManager necesitamos un objeto User
   const userForSchedule = user || {
@@ -520,7 +520,7 @@ const UserForm: React.FC<UserFormProps> = ({
                   userRole={formData.role}
                   onScheduleChange={() => {
                     // Opcional: callback cuando se actualicen horarios
-                    console.log('Horarios actualizados');
+                    Logger.info('Horarios actualizados');
                   }}
                 />
               </div>

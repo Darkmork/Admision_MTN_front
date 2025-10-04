@@ -4,14 +4,14 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import useUserProfile from '../../hooks/useUserProfile';
-import applicationWorkflowService from '../../services/applicationWorkflowService';
-import documentGatewayService from '../../services/documentGatewayService';
-import evaluationWorkflowService from '../../services/evaluationWorkflowService';
-import interviewWorkflowService from '../../services/interviewWorkflowService';
-import notificationTemplateService from '../../services/notificationTemplateService';
-import { useAuth } from '../../context/AuthContext';
-
+import { Logger } from '../src/utils/logger';import useUserProfile from '../../hooks/useUserProfile';
+import { Logger } from '../src/utils/logger';import applicationWorkflowService from '../../services/applicationWorkflowService';
+import { Logger } from '../src/utils/logger';import documentGatewayService from '../../services/documentGatewayService';
+import { Logger } from '../src/utils/logger';import evaluationWorkflowService from '../../services/evaluationWorkflowService';
+import { Logger } from '../src/utils/logger';import interviewWorkflowService from '../../services/interviewWorkflowService';
+import { Logger } from '../src/utils/logger';import notificationTemplateService from '../../services/notificationTemplateService';
+import { Logger } from '../src/utils/logger';import { useAuth } from '../../context/AuthContext';
+import { Logger } from '../src/utils/logger';
 interface TestResult {
   service: string;
   endpoint: string;
@@ -65,7 +65,7 @@ const GatewayIntegrationTest: React.FC = () => {
         }
       });
       
-      console.log('✅ Profile Service Test:', profile);
+      Logger.info('✅ Profile Service Test:', profile);
     } catch (error: any) {
       const duration = Date.now() - startTime;
       updateTestResult(testIndex, {
@@ -74,7 +74,7 @@ const GatewayIntegrationTest: React.FC = () => {
         duration
       });
       
-      console.error('❌ Profile Service Test Failed:', error);
+      Logger.error('❌ Profile Service Test Failed:', error);
     }
   };
 
@@ -114,7 +114,7 @@ const GatewayIntegrationTest: React.FC = () => {
         }
       });
       
-      console.log('✅ Application Workflow Test:', draft);
+      Logger.info('✅ Application Workflow Test:', draft);
       
       // Test submission if draft was created successfully
       if (draft.id) {
@@ -128,7 +128,7 @@ const GatewayIntegrationTest: React.FC = () => {
         duration
       });
       
-      console.error('❌ Application Workflow Test Failed:', error);
+      Logger.error('❌ Application Workflow Test Failed:', error);
     }
   };
 
@@ -164,7 +164,7 @@ const GatewayIntegrationTest: React.FC = () => {
         }
       });
       
-      console.log('✅ Application Submission Test:', submission);
+      Logger.info('✅ Application Submission Test:', submission);
     } catch (error: any) {
       const duration = Date.now() - startTime;
       updateTestResult(testIndex, {
@@ -173,7 +173,7 @@ const GatewayIntegrationTest: React.FC = () => {
         duration
       });
       
-      console.error('❌ Application Submission Test Failed:', error);
+      Logger.error('❌ Application Submission Test Failed:', error);
     }
   };
 
@@ -215,7 +215,7 @@ const GatewayIntegrationTest: React.FC = () => {
         }
       });
       
-      console.log('✅ Document Service Test:', documentMetadata);
+      Logger.info('✅ Document Service Test:', documentMetadata);
     } catch (error: any) {
       const duration = Date.now() - startTime;
       updateTestResult(testIndex, {
@@ -224,7 +224,7 @@ const GatewayIntegrationTest: React.FC = () => {
         duration
       });
       
-      console.error('❌ Document Service Test Failed:', error);
+      Logger.error('❌ Document Service Test Failed:', error);
     }
   };
 
@@ -258,7 +258,7 @@ const GatewayIntegrationTest: React.FC = () => {
         }
       });
       
-      console.log('✅ Evaluation Service Test:', assignments);
+      Logger.info('✅ Evaluation Service Test:', assignments);
     } catch (error: any) {
       const duration = Date.now() - startTime;
       updateTestResult(testIndex, {
@@ -267,7 +267,7 @@ const GatewayIntegrationTest: React.FC = () => {
         duration
       });
       
-      console.error('❌ Evaluation Service Test Failed:', error);
+      Logger.error('❌ Evaluation Service Test Failed:', error);
     }
   };
 
@@ -299,7 +299,7 @@ const GatewayIntegrationTest: React.FC = () => {
         }
       });
       
-      console.log('✅ Interview Service Test:', dashboard);
+      Logger.info('✅ Interview Service Test:', dashboard);
     } catch (error: any) {
       const duration = Date.now() - startTime;
       updateTestResult(testIndex, {
@@ -308,7 +308,7 @@ const GatewayIntegrationTest: React.FC = () => {
         duration
       });
       
-      console.error('❌ Interview Service Test Failed:', error);
+      Logger.error('❌ Interview Service Test Failed:', error);
     }
   };
 
@@ -341,7 +341,7 @@ const GatewayIntegrationTest: React.FC = () => {
         }
       });
       
-      console.log('✅ Notification Service Test:', templates);
+      Logger.info('✅ Notification Service Test:', templates);
     } catch (error: any) {
       const duration = Date.now() - startTime;
       updateTestResult(testIndex, {
@@ -350,7 +350,7 @@ const GatewayIntegrationTest: React.FC = () => {
         duration
       });
       
-      console.error('❌ Notification Service Test Failed:', error);
+      Logger.error('❌ Notification Service Test Failed:', error);
     }
   };
 
@@ -361,7 +361,7 @@ const GatewayIntegrationTest: React.FC = () => {
     setTestResults([]);
     setCurrentTest('');
     
-    console.log('🏁 Starting Gateway Integration Tests...');
+    Logger.info('🏁 Starting Gateway Integration Tests...');
     
     try {
       await testProfileService();
@@ -381,9 +381,9 @@ const GatewayIntegrationTest: React.FC = () => {
       
       await testNotificationService();
       
-      console.log('🎉 All Gateway Integration Tests Complete!');
+      Logger.info('🎉 All Gateway Integration Tests Complete!');
     } catch (error) {
-      console.error('❌ Test suite failed:', error);
+      Logger.error('❌ Test suite failed:', error);
     } finally {
       setTesting(false);
       setCurrentTest('');

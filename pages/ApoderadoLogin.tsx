@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import Input from '../components/ui/Input';
-import RutInput from '../components/ui/RutInput';
-import Button from '../components/ui/Button';
-import Card from '../components/ui/Card';
-import EmailVerification from '../components/ui/EmailVerification';
-import { LogoIcon } from '../components/icons/Icons';
-import { useAuth } from '../context/AuthContext';
-
+import { Logger } from '../src/utils/logger';import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Logger } from '../src/utils/logger';import Input from '../components/ui/Input';
+import { Logger } from '../src/utils/logger';import RutInput from '../components/ui/RutInput';
+import { Logger } from '../src/utils/logger';import Button from '../components/ui/Button';
+import { Logger } from '../src/utils/logger';import Card from '../components/ui/Card';
+import { Logger } from '../src/utils/logger';import EmailVerification from '../components/ui/EmailVerification';
+import { Logger } from '../src/utils/logger';import { LogoIcon } from '../components/icons/Icons';
+import { Logger } from '../src/utils/logger';import { useAuth } from '../context/AuthContext';
+import { Logger } from '../src/utils/logger';
 const ApoderadoLogin: React.FC = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -41,16 +41,16 @@ const ApoderadoLogin: React.FC = () => {
         try {
             // Simulando autenticación
             if (email && password) {
-                console.log('🔐 ApoderadoLogin: Attempting login with:', { email, password: password.length + ' chars' });
+                Logger.info('🔐 ApoderadoLogin: Attempting login with:', { email, password: password.length + ' chars' });
                 await login(email, password, 'apoderado');
-                console.log('✅ ApoderadoLogin: Login successful, navigating to:', redirectTo);
+                Logger.info('✅ ApoderadoLogin: Login successful, navigating to:', redirectTo);
                 navigate(redirectTo);
             } else {
-                console.warn('⚠️ ApoderadoLogin: Missing email or password');
+                Logger.warn('⚠️ ApoderadoLogin: Missing email or password');
                 setError('Por favor complete todos los campos');
             }
         } catch (err) {
-            console.error('❌ ApoderadoLogin: Login failed:', err);
+            Logger.error('❌ ApoderadoLogin: Login failed:', err);
             setError('Credenciales inválidas. Verifique su email y contraseña.');
         } finally {
             setIsLoading(false);

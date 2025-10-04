@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
-import Button from '../ui/Button';
-import { 
-  CalendarIcon, 
+import { Logger } from '../src/utils/logger';import Card from '../ui/Card';
+import { Logger } from '../src/utils/logger';import Badge from '../ui/Badge';
+import { Logger } from '../src/utils/logger';import Button from '../ui/Button';
+import { Logger } from '../src/utils/logger';import { 
+import { Logger } from '../src/utils/logger';  CalendarIcon, 
   ClockIcon, 
   CheckCircleIcon,
   ExclamationTriangleIcon,
@@ -11,8 +11,8 @@ import {
   EyeIcon
 } from '../icons/Icons';
 import { interviewService } from '../../services/interviewService';
-import { 
-  InterviewStatus, 
+import { Logger } from '../src/utils/logger';import { 
+import { Logger } from '../src/utils/logger';  InterviewStatus, 
   INTERVIEW_STATUS_LABELS,
   InterviewUtils,
   INTERVIEW_TYPE_LABELS 
@@ -89,7 +89,7 @@ const InterviewStatusPanel: React.FC<InterviewStatusPanelProps> = ({
 
         setRequiredInterviews(mappedInterviews);
       } catch (error) {
-        console.error('Error cargando entrevistas requeridas:', error);
+        Logger.error('Error cargando entrevistas requeridas:', error);
         // En caso de error, mantener array vacío
         setRequiredInterviews([]);
       } finally {

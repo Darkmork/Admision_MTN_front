@@ -6,11 +6,11 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { dashboardClient } from '../../api/dashboard.client';
-import type { TemporalTrend, DetailedAdminStats } from '../../api/dashboard.types';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { format } from 'date-fns';
-
+import { Logger } from '@/utils/logger';import { dashboardClient } from '../../api/dashboard.client';
+import { Logger } from '@/utils/logger';import type { TemporalTrend, DetailedAdminStats } from '../../api/dashboard.types';
+import { Logger } from '@/utils/logger';import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Logger } from '@/utils/logger';import { format } from 'date-fns';
+import { Logger } from '@/utils/logger';
 export const TemporalTrendsView: React.FC = () => {
   const [trends, setTrends] = useState<TemporalTrend[]>([]);
   const [yearlyStats, setYearlyStats] = useState<Record<number, DetailedAdminStats>>({});
@@ -53,7 +53,7 @@ export const TemporalTrendsView: React.FC = () => {
 
       setYearlyStats(statsMap);
     } catch (err: any) {
-      console.error('Error loading trends:', err);
+      Logger.error('Error loading trends:', err);
       setError(err.message || 'Error al cargar tendencias');
     } finally {
       setLoading(false);

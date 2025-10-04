@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Professor } from '../types';
-
+import { Logger } from '../src/utils/logger';import { Professor } from '../types';
+import { Logger } from '../src/utils/logger';
 interface ProfessorContextType {
     currentProfessor: Professor | null;
     isAuthenticated: boolean;
@@ -25,7 +25,7 @@ export const ProfessorProvider: React.FC<ProfessorProviderProps> = ({ children }
                 const professorData = JSON.parse(storedProfessor);
                 setCurrentProfessor(professorData);
             } catch (error) {
-                console.error('Error parsing stored professor data:', error);
+                Logger.error('Error parsing stored professor data:', error);
                 localStorage.removeItem('currentProfessor');
             }
         }

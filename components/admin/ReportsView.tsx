@@ -4,12 +4,12 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { FiDownload, FiFilter, FiCalendar, FiBarChart2, FiPieChart, FiTrendingUp } from 'react-icons/fi';
-import Card from '../ui/Card';
-import Button from '../ui/Button';
-import { BarChart, Bar, PieChart, Pie, LineChart, Line, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { dashboardClient } from '../../src/api/dashboard.client';
-
+import { Logger } from '../src/utils/logger';import { FiDownload, FiFilter, FiCalendar, FiBarChart2, FiPieChart, FiTrendingUp } from 'react-icons/fi';
+import { Logger } from '../src/utils/logger';import Card from '../ui/Card';
+import { Logger } from '../src/utils/logger';import Button from '../ui/Button';
+import { Logger } from '../src/utils/logger';import { BarChart, Bar, PieChart, Pie, LineChart, Line, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Logger } from '../src/utils/logger';import { dashboardClient } from '../../src/api/dashboard.client';
+import { Logger } from '../src/utils/logger';
 interface ReportFilters {
     academicYear: number;
     startDate?: string;
@@ -54,7 +54,7 @@ export const ReportsView: React.FC = () => {
             setTemporalData(temporalTrends);
             setMetrics(dashboardMetrics);
         } catch (error) {
-            console.error('Error loading report data:', error);
+            Logger.error('Error loading report data:', error);
         } finally {
             setLoading(false);
         }

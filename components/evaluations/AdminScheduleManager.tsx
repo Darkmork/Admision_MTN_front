@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import Card from '../ui/Card';
-import Button from '../ui/Button';
-import Badge from '../ui/Badge';
-import LoadingSpinner from '../ui/LoadingSpinner';
-import Modal from '../ui/Modal';
-import EvaluationScheduleCard from './EvaluationScheduleCard';
-import {
-  EvaluationSchedule,
+import { Logger } from '../src/utils/logger';import Card from '../ui/Card';
+import { Logger } from '../src/utils/logger';import Button from '../ui/Button';
+import { Logger } from '../src/utils/logger';import Badge from '../ui/Badge';
+import { Logger } from '../src/utils/logger';import LoadingSpinner from '../ui/LoadingSpinner';
+import { Logger } from '../src/utils/logger';import Modal from '../ui/Modal';
+import { Logger } from '../src/utils/logger';import EvaluationScheduleCard from './EvaluationScheduleCard';
+import { Logger } from '../src/utils/logger';import {
+import { Logger } from '../src/utils/logger';  EvaluationSchedule,
   CreateGenericScheduleRequest,
   CreateIndividualScheduleRequest,
   EvaluationType,
@@ -17,8 +17,8 @@ import {
   ScheduleUtils
 } from '../../types/evaluation';
 import { evaluationService } from '../../services/evaluationService';
-import { 
-  CalendarIcon, 
+import { Logger } from '../src/utils/logger';import { 
+import { Logger } from '../src/utils/logger';  CalendarIcon, 
   PlusIcon, 
   ClockIcon, 
   UserGroupIcon,
@@ -66,7 +66,7 @@ const AdminScheduleManager: React.FC<AdminScheduleManagerProps> = ({
       const pending = await evaluationService.getPendingConfirmations();
       setSchedules(pending);
     } catch (err: any) {
-      console.warn('Error loading pending confirmations, using mock data');
+      Logger.warn('Error loading pending confirmations, using mock data');
       // Usar datos mock para desarrollo
       const mockSchedules = evaluationService.createLocalMockSchedules(1);
       setSchedules(mockSchedules.filter(s => 

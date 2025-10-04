@@ -1,5 +1,5 @@
 import axios from 'axios';
-
+import { Logger } from '../src/utils/logger';
 const API_BASE_URL = 'http://localhost:8080/api';
 
 // Types for the interviewer schedule system
@@ -102,7 +102,7 @@ export class InterviewerScheduleService {
             });
             return response.data;
         } catch (error) {
-            console.error('Error creating schedule:', error);
+            Logger.error('Error creating schedule:', error);
             throw new Error(axios.isAxiosError(error) ? 
                 error.response?.data?.message || 'Error al crear horario' : 
                 'Error al crear horario');
@@ -119,7 +119,7 @@ export class InterviewerScheduleService {
             });
             return response.data;
         } catch (error) {
-            console.error('Error updating schedule:', error);
+            Logger.error('Error updating schedule:', error);
             throw new Error(axios.isAxiosError(error) ? 
                 error.response?.data?.message || 'Error al actualizar horario' : 
                 'Error al actualizar horario');
@@ -135,7 +135,7 @@ export class InterviewerScheduleService {
                 headers: this.getAuthHeaders()
             });
         } catch (error) {
-            console.error('Error deactivating schedule:', error);
+            Logger.error('Error deactivating schedule:', error);
             throw new Error(axios.isAxiosError(error) ? 
                 error.response?.data?.message || 'Error al desactivar horario' : 
                 'Error al desactivar horario');
@@ -151,7 +151,7 @@ export class InterviewerScheduleService {
                 headers: this.getAuthHeaders()
             });
         } catch (error) {
-            console.error('Error deleting schedule:', error);
+            Logger.error('Error deleting schedule:', error);
             throw new Error(axios.isAxiosError(error) ? 
                 error.response?.data?.message || 'Error al eliminar horario' : 
                 'Error al eliminar horario');
@@ -168,7 +168,7 @@ export class InterviewerScheduleService {
             });
             return response.data;
         } catch (error) {
-            console.error('Error fetching schedule:', error);
+            Logger.error('Error fetching schedule:', error);
             throw new Error(axios.isAxiosError(error) ? 
                 error.response?.data?.message || 'Error al obtener horario' : 
                 'Error al obtener horario');
@@ -185,7 +185,7 @@ export class InterviewerScheduleService {
             });
             return response.data;
         } catch (error) {
-            console.error('Error fetching interviewer schedules:', error);
+            Logger.error('Error fetching interviewer schedules:', error);
             throw new Error(axios.isAxiosError(error) ? 
                 error.response?.data?.message || 'Error al obtener horarios del entrevistador' : 
                 'Error al obtener horarios del entrevistador');
@@ -202,7 +202,7 @@ export class InterviewerScheduleService {
             });
             return response.data;
         } catch (error) {
-            console.error('Error fetching schedules by year:', error);
+            Logger.error('Error fetching schedules by year:', error);
             throw new Error(axios.isAxiosError(error) ? 
                 error.response?.data?.message || 'Error al obtener horarios por año' : 
                 'Error al obtener horarios por año');
@@ -222,7 +222,7 @@ export class InterviewerScheduleService {
             });
             return response.data;
         } catch (error) {
-            console.error('Error fetching available interviewers:', error);
+            Logger.error('Error fetching available interviewers:', error);
             throw new Error(axios.isAxiosError(error) ? 
                 error.response?.data?.message || 'Error al obtener entrevistadores disponibles' : 
                 'Error al obtener entrevistadores disponibles');
@@ -254,7 +254,7 @@ export class InterviewerScheduleService {
                 subject: interviewer.subject
             }));
         } catch (error) {
-            console.error('Error finding available interviewers:', error);
+            Logger.error('Error finding available interviewers:', error);
             throw new Error(axios.isAxiosError(error) ? 
                 error.response?.data?.message || 'Error al buscar entrevistadores disponibles' : 
                 'Error al buscar entrevistadores disponibles');
@@ -272,7 +272,7 @@ export class InterviewerScheduleService {
             });
             return response.data;
         } catch (error) {
-            console.error('Error fetching interviewers by type:', error);
+            Logger.error('Error fetching interviewers by type:', error);
             throw new Error(axios.isAxiosError(error) ? 
                 error.response?.data?.message || 'Error al obtener entrevistadores por tipo' : 
                 'Error al obtener entrevistadores por tipo');
@@ -295,7 +295,7 @@ export class InterviewerScheduleService {
             });
             return response.data;
         } catch (error) {
-            console.error('Error checking availability:', error);
+            Logger.error('Error checking availability:', error);
             throw new Error(axios.isAxiosError(error) ? 
                 error.response?.data?.message || 'Error al verificar disponibilidad' : 
                 'Error al verificar disponibilidad');
@@ -313,7 +313,7 @@ export class InterviewerScheduleService {
             });
             return response.data;
         } catch (error) {
-            console.error('Error fetching availability summary:', error);
+            Logger.error('Error fetching availability summary:', error);
             throw new Error(axios.isAxiosError(error) ? 
                 error.response?.data?.message || 'Error al obtener resumen de disponibilidad' : 
                 'Error al obtener resumen de disponibilidad');
@@ -332,7 +332,7 @@ export class InterviewerScheduleService {
             });
             return response.data;
         } catch (error) {
-            console.error('Error creating recurring schedules:', error);
+            Logger.error('Error creating recurring schedules:', error);
             throw new Error(axios.isAxiosError(error) ? 
                 error.response?.data?.message || 'Error al crear horarios recurrentes' : 
                 'Error al crear horarios recurrentes');
@@ -350,7 +350,7 @@ export class InterviewerScheduleService {
             });
             return response.data;
         } catch (error) {
-            console.error('Error creating exception:', error);
+            Logger.error('Error creating exception:', error);
             throw new Error(axios.isAxiosError(error) ? 
                 error.response?.data?.message || 'Error al crear excepción' : 
                 'Error al crear excepción');
@@ -368,7 +368,7 @@ export class InterviewerScheduleService {
             });
             return response.data;
         } catch (error) {
-            console.error('Error copying schedules:', error);
+            Logger.error('Error copying schedules:', error);
             throw new Error(axios.isAxiosError(error) ? 
                 error.response?.data?.message || 'Error al copiar horarios' : 
                 'Error al copiar horarios');
@@ -387,7 +387,7 @@ export class InterviewerScheduleService {
             });
             return response.data;
         } catch (error) {
-            console.error('Error fetching workload statistics:', error);
+            Logger.error('Error fetching workload statistics:', error);
             throw new Error(axios.isAxiosError(error) ? 
                 error.response?.data?.message || 'Error al obtener estadísticas' : 
                 'Error al obtener estadísticas');
@@ -404,7 +404,7 @@ export class InterviewerScheduleService {
             });
             return response.data;
         } catch (error) {
-            console.error('Error fetching interviewers with schedules:', error);
+            Logger.error('Error fetching interviewers with schedules:', error);
             throw new Error(axios.isAxiosError(error) ? 
                 error.response?.data?.message || 'Error al obtener entrevistadores con horarios' : 
                 'Error al obtener entrevistadores con horarios');
@@ -419,7 +419,7 @@ export class InterviewerScheduleService {
             const response = await axios.get(`${this.baseURL}/health`);
             return response.data;
         } catch (error) {
-            console.error('Error in health check:', error);
+            Logger.error('Error in health check:', error);
             throw new Error('Service unavailable');
         }
     }
@@ -434,7 +434,7 @@ export class InterviewerScheduleService {
             });
             return response.data;
         } catch (error) {
-            console.error('Error testing availability system:', error);
+            Logger.error('Error testing availability system:', error);
             throw new Error(axios.isAxiosError(error) ? 
                 error.response?.data?.message || 'Error al probar sistema' : 
                 'Error al probar sistema');

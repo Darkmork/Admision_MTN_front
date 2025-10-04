@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
-import Button from '../ui/Button';
-import LoadingSpinner from '../ui/LoadingSpinner';
-import { 
-  FiCalendar, 
+import { Logger } from '../src/utils/logger';import Card from '../ui/Card';
+import { Logger } from '../src/utils/logger';import Badge from '../ui/Badge';
+import { Logger } from '../src/utils/logger';import Button from '../ui/Button';
+import { Logger } from '../src/utils/logger';import LoadingSpinner from '../ui/LoadingSpinner';
+import { Logger } from '../src/utils/logger';import { 
+import { Logger } from '../src/utils/logger';  FiCalendar, 
   FiClock, 
   FiMapPin, 
   FiVideo, 
@@ -15,7 +15,7 @@ import {
   FiFileText
 } from 'react-icons/fi';
 import {
-  Interview,
+import { Logger } from '../src/utils/logger';  Interview,
   InterviewStatus,
   InterviewType,
   InterviewMode,
@@ -25,8 +25,8 @@ import {
   InterviewUtils
 } from '../../types/interview';
 import interviewService from '../../services/interviewService';
-import { useAuth } from '../../context/AuthContext';
-
+import { Logger } from '../src/utils/logger';import { useAuth } from '../../context/AuthContext';
+import { Logger } from '../src/utils/logger';
 interface FamilyInterviewsProps {
   className?: string;
 }
@@ -54,7 +54,7 @@ const FamilyInterviews: React.FC<FamilyInterviewsProps> = ({ className = '' }) =
       const familyInterviews = await interviewService.getInterviewsByApplication(user.applicationId);
       setInterviews(familyInterviews);
     } catch (error) {
-      console.error('Error cargando entrevistas familiares:', error);
+      Logger.error('Error cargando entrevistas familiares:', error);
       setError('Error al cargar las entrevistas');
     } finally {
       setIsLoading(false);

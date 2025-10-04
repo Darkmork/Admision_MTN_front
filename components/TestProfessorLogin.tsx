@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { professorAuthService } from '../services/professorAuthService';
-
+import { Logger } from '../src/utils/logger';import { professorAuthService } from '../services/professorAuthService';
+import { Logger } from '../src/utils/logger';
 const TestProfessorLogin: React.FC = () => {
     const [email, setEmail] = useState('alejandra.flores@mtn.cl');
     const [password, setPassword] = useState('12345678');
@@ -12,15 +12,15 @@ const TestProfessorLogin: React.FC = () => {
         setResult('');
 
         try {
-            console.log('🧪 Probando login con:', { email, password });
+            Logger.info('🧪 Probando login con:', { email, password });
             
             const response = await professorAuthService.login({ email, password });
             
-            console.log('✅ Respuesta del login:', response);
+            Logger.info('✅ Respuesta del login:', response);
             setResult(`✅ Login exitoso: ${JSON.stringify(response, null, 2)}`);
             
         } catch (error: any) {
-            console.error('❌ Error en login:', error);
+            Logger.error('❌ Error en login:', error);
             setResult(`❌ Error: ${error.message}`);
         } finally {
             setIsLoading(false);
@@ -32,16 +32,16 @@ const TestProfessorLogin: React.FC = () => {
         setResult('');
 
         try {
-            console.log('🧪 Probando conexión al backend...');
+            Logger.info('🧪 Probando conexión al backend...');
             
             const response = await fetch('http://localhost:8080/api/auth/check-email?email=alejandra.flores@mtn.cl');
             const data = await response.text();
             
-            console.log('✅ Respuesta del backend:', data);
+            Logger.info('✅ Respuesta del backend:', data);
             setResult(`✅ Backend responde: ${data}`);
             
         } catch (error: any) {
-            console.error('❌ Error conectando al backend:', error);
+            Logger.error('❌ Error conectando al backend:', error);
             setResult(`❌ Error de conexión: ${error.message}`);
         } finally {
             setIsLoading(false);

@@ -1,6 +1,6 @@
 import api from './api';
-import {
-  EmailVerificationRequest,
+import { Logger } from '../src/utils/logger';import {
+import { Logger } from '../src/utils/logger';  EmailVerificationRequest,
   EmailVerificationResponse,
   VerifyCodeRequest,
   VerifyCodeResponse,
@@ -19,15 +19,15 @@ class EmailVerificationService {
    */
   async sendVerificationCode(request: EmailVerificationRequest): Promise<EmailVerificationResponse> {
     try {
-      console.log('📧 Enviando código de verificación:', request);
+      Logger.info('📧 Enviando código de verificación:', request);
 
       const response = await api.post('/api/email/send-verification', request);
       
-      console.log('✅ Código enviado exitosamente');
+      Logger.info('✅ Código enviado exitosamente');
       return response.data;
 
     } catch (error: any) {
-      console.error('❌ Error enviando código de verificación:', error);
+      Logger.error('❌ Error enviando código de verificación:', error);
       
       const errorMessage = error.response?.data?.message || 
                           error.message || 
@@ -45,15 +45,15 @@ class EmailVerificationService {
    */
   async verifyCode(request: VerifyCodeRequest): Promise<VerifyCodeResponse> {
     try {
-      console.log('🔍 Verificando código:', { email: request.email, code: '***' });
+      Logger.info('🔍 Verificando código:', { email: request.email, code: '***' });
 
       const response = await api.post('/api/email/verify-code', request);
       
-      console.log('✅ Código verificado exitosamente');
+      Logger.info('✅ Código verificado exitosamente');
       return response.data;
 
     } catch (error: any) {
-      console.error('❌ Error verificando código:', error);
+      Logger.error('❌ Error verificando código:', error);
       
       const errorMessage = error.response?.data?.message || 
                           error.message || 
@@ -72,7 +72,7 @@ class EmailVerificationService {
    */
   async checkEmailExists(email: string): Promise<any> {
     try {
-      console.log('🔎 Verificando si email existe:', email);
+      Logger.info('🔎 Verificando si email existe:', email);
 
       const response = await api.get('/api/email/check-exists', {
         params: { email }
@@ -81,7 +81,7 @@ class EmailVerificationService {
       return response.data;
 
     } catch (error: any) {
-      console.error('❌ Error verificando email (backend may be down):', error);
+      Logger.error('❌ Error verificando email (backend may be down):', error);
       // Return null to indicate check failed rather than false
       return null;
     }
@@ -92,7 +92,7 @@ class EmailVerificationService {
    */
   async checkRutExists(rut: string): Promise<any> {
     try {
-      console.log('🔎 Verificando si RUT existe:', rut);
+      Logger.info('🔎 Verificando si RUT existe:', rut);
 
       const response = await api.get('/api/users/check-rut', {
         params: { rut }
@@ -101,7 +101,7 @@ class EmailVerificationService {
       return response.data;
 
     } catch (error: any) {
-      console.error('❌ Error verificando RUT (backend may be down):', error);
+      Logger.error('❌ Error verificando RUT (backend may be down):', error);
       // Return null to indicate check failed rather than false
       return null;
     }
@@ -112,7 +112,7 @@ class EmailVerificationService {
    */
   async getLastCodeForDevelopment(email: string): Promise<string | null> {
     try {
-      console.warn('🚧 Obteniendo código para desarrollo:', email);
+      Logger.warn('🚧 Obteniendo código para desarrollo:', email);
 
       const response = await api.get('/api/email/get-last-code', {
         params: { email }
@@ -125,7 +125,7 @@ class EmailVerificationService {
       return codeMatch ? codeMatch[1] : null;
 
     } catch (error: any) {
-      console.error('❌ Error obteniendo código para desarrollo:', error);
+      Logger.error('❌ Error obteniendo código para desarrollo:', error);
       return null;
     }
   }
@@ -302,7 +302,7 @@ class EmailVerificationService {
    * Simular envío de código (para desarrollo sin backend)
    */
   async mockSendVerificationCode(request: EmailVerificationRequest): Promise<EmailVerificationResponse> {
-    console.log('🎭 Mock: Simulando envío de código', request);
+    Logger.info('🎭 Mock: Simulando envío de código', request);
     
     // Simular delay de red
     await new Promise(resolve => setTimeout(resolve, 1000));
@@ -326,7 +326,7 @@ class EmailVerificationService {
    * Simular verificación de código (para desarrollo sin backend)
    */
   async mockVerifyCode(request: VerifyCodeRequest): Promise<VerifyCodeResponse> {
-    console.log('🎭 Mock: Simulando verificación de código', { 
+    Logger.info('🎭 Mock: Simulando verificación de código', { 
       email: request.email, 
       code: '***' 
     });

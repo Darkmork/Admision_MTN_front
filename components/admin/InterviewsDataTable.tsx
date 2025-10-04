@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import Card from '../ui/Card';
-import Button from '../ui/Button';
-import Modal from '../ui/Modal';
-import LoadingSpinner from '../ui/LoadingSpinner';
-import AdvancedPagination from '../ui/AdvancedPagination';
-import { useNotifications } from '../../context/AppContext';
-import InterviewTable from '../interviews/InterviewTable';
-import InterviewForm from '../interviews/InterviewForm';
-import InterviewStatsPanel from '../interviews/InterviewStatsPanel';
-import { FiPlus, FiDownload, FiFilter, FiRefreshCw, FiCalendar, FiUsers, FiBarChart } from 'react-icons/fi';
-import {
-  Interview,
+import { Logger } from '../src/utils/logger';import Card from '../ui/Card';
+import { Logger } from '../src/utils/logger';import Button from '../ui/Button';
+import { Logger } from '../src/utils/logger';import Modal from '../ui/Modal';
+import { Logger } from '../src/utils/logger';import LoadingSpinner from '../ui/LoadingSpinner';
+import { Logger } from '../src/utils/logger';import AdvancedPagination from '../ui/AdvancedPagination';
+import { Logger } from '../src/utils/logger';import { useNotifications } from '../../context/AppContext';
+import { Logger } from '../src/utils/logger';import InterviewTable from '../interviews/InterviewTable';
+import { Logger } from '../src/utils/logger';import InterviewForm from '../interviews/InterviewForm';
+import { Logger } from '../src/utils/logger';import InterviewStatsPanel from '../interviews/InterviewStatsPanel';
+import { Logger } from '../src/utils/logger';import { FiPlus, FiDownload, FiFilter, FiRefreshCw, FiCalendar, FiUsers, FiBarChart } from 'react-icons/fi';
+import { Logger } from '../src/utils/logger';import {
+import { Logger } from '../src/utils/logger';  Interview,
   InterviewStatus,
   InterviewType,
   InterviewMode,
@@ -25,7 +25,7 @@ import {
   INTERVIEW_MODE_LABELS
 } from '../../types/interview';
 import interviewService from '../../services/interviewService';
-
+import { Logger } from '../src/utils/logger';
 interface InterviewsDataTableProps {
   className?: string;
 }
@@ -107,7 +107,7 @@ const InterviewsDataTable: React.FC<InterviewsDataTableProps> = ({ className = '
       setTotalElements(result.totalElements);
       setTotalPages(result.totalPages);
     } catch (error) {
-      console.error('Error loading interviews:', error);
+      Logger.error('Error loading interviews:', error);
       setError('Error al cargar las entrevistas');
       addNotification({
         type: 'error',
@@ -124,7 +124,7 @@ const InterviewsDataTable: React.FC<InterviewsDataTableProps> = ({ className = '
       const statistics = await interviewService.getInterviewStatistics();
       setStats(statistics);
     } catch (error) {
-      console.error('Error loading interview stats:', error);
+      Logger.error('Error loading interview stats:', error);
     }
   };
 
@@ -144,7 +144,7 @@ const InterviewsDataTable: React.FC<InterviewsDataTableProps> = ({ className = '
       setShowCreateModal(false);
       await refreshData();
     } catch (error) {
-      console.error('Error creating interview:', error);
+      Logger.error('Error creating interview:', error);
       addNotification({ type: 'error', title: 'Error', message: 'Error al crear la entrevista' });
     } finally {
       setIsSubmitting(false);
@@ -162,7 +162,7 @@ const InterviewsDataTable: React.FC<InterviewsDataTableProps> = ({ className = '
       setSelectedInterview(null);
       await refreshData();
     } catch (error) {
-      console.error('Error updating interview:', error);
+      Logger.error('Error updating interview:', error);
       addNotification({ type: 'error', title: 'Error', message: 'Error al actualizar la entrevista' });
     } finally {
       setIsSubmitting(false);
@@ -180,7 +180,7 @@ const InterviewsDataTable: React.FC<InterviewsDataTableProps> = ({ className = '
       setSelectedInterview(null);
       await refreshData();
     } catch (error) {
-      console.error('Error completing interview:', error);
+      Logger.error('Error completing interview:', error);
       addNotification({ type: 'error', title: 'Error', message: 'Error al completar la entrevista' });
     } finally {
       setIsSubmitting(false);
@@ -213,7 +213,7 @@ const InterviewsDataTable: React.FC<InterviewsDataTableProps> = ({ className = '
         addNotification({ type: 'success', title: 'Éxito', message: 'Entrevista cancelada exitosamente' });
         await refreshData();
       } catch (error) {
-        console.error('Error cancelling interview:', error);
+        Logger.error('Error cancelling interview:', error);
         addNotification({ type: 'error', title: 'Error', message: 'Error al cancelar la entrevista' });
       }
     }
@@ -232,7 +232,7 @@ const InterviewsDataTable: React.FC<InterviewsDataTableProps> = ({ className = '
       await interviewService.sendNotification(interview.id, type);
       addNotification({ type: 'success', title: 'Éxito', message: 'Notificación enviada exitosamente' });
     } catch (error) {
-      console.error('Error sending notification:', error);
+      Logger.error('Error sending notification:', error);
       addNotification({ type: 'error', title: 'Error', message: 'Error al enviar la notificación' });
     }
   };
@@ -242,7 +242,7 @@ const InterviewsDataTable: React.FC<InterviewsDataTableProps> = ({ className = '
       await interviewService.sendReminder(interview.id);
       addNotification({ type: 'success', title: 'Éxito', message: 'Recordatorio enviado exitosamente' });
     } catch (error) {
-      console.error('Error sending reminder:', error);
+      Logger.error('Error sending reminder:', error);
       addNotification({ type: 'error', title: 'Error', message: 'Error al enviar el recordatorio' });
     }
   };
@@ -271,7 +271,7 @@ const InterviewsDataTable: React.FC<InterviewsDataTableProps> = ({ className = '
       // TODO: Implementar exportación de datos
       addNotification({ type: 'info', title: 'Información', message: 'Funcionalidad de exportación próximamente' });
     } catch (error) {
-      console.error('Error exporting data:', error);
+      Logger.error('Error exporting data:', error);
       addNotification({ type: 'error', title: 'Error', message: 'Error al exportar los datos' });
     }
   };

@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import Card from '../ui/Card';
-import Button from '../ui/Button';
-import Badge from '../ui/Badge';
-import Modal from '../ui/Modal';
-import LoadingSpinner from '../ui/LoadingSpinner';
-import SimpleToast from '../ui/SimpleToast';
-import {
-  CalendarIcon,
+import { Logger } from '../src/utils/logger';import Card from '../ui/Card';
+import { Logger } from '../src/utils/logger';import Button from '../ui/Button';
+import { Logger } from '../src/utils/logger';import Badge from '../ui/Badge';
+import { Logger } from '../src/utils/logger';import Modal from '../ui/Modal';
+import { Logger } from '../src/utils/logger';import LoadingSpinner from '../ui/LoadingSpinner';
+import { Logger } from '../src/utils/logger';import SimpleToast from '../ui/SimpleToast';
+import { Logger } from '../src/utils/logger';import {
+import { Logger } from '../src/utils/logger';  CalendarIcon,
   ClockIcon,
   UserIcon,
   CheckCircleIcon,
@@ -18,8 +18,8 @@ import {
   EditIcon
 } from '../icons/Icons';
 import { FiCalendar, FiClock, FiUser, FiVideo, FiMapPin, FiPhone, FiMail, FiFilter, FiSearch, FiEye, FiEdit, FiCheck, FiX, FiRefreshCw, FiArrowLeft } from 'react-icons/fi';
-import {
-  Interview,
+import { Logger } from '../src/utils/logger';import {
+import { Logger } from '../src/utils/logger';  Interview,
   InterviewStatus,
   InterviewType,
   InterviewMode,
@@ -37,16 +37,16 @@ import {
   InterviewUtils
 } from '../../types/interview';
 import InterviewTable from './InterviewTable';
-import InterviewForm from './InterviewForm';
-import InterviewCalendar from './InterviewCalendar';
-import InterviewStatsPanel from './InterviewStatsPanel';
-import InterviewStatusPanel from './InterviewStatusPanel';
-import InterviewOverview from './InterviewOverview';
-// Removed excessive imports for simplification
+import { Logger } from '../src/utils/logger';import InterviewForm from './InterviewForm';
+import { Logger } from '../src/utils/logger';import InterviewCalendar from './InterviewCalendar';
+import { Logger } from '../src/utils/logger';import InterviewStatsPanel from './InterviewStatsPanel';
+import { Logger } from '../src/utils/logger';import InterviewStatusPanel from './InterviewStatusPanel';
+import { Logger } from '../src/utils/logger';import InterviewOverview from './InterviewOverview';
+import { Logger } from '../src/utils/logger';// Removed excessive imports for simplification
 import interviewService from '../../services/interviewService';
-import { emailTemplateService, EmailTemplate } from '../../services/emailTemplateService';
-import { applicationService } from '../../services/applicationService';
-// Removed non-essential service imports
+import { Logger } from '../src/utils/logger';import { emailTemplateService, EmailTemplate } from '../../services/emailTemplateService';
+import { Logger } from '../src/utils/logger';import { applicationService } from '../../services/applicationService';
+import { Logger } from '../src/utils/logger';// Removed non-essential service imports
 
 interface InterviewManagementProps {
   className?: string;
@@ -106,13 +106,13 @@ const InterviewManagement: React.FC<InterviewManagementProps> = ({ className = '
 
   const loadInterviews = async () => {
     try {
-      console.log('🔄 InterviewManagement: Iniciando carga de entrevistas...');
+      Logger.info('🔄 InterviewManagement: Iniciando carga de entrevistas...');
       setIsLoading(true);
       setError(null);
 
       // Usar servicio real con filtros
       if (filters.status || filters.type || filters.mode || filters.dateFrom || filters.dateTo) {
-        console.log('🔍 InterviewManagement: Cargando con filtros:', filters);
+        Logger.info('🔍 InterviewManagement: Cargando con filtros:', filters);
         const response = await interviewService.getInterviewsWithFilters(
           {
             status: filters.status,
@@ -127,10 +127,10 @@ const InterviewManagement: React.FC<InterviewManagementProps> = ({ className = '
           'scheduledDate',
           'desc'
         );
-        console.log('✅ InterviewManagement: Entrevistas con filtros cargadas:', response.interviews.length);
+        Logger.info('✅ InterviewManagement: Entrevistas con filtros cargadas:', response.interviews.length);
         setInterviews(response.interviews);
       } else {
-        console.log('📋 InterviewManagement: Cargando todas las entrevistas sin filtros');
+        Logger.info('📋 InterviewManagement: Cargando todas las entrevistas sin filtros');
         // Cargar todas las entrevistas sin filtros
         const response = await interviewService.getAllInterviews(
           filters.page || 0,
@@ -138,13 +138,13 @@ const InterviewManagement: React.FC<InterviewManagementProps> = ({ className = '
           'scheduledDate',
           'desc'
         );
-        console.log('✅ InterviewManagement: Todas las entrevistas cargadas:', response.interviews.length);
-        console.log('📋 InterviewManagement: Primeras 3 entrevistas:', response.interviews.slice(0, 3));
+        Logger.info('✅ InterviewManagement: Todas las entrevistas cargadas:', response.interviews.length);
+        Logger.info('📋 InterviewManagement: Primeras 3 entrevistas:', response.interviews.slice(0, 3));
         setInterviews(response.interviews);
       }
 
     } catch (err: any) {
-      console.error('❌ InterviewManagement: Error al cargar las entrevistas:', err);
+      Logger.error('❌ InterviewManagement: Error al cargar las entrevistas:', err);
       setError(err.message || 'Error al cargar las entrevistas');
       showToast('Error al cargar las entrevistas', 'error');
     } finally {
@@ -161,7 +161,7 @@ const InterviewManagement: React.FC<InterviewManagementProps> = ({ className = '
       setStats(statsData);
       
     } catch (err: any) {
-      console.error('Error loading stats:', err);
+      Logger.error('Error loading stats:', err);
       // Si hay error, no mostrar estadísticas pero no fallar la carga
       setStats(null);
     } finally {
@@ -267,7 +267,7 @@ const InterviewManagement: React.FC<InterviewManagementProps> = ({ className = '
       setRefreshKey(prev => prev + 1);
       
     } catch (err: any) {
-      console.error('Error procesando entrevista:', err);
+      Logger.error('Error procesando entrevista:', err);
       showToast(err.message || 'Error al procesar la entrevista', 'error');
     } finally {
       setIsSubmitting(false);
@@ -282,7 +282,7 @@ const InterviewManagement: React.FC<InterviewManagementProps> = ({ className = '
       await loadStats();
       setRefreshKey(prev => prev + 1); // Sincronizar todas las vistas
     } catch (err: any) {
-      console.error('Error cancelando entrevista:', err);
+      Logger.error('Error cancelando entrevista:', err);
       showToast(err.message || 'Error al cancelar la entrevista', 'error');
     }
   };
@@ -650,11 +650,11 @@ const StudentListView: React.FC<StudentListViewProps> = ({ onStudentSelect }) =>
   const loadApplications = async () => {
     try {
       setIsLoading(true);
-      console.log('📋 Cargando aplicaciones para vista de estudiantes...');
+      Logger.info('📋 Cargando aplicaciones para vista de estudiantes...');
 
       // Usar el servicio de aplicaciones real
       const response = await applicationService.getAllApplications();
-      console.log('📋 Aplicaciones obtenidas:', response);
+      Logger.info('📋 Aplicaciones obtenidas:', response);
 
       // Filtrar solo aplicaciones con datos de estudiante válidos
       const validApplications = response.filter(app =>
@@ -677,11 +677,11 @@ const StudentListView: React.FC<StudentListViewProps> = ({ onStudentSelect }) =>
         status: app.status || 'PENDING'
       }));
 
-      console.log('📋 Aplicaciones mapeadas:', mappedApplications);
+      Logger.info('📋 Aplicaciones mapeadas:', mappedApplications);
       setApplications(mappedApplications);
 
     } catch (error) {
-      console.error('❌ Error cargando aplicaciones:', error);
+      Logger.error('❌ Error cargando aplicaciones:', error);
       // Solo usar mock si realmente falla todo (mezclando IDs con y sin entrevistas)
       setApplications([
         // Estudiantes CON entrevistas (según DB)
@@ -766,32 +766,32 @@ const StudentDetailView: React.FC<StudentDetailViewProps> = ({
 
   const loadStudentInterviews = async () => {
     try {
-      console.log(`🔄 StudentDetailView: Cargando entrevistas para aplicación ${applicationId}...`);
+      Logger.info(`🔄 StudentDetailView: Cargando entrevistas para aplicación ${applicationId}...`);
       setIsLoading(true);
 
       // Debug: Probar conexión directa al endpoint
-      console.log('🧪 Debug: Probando conexión directa al endpoint...');
+      Logger.info('🧪 Debug: Probando conexión directa al endpoint...');
       try {
         const directResponse = await fetch('http://localhost:8080/api/interviews');
         const directData = await directResponse.json();
-        console.log('🧪 Debug: Respuesta directa del endpoint:', directData);
+        Logger.info('🧪 Debug: Respuesta directa del endpoint:', directData);
 
         if (directData.success && directData.data) {
           const filtered = directData.data.filter((interview: any) =>
             parseInt(interview.applicationId) === applicationId
           );
-          console.log(`🧪 Debug: Entrevistas filtradas para app ${applicationId}:`, filtered);
+          Logger.info(`🧪 Debug: Entrevistas filtradas para app ${applicationId}:`, filtered);
         }
       } catch (directError) {
-        console.error('🧪 Debug: Error en conexión directa:', directError);
+        Logger.error('🧪 Debug: Error en conexión directa:', directError);
       }
 
       // Usar el servicio normal
       const response = await interviewService.getInterviewsByApplication(applicationId);
-      console.log(`✅ StudentDetailView: Entrevistas obtenidas para aplicación ${applicationId}:`, response);
+      Logger.info(`✅ StudentDetailView: Entrevistas obtenidas para aplicación ${applicationId}:`, response);
       setStudentInterviews(response.interviews || []);
     } catch (error) {
-      console.error(`❌ StudentDetailView: Error loading student interviews for ${applicationId}:`, error);
+      Logger.error(`❌ StudentDetailView: Error loading student interviews for ${applicationId}:`, error);
       setStudentInterviews([]);
     } finally {
       setIsLoading(false);
@@ -807,13 +807,13 @@ const StudentDetailView: React.FC<StudentDetailViewProps> = ({
   ];
 
   const getInterviewForType = (type: string) => {
-    console.log(`🔍 StudentDetailView: Buscando entrevista tipo "${type}" para aplicación ${applicationId}`);
-    console.log(`📋 StudentDetailView: Entrevistas disponibles:`, studentInterviews.map(i => ({id: i.id, type: i.type, status: i.status, interviewer: i.interviewerName, date: i.scheduledDate})));
+    Logger.info(`🔍 StudentDetailView: Buscando entrevista tipo "${type}" para aplicación ${applicationId}`);
+    Logger.info(`📋 StudentDetailView: Entrevistas disponibles:`, studentInterviews.map(i => ({id: i.id, type: i.type, status: i.status, interviewer: i.interviewerName, date: i.scheduledDate})));
 
     // SOLO buscar por tipo exacto - NO crear entrevistas falsas
     const found = studentInterviews.find(interview => interview.type === type);
 
-    console.log(`${found ? '✅' : '❌'} StudentDetailView: Entrevista tipo "${type}" ${found ? 'encontrada: ' + found.id : 'no encontrada'}`);
+    Logger.info(`${found ? '✅' : '❌'} StudentDetailView: Entrevista tipo "${type}" ${found ? 'encontrada: ' + found.id : 'no encontrada'}`);
 
     return found;
   };

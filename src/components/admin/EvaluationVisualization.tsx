@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import {
-    FiEye,
+import { Logger } from '@/utils/logger';import {
+import { Logger } from '@/utils/logger';    FiEye,
     FiDownload,
     FiFilter,
     FiRefreshCw,
@@ -14,11 +14,11 @@ import {
     FiStar
 } from 'react-icons/fi';
 import Card from '../../../components/ui/Card';
-import Button from '../../../components/ui/Button';
-import Badge from '../../../components/ui/Badge';
-import { evaluationService } from '../../../services/evaluationService';
-import { Evaluation } from '../../../types/evaluation';
-
+import { Logger } from '@/utils/logger';import Button from '../../../components/ui/Button';
+import { Logger } from '@/utils/logger';import Badge from '../../../components/ui/Badge';
+import { Logger } from '@/utils/logger';import { evaluationService } from '../../../services/evaluationService';
+import { Logger } from '@/utils/logger';import { Evaluation } from '../../../types/evaluation';
+import { Logger } from '@/utils/logger';
 interface EvaluationVisualizationProps {
     className?: string;
 }
@@ -52,7 +52,7 @@ const EvaluationVisualization: React.FC<EvaluationVisualizationProps> = ({ class
             const data = await evaluationService.getAllEvaluations();
             setEvaluations(data);
         } catch (err: any) {
-            console.error('Error loading evaluations:', err);
+            Logger.error('Error loading evaluations:', err);
             setError(err.message || 'Error al cargar las evaluaciones');
         } finally {
             setIsLoading(false);

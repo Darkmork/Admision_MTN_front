@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
-import { emailVerificationService, EmailVerificationResponse, VerifyCodeResponse } from '../services/emailVerificationService';
-
+import { Logger } from '../src/utils/logger';import { emailVerificationService, EmailVerificationResponse, VerifyCodeResponse } from '../services/emailVerificationService';
+import { Logger } from '../src/utils/logger';
 export interface EmailVerificationState {
     isLoading: boolean;
     verificationSent: boolean;
@@ -46,7 +46,7 @@ export const useEmailVerification = () => {
                 if (emailCheckError.message?.includes('cuenta') || emailCheckError.message?.includes('correo')) {
                     throw emailCheckError;
                 }
-                console.warn('Could not check email existence, continuing...', emailCheckError);
+                Logger.warn('Could not check email existence, continuing...', emailCheckError);
                 // Continue even if check fails - maybe backend is down
             }
 
@@ -62,7 +62,7 @@ export const useEmailVerification = () => {
                     if (rutCheckError.message?.includes('cuenta') || rutCheckError.message?.includes('RUT')) {
                         throw rutCheckError;
                     }
-                    console.warn('Could not check RUT existence, continuing...', rutCheckError);
+                    Logger.warn('Could not check RUT existence, continuing...', rutCheckError);
                     // Continue even if check fails - maybe backend is down
                 }
             }

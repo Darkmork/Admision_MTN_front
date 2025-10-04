@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import Card from '../components/ui/Card';
-import Button from '../components/ui/Button';
-import Badge from '../components/ui/Badge';
-import Table from '../components/ui/Table';
-import { 
-    DashboardIcon, 
+import { Logger } from '../src/utils/logger';import Card from '../components/ui/Card';
+import { Logger } from '../src/utils/logger';import Button from '../components/ui/Button';
+import { Logger } from '../src/utils/logger';import Badge from '../components/ui/Badge';
+import { Logger } from '../src/utils/logger';import Table from '../components/ui/Table';
+import { Logger } from '../src/utils/logger';import { 
+import { Logger } from '../src/utils/logger';    DashboardIcon, 
     FileTextIcon, 
     UsersIcon, 
     BookOpenIcon,
@@ -13,19 +13,19 @@ import {
     BarChartIcon
 } from '../components/icons/Icons';
 import { 
-    mockProfessors, 
+import { Logger } from '../src/utils/logger';    mockProfessors, 
     getPendingExamsByProfessor, 
     getProfessorStats,
     mockStudentExams,
     mockStudentProfiles
 } from '../services/staticData';
 import { ExamStatus, StudentExam, StudentProfile } from '../types';
-import { Link, useNavigate } from 'react-router-dom';
-import { professorEvaluationService, ProfessorEvaluation, ProfessorEvaluationStats } from '../services/professorEvaluationService';
-import { professorAuthService } from '../services/professorAuthService';
-import { EvaluationStatus, EvaluationType } from '../types/evaluation';
-import { FiRefreshCw, FiBarChart2 } from 'react-icons/fi';
-
+import { Logger } from '../src/utils/logger';import { Link, useNavigate } from 'react-router-dom';
+import { Logger } from '../src/utils/logger';import { professorEvaluationService, ProfessorEvaluation, ProfessorEvaluationStats } from '../services/professorEvaluationService';
+import { Logger } from '../src/utils/logger';import { professorAuthService } from '../services/professorAuthService';
+import { Logger } from '../src/utils/logger';import { EvaluationStatus, EvaluationType } from '../types/evaluation';
+import { Logger } from '../src/utils/logger';import { FiRefreshCw, FiBarChart2 } from 'react-icons/fi';
+import { Logger } from '../src/utils/logger';
 const baseSections = [
     { key: 'dashboard', label: 'Dashboard General', icon: DashboardIcon },
     { key: 'evaluaciones', label: 'Evaluaciones Pendientes', icon: ClockIcon },
@@ -38,15 +38,15 @@ const ProfessorDashboard: React.FC = () => {
     const [activeSection, setActiveSection] = useState('evaluaciones'); // Cambiado de 'dashboard' a 'evaluaciones'
     const navigate = useNavigate();
     
-    console.log('🚀 ProfessorDashboard renderizándose...');
-    console.log('📋 activeSection inicial:', activeSection);
+    Logger.info('🚀 ProfessorDashboard renderizándose...');
+    Logger.info('📋 activeSection inicial:', activeSection);
     
     // Obtener profesor actual del localStorage
     const [currentProfessor, setCurrentProfessor] = useState(() => {
         const storedProfessor = localStorage.getItem('currentProfessor');
-        console.log('🔍 localStorage.getItem("currentProfessor"):', storedProfessor);
+        Logger.info('🔍 localStorage.getItem("currentProfessor"):', storedProfessor);
         const parsed = storedProfessor ? JSON.parse(storedProfessor) : null;
-        console.log('🔍 currentProfessor parseado:', parsed);
+        Logger.info('🔍 currentProfessor parseado:', parsed);
         return parsed;
     });
 
@@ -71,9 +71,9 @@ const ProfessorDashboard: React.FC = () => {
     useEffect(() => {
         const updateProfessorData = async () => {
             try {
-                console.log('🔄 Llamando a getCurrentProfessor()...');
+                Logger.info('🔄 Llamando a getCurrentProfessor()...');
                 const professorData = await professorAuthService.getCurrentProfessor();
-                console.log('📦 Datos recibidos del backend:', professorData);
+                Logger.info('📦 Datos recibidos del backend:', professorData);
 
                 if (professorData) {
                     // Actualizar localStorage con los datos frescos del backend
@@ -88,13 +88,13 @@ const ProfessorDashboard: React.FC = () => {
                     };
                     localStorage.setItem('currentProfessor', JSON.stringify(updatedProfessor));
                     setCurrentProfessor(updatedProfessor);
-                    console.log('✅ Datos del profesor actualizados desde backend:', updatedProfessor);
-                    console.log('✅ Subject guardado:', updatedProfessor.subject);
+                    Logger.info('✅ Datos del profesor actualizados desde backend:', updatedProfessor);
+                    Logger.info('✅ Subject guardado:', updatedProfessor.subject);
                 } else {
-                    console.warn('⚠️ getCurrentProfessor() retornó null');
+                    Logger.warn('⚠️ getCurrentProfessor() retornó null');
                 }
             } catch (error) {
-                console.error('❌ Error actualizando datos del profesor:', error);
+                Logger.error('❌ Error actualizando datos del profesor:', error);
             }
         };
 
@@ -102,36 +102,36 @@ const ProfessorDashboard: React.FC = () => {
     }, []); // Solo al montar el componente
 
     useEffect(() => {
-        console.log('🔄 useEffect ejecutándose...');
-        console.log('👤 currentProfessor:', currentProfessor);
+        Logger.info('🔄 useEffect ejecutándose...');
+        Logger.info('👤 currentProfessor:', currentProfessor);
 
         const loadEvaluations = async () => {
             if (!currentProfessor) {
-                console.log('❌ No hay currentProfessor, saltando loadEvaluations');
+                Logger.info('❌ No hay currentProfessor, saltando loadEvaluations');
                 return;
             }
 
             try {
                 setIsLoading(true);
-                console.log('🔄 Cargando evaluaciones del profesor...');
-                console.log('🆔 ID del profesor:', currentProfessor.id);
+                Logger.info('🔄 Cargando evaluaciones del profesor...');
+                Logger.info('🆔 ID del profesor:', currentProfessor.id);
 
                 const [evaluationsData, statsData] = await Promise.all([
                     professorEvaluationService.getMyEvaluations(),
                     professorEvaluationService.getMyEvaluationStats()
                 ]);
 
-                console.log('✅ Evaluaciones obtenidas del servicio:', evaluationsData);
-                console.log('📊 Stats obtenidos del servicio:', statsData);
+                Logger.info('✅ Evaluaciones obtenidas del servicio:', evaluationsData);
+                Logger.info('📊 Stats obtenidos del servicio:', statsData);
 
                 setEvaluations(evaluationsData);
                 setEvaluationStats(statsData);
 
-                console.log('✅ Estado actualizado - evaluations:', evaluationsData.length);
-                console.log('✅ Estado actualizado - evaluationStats:', statsData);
+                Logger.info('✅ Estado actualizado - evaluations:', evaluationsData.length);
+                Logger.info('✅ Estado actualizado - evaluationStats:', statsData);
 
             } catch (error: any) {
-                console.error('❌ Error cargando evaluaciones:', error);
+                Logger.error('❌ Error cargando evaluaciones:', error);
 
                 // Si no hay evaluaciones asignadas, mostrar estado vacío
                 if (error.message.includes('No se encontraron evaluaciones')) {
@@ -145,11 +145,11 @@ const ProfessorDashboard: React.FC = () => {
                     });
                 } else {
                     // Para otros errores, mostrar notificación
-                    console.error('Error específico:', error.message);
+                    Logger.error('Error específico:', error.message);
                 }
             } finally {
                 setIsLoading(false);
-                console.log('✅ Loading completado');
+                Logger.info('✅ Loading completado');
             }
         };
 
@@ -376,7 +376,7 @@ const ProfessorDashboard: React.FC = () => {
                 <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">
                     Mis Evaluaciones Asignadas ({evaluations.length})
                 </h2>
-                {(() => { console.log('🔄 Renderizando evaluaciones - isLoading:', isLoading, 'evaluations:', evaluations); return null; })()}
+                {(() => { Logger.info('🔄 Renderizando evaluaciones - isLoading:', isLoading, 'evaluations:', evaluations); return null; })()}
                 {isLoading ? (
                     <div className="text-center py-8">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-azul-monte-tabor mx-auto"></div>
@@ -813,26 +813,26 @@ const ProfessorDashboard: React.FC = () => {
 
 
     const renderSection = () => {
-        console.log('🔄 renderSection ejecutándose...');
-        console.log('📋 activeSection:', activeSection);
-        console.log('📋 activeSection type:', typeof activeSection);
-        console.log('📋 activeSection === "evaluaciones":', activeSection === 'evaluaciones');
+        Logger.info('🔄 renderSection ejecutándose...');
+        Logger.info('📋 activeSection:', activeSection);
+        Logger.info('📋 activeSection type:', typeof activeSection);
+        Logger.info('📋 activeSection === "evaluaciones":', activeSection === 'evaluaciones');
         
         switch (activeSection) {
             case 'dashboard':
-                console.log('🏠 Renderizando dashboard');
+                Logger.info('🏠 Renderizando dashboard');
                 return renderDashboard();
             case 'evaluaciones':
-                console.log('📋 Renderizando evaluaciones');
+                Logger.info('📋 Renderizando evaluaciones');
                 return renderEvaluaciones();
             case 'estudiantes':
-                console.log('👥 Renderizando estudiantes');
+                Logger.info('👥 Renderizando estudiantes');
                 return renderEstudiantes();
             case 'reportes':
-                console.log('📊 Renderizando reportes');
+                Logger.info('📊 Renderizando reportes');
                 return renderReportesEstadisticas();
             case 'configuracion':
-                console.log('⚙️ Renderizando configuración');
+                Logger.info('⚙️ Renderizando configuración');
                 return (
                     <Card className="p-6">
                         <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">Configuración</h2>
@@ -854,7 +854,7 @@ const ProfessorDashboard: React.FC = () => {
                     </Card>
                 );
             case 'admin':
-                console.log('👑 Renderizando admin');
+                Logger.info('👑 Renderizando admin');
                 return (
                     <Card className="p-6">
                         <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">Panel de Administrador</h2>
@@ -896,8 +896,8 @@ const ProfessorDashboard: React.FC = () => {
                     </Card>
                 );
             default:
-                console.log('⚠️ Caso default - activeSection no reconocido:', activeSection);
-                console.log('🔄 Redirigiendo a evaluaciones por defecto');
+                Logger.info('⚠️ Caso default - activeSection no reconocido:', activeSection);
+                Logger.info('🔄 Redirigiendo a evaluaciones por defecto');
                 return renderEvaluaciones();
         }
     };

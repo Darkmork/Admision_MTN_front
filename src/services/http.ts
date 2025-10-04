@@ -12,6 +12,7 @@
 
 import axios, { AxiosInstance, AxiosResponse, AxiosError } from 'axios';
 import axiosRetry from 'axios-retry';
+import { Logger } from '../utils/logger';
 
 class HttpClient {
   private axiosInstance: AxiosInstance;
@@ -44,7 +45,7 @@ class HttpClient {
         const baseDelay = Math.pow(2, retryCount - 1) * 1000;
         const jitter = 0.75 + Math.random() * 0.5; // 0.75 to 1.25
         const delay = Math.floor(baseDelay * jitter);
-        console.log(`[Retry] Attempt ${retryCount} - waiting ${delay}ms`);
+        Logger.debug(`Retry attempt ${retryCount} - waiting ${delay}ms`);
         return delay;
       },
       retryCondition: (error) => {
@@ -57,7 +58,7 @@ class HttpClient {
                          error.response?.data?.code === 'CIRCUIT_BREAKER_OPEN';
 
         if (isCBOpen) {
-          console.error('[Retry] Circuit breaker OPEN - aborting retries');
+          Logger.error('Circuit breaker OPEN - aborting retries');
           return false;
         }
 
@@ -68,9 +69,9 @@ class HttpClient {
         );
 
         if (isRetryable) {
-          console.warn(`[Retry] Retrying ${method} request due to: ${error.message}`);
+          Logger.warn(`Retrying ${method} request due to: ${error.message}`);
         } else if (!isIdempotent && error.response?.status >= 500) {
-          console.warn(`[Retry] NOT retrying ${method} (non-idempotent method)`);
+          Logger.warn(`NOT retrying ${method} (non-idempotent method)`);
         }
 
         return isRetryable;
@@ -178,7 +179,7 @@ class HttpClient {
       shouldResetTimeout: true,
     });
 
-    console.log('[HTTP Client] Retry configuration updated:', config);
+    Logger.debug('HTTP Client retry configuration updated:', config);
   }
 
   // Health check method

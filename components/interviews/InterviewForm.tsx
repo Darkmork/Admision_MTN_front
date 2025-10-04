@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import Button from '../ui/Button';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
-import LoadingSpinner from '../ui/LoadingSpinner';
-import DayScheduleSelector from '../DayScheduleSelector';
-import {
-  CalendarIcon,
+import { Logger } from '../src/utils/logger';import axios from 'axios';
+import { Logger } from '../src/utils/logger';import Button from '../ui/Button';
+import { Logger } from '../src/utils/logger';import Card from '../ui/Card';
+import { Logger } from '../src/utils/logger';import Badge from '../ui/Badge';
+import { Logger } from '../src/utils/logger';import LoadingSpinner from '../ui/LoadingSpinner';
+import { Logger } from '../src/utils/logger';import DayScheduleSelector from '../DayScheduleSelector';
+import { Logger } from '../src/utils/logger';import {
+import { Logger } from '../src/utils/logger';  CalendarIcon,
   ClockIcon,
   UserIcon,
   CheckCircleIcon,
@@ -15,7 +15,7 @@ import {
   VideoIcon
 } from '../icons/Icons';
 import { 
-  FiCalendar, 
+import { Logger } from '../src/utils/logger';  FiCalendar, 
   FiClock, 
   FiUser, 
   FiMapPin, 
@@ -28,7 +28,7 @@ import {
   FiStar
 } from 'react-icons/fi';
 import {
-  Interview,
+import { Logger } from '../src/utils/logger';  Interview,
   InterviewFormProps,
   InterviewFormMode,
   InterviewStatus,
@@ -47,9 +47,9 @@ import {
   INTERVIEW_CONFIG
 } from '../../types/interview';
 import { applicationService } from '../../services/applicationService';
-import interviewService from '../../services/interviewService';
-import InterviewerAvailability from './InterviewerAvailability';
-
+import { Logger } from '../src/utils/logger';import interviewService from '../../services/interviewService';
+import { Logger } from '../src/utils/logger';import InterviewerAvailability from './InterviewerAvailability';
+import { Logger } from '../src/utils/logger';
 // Interface para entrevistadores del backend
 interface BackendInterviewer {
   id: number;
@@ -110,9 +110,9 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
       setInterviewersError(null);
       
       try {
-        console.log('🔍 Cargando entrevistadores desde API...');
+        Logger.info('🔍 Cargando entrevistadores desde API...');
         const response = await axios.get('http://localhost:8080/api/interviews/public/interviewers');
-        console.log('✅ Entrevistadores obtenidos:', response.data);
+        Logger.info('✅ Entrevistadores obtenidos:', response.data);
         
         // Mapear los datos del backend al formato esperado
         const mappedInterviewers: BackendInterviewer[] = response.data.map((item: any) => ({
@@ -126,7 +126,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
         
         setInterviewers(mappedInterviewers);
       } catch (error) {
-        console.error('❌ Error cargando entrevistadores:', error);
+        Logger.error('❌ Error cargando entrevistadores:', error);
         setInterviewersError('Error al cargar la lista de entrevistadores');
       } finally {
         setLoadingInterviewers(false);
@@ -189,9 +189,9 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
 
   const loadApplications = async () => {
     try {
-      console.log('📋 InterviewForm: Cargando aplicaciones disponibles...');
+      Logger.info('📋 InterviewForm: Cargando aplicaciones disponibles...');
       const response = await applicationService.getAllApplications();
-      console.log('📋 InterviewForm: Aplicaciones obtenidas:', response);
+      Logger.info('📋 InterviewForm: Aplicaciones obtenidas:', response);
 
       // Filtrar solo aplicaciones con datos válidos
       const validApplications = response.filter(app =>
@@ -202,10 +202,10 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
         app.student.lastName
       );
 
-      console.log('📋 InterviewForm: Aplicaciones válidas filtradas:', validApplications);
+      Logger.info('📋 InterviewForm: Aplicaciones válidas filtradas:', validApplications);
       setApplications(validApplications);
     } catch (error) {
-      console.error('❌ InterviewForm: Error loading applications:', error);
+      Logger.error('❌ InterviewForm: Error loading applications:', error);
       setApplications([]);
     }
   };
@@ -231,7 +231,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
         setFormData(prev => ({ ...prev, scheduledTime: '' }));
       }
     } catch (error) {
-      console.error('Error loading available time slots:', error);
+      Logger.error('Error loading available time slots:', error);
       setAvailableTimeSlots(INTERVIEW_CONFIG.DEFAULT_TIME_SLOTS);
     } finally {
       setIsLoadingSlots(false);
@@ -264,8 +264,8 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
 
   // Función para manejar selección de fecha y hora desde DayScheduleSelector
   const handleDateTimeSelect = (date: string, time: string) => {
-    console.log(`📅 InterviewForm: handleDateTimeSelect llamado con fecha="${date}" y hora="${time}"`);
-    console.log(`📅 InterviewForm: Estado actual - fecha="${formData.scheduledDate}" y hora="${formData.scheduledTime}"`);
+    Logger.info(`📅 InterviewForm: handleDateTimeSelect llamado con fecha="${date}" y hora="${time}"`);
+    Logger.info(`📅 InterviewForm: Estado actual - fecha="${formData.scheduledDate}" y hora="${formData.scheduledTime}"`);
     
     setFormData(prev => ({ 
       ...prev, 
@@ -388,7 +388,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
     // Temporalmente simplificado - solo validamos que haya datos básicos
     // TODO: Re-implementar cuando el microservicio esté completo
     try {
-      console.log('🔍 Validación básica de horarios:', {
+      Logger.info('🔍 Validación básica de horarios:', {
         interviewerId: formData.interviewerId,
         date: formData.scheduledDate,
         time: formData.scheduledTime,
@@ -400,7 +400,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
       return true;
       
     } catch (error) {
-      console.error('Error validating time slot:', error);
+      Logger.error('Error validating time slot:', error);
       // En caso de error, continuar pero mostrar advertencia
       setConflictWarning('No se pudo validar el horario. Verifique manualmente.');
       return true;
@@ -433,7 +433,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
         preparation: formData.preparation || undefined,
         status: InterviewStatus.SCHEDULED // Establecer estado como SCHEDULED al programar
       };
-      console.log('🔥 CREATING INTERVIEW WITH STATUS:', createData.status, 'Data:', createData);
+      Logger.info('🔥 CREATING INTERVIEW WITH STATUS:', createData.status, 'Data:', createData);
       onSubmit(createData);
     } else if (mode === InterviewFormMode.EDIT) {
       const updateData: UpdateInterviewRequest = {

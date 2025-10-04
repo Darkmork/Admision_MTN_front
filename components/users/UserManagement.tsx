@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import Button from '../ui/Button';
-import Modal from '../ui/Modal';
-import SimpleToast from '../ui/SimpleToast';
-import Pagination from '../ui/Pagination';
-import UserForm from './UserForm';
-import UserTable from './UserTable';
-import UserFilters from './UserFilters';
-import UserStats from './UserStats';
-import {
-  User,
+import { Logger } from '../src/utils/logger';import Button from '../ui/Button';
+import { Logger } from '../src/utils/logger';import Modal from '../ui/Modal';
+import { Logger } from '../src/utils/logger';import SimpleToast from '../ui/SimpleToast';
+import { Logger } from '../src/utils/logger';import Pagination from '../ui/Pagination';
+import { Logger } from '../src/utils/logger';import UserForm from './UserForm';
+import { Logger } from '../src/utils/logger';import UserTable from './UserTable';
+import { Logger } from '../src/utils/logger';import UserFilters from './UserFilters';
+import { Logger } from '../src/utils/logger';import UserStats from './UserStats';
+import { Logger } from '../src/utils/logger';import {
+import { Logger } from '../src/utils/logger';  User,
   CreateUserRequest,
   UpdateUserRequest,
   UserFilters as UserFiltersType,
@@ -18,8 +18,8 @@ import {
   UserStats as UserStatsType
 } from '../../types/user';
 import { userService } from '../../services/userService';
-import {
-  PlusIcon,
+import { Logger } from '../src/utils/logger';import {
+import { Logger } from '../src/utils/logger';  PlusIcon,
   UsersIcon,
   ChartBarIcon,
   ExclamationTriangleIcon,
@@ -129,7 +129,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ onBack }) => {
       const stats = await userService.getUserStats();
       setState(prev => ({ ...prev, stats }));
     } catch (error: any) {
-      console.error('Error cargando estadísticas:', error);
+      Logger.error('Error cargando estadísticas:', error);
       // Si es 401, no mostrar error ya que la redirección se maneja en api.ts
       if (error.response?.status !== 401) {
         showToast('Error al cargar estadísticas de usuarios', 'error');

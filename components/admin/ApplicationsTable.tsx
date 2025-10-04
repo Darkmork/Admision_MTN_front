@@ -1,10 +1,10 @@
 import React from 'react';
-import Button from '../ui/Button';
-import Badge from '../ui/Badge';
-import LoadingSpinner from '../ui/LoadingSpinner';
-import { Application } from '../../services/applicationService';
-import {
-  FileTextIcon,
+import { Logger } from '../src/utils/logger';import Button from '../ui/Button';
+import { Logger } from '../src/utils/logger';import Badge from '../ui/Badge';
+import { Logger } from '../src/utils/logger';import LoadingSpinner from '../ui/LoadingSpinner';
+import { Logger } from '../src/utils/logger';import { Application } from '../../services/applicationService';
+import { Logger } from '../src/utils/logger';import {
+import { Logger } from '../src/utils/logger';  FileTextIcon,
   EyeIcon,
   ArchiveIcon,
   UserIcon
@@ -25,7 +25,7 @@ const ApplicationsTable: React.FC<ApplicationsTableProps> = ({
   onArchive,
   className = ''
 }) => {
-  console.log('📊 ApplicationsTable render - applications:', applications.length, 'onView:', !!onView);
+  Logger.info('📊 ApplicationsTable render - applications:', applications.length, 'onView:', !!onView);
 
   if (isLoading) {
     return (
@@ -193,8 +193,8 @@ const ApplicationsTable: React.FC<ApplicationsTableProps> = ({
                         variant="outline"
                         size="sm"
                         onClick={() => {
-                          console.log('👁️ Ver detalles clicked for application:', application);
-                          console.log('👁️ onView callback exists:', !!onView);
+                          Logger.info('👁️ Ver detalles clicked for application:', application);
+                          Logger.info('👁️ onView callback exists:', !!onView);
                           onView(application);
                         }}
                         title="Ver detalles"

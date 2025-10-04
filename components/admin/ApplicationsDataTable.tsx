@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import DataTable, { TableColumn } from '../ui/DataTable';
-import Badge from '../ui/Badge';
-import Button from '../ui/Button';
-import Modal from '../ui/Modal';
-import { FiEdit, FiEye, FiDownload, FiCalendar, FiFileText, FiUser } from 'react-icons/fi';
-import { useNotifications } from '../../context/AppContext';
-import { applicationService } from '../../services/applicationService';
-
+import { Logger } from '../src/utils/logger';import DataTable, { TableColumn } from '../ui/DataTable';
+import { Logger } from '../src/utils/logger';import Badge from '../ui/Badge';
+import { Logger } from '../src/utils/logger';import Button from '../ui/Button';
+import { Logger } from '../src/utils/logger';import Modal from '../ui/Modal';
+import { Logger } from '../src/utils/logger';import { FiEdit, FiEye, FiDownload, FiCalendar, FiFileText, FiUser } from 'react-icons/fi';
+import { Logger } from '../src/utils/logger';import { useNotifications } from '../../context/AppContext';
+import { Logger } from '../src/utils/logger';import { applicationService } from '../../services/applicationService';
+import { Logger } from '../src/utils/logger';
 interface Application {
     id: number;
     studentName: string;
@@ -341,7 +341,7 @@ const ApplicationsDataTable: React.FC<ApplicationsDataTableProps> = ({
                 total: response.totalElements
             });
         } catch (error: any) {
-            console.error('Error cargando aplicaciones:', error);
+            Logger.error('Error cargando aplicaciones:', error);
             addNotification({
                 type: 'error',
                 title: 'Error',

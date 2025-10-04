@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import DataTable, { TableColumn } from '../ui/DataTable';
-import Badge from '../ui/Badge';
-import Button from '../ui/Button';
-import StudentDetailModal from './StudentDetailModal';
-import { FiEdit, FiEye, FiDownload, FiCalendar, FiFileText, FiUser, FiMapPin, FiPhone, FiMail, FiBookOpen, FiClock, FiCheckCircle, FiAlertCircle, FiInfo, FiHome, FiUsers } from 'react-icons/fi';
-import { useNotifications } from '../../context/AppContext';
-import { applicationService, Application } from '../../services/applicationService';
-
+import { Logger } from '../src/utils/logger';import DataTable, { TableColumn } from '../ui/DataTable';
+import { Logger } from '../src/utils/logger';import Badge from '../ui/Badge';
+import { Logger } from '../src/utils/logger';import Button from '../ui/Button';
+import { Logger } from '../src/utils/logger';import StudentDetailModal from './StudentDetailModal';
+import { Logger } from '../src/utils/logger';import { FiEdit, FiEye, FiDownload, FiCalendar, FiFileText, FiUser, FiMapPin, FiPhone, FiMail, FiBookOpen, FiClock, FiCheckCircle, FiAlertCircle, FiInfo, FiHome, FiUsers } from 'react-icons/fi';
+import { Logger } from '../src/utils/logger';import { useNotifications } from '../../context/AppContext';
+import { Logger } from '../src/utils/logger';import { applicationService, Application } from '../../services/applicationService';
+import { Logger } from '../src/utils/logger';
 // Interface específica para postulantes
 interface Postulante {
     id: number;
@@ -428,11 +428,11 @@ const PostulantesDataTable: React.FC<PostulantesDataTableProps> = ({
     const loadPostulantes = async (page = 1, size = 25) => {
         setLoading(true);
         try {
-            console.log('📊 Admin: Cargando postulantes desde backend...');
+            Logger.info('📊 Admin: Cargando postulantes desde backend...');
             
             // Obtener applications reales del backend
             const backendApplications = await applicationService.getAllApplications();
-            console.log('📊 Applications obtenidas del backend:', backendApplications.length);
+            Logger.info('📊 Applications obtenidas del backend:', backendApplications.length);
             
             // Transformar a formato Postulante
             const transformedPostulantes = backendApplications.map(transformApplicationToPostulante);
@@ -449,10 +449,10 @@ const PostulantesDataTable: React.FC<PostulantesDataTableProps> = ({
                 total: transformedPostulantes.length
             });
             
-            console.log('✅ Postulantes cargados y transformados exitosamente');
+            Logger.info('✅ Postulantes cargados y transformados exitosamente');
             
         } catch (error: any) {
-            console.error('❌ Error cargando postulantes:', error);
+            Logger.error('❌ Error cargando postulantes:', error);
             addNotification({
                 type: 'error',
                 title: 'Error',
@@ -477,10 +477,10 @@ const PostulantesDataTable: React.FC<PostulantesDataTableProps> = ({
 
     // Abrir modal de detalles del postulante
     const handleViewPostulanteDetail = (postulante: Postulante) => {
-        console.log('🔍 PostulantesDataTable - handleViewPostulanteDetail called with:', postulante);
+        Logger.info('🔍 PostulantesDataTable - handleViewPostulanteDetail called with:', postulante);
         setSelectedPostulante(postulante);
         setIsDetailModalOpen(true);
-        console.log('📖 PostulantesDataTable - Modal state set to open');
+        Logger.info('📖 PostulantesDataTable - Modal state set to open');
         // Llamar al callback original si existe
         onViewPostulante?.(postulante);
     };

@@ -7,10 +7,10 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { dashboardClient } from '../../api/dashboard.client';
-import type { DetailedAdminStats, Alert } from '../../api/dashboard.types';
-import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-
+import { Logger } from '@/utils/logger';import { dashboardClient } from '../../api/dashboard.client';
+import { Logger } from '@/utils/logger';import type { DetailedAdminStats, Alert } from '../../api/dashboard.types';
+import { Logger } from '@/utils/logger';import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Logger } from '@/utils/logger';
 export const CoordinatorDashboard: React.FC = () => {
   const [stats, setStats] = useState<DetailedAdminStats | null>(null);
   const [alerts, setAlerts] = useState<Alert[]>([]);
@@ -65,7 +65,7 @@ export const CoordinatorDashboard: React.FC = () => {
       setStats(normalizedData);
       setAlerts(alertsData);
     } catch (err: any) {
-      console.error('Error loading dashboard:', err);
+      Logger.error('Error loading dashboard:', err);
       setError(err.message || 'Error al cargar el dashboard');
     } finally {
       setLoading(false);

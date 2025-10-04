@@ -1,6 +1,6 @@
 import api from './api';
-import { 
-  EvaluationSchedule,
+import { Logger } from '../src/utils/logger';import { 
+import { Logger } from '../src/utils/logger';  EvaluationSchedule,
   CreateGenericScheduleRequest,
   CreateIndividualScheduleRequest,
   RescheduleRequest,
@@ -44,12 +44,12 @@ class EvaluationService {
      */
     async createGenericSchedule(request: CreateGenericScheduleRequest): Promise<ScheduleResponse> {
       try {
-        console.log('📅 Creando programación genérica:', request);
+        Logger.info('📅 Creando programación genérica:', request);
         
         const response = await api.post('/api/schedules/generic', request);
         return response.data;
       } catch (error: any) {
-        console.error('❌ Error creando programación genérica:', error);
+        Logger.error('❌ Error creando programación genérica:', error);
         throw new Error(
           error.response?.data?.message || 
           error.message || 
@@ -63,12 +63,12 @@ class EvaluationService {
      */
     async createIndividualSchedule(request: CreateIndividualScheduleRequest): Promise<ScheduleResponse> {
       try {
-        console.log('📅 Creando programación individual:', request);
+        Logger.info('📅 Creando programación individual:', request);
         
         const response = await api.post('/api/schedules/individual', request);
         return response.data;
       } catch (error: any) {
-        console.error('❌ Error creando programación individual:', error);
+        Logger.error('❌ Error creando programación individual:', error);
         throw new Error(
           error.response?.data?.message || 
           error.message || 
@@ -82,12 +82,12 @@ class EvaluationService {
      */
     async getFamilySchedules(applicationId: number): Promise<EvaluationSchedule[]> {
       try {
-        console.log('📋 Obteniendo citas para aplicación:', applicationId);
+        Logger.info('📋 Obteniendo citas para aplicación:', applicationId);
         
         const response = await api.get(`/api/schedules/family/${applicationId}`);
         return response.data;
       } catch (error: any) {
-        console.error('❌ Error obteniendo citas familiares:', error);
+        Logger.error('❌ Error obteniendo citas familiares:', error);
         throw new Error('Error al obtener las citas programadas');
       }
     }
@@ -101,14 +101,14 @@ class EvaluationService {
       endDate: string
     ): Promise<EvaluationSchedule[]> {
       try {
-        console.log('👨‍🏫 Obteniendo calendario del evaluador:', evaluatorId);
+        Logger.info('👨‍🏫 Obteniendo calendario del evaluador:', evaluatorId);
         
         const response = await api.get(`/api/schedules/evaluator/${evaluatorId}`, {
           params: { startDate, endDate }
         });
         return response.data;
       } catch (error: any) {
-        console.error('❌ Error obteniendo calendario del evaluador:', error);
+        Logger.error('❌ Error obteniendo calendario del evaluador:', error);
         throw new Error('Error al obtener el calendario del evaluador');
       }
     }
@@ -118,14 +118,14 @@ class EvaluationService {
      */
     async confirmSchedule(scheduleId: number, userId: number): Promise<EvaluationSchedule> {
       try {
-        console.log('✅ Confirmando cita:', scheduleId);
+        Logger.info('✅ Confirmando cita:', scheduleId);
         
         const response = await api.put(`/api/schedules/${scheduleId}/confirm`, null, {
           params: { userId }
         });
         return response.data;
       } catch (error: any) {
-        console.error('❌ Error confirmando cita:', error);
+        Logger.error('❌ Error confirmando cita:', error);
         throw new Error(
           error.response?.data?.message || 
           'Error al confirmar la cita'
@@ -138,12 +138,12 @@ class EvaluationService {
      */
     async rescheduleAppointment(scheduleId: number, request: RescheduleRequest): Promise<EvaluationSchedule> {
       try {
-        console.log('🔄 Reprogramando cita:', scheduleId, request);
+        Logger.info('🔄 Reprogramando cita:', scheduleId, request);
         
         const response = await api.put(`/api/schedules/${scheduleId}/reschedule`, request);
         return response.data;
       } catch (error: any) {
-        console.error('❌ Error reprogramando cita:', error);
+        Logger.error('❌ Error reprogramando cita:', error);
         throw new Error(
           error.response?.data?.message || 
           'Error al reprogramar la cita'
@@ -156,12 +156,12 @@ class EvaluationService {
      */
     async getPendingConfirmations(): Promise<EvaluationSchedule[]> {
       try {
-        console.log('⏰ Obteniendo citas pendientes de confirmación');
+        Logger.info('⏰ Obteniendo citas pendientes de confirmación');
         
         const response = await api.get('/api/schedules/pending-confirmations');
         return response.data;
       } catch (error: any) {
-        console.error('❌ Error obteniendo citas pendientes:', error);
+        Logger.error('❌ Error obteniendo citas pendientes:', error);
         throw new Error('Error al obtener las citas pendientes de confirmación');
       }
     }
@@ -171,12 +171,12 @@ class EvaluationService {
      */
     async markAsCompleted(scheduleId: number): Promise<EvaluationSchedule> {
       try {
-        console.log('✅ Marcando cita como completada:', scheduleId);
+        Logger.info('✅ Marcando cita como completada:', scheduleId);
         
         const response = await api.put(`/api/schedules/${scheduleId}/complete`);
         return response.data;
       } catch (error: any) {
-        console.error('❌ Error marcando cita como completada:', error);
+        Logger.error('❌ Error marcando cita como completada:', error);
         throw new Error('Error al marcar la cita como completada');
       }
     }
@@ -186,14 +186,14 @@ class EvaluationService {
      */
     async getMockFamilySchedules(applicationId: number): Promise<EvaluationSchedule[]> {
       try {
-        console.log('🎭 Obteniendo citas mock para aplicación:', applicationId);
+        Logger.info('🎭 Obteniendo citas mock para aplicación:', applicationId);
         
         const response = await api.get(`/api/schedules/public/mock-schedules/${applicationId}`);
         
         // Convertir datos mock a formato TypeScript
         return response.data.map((mockSchedule: any) => this.convertMockToSchedule(mockSchedule));
       } catch (error: any) {
-        console.error('❌ Error obteniendo citas mock:', error);
+        Logger.error('❌ Error obteniendo citas mock:', error);
         throw new Error('Error al obtener las citas de demostración');
       }
     }
@@ -339,36 +339,36 @@ class EvaluationService {
     
     async assignEvaluationsToApplication(applicationId: number): Promise<Evaluation[]> {
         try {
-            console.log('📝 Asignando evaluaciones automáticamente a aplicación:', applicationId);
+            Logger.info('📝 Asignando evaluaciones automáticamente a aplicación:', applicationId);
             const response = await api.post(`/api/evaluations/assign/${applicationId}`);
-            console.log('✅ Evaluaciones asignadas automáticamente');
+            Logger.info('✅ Evaluaciones asignadas automáticamente');
             return response.data;
         } catch (error: any) {
-            console.error('❌ Error asignando evaluaciones automáticamente:', error);
+            Logger.error('❌ Error asignando evaluaciones automáticamente:', error);
             throw new Error(error.response?.data?.message || 'Error al asignar evaluaciones automáticamente');
         }
     }
 
     async assignSpecificEvaluation(applicationId: number, evaluationType: EvaluationType, evaluatorId: number): Promise<Evaluation> {
         try {
-            console.log('🎯 Asignando evaluación específica:', { applicationId, evaluationType, evaluatorId });
+            Logger.info('🎯 Asignando evaluación específica:', { applicationId, evaluationType, evaluatorId });
             const response = await api.post(`/api/evaluations/assign/${applicationId}/${evaluationType}/${evaluatorId}`);
-            console.log('✅ Evaluación específica asignada');
+            Logger.info('✅ Evaluación específica asignada');
             return response.data;
         } catch (error: any) {
-            console.error('❌ Error asignando evaluación específica:', error);
+            Logger.error('❌ Error asignando evaluación específica:', error);
             throw new Error(error.response?.data?.message || 'Error al asignar evaluación específica');
         }
     }
 
     async getEvaluationsByApplication(applicationId: number): Promise<Evaluation[]> {
         try {
-            console.log('📋 Obteniendo evaluaciones para aplicación:', applicationId);
+            Logger.info('📋 Obteniendo evaluaciones para aplicación:', applicationId);
             const response = await api.get(`/api/evaluations/application/${applicationId}`);
-            console.log('✅ Evaluaciones obtenidas');
+            Logger.info('✅ Evaluaciones obtenidas');
             return response.data;
         } catch (error: any) {
-            console.error('❌ Error obteniendo evaluaciones:', error);
+            Logger.error('❌ Error obteniendo evaluaciones:', error);
             throw new Error(error.response?.data?.message || 'Error al obtener evaluaciones');
         }
     }
@@ -381,37 +381,37 @@ class EvaluationService {
         isComplete: boolean;
     }> {
         try {
-            console.log('📊 Obteniendo progreso de evaluación para aplicación:', applicationId);
+            Logger.info('📊 Obteniendo progreso de evaluación para aplicación:', applicationId);
             const response = await api.get(`/api/evaluations/application/${applicationId}/progress`);
-            console.log('✅ Progreso obtenido');
+            Logger.info('✅ Progreso obtenido');
             return response.data;
         } catch (error: any) {
-            console.error('❌ Error obteniendo progreso:', error);
+            Logger.error('❌ Error obteniendo progreso:', error);
             throw new Error(error.response?.data?.message || 'Error al obtener progreso de evaluación');
         }
     }
 
     async getEvaluatorsByRole(role: UserRole): Promise<any[]> {
         try {
-            console.log('👨‍🏫 Obteniendo evaluadores por rol:', role);
+            Logger.info('👨‍🏫 Obteniendo evaluadores por rol:', role);
             const response = await api.get(`/api/evaluations/evaluators/${role}`);
-            console.log('✅ Evaluadores obtenidos');
+            Logger.info('✅ Evaluadores obtenidos');
             return response.data;
         } catch (error: any) {
-            console.error('❌ Error obteniendo evaluadores por rol:', error);
+            Logger.error('❌ Error obteniendo evaluadores por rol:', error);
             // Fallback to public endpoint for development
             try {
-                console.log('🔄 Intentando endpoint público...');
+                Logger.info('🔄 Intentando endpoint público...');
                 const response = await fetch(`http://localhost:8080/api/evaluations/public/evaluators/${role}`, {
                     headers: { 'Content-Type': 'application/json' }
                 });
                 if (response.ok) {
                     const data = await response.json();
-                    console.log('✅ Evaluadores obtenidos desde endpoint público');
+                    Logger.info('✅ Evaluadores obtenidos desde endpoint público');
                     return data;
                 }
             } catch (fallbackError) {
-                console.error('❌ Error en endpoint público:', fallbackError);
+                Logger.error('❌ Error en endpoint público:', fallbackError);
             }
             return [];
         }
@@ -577,18 +577,18 @@ class EvaluationService {
      */
     async getAllEvaluations(): Promise<Evaluation[]> {
         try {
-            console.log('📊 Obteniendo todas las evaluaciones...');
+            Logger.info('📊 Obteniendo todas las evaluaciones...');
 
             const response = await api.get('/api/evaluations');
 
             if (response.data.success) {
-                console.log(`✅ ${response.data.count} evaluaciones obtenidas`);
+                Logger.info(`✅ ${response.data.count} evaluaciones obtenidas`);
                 return response.data.data;
             }
 
             throw new Error('Respuesta inválida del servidor');
         } catch (error: any) {
-            console.error('❌ Error obteniendo evaluaciones:', error);
+            Logger.error('❌ Error obteniendo evaluaciones:', error);
             throw new Error(
                 error.response?.data?.message ||
                 error.message ||
@@ -603,18 +603,18 @@ class EvaluationService {
      */
     async getEvaluationById(evaluationId: number): Promise<Evaluation> {
         try {
-            console.log(`📋 Obteniendo evaluación ${evaluationId}...`);
+            Logger.info(`📋 Obteniendo evaluación ${evaluationId}...`);
 
             const response = await api.get(`/api/evaluations/${evaluationId}`);
 
             if (response.data.success) {
-                console.log('✅ Evaluación obtenida');
+                Logger.info('✅ Evaluación obtenida');
                 return response.data.data;
             }
 
             throw new Error('Respuesta inválida del servidor');
         } catch (error: any) {
-            console.error('❌ Error obteniendo evaluación:', error);
+            Logger.error('❌ Error obteniendo evaluación:', error);
             throw new Error(
                 error.response?.data?.message ||
                 error.message ||
@@ -629,14 +629,14 @@ class EvaluationService {
      */
     async getEvaluationsByApplicationId(applicationId: number): Promise<Evaluation[]> {
         try {
-            console.log(`📋 Obteniendo evaluaciones para application ${applicationId}...`);
+            Logger.info(`📋 Obteniendo evaluaciones para application ${applicationId}...`);
 
             const response = await api.get(`/api/evaluations/application/${applicationId}`);
 
-            console.log(`✅ ${response.data.length} evaluaciones obtenidas`);
+            Logger.info(`✅ ${response.data.length} evaluaciones obtenidas`);
             return response.data;
         } catch (error: any) {
-            console.error('❌ Error obteniendo evaluaciones por application:', error);
+            Logger.error('❌ Error obteniendo evaluaciones por application:', error);
             throw new Error(
                 error.response?.data?.message ||
                 error.message ||

@@ -1,20 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import Modal from '../ui/Modal';
-import Badge from '../ui/Badge';
-import Button from '../ui/Button';
-import {
-    FiUser, FiPhone, FiMail, FiMapPin, FiHome, FiBookOpen, FiCalendar,
+import { Logger } from '../src/utils/logger';import Modal from '../ui/Modal';
+import { Logger } from '../src/utils/logger';import Badge from '../ui/Badge';
+import { Logger } from '../src/utils/logger';import Button from '../ui/Button';
+import { Logger } from '../src/utils/logger';import {
+import { Logger } from '../src/utils/logger';    FiUser, FiPhone, FiMail, FiMapPin, FiHome, FiBookOpen, FiCalendar,
     FiFileText, FiEdit, FiDownload, FiClock, FiCheckCircle, FiAlertCircle,
     FiUsers, FiBriefcase, FiHeart, FiStar, FiEye,
     FiX, FiChevronRight, FiInfo, FiMessageSquare, FiAward, FiRefreshCw
 } from 'react-icons/fi';
 import { useNotifications } from '../../context/AppContext';
-import { applicationService, Application } from '../../services/applicationService';
-import interviewService from '../../services/interviewService';
-import { Interview, InterviewStatus, INTERVIEW_TYPE_LABELS } from '../../types/interview';
-import evaluationService from '../../services/evaluationService';
-import { Evaluation } from '../../types/evaluation';
-
+import { Logger } from '../src/utils/logger';import { applicationService, Application } from '../../services/applicationService';
+import { Logger } from '../src/utils/logger';import interviewService from '../../services/interviewService';
+import { Logger } from '../src/utils/logger';import { Interview, InterviewStatus, INTERVIEW_TYPE_LABELS } from '../../types/interview';
+import { Logger } from '../src/utils/logger';import evaluationService from '../../services/evaluationService';
+import { Logger } from '../src/utils/logger';import { Evaluation } from '../../types/evaluation';
+import { Logger } from '../src/utils/logger';
 interface Postulante {
     id: number;
     nombreCompleto: string;
@@ -118,7 +118,7 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
             const app = await applicationService.getApplicationById(postulante.id);
             setFullApplication(app);
         } catch (error) {
-            console.error('Error loading full application:', error);
+            Logger.error('Error loading full application:', error);
             addNotification({
                 type: 'warning',
                 title: 'Información limitada',
@@ -137,7 +137,7 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
             const response = await interviewService.getInterviewsByApplication(postulante.id);
             setInterviews(response.interviews || []);
         } catch (error) {
-            console.error('Error loading interviews:', error);
+            Logger.error('Error loading interviews:', error);
             setInterviews([]);
         } finally {
             setInterviewsLoading(false);
@@ -152,7 +152,7 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
             const evaluationsData = await evaluationService.getEvaluationsByApplicationId(postulante.id);
             setEvaluations(evaluationsData || []);
         } catch (error) {
-            console.error('Error loading evaluations:', error);
+            Logger.error('Error loading evaluations:', error);
             setEvaluations([]);
         } finally {
             setEvaluationsLoading(false);
@@ -163,12 +163,12 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
         await Promise.all([loadFullApplication(), loadInterviews(), loadEvaluations()]);
     };
 
-    console.log('🎭 StudentDetailModal render - isOpen:', isOpen, 'postulante:', postulante, 'activeTab:', activeTab, 'loading:', loading);
+    Logger.info('🎭 StudentDetailModal render - isOpen:', isOpen, 'postulante:', postulante, 'activeTab:', activeTab, 'loading:', loading);
     if (!postulante) {
-        console.log('⚠️ StudentDetailModal - No postulante provided, returning null');
+        Logger.info('⚠️ StudentDetailModal - No postulante provided, returning null');
         return null;
     }
-    console.log('✅ StudentDetailModal - Will render modal content');
+    Logger.info('✅ StudentDetailModal - Will render modal content');
 
     const getStatusVariant = (status: string) => {
         switch (status) {
@@ -247,7 +247,7 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
     );
 
     const renderInfoTab = () => {
-        console.log('📝 renderInfoTab called');
+        Logger.info('📝 renderInfoTab called');
         return (
         <div className="space-y-6">
             {/* Header con foto y datos básicos */}
@@ -1081,7 +1081,7 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                     title="Detalles de la Evaluación"
                     size="lg"
                 >
-                    {console.log('📊 Selected Evaluation:', selectedEvaluation)}
+                    {Logger.info('📊 Selected Evaluation:', selectedEvaluation)}
                     <div className="space-y-6">
                         {/* Header */}
                         <div className="bg-blue-50 p-4 rounded-lg">

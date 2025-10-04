@@ -1,6 +1,6 @@
 import api from './api';
-import {
-  User,
+import { Logger } from '../src/utils/logger';import {
+import { Logger } from '../src/utils/logger';  User,
   CreateUserRequest,
   UpdateUserRequest,
   UserFilters,
@@ -10,7 +10,7 @@ import {
   USER_ROLE_LABELS
 } from '../types/user';
 import { DataAdapter } from './dataAdapter';
-
+import { Logger } from '../src/utils/logger';
 class UserService {
 
   // ============= MÉTODOS PRINCIPALES =============
@@ -20,7 +20,7 @@ class UserService {
    */
   async getAllUsers(filters: UserFilters = {}): Promise<PagedResponse<User>> {
     try {
-      console.log('👥 Obteniendo usuarios desde microservicio:', filters);
+      Logger.info('👥 Obteniendo usuarios desde microservicio:', filters);
 
       const params = new URLSearchParams();
       
@@ -33,16 +33,16 @@ class UserService {
 
       const response = await api.get(`/api/users?${params.toString()}`);
       
-      console.log('✅ Respuesta cruda del microservicio:', response.data);
+      Logger.info('✅ Respuesta cruda del microservicio:', response.data);
       
       // Usar el adaptador para convertir datos simples a estructura compleja
       const adaptedResponse = DataAdapter.adaptUserApiResponse(response);
       
-      console.log('✅ Usuarios adaptados exitosamente:', adaptedResponse.content.length);
+      Logger.info('✅ Usuarios adaptados exitosamente:', adaptedResponse.content.length);
       return adaptedResponse;
 
     } catch (error: any) {
-      console.error('❌ Error obteniendo usuarios del microservicio:', error);
+      Logger.error('❌ Error obteniendo usuarios del microservicio:', error);
       throw this.handleError(error, 'Error al obtener los usuarios');
     }
   }
@@ -52,15 +52,15 @@ class UserService {
    */
   async getUserById(id: number): Promise<User> {
     try {
-      console.log('👤 Obteniendo usuario por ID:', id);
+      Logger.info('👤 Obteniendo usuario por ID:', id);
 
       const response = await api.get(`/api/users/${id}`);
       
-      console.log('✅ Usuario obtenido exitosamente');
+      Logger.info('✅ Usuario obtenido exitosamente');
       return response.data;
 
     } catch (error: any) {
-      console.error('❌ Error obteniendo usuario:', error);
+      Logger.error('❌ Error obteniendo usuario:', error);
       throw this.handleError(error, 'Error al obtener el usuario');
     }
   }
@@ -70,15 +70,15 @@ class UserService {
    */
   async createUser(request: CreateUserRequest): Promise<User> {
     try {
-      console.log('➕ Creando usuario:', request.email);
+      Logger.info('➕ Creando usuario:', request.email);
 
       const response = await api.post('/api/users', request);
       
-      console.log('✅ Usuario creado exitosamente');
+      Logger.info('✅ Usuario creado exitosamente');
       return response.data;
 
     } catch (error: any) {
-      console.error('❌ Error creando usuario:', error);
+      Logger.error('❌ Error creando usuario:', error);
       throw this.handleError(error, 'Error al crear el usuario');
     }
   }
@@ -88,15 +88,15 @@ class UserService {
    */
   async updateUser(id: number, request: UpdateUserRequest): Promise<User> {
     try {
-      console.log('✏️ Actualizando usuario:', id);
+      Logger.info('✏️ Actualizando usuario:', id);
 
       const response = await api.put(`/api/users/${id}`, request);
       
-      console.log('✅ Usuario actualizado exitosamente');
+      Logger.info('✅ Usuario actualizado exitosamente');
       return response.data;
 
     } catch (error: any) {
-      console.error('❌ Error actualizando usuario:', error);
+      Logger.error('❌ Error actualizando usuario:', error);
       throw this.handleError(error, 'Error al actualizar el usuario');
     }
   }
@@ -106,14 +106,14 @@ class UserService {
    */
   async deactivateUser(id: number): Promise<void> {
     try {
-      console.log('🔒 Desactivando usuario:', id);
+      Logger.info('🔒 Desactivando usuario:', id);
 
       await api.put(`/api/users/${id}/deactivate`);
       
-      console.log('✅ Usuario desactivado exitosamente');
+      Logger.info('✅ Usuario desactivado exitosamente');
 
     } catch (error: any) {
-      console.error('❌ Error desactivando usuario:', error);
+      Logger.error('❌ Error desactivando usuario:', error);
       throw this.handleError(error, 'Error al desactivar el usuario');
     }
   }
@@ -123,14 +123,14 @@ class UserService {
    */
   async deleteUser(id: number): Promise<void> {
     try {
-      console.log('🗑️ Eliminando usuario permanentemente:', id);
+      Logger.info('🗑️ Eliminando usuario permanentemente:', id);
 
       await api.delete(`/api/users/${id}`);
       
-      console.log('✅ Usuario eliminado permanentemente');
+      Logger.info('✅ Usuario eliminado permanentemente');
 
     } catch (error: any) {
-      console.error('❌ Error eliminando usuario:', error);
+      Logger.error('❌ Error eliminando usuario:', error);
       throw this.handleError(error, 'Error al eliminar el usuario');
     }
   }
@@ -140,15 +140,15 @@ class UserService {
    */
   async activateUser(id: number): Promise<User> {
     try {
-      console.log('🔓 Activando usuario:', id);
+      Logger.info('🔓 Activando usuario:', id);
 
       const response = await api.put(`/api/users/${id}/activate`);
       
-      console.log('✅ Usuario activado exitosamente');
+      Logger.info('✅ Usuario activado exitosamente');
       return response.data;
 
     } catch (error: any) {
-      console.error('❌ Error activando usuario:', error);
+      Logger.error('❌ Error activando usuario:', error);
       throw this.handleError(error, 'Error al activar el usuario');
     }
   }
@@ -158,14 +158,14 @@ class UserService {
    */
   async resetUserPassword(id: number): Promise<void> {
     try {
-      console.log('🔑 Restableciendo contraseña:', id);
+      Logger.info('🔑 Restableciendo contraseña:', id);
 
       await api.put(`/api/users/${id}/reset-password`);
       
-      console.log('✅ Contraseña restablecida exitosamente');
+      Logger.info('✅ Contraseña restablecida exitosamente');
 
     } catch (error: any) {
-      console.error('❌ Error restableciendo contraseña:', error);
+      Logger.error('❌ Error restableciendo contraseña:', error);
       throw this.handleError(error, 'Error al restablecer la contraseña');
     }
   }
@@ -175,15 +175,15 @@ class UserService {
    */
   async getAllRoles(): Promise<UserRole[]> {
     try {
-      console.log('📋 Obteniendo roles disponibles');
+      Logger.info('📋 Obteniendo roles disponibles');
 
       const response = await api.get('/api/users/roles');
       
-      console.log('✅ Roles obtenidos exitosamente');
+      Logger.info('✅ Roles obtenidos exitosamente');
       return response.data;
 
     } catch (error: any) {
-      console.error('❌ Error obteniendo roles:', error);
+      Logger.error('❌ Error obteniendo roles:', error);
       // Fallback a los roles definidos en el frontend
       return Object.values(UserRole);
     }
@@ -194,15 +194,15 @@ class UserService {
    */
   async getUserStats(): Promise<UserStats> {
     try {
-      console.log('📊 Obteniendo estadísticas de usuarios');
+      Logger.info('📊 Obteniendo estadísticas de usuarios');
 
       const response = await api.get('/api/users/stats');
       
-      console.log('✅ Estadísticas obtenidas exitosamente');
+      Logger.info('✅ Estadísticas obtenidas exitosamente');
       return response.data;
 
     } catch (error: any) {
-      console.error('❌ Error obteniendo estadísticas:', error);
+      Logger.error('❌ Error obteniendo estadísticas:', error);
       throw this.handleError(error, 'Error al obtener las estadísticas');
     }
   }
@@ -244,7 +244,7 @@ class UserService {
    */
   async getSchoolStaffUsers(filters: UserFilters = {}): Promise<PagedResponse<User>> {
     try {
-      console.log('👨‍🏫 Obteniendo usuarios del colegio desde microservicio');
+      Logger.info('👨‍🏫 Obteniendo usuarios del colegio desde microservicio');
       
       // Filtrar en el backend excluyendo APODERADOS mediante parámetros
       const staffFilters = {
@@ -265,16 +265,16 @@ class UserService {
 
       const response = await api.get(`/api/users?${params.toString()}`);
       
-      console.log('✅ Respuesta cruda staff del microservicio:', response.data);
+      Logger.info('✅ Respuesta cruda staff del microservicio:', response.data);
       
       // Usar el adaptador para convertir datos simples a estructura compleja
       const adaptedResponse = DataAdapter.adaptUserApiResponse(response);
       
-      console.log('✅ Usuarios staff adaptados exitosamente:', adaptedResponse.content.length);
+      Logger.info('✅ Usuarios staff adaptados exitosamente:', adaptedResponse.content.length);
       return adaptedResponse;
 
     } catch (error: any) {
-      console.error('❌ Error obteniendo usuarios staff del microservicio:', error);
+      Logger.error('❌ Error obteniendo usuarios staff del microservicio:', error);
       throw this.handleError(error, 'Error al obtener usuarios del colegio');
     }
   }
@@ -331,7 +331,7 @@ class UserService {
       };
 
     } catch (error: any) {
-      console.error('❌ Error obteniendo evaluadores:', error);
+      Logger.error('❌ Error obteniendo evaluadores:', error);
       throw this.handleError(error, 'Error al obtener los evaluadores');
     }
   }
@@ -383,14 +383,14 @@ class UserService {
    */
   async getSchoolStaffUsersPublic(): Promise<PagedResponse<User>> {
     try {
-      console.log('👨‍🏫 Obteniendo usuarios del colegio desde endpoint público');
+      Logger.info('👨‍🏫 Obteniendo usuarios del colegio desde endpoint público');
 
       const response = await api.get('/api/users/public/school-staff');
 
-      console.log('✅ Respuesta del endpoint público:', response.data);
+      Logger.info('✅ Respuesta del endpoint público:', response.data);
       return response.data;
     } catch (error) {
-      console.error('❌ Error obteniendo usuarios del colegio (público):', error);
+      Logger.error('❌ Error obteniendo usuarios del colegio (público):', error);
       throw this.handleError(error, 'Error al obtener usuarios del colegio');
     }
   }

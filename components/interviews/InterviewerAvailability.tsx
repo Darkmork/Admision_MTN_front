@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import Card from '../ui/Card';
-import Button from '../ui/Button';
-import LoadingSpinner from '../ui/LoadingSpinner';
-import { FiCalendar, FiClock, FiUser, FiRefreshCw } from 'react-icons/fi';
-import interviewService from '../../services/interviewService';
-
+import { Logger } from '../src/utils/logger';import Card from '../ui/Card';
+import { Logger } from '../src/utils/logger';import Button from '../ui/Button';
+import { Logger } from '../src/utils/logger';import LoadingSpinner from '../ui/LoadingSpinner';
+import { Logger } from '../src/utils/logger';import { FiCalendar, FiClock, FiUser, FiRefreshCw } from 'react-icons/fi';
+import { Logger } from '../src/utils/logger';import interviewService from '../../services/interviewService';
+import { Logger } from '../src/utils/logger';
 interface InterviewerAvailabilityProps {
   interviewerId: number;
   selectedDate?: string;
@@ -105,7 +105,7 @@ const InterviewerAvailability: React.FC<InterviewerAvailabilityProps> = ({
 
       setWeeklyAvailability(combined);
     } catch (err) {
-      console.error('Error loading weekly availability:', err);
+      Logger.error('Error loading weekly availability:', err);
       setError('Error al cargar disponibilidad semanal');
       // Usar datos por defecto en caso de error
       setWeeklyAvailability(generateWeekDates(getWeekStart(currentWeekStart)));

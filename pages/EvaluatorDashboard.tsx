@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { useNotifications } from '../context/AppContext';
-import Card from '../components/ui/Card';
-import Button from '../components/ui/Button';
-import Badge from '../components/ui/Badge';
-import Modal from '../components/ui/Modal';
-import { 
-  Evaluation, 
+import { Logger } from '../src/utils/logger';import { useNavigate } from 'react-router-dom';
+import { Logger } from '../src/utils/logger';import { useAuth } from '../context/AuthContext';
+import { Logger } from '../src/utils/logger';import { useNotifications } from '../context/AppContext';
+import { Logger } from '../src/utils/logger';import Card from '../components/ui/Card';
+import { Logger } from '../src/utils/logger';import Button from '../components/ui/Button';
+import { Logger } from '../src/utils/logger';import Badge from '../components/ui/Badge';
+import { Logger } from '../src/utils/logger';import Modal from '../components/ui/Modal';
+import { Logger } from '../src/utils/logger';import { 
+import { Logger } from '../src/utils/logger';  Evaluation, 
   AcademicEvaluation, 
   PsychologicalEvaluation, 
   CycleDirectorEvaluation,
@@ -18,8 +18,8 @@ import {
   UpdateEvaluationRequest
 } from '../types/evaluation';
 import evaluationApiService from '../services/evaluationApiService';
-import { 
-  Interview, 
+import { Logger } from '../src/utils/logger';import { 
+import { Logger } from '../src/utils/logger';  Interview, 
   InterviewStatus,
   InterviewType,
   INTERVIEW_STATUS_LABELS,
@@ -27,8 +27,8 @@ import {
   InterviewUtils
 } from '../types/interview';
 import { interviewService } from '../services/interviewService';
-import { 
-  FileTextIcon, 
+import { Logger } from '../src/utils/logger';import { 
+import { Logger } from '../src/utils/logger';  FileTextIcon, 
   ClockIcon, 
   CheckCircleIcon, 
   UsersIcon,
@@ -36,9 +36,9 @@ import {
   EyeIcon
 } from '../components/icons/Icons';
 import AcademicEvaluationForm from '../components/evaluations/AcademicEvaluationFormNew';
-import PsychologicalInterviewForm from '../components/evaluations/PsychologicalInterviewFormNew';
-import CycleDirectorForm from '../components/evaluations/CycleDirectorFormNew';
-
+import { Logger } from '../src/utils/logger';import PsychologicalInterviewForm from '../components/evaluations/PsychologicalInterviewFormNew';
+import { Logger } from '../src/utils/logger';import CycleDirectorForm from '../components/evaluations/CycleDirectorFormNew';
+import { Logger } from '../src/utils/logger';
 const sections = [
   { key: 'dashboard', label: 'Dashboard' },
   { key: 'entrevistas', label: 'Mis Entrevistas' },
@@ -81,7 +81,7 @@ const EvaluatorDashboard: React.FC = () => {
       setPendingEvaluations(pendingEvals);
       setInterviews(myInterviews);
     } catch (error) {
-      console.error('Error loading evaluations:', error);
+      Logger.error('Error loading evaluations:', error);
       addNotification({
         type: 'error',
         title: 'Error',
@@ -95,15 +95,15 @@ const EvaluatorDashboard: React.FC = () => {
   const loadMyInterviews = async (): Promise<Interview[]> => {
     try {
       if (!user || !user.id) {
-        console.log('👤 No user found for loading interviews');
+        Logger.info('👤 No user found for loading interviews');
         return [];
       }
       
       const response = await interviewService.getInterviewsByInterviewer(user.id);
-      console.log('📅 Loaded interviews for evaluator:', response.length);
+      Logger.info('📅 Loaded interviews for evaluator:', response.length);
       return response;
     } catch (error) {
-      console.error('Error loading interviews:', error);
+      Logger.error('Error loading interviews:', error);
       return [];
     }
   };
@@ -136,7 +136,7 @@ const EvaluatorDashboard: React.FC = () => {
       loadEvaluations();
       setShowInterviewModal(false);
     } catch (error) {
-      console.error('Error completing interview:', error);
+      Logger.error('Error completing interview:', error);
       addNotification({
         type: 'error',
         title: 'Error',
@@ -166,7 +166,7 @@ const EvaluatorDashboard: React.FC = () => {
       loadEvaluations();
       setShowEvaluationModal(false);
     } catch (error) {
-      console.error('Error saving evaluation:', error);
+      Logger.error('Error saving evaluation:', error);
       addNotification({
         type: 'error',
         title: 'Error',
@@ -199,7 +199,7 @@ const EvaluatorDashboard: React.FC = () => {
         setActiveSection('dashboard');
       }, 1500);
     } catch (error) {
-      console.error('Error completing evaluation:', error);
+      Logger.error('Error completing evaluation:', error);
       addNotification({
         type: 'error',
         title: 'Error',

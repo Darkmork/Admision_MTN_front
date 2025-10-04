@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import Button from '../ui/Button';
-import LoadingSpinner from '../ui/LoadingSpinner';
-import { interviewerScheduleService, InterviewerSchedule } from '../../services/interviewerScheduleService';
-
+import { Logger } from '../src/utils/logger';import Button from '../ui/Button';
+import { Logger } from '../src/utils/logger';import LoadingSpinner from '../ui/LoadingSpinner';
+import { Logger } from '../src/utils/logger';import { interviewerScheduleService, InterviewerSchedule } from '../../services/interviewerScheduleService';
+import { Logger } from '../src/utils/logger';
 interface WeeklyCalendarProps {
   userId: number;
   userRole: string;
@@ -115,7 +115,7 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
       
       setSchedule(newSchedule);
     } catch (error) {
-      console.error('Error loading schedules:', error);
+      Logger.error('Error loading schedules:', error);
     } finally {
       setLoading(false);
     }
@@ -230,7 +230,7 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
       }
       
     } catch (error) {
-      console.error('Error saving schedules:', error);
+      Logger.error('Error saving schedules:', error);
       alert('Error al guardar los horarios. Por favor, inténtalo nuevamente.');
     } finally {
       setSaving(false);

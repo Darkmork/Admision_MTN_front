@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import DataTable, { TableColumn } from '../ui/DataTable';
-import Badge from '../ui/Badge';
-import Button from '../ui/Button';
-import AdvancedFilters, { FilterCondition, FilterField } from '../ui/AdvancedFilters';
-import StudentDetailModal from './StudentDetailModal';
-import { FiEdit, FiEye, FiDownload, FiCalendar, FiPhone, FiMail, FiBookOpen, FiClock, FiAlertCircle, FiInfo, FiFilter, FiUser } from 'react-icons/fi';
-import { useNotifications } from '../../context/AppContext';
-import { Application } from '../../services/applicationService';
-import api from '../../services/api';
-
+import { Logger } from '../src/utils/logger';import DataTable, { TableColumn } from '../ui/DataTable';
+import { Logger } from '../src/utils/logger';import Badge from '../ui/Badge';
+import { Logger } from '../src/utils/logger';import Button from '../ui/Button';
+import { Logger } from '../src/utils/logger';import AdvancedFilters, { FilterCondition, FilterField } from '../ui/AdvancedFilters';
+import { Logger } from '../src/utils/logger';import StudentDetailModal from './StudentDetailModal';
+import { Logger } from '../src/utils/logger';import { FiEdit, FiEye, FiDownload, FiCalendar, FiPhone, FiMail, FiBookOpen, FiClock, FiAlertCircle, FiInfo, FiFilter, FiUser } from 'react-icons/fi';
+import { Logger } from '../src/utils/logger';import { useNotifications } from '../../context/AppContext';
+import { Logger } from '../src/utils/logger';import { Application } from '../../services/applicationService';
+import { Logger } from '../src/utils/logger';import api from '../../services/api';
+import { Logger } from '../src/utils/logger';
 // Interface completa para la postulación
 interface EnhancedApplication {
     id: number;
@@ -726,15 +726,15 @@ const EnhancedApplicationsDataTable: React.FC<EnhancedApplicationsDataTableProps
     const loadApplications = async (page = 1, size = 25, preserveFilters = false) => {
         setLoading(true);
         try {
-            console.log('📊 EnhancedApplications: Cargando postulaciones...');
+            Logger.info('📊 EnhancedApplications: Cargando postulaciones...');
             
             // Usar directamente el endpoint público que sabemos que funciona
             const response = await api.get('/api/applications/public/all');
             const backendApplications = response.data || [];
-            console.log('📊 Applications del backend:', backendApplications.length);
+            Logger.info('📊 Applications del backend:', backendApplications.length);
             
             if (backendApplications.length === 0) {
-                console.warn('⚠️ No se encontraron applications en el backend');
+                Logger.warn('⚠️ No se encontraron applications en el backend');
                 setApplications([]);
                 setPagination({ current: 1, pageSize: size, total: 0 });
                 return;
@@ -745,7 +745,7 @@ const EnhancedApplicationsDataTable: React.FC<EnhancedApplicationsDataTableProps
                 try {
                     return transformApplicationToEnhanced(app);
                 } catch (transformError) {
-                    console.error(`❌ Error transformando application ${index}:`, transformError);
+                    Logger.error(`❌ Error transformando application ${index}:`, transformError);
                     // Retornar objeto básico en caso de error
                     return {
                         id: app.id || index,
@@ -792,7 +792,7 @@ const EnhancedApplicationsDataTable: React.FC<EnhancedApplicationsDataTableProps
                 }
             });
             
-            console.log('✅ Applications transformadas:', enhancedApplications.length);
+            Logger.info('✅ Applications transformadas:', enhancedApplications.length);
             
             // Set all applications (filtering will be handled separately)
             setApplications(enhancedApplications);
@@ -806,10 +806,10 @@ const EnhancedApplicationsDataTable: React.FC<EnhancedApplicationsDataTableProps
                 total: currentData.length
             }));
             
-            console.log('✅ EnhancedApplications cargadas exitosamente');
+            Logger.info('✅ EnhancedApplications cargadas exitosamente');
             
         } catch (error: any) {
-            console.error('❌ Error cargando postulaciones avanzadas:', error);
+            Logger.error('❌ Error cargando postulaciones avanzadas:', error);
             addNotification({
                 type: 'error',
                 title: 'Error',
@@ -1083,7 +1083,7 @@ const EnhancedApplicationsDataTable: React.FC<EnhancedApplicationsDataTableProps
                         Reload Data
                     </button>
                     <button 
-                        onClick={() => console.log('Active Filters:', activeFilters)}
+                        onClick={() => Logger.info('Active Filters:', activeFilters)}
                         className="mt-2 bg-blue-500 text-white px-3 py-1 rounded text-xs"
                     >
                         Log Filters

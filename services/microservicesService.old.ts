@@ -1,5 +1,5 @@
 import axios from 'axios';
-
+import { Logger } from '../src/utils/logger';
 /**
  * Servicio para conectar el frontend con la arquitectura de microservicios
  * Este servicio permite al frontend comunicarse tanto con el monolito como con microservicios
@@ -53,7 +53,7 @@ export class MicroservicesService {
    */
   async detectArchitecture(): Promise<'microservices' | 'unavailable'> {
     try {
-      console.log('🔍 Detectando microservicios disponibles...');
+      Logger.info('🔍 Detectando microservicios disponibles...');
       
       const microservicesStatus = await Promise.allSettled([
         this.checkGatewayHealth(),
@@ -63,7 +63,7 @@ export class MicroservicesService {
       const gatewayAvailable = microservicesStatus[0].status === 'fulfilled';
       const servicesAvailable = microservicesStatus[1].status === 'fulfilled';
 
-      console.log('📊 Estado de microservicios:', {
+      Logger.info('📊 Estado de microservicios:', {
         gateway: gatewayAvailable ? '✅' : '❌',
         servicios: servicesAvailable ? '✅' : '❌'
       });
@@ -74,7 +74,7 @@ export class MicroservicesService {
         throw new Error('Microservicios no disponibles');
       }
     } catch (error) {
-      console.error('❌ Error detectando microservicios:', error);
+      Logger.error('❌ Error detectando microservicios:', error);
       return 'unavailable';
     }
   }
@@ -151,7 +151,7 @@ export class MicroservicesService {
       const userServiceInfo = await axios.get(`${USER_SERVICE_DIRECT_URL}/info`, { timeout: 5000 });
       services.push(userServiceInfo.data);
     } catch (error) {
-      console.warn('⚠️ No se pudo obtener información del User Service');
+      Logger.warn('⚠️ No se pudo obtener información del User Service');
     }
 
     // Información del monolito (si está disponible)
@@ -164,7 +164,7 @@ export class MicroservicesService {
         endpoints: ['/api/auth', '/api/applications', '/api/interviews', '/api/evaluations']
       });
     } catch (error) {
-      console.warn('⚠️ Monolito no disponible');
+      Logger.warn('⚠️ Monolito no disponible');
     }
 
     return services;
@@ -175,12 +175,12 @@ export class MicroservicesService {
    */
   async getUsersFromMicroservice(): Promise<UserData[]> {
     try {
-      console.log('👥 Obteniendo usuarios del microservicio...');
+      Logger.info('👥 Obteniendo usuarios del microservicio...');
       const response = await axios.get(`${USER_SERVICE_DIRECT_URL}/demo-users`);
-      console.log('✅ Usuarios obtenidos del microservicio:', response.data);
+      Logger.info('✅ Usuarios obtenidos del microservicio:', response.data);
       return response.data;
     } catch (error) {
-      console.error('❌ Error obteniendo usuarios del microservicio:', error);
+      Logger.error('❌ Error obteniendo usuarios del microservicio:', error);
       throw new Error('No se pudieron obtener usuarios del microservicio');
     }
   }
@@ -190,17 +190,17 @@ export class MicroservicesService {
    */
   async testMicroserviceConnection(data: any = {}): Promise<any> {
     try {
-      console.log('🧪 Probando conexión con microservicio...');
+      Logger.info('🧪 Probando conexión con microservicio...');
       const response = await axios.post(`${USER_SERVICE_DIRECT_URL}/test-connection`, {
         ...data,
         from: 'frontend',
         timestamp: new Date().toISOString(),
         testData: 'Connection test from React frontend'
       });
-      console.log('✅ Conexión con microservicio exitosa:', response.data);
+      Logger.info('✅ Conexión con microservicio exitosa:', response.data);
       return response.data;
     } catch (error) {
-      console.error('❌ Error en conexión con microservicio:', error);
+      Logger.error('❌ Error en conexión con microservicio:', error);
       throw error;
     }
   }
@@ -210,12 +210,12 @@ export class MicroservicesService {
    */
   async getMicroserviceStats(): Promise<any> {
     try {
-      console.log('📊 Obteniendo estadísticas del microservicio...');
+      Logger.info('📊 Obteniendo estadísticas del microservicio...');
       const response = await axios.get(`${USER_SERVICE_DIRECT_URL}/stats`);
-      console.log('✅ Estadísticas del microservicio:', response.data);
+      Logger.info('✅ Estadísticas del microservicio:', response.data);
       return response.data;
     } catch (error) {
-      console.error('❌ Error obteniendo estadísticas del microservicio:', error);
+      Logger.error('❌ Error obteniendo estadísticas del microservicio:', error);
       throw error;
     }
   }

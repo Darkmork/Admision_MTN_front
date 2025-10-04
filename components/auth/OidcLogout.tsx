@@ -4,8 +4,8 @@
  */
 
 import React, { useState } from 'react';
-import { useOidcAuth, useAuthError } from '../../hooks/useOidcAuth';
-
+import { Logger } from '../src/utils/logger';import { useOidcAuth, useAuthError } from '../../hooks/useOidcAuth';
+import { Logger } from '../src/utils/logger';
 interface OidcLogoutProps {
   /**
    * Callback cuando el logout es exitoso
@@ -56,15 +56,15 @@ export const OidcLogout: React.FC<OidcLogoutProps> = ({
     try {
       setIsLoggingOut(true);
       
-      console.log('🚪 Cerrando sesión...');
+      Logger.info('🚪 Cerrando sesión...');
       
       await logout();
       
-      console.log('✅ Sesión cerrada exitosamente');
+      Logger.info('✅ Sesión cerrada exitosamente');
       onLogoutSuccess?.();
       
     } catch (error) {
-      console.error('❌ Error cerrando sesión:', error);
+      Logger.error('❌ Error cerrando sesión:', error);
       
       const errorMessage = error instanceof Error 
         ? error.message 

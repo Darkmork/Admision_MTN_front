@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import Button from '../ui/Button';
-import Card from '../ui/Card';
-import { EmailTemplate, emailTemplateService } from '../../services/emailTemplateService';
-import { FiX, FiSave, FiEye, FiUpload, FiPlus, FiCode, FiType } from 'react-icons/fi';
-
+import { Logger } from '../src/utils/logger';import Button from '../ui/Button';
+import { Logger } from '../src/utils/logger';import Card from '../ui/Card';
+import { Logger } from '../src/utils/logger';import { EmailTemplate, emailTemplateService } from '../../services/emailTemplateService';
+import { Logger } from '../src/utils/logger';import { FiX, FiSave, FiEye, FiUpload, FiPlus, FiCode, FiType } from 'react-icons/fi';
+import { Logger } from '../src/utils/logger';
 interface EmailTemplateEditorProps {
   template?: EmailTemplate | null;
   isOpen: boolean;
@@ -90,7 +90,7 @@ const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
       onSave(newTemplate);
       onClose();
     } catch (error) {
-      console.error('Error saving template:', error);
+      Logger.error('Error saving template:', error);
       alert('Error al guardar el template');
     } finally {
       setSaving(false);

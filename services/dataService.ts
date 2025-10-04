@@ -1,6 +1,6 @@
 import api from './api';
-import { applicationService } from './applicationService';
-
+import { Logger } from '../src/utils/logger';import { applicationService } from './applicationService';
+import { Logger } from '../src/utils/logger';
 // Interfaces centralizadas
 export interface DataServiceResponse<T> {
     data: T[];
@@ -103,7 +103,7 @@ class DataService {
     // ===== EVALUACIONES =====
     async getEvaluations(page: number = 1, size: number = 25): Promise<EvaluationData[]> {
         try {
-            console.log('📊 DataService: Cargando evaluaciones...');
+            Logger.info('📊 DataService: Cargando evaluaciones...');
             
             // Intentar cargar desde endpoint específico
             const response = await api.get(`/api/evaluations`, {
@@ -112,12 +112,12 @@ class DataService {
             
             // Transformar datos del backend
             const evaluations = response.data.map(this.transformBackendToEvaluation);
-            console.log(`✅ Evaluaciones cargadas: ${evaluations.length}`);
+            Logger.info(`✅ Evaluaciones cargadas: ${evaluations.length}`);
             
             return evaluations;
             
         } catch (error: any) {
-            console.warn('⚠️ Endpoint de evaluaciones no disponible, usando datos mock');
+            Logger.warn('⚠️ Endpoint de evaluaciones no disponible, usando datos mock');
             
             // Fallback: datos de ejemplo para desarrollo
             return this.getMockEvaluations();
@@ -191,7 +191,7 @@ class DataService {
     // ===== NOTIFICACIONES EMAIL =====
     async getEmailNotifications(page: number = 1, size: number = 25): Promise<EmailNotificationData[]> {
         try {
-            console.log('📧 DataService: Cargando notificaciones email...');
+            Logger.info('📧 DataService: Cargando notificaciones email...');
             
             const response = await api.get(`/api/email-notifications`, {
                 params: { page, size }
@@ -200,7 +200,7 @@ class DataService {
             return response.data;
             
         } catch (error: any) {
-            console.warn('⚠️ Endpoint de email notifications no disponible, usando datos mock');
+            Logger.warn('⚠️ Endpoint de email notifications no disponible, usando datos mock');
             return this.getMockEmailNotifications();
         }
     }
@@ -236,7 +236,7 @@ class DataService {
     // ===== POSTULANTES =====
     async getPostulantes(page: number = 1, size: number = 25): Promise<PostulanteData[]> {
         try {
-            console.log('👨‍👩‍👧‍👦 DataService: Cargando postulantes...');
+            Logger.info('👨‍👩‍👧‍👦 DataService: Cargando postulantes...');
             
             // Usar applicationService existente que ya funciona
             const applications = await applicationService.getAllApplications();
@@ -247,7 +247,7 @@ class DataService {
             return postulantes;
             
         } catch (error: any) {
-            console.error('❌ Error cargando postulantes:', error);
+            Logger.error('❌ Error cargando postulantes:', error);
             throw error; // Propagar el error para que useDataTable lo maneje
         }
     }

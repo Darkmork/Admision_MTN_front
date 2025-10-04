@@ -1,10 +1,10 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import Badge from '../ui/Badge';
-import Button from '../ui/Button';
-import Card from '../ui/Card';
-import Modal from '../ui/Modal';
-import { 
-  FiCalendar, 
+import { Logger } from '../src/utils/logger';import Badge from '../ui/Badge';
+import { Logger } from '../src/utils/logger';import Button from '../ui/Button';
+import { Logger } from '../src/utils/logger';import Card from '../ui/Card';
+import { Logger } from '../src/utils/logger';import Modal from '../ui/Modal';
+import { Logger } from '../src/utils/logger';import { 
+import { Logger } from '../src/utils/logger';  FiCalendar, 
   FiChevronLeft, 
   FiChevronRight, 
   FiClock, 
@@ -17,7 +17,7 @@ import {
   FiAlertTriangle
 } from 'react-icons/fi';
 import {
-  Interview,
+import { Logger } from '../src/utils/logger';  Interview,
   InterviewStatus,
   InterviewMode,
   INTERVIEW_STATUS_LABELS,
@@ -225,7 +225,7 @@ const EnhancedInterviewCalendar: React.FC<EnhancedInterviewCalendarProps> = ({
       setShowRescheduleModal(false);
       setRescheduleConfirmation(null);
     } catch (error) {
-      console.error('Error al reprogramar:', error);
+      Logger.error('Error al reprogramar:', error);
       // El error se maneja en el componente padre
     } finally {
       setIsRescheduling(false);

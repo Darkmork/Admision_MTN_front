@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import Card from '../ui/Card';
-import Button from '../ui/Button';
-import Badge from '../ui/Badge';
-import LoadingSpinner from '../ui/LoadingSpinner';
-import { 
-  FiAlertTriangle, 
+import { Logger } from '../src/utils/logger';import Card from '../ui/Card';
+import { Logger } from '../src/utils/logger';import Button from '../ui/Button';
+import { Logger } from '../src/utils/logger';import Badge from '../ui/Badge';
+import { Logger } from '../src/utils/logger';import LoadingSpinner from '../ui/LoadingSpinner';
+import { Logger } from '../src/utils/logger';import { 
+import { Logger } from '../src/utils/logger';  FiAlertTriangle, 
   FiClock, 
   FiCheckCircle, 
   FiCalendar, 
@@ -15,7 +15,7 @@ import {
   FiRefreshCw
 } from 'react-icons/fi';
 import {
-  Interview,
+import { Logger } from '../src/utils/logger';  Interview,
   InterviewStatus,
   InterviewResult,
   INTERVIEW_STATUS_LABELS,
@@ -23,8 +23,8 @@ import {
   InterviewUtils
 } from '../../types/interview';
 import { applicationService } from '../../services/applicationService';
-import interviewService from '../../services/interviewService';
-
+import { Logger } from '../src/utils/logger';import interviewService from '../../services/interviewService';
+import { Logger } from '../src/utils/logger';
 interface InterviewDashboardProps {
   onScheduleInterview: (applicationId: number) => void;
   onViewInterview: (interview: Interview) => void;
@@ -149,7 +149,7 @@ const InterviewDashboard: React.FC<InterviewDashboardProps> = ({
       setCompletedInterviews(completed);
 
     } catch (err: any) {
-      console.error('Error loading dashboard data:', err);
+      Logger.error('Error loading dashboard data:', err);
       setError('Error al cargar los datos del dashboard');
     } finally {
       setIsLoading(false);

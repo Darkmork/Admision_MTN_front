@@ -1,25 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { useNotifications } from '../../context/AppContext';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
-import Button from '../ui/Button';
-import Modal from '../ui/Modal';
-import { 
-  evaluationService
+import { Logger } from '../src/utils/logger';import { useNotifications } from '../../context/AppContext';
+import { Logger } from '../src/utils/logger';import Card from '../ui/Card';
+import { Logger } from '../src/utils/logger';import Badge from '../ui/Badge';
+import { Logger } from '../src/utils/logger';import Button from '../ui/Button';
+import { Logger } from '../src/utils/logger';import Modal from '../ui/Modal';
+import { Logger } from '../src/utils/logger';import { 
+import { Logger } from '../src/utils/logger';  evaluationService
 } from '../../services/evaluationService';
 import {
-  Evaluation,
+import { Logger } from '../src/utils/logger';  Evaluation,
   EvaluationType,
   EvaluationStatus,
   EVALUATION_TYPE_LABELS,
   EVALUATION_STATUS_LABELS
 } from '../../types/evaluation';
 import { Application } from '../../services/applicationService';
-import AcademicEvaluationForm from '../evaluations/AcademicEvaluationForm';
-import PsychologicalInterviewForm from '../evaluations/PsychologicalInterviewForm';
-import CycleDirectorForm from '../evaluations/CycleDirectorForm';
-import { 
-  FileText, 
+import { Logger } from '../src/utils/logger';import AcademicEvaluationForm from '../evaluations/AcademicEvaluationForm';
+import { Logger } from '../src/utils/logger';import PsychologicalInterviewForm from '../evaluations/PsychologicalInterviewForm';
+import { Logger } from '../src/utils/logger';import CycleDirectorForm from '../evaluations/CycleDirectorForm';
+import { Logger } from '../src/utils/logger';import { 
+import { Logger } from '../src/utils/logger';  FileText, 
   Eye, 
   Download,
   Printer,
@@ -152,7 +152,7 @@ const EvaluationReports: React.FC<EvaluationReportsProps> = ({
       
       setEvaluations(mockEvaluations);
     } catch (error) {
-      console.error('Error loading evaluations:', error);
+      Logger.error('Error loading evaluations:', error);
       addNotification({
         type: 'error',
         title: 'Error',

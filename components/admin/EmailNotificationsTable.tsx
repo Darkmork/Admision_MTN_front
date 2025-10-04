@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import DataTable, { TableColumn } from '../ui/DataTable';
-import Badge from '../ui/Badge';
-import Button from '../ui/Button';
-import { FiEye, FiMail, FiCheck, FiX, FiClock, FiRefreshCw } from 'react-icons/fi';
-import Modal from '../ui/Modal';
-import { useDataTable } from '../../hooks/useDataTable';
-import { dataService, EmailNotificationData } from '../../services/dataService';
-
+import { Logger } from '../src/utils/logger';import DataTable, { TableColumn } from '../ui/DataTable';
+import { Logger } from '../src/utils/logger';import Badge from '../ui/Badge';
+import { Logger } from '../src/utils/logger';import Button from '../ui/Button';
+import { Logger } from '../src/utils/logger';import { FiEye, FiMail, FiCheck, FiX, FiClock, FiRefreshCw } from 'react-icons/fi';
+import { Logger } from '../src/utils/logger';import Modal from '../ui/Modal';
+import { Logger } from '../src/utils/logger';import { useDataTable } from '../../hooks/useDataTable';
+import { Logger } from '../src/utils/logger';import { dataService, EmailNotificationData } from '../../services/dataService';
+import { Logger } from '../src/utils/logger';
 // Usar tipos centralizados
 type EmailNotification = EmailNotificationData;
 
@@ -47,7 +47,7 @@ const EmailNotificationsTable: React.FC<EmailNotificationsTableProps> = ({ appli
                 setEvents(eventsData);
             }
         } catch (error) {
-            console.error('Error cargando eventos:', error);
+            Logger.error('Error cargando eventos:', error);
         }
     };
 

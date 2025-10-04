@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Button from '../components/ui/Button';
-import Modal from '../components/ui/Modal';
-import LoadingSpinner from '../components/ui/LoadingSpinner';
-import SimpleToast from '../components/ui/SimpleToast';
-import {
-  ChartBarIcon,
+import { Logger } from '../src/utils/logger';import { useNavigate } from 'react-router-dom';
+import { Logger } from '../src/utils/logger';import Button from '../components/ui/Button';
+import { Logger } from '../src/utils/logger';import Modal from '../components/ui/Modal';
+import { Logger } from '../src/utils/logger';import LoadingSpinner from '../components/ui/LoadingSpinner';
+import { Logger } from '../src/utils/logger';import SimpleToast from '../components/ui/SimpleToast';
+import { Logger } from '../src/utils/logger';import {
+import { Logger } from '../src/utils/logger';  ChartBarIcon,
   DownloadIcon,
   UsersIcon,
   AcademicCapIcon,
@@ -17,11 +17,11 @@ import {
   ArrowLeftIcon
 } from '../components/icons/Icons';
 import { FiFileText, FiArrowLeft } from 'react-icons/fi';
-import * as XLSX from 'xlsx';
-import { applicationService } from '../services/applicationService';
-import { userService } from '../services/userService';
-import { professorEvaluationService } from '../services/professorEvaluationService';
-
+import { Logger } from '../src/utils/logger';import * as XLSX from 'xlsx';
+import { Logger } from '../src/utils/logger';import { applicationService } from '../services/applicationService';
+import { Logger } from '../src/utils/logger';import { userService } from '../services/userService';
+import { Logger } from '../src/utils/logger';import { professorEvaluationService } from '../services/professorEvaluationService';
+import { Logger } from '../src/utils/logger';
 interface ReportData {
   id: string;
   title: string;
@@ -118,10 +118,10 @@ const ReportsDashboard: React.FC = () => {
           try {
             // Usar getMyEvaluations ya que getAllEvaluations no existe
             const myEvaluations = await professorEvaluationService.getMyEvaluations();
-            console.log('Evaluaciones obtenidas:', myEvaluations);
+            Logger.info('Evaluaciones obtenidas:', myEvaluations);
             evaluationsData = myEvaluations;
           } catch (error) {
-            console.log('No se pudieron cargar las evaluaciones desde la API:', error);
+            Logger.info('No se pudieron cargar las evaluaciones desde la API:', error);
           }
 
           // Agregar algunos datos simulados para demostrar los enlaces (siempre)

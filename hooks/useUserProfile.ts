@@ -4,9 +4,9 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import profileService, { type UserProfile, type UpdateProfileRequest } from '../services/profileService';
-import { useAuth } from '../context/AuthContext';
-
+import { Logger } from '../src/utils/logger';import profileService, { type UserProfile, type UpdateProfileRequest } from '../services/profileService';
+import { Logger } from '../src/utils/logger';import { useAuth } from '../context/AuthContext';
+import { Logger } from '../src/utils/logger';
 interface UseUserProfileReturn {
   profile: UserProfile | null;
   loading: boolean;
@@ -41,14 +41,14 @@ export const useUserProfile = (): UseUserProfileReturn => {
       const userProfile = await profileService.getCurrentUser();
       setProfile(userProfile);
       
-      console.log('✅ Profile loaded from gateway:', {
+      Logger.info('✅ Profile loaded from gateway:', {
         id: userProfile.id,
         role: userProfile.role,
         permissions: userProfile.permissions?.length || 0
       });
     } catch (err: any) {
       setError(err.message || 'Failed to load profile');
-      console.error('❌ Profile loading error:', err);
+      Logger.error('❌ Profile loading error:', err);
     } finally {
       setLoading(false);
     }
@@ -62,10 +62,10 @@ export const useUserProfile = (): UseUserProfileReturn => {
       const updatedProfile = await profileService.updateProfile(data);
       setProfile(updatedProfile);
       
-      console.log('✅ Profile updated successfully');
+      Logger.info('✅ Profile updated successfully');
     } catch (err: any) {
       setError(err.message || 'Failed to update profile');
-      console.error('❌ Profile update error:', err);
+      Logger.error('❌ Profile update error:', err);
       throw err;
     } finally {
       setLoading(false);
@@ -80,10 +80,10 @@ export const useUserProfile = (): UseUserProfileReturn => {
       const updatedProfile = await profileService.updatePreferences(preferences);
       setProfile(updatedProfile);
       
-      console.log('✅ Preferences updated successfully');
+      Logger.info('✅ Preferences updated successfully');
     } catch (err: any) {
       setError(err.message || 'Failed to update preferences');
-      console.error('❌ Preferences update error:', err);
+      Logger.error('❌ Preferences update error:', err);
       throw err;
     } finally {
       setLoading(false);
@@ -101,10 +101,10 @@ export const useUserProfile = (): UseUserProfileReturn => {
         confirmPassword: newPassword
       });
       
-      console.log('✅ Password changed successfully');
+      Logger.info('✅ Password changed successfully');
     } catch (err: any) {
       setError(err.message || 'Failed to change password');
-      console.error('❌ Password change error:', err);
+      Logger.error('❌ Password change error:', err);
       throw err;
     } finally {
       setLoading(false);
@@ -121,10 +121,10 @@ export const useUserProfile = (): UseUserProfileReturn => {
       // Refresh profile to get updated picture URL
       await refreshProfile();
       
-      console.log('✅ Profile picture uploaded successfully:', result.profilePictureUrl);
+      Logger.info('✅ Profile picture uploaded successfully:', result.profilePictureUrl);
     } catch (err: any) {
       setError(err.message || 'Failed to upload profile picture');
-      console.error('❌ Profile picture upload error:', err);
+      Logger.error('❌ Profile picture upload error:', err);
       throw err;
     } finally {
       setLoading(false);
@@ -134,10 +134,10 @@ export const useUserProfile = (): UseUserProfileReturn => {
   const getActivityLog = useCallback(async (params?: { from?: string; to?: string; limit?: number }) => {
     try {
       const activityLog = await profileService.getActivityLog(params);
-      console.log('📊 Activity log retrieved:', activityLog.length, 'entries');
+      Logger.info('📊 Activity log retrieved:', activityLog.length, 'entries');
       return activityLog;
     } catch (err: any) {
-      console.error('❌ Failed to get activity log:', err);
+      Logger.error('❌ Failed to get activity log:', err);
       throw err;
     }
   }, []);
@@ -145,10 +145,10 @@ export const useUserProfile = (): UseUserProfileReturn => {
   const getSessions = useCallback(async () => {
     try {
       const sessions = await profileService.getSessions();
-      console.log('🔐 Active sessions retrieved:', sessions.length);
+      Logger.info('🔐 Active sessions retrieved:', sessions.length);
       return sessions;
     } catch (err: any) {
-      console.error('❌ Failed to get sessions:', err);
+      Logger.error('❌ Failed to get sessions:', err);
       throw err;
     }
   }, []);
@@ -156,9 +156,9 @@ export const useUserProfile = (): UseUserProfileReturn => {
   const revokeSession = useCallback(async (sessionId: string) => {
     try {
       await profileService.revokeSession(sessionId);
-      console.log('✅ Session revoked successfully:', sessionId);
+      Logger.info('✅ Session revoked successfully:', sessionId);
     } catch (err: any) {
-      console.error('❌ Failed to revoke session:', err);
+      Logger.error('❌ Failed to revoke session:', err);
       throw err;
     }
   }, []);

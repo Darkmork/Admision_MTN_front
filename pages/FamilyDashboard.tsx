@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import Card from '../components/ui/Card';
-import Badge from '../components/ui/Badge';
-import Button from '../components/ui/Button';
-import { ApplicationStatus, Document } from '../types';
-import { applicationService } from '../services/applicationService';
-import { applicationWorkflowService } from '../services/applicationWorkflowService';
-import { useUserProfile } from '../hooks/useUserProfile';
-import { CheckCircleIcon, ClockIcon, FileTextIcon, XCircleIcon, CalendarIcon, UsersIcon, LogoIcon } from '../components/icons/Icons';
-import { 
-  FiFileText, 
+import { Logger } from '../src/utils/logger';import { Link } from 'react-router-dom';
+import { Logger } from '../src/utils/logger';import Card from '../components/ui/Card';
+import { Logger } from '../src/utils/logger';import Badge from '../components/ui/Badge';
+import { Logger } from '../src/utils/logger';import Button from '../components/ui/Button';
+import { Logger } from '../src/utils/logger';import { ApplicationStatus, Document } from '../types';
+import { Logger } from '../src/utils/logger';import { applicationService } from '../services/applicationService';
+import { Logger } from '../src/utils/logger';import { applicationWorkflowService } from '../services/applicationWorkflowService';
+import { Logger } from '../src/utils/logger';import { useUserProfile } from '../hooks/useUserProfile';
+import { Logger } from '../src/utils/logger';import { CheckCircleIcon, ClockIcon, FileTextIcon, XCircleIcon, CalendarIcon, UsersIcon, LogoIcon } from '../components/icons/Icons';
+import { Logger } from '../src/utils/logger';import { 
+import { Logger } from '../src/utils/logger';  FiFileText, 
   FiBarChart2, 
   FiFile, 
   FiKey, 
@@ -37,13 +37,13 @@ import {
   FiLogOut
 } from 'react-icons/fi';
 import { useApplications } from '../context/AppContext';
-import { applicationService, Application } from '../services/applicationService';
-import { useAuth } from '../context/AuthContext';
-import useUserProfile from '../hooks/useUserProfile';
-import applicationWorkflowService, { type ApplicationDraft } from '../services/applicationWorkflowService';
-import documentGatewayService from '../services/documentGatewayService';
-import FamilyInterviews from '../components/family/FamilyInterviews';
-
+import { Logger } from '../src/utils/logger';import { applicationService, Application } from '../services/applicationService';
+import { Logger } from '../src/utils/logger';import { useAuth } from '../context/AuthContext';
+import { Logger } from '../src/utils/logger';import useUserProfile from '../hooks/useUserProfile';
+import { Logger } from '../src/utils/logger';import applicationWorkflowService, { type ApplicationDraft } from '../services/applicationWorkflowService';
+import { Logger } from '../src/utils/logger';import documentGatewayService from '../services/documentGatewayService';
+import { Logger } from '../src/utils/logger';import FamilyInterviews from '../components/family/FamilyInterviews';
+import { Logger } from '../src/utils/logger';
 const sections = [
   { key: 'resumen', label: 'Resumen de Postulación' },
   { key: 'datos', label: 'Datos del Postulante y Apoderados' },
@@ -123,12 +123,12 @@ const FamilyDashboard: React.FC = () => {
           setRealApplications(dashboardData.applications);
           setError(null);
         } else {
-          console.warn('Dashboard data no contiene un array de applications:', dashboardData);
+          Logger.warn('Dashboard data no contiene un array de applications:', dashboardData);
           setRealApplications([]);
           setError('Formato de datos inválido del servidor');
         }
       } catch (error: any) {
-        console.error('Error loading dashboard data:', error);
+        Logger.error('Error loading dashboard data:', error);
         setError('Error al cargar los datos del dashboard');
         setRealApplications([]);
       } finally {
@@ -149,7 +149,7 @@ const FamilyDashboard: React.FC = () => {
         const response = await applicationService.getApplicationDocuments(realApplications[0].id);
         setDocuments(response.documents || []);
       } catch (error) {
-        console.error('Error loading documents:', error);
+        Logger.error('Error loading documents:', error);
         setDocuments([]);
       } finally {
         setLoadingDocuments(false);

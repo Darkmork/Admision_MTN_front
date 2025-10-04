@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { microservicesService, MicroserviceStatus, ServiceInfo, UserData } from '../../services/microservicesService';
-
+import { Logger } from '../src/utils/logger';import { microservicesService, MicroserviceStatus, ServiceInfo, UserData } from '../../services/microservicesService';
+import { Logger } from '../src/utils/logger';
 interface MicroservicesDashboardProps {
   className?: string;
 }
@@ -25,7 +25,7 @@ const MicroservicesDashboard: React.FC<MicroservicesDashboardProps> = ({ classNa
       setLoading(true);
       setError(null);
 
-      console.log('🔄 Cargando dashboard de microservicios...');
+      Logger.info('🔄 Cargando dashboard de microservicios...');
 
       // Obtener estado de servicios
       const dashboard = await microservicesService.getServicesDashboard();
@@ -37,9 +37,9 @@ const MicroservicesDashboard: React.FC<MicroservicesDashboardProps> = ({ classNa
       const info = await microservicesService.getServicesInfo();
       setServicesInfo(info);
 
-      console.log('✅ Dashboard cargado correctamente');
+      Logger.info('✅ Dashboard cargado correctamente');
     } catch (err: any) {
-      console.error('❌ Error cargando dashboard:', err);
+      Logger.error('❌ Error cargando dashboard:', err);
       setError(err.message || 'Error cargando dashboard de microservicios');
     } finally {
       setLoading(false);
@@ -48,7 +48,7 @@ const MicroservicesDashboard: React.FC<MicroservicesDashboardProps> = ({ classNa
 
   const testMicroservice = async () => {
     try {
-      console.log('🧪 Probando microservicio...');
+      Logger.info('🧪 Probando microservicio...');
       
       // Probar conexión
       const connectionTest = await microservicesService.testMicroserviceConnection({
@@ -65,9 +65,9 @@ const MicroservicesDashboard: React.FC<MicroservicesDashboardProps> = ({ classNa
       const serviceStats = await microservicesService.getMicroserviceStats();
       setStats(serviceStats);
 
-      console.log('✅ Prueba de microservicio completada');
+      Logger.info('✅ Prueba de microservicio completada');
     } catch (err: any) {
-      console.error('❌ Error probando microservicio:', err);
+      Logger.error('❌ Error probando microservicio:', err);
       setError(err.message || 'Error probando microservicio');
     }
   };

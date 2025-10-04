@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import Card from '../ui/Card';
-import Button from '../ui/Button';
-import Badge from '../ui/Badge';
-import { 
-  FiMail, 
+import { Logger } from '../src/utils/logger';import Card from '../ui/Card';
+import { Logger } from '../src/utils/logger';import Button from '../ui/Button';
+import { Logger } from '../src/utils/logger';import Badge from '../ui/Badge';
+import { Logger } from '../src/utils/logger';import { 
+import { Logger } from '../src/utils/logger';  FiMail, 
   FiSend, 
   FiClock, 
   FiCheckCircle, 
@@ -22,11 +22,11 @@ import {
   FiCode
 } from 'react-icons/fi';
 import { institutionalEmailService } from '../../services/institutionalEmailService';
-import { applicationService } from '../../services/applicationService';
-import { emailTemplateService, EmailTemplate } from '../../services/emailTemplateService';
-import EmailTemplatePreview from './EmailTemplatePreview';
-import EmailTemplateEditor from './EmailTemplateEditor';
-
+import { Logger } from '../src/utils/logger';import { applicationService } from '../../services/applicationService';
+import { Logger } from '../src/utils/logger';import { emailTemplateService, EmailTemplate } from '../../services/emailTemplateService';
+import { Logger } from '../src/utils/logger';import EmailTemplatePreview from './EmailTemplatePreview';
+import { Logger } from '../src/utils/logger';import EmailTemplateEditor from './EmailTemplateEditor';
+import { Logger } from '../src/utils/logger';
 interface EmailStatistics {
   pendingEmails: number;
   emailsSentThisHour: number;
@@ -94,7 +94,7 @@ const InstitutionalEmailManager: React.FC<InstitutionalEmailManagerProps> = ({ o
       
       // Load applications first (this endpoint works)
       const appsResponse = await applicationService.getAllApplications();
-      console.log('Aplicaciones recibidas:', appsResponse);
+      Logger.info('Aplicaciones recibidas:', appsResponse);
       
       // Manejar tanto el formato directo como el formato { data: [] }
       let apps = [];
@@ -107,17 +107,17 @@ const InstitutionalEmailManager: React.FC<InstitutionalEmailManagerProps> = ({ o
       }
       
       setApplications(apps);
-      console.log('Aplicaciones procesadas:', apps.length);
+      Logger.info('Aplicaciones procesadas:', apps.length);
 
       // Load email templates
       try {
         const templatesResponse = await emailTemplateService.getAllTemplates();
         if (templatesResponse.success) {
           setTemplates(templatesResponse.data);
-          console.log('Templates cargados:', templatesResponse.data.length);
+          Logger.info('Templates cargados:', templatesResponse.data.length);
         }
       } catch (templateError: any) {
-        console.warn('Error loading email templates:', templateError.message);
+        Logger.warn('Error loading email templates:', templateError.message);
       }
       
       // Try to load email statistics, but handle gracefully if service is disabled
@@ -139,7 +139,7 @@ const InstitutionalEmailManager: React.FC<InstitutionalEmailManagerProps> = ({ o
           });
         }
       } catch (emailError: any) {
-        console.warn('Institutional email service not available:', emailError.message);
+        Logger.warn('Institutional email service not available:', emailError.message);
         // Set default statistics when service is disabled
         setStatistics({
           pendingEmails: 0,
@@ -153,7 +153,7 @@ const InstitutionalEmailManager: React.FC<InstitutionalEmailManagerProps> = ({ o
         });
       }
     } catch (error) {
-      console.error('Error loading application data:', error);
+      Logger.error('Error loading application data:', error);
     } finally {
       setLoading(false);
     }
@@ -188,7 +188,7 @@ const InstitutionalEmailManager: React.FC<InstitutionalEmailManagerProps> = ({ o
         alert(`Error: ${response.message}`);
       }
     } catch (error: any) {
-      console.error('Error sending email:', error);
+      Logger.error('Error sending email:', error);
       if (error.response?.status === 401 || error.response?.status === 404) {
         alert('Sistema de emails institucionales no disponible en este momento');
       } else {
@@ -216,7 +216,7 @@ const InstitutionalEmailManager: React.FC<InstitutionalEmailManagerProps> = ({ o
         alert(`Error: ${response.message}`);
       }
     } catch (error: any) {
-      console.error('Error sending test email:', error);
+      Logger.error('Error sending test email:', error);
       if (error.response?.status === 401 || error.response?.status === 404) {
         alert('Sistema de emails institucionales no disponible en este momento');
       } else {
@@ -236,7 +236,7 @@ const InstitutionalEmailManager: React.FC<InstitutionalEmailManagerProps> = ({ o
         loadData();
       }
     } catch (error: any) {
-      console.error('Error processing queue:', error);
+      Logger.error('Error processing queue:', error);
       if (error.response?.status === 401 || error.response?.status === 404) {
         alert('Sistema de emails institucionales no disponible en este momento');
       } else {
@@ -260,7 +260,7 @@ const InstitutionalEmailManager: React.FC<InstitutionalEmailManagerProps> = ({ o
         loadData();
       }
     } catch (error: any) {
-      console.error('Error clearing queue:', error);
+      Logger.error('Error clearing queue:', error);
       if (error.response?.status === 401 || error.response?.status === 404) {
         alert('Sistema de emails institucionales no disponible en este momento');
       } else {
@@ -284,7 +284,7 @@ const InstitutionalEmailManager: React.FC<InstitutionalEmailManagerProps> = ({ o
         alert(`Error: ${response.message}`);
       }
     } catch (error: any) {
-      console.error('Error sending templated email:', error);
+      Logger.error('Error sending templated email:', error);
       if (error.response?.status === 401 || error.response?.status === 404) {
         alert('Sistema de emails institucionales no disponible en este momento');
       } else {
@@ -328,10 +328,10 @@ const InstitutionalEmailManager: React.FC<InstitutionalEmailManagerProps> = ({ o
       let result;
       
       if (editorMode === 'create') {
-        console.log('📝 Creando nuevo template:', template.templateKey);
+        Logger.info('📝 Creando nuevo template:', template.templateKey);
         result = await emailTemplateService.createTemplate(template);
       } else {
-        console.log('✏️ Actualizando template:', template.templateKey);
+        Logger.info('✏️ Actualizando template:', template.templateKey);
         result = await emailTemplateService.updateTemplate(template.id, template);
       }
       
@@ -352,7 +352,7 @@ const InstitutionalEmailManager: React.FC<InstitutionalEmailManagerProps> = ({ o
             setTemplates(templatesResponse.data);
           }
         } catch (reloadError) {
-          console.warn('No se pudieron recargar templates desde backend:', reloadError);
+          Logger.warn('No se pudieron recargar templates desde backend:', reloadError);
         }
         
         alert(result.message || (editorMode === 'create' ? 'Template creado exitosamente' : 'Template actualizado exitosamente'));
@@ -360,7 +360,7 @@ const InstitutionalEmailManager: React.FC<InstitutionalEmailManagerProps> = ({ o
         alert(`Error: ${result.message}`);
       }
     } catch (error) {
-      console.error('Error saving template:', error);
+      Logger.error('Error saving template:', error);
       alert('Error al guardar el template');
     }
   };

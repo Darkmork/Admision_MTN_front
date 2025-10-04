@@ -4,8 +4,8 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useOidcAuth, useAuthRedirect, useAuthError } from '../../hooks/useOidcAuth';
-
+import { Logger } from '../src/utils/logger';import { useOidcAuth, useAuthRedirect, useAuthError } from '../../hooks/useOidcAuth';
+import { Logger } from '../src/utils/logger';
 interface OidcLoginProps {
   /**
    * Tipo de login (admin o user)
@@ -83,13 +83,13 @@ export const OidcLogin: React.FC<OidcLoginProps> = ({
       setIsLoggingIn(true);
       clearError();
       
-      console.log(`🔐 Iniciando login como ${selectedLoginType}...`);
+      Logger.info(`🔐 Iniciando login como ${selectedLoginType}...`);
       
       await login(selectedLoginType);
       
       // El manejo del éxito se realiza en el useEffect de isAuthenticated
     } catch (error) {
-      console.error('❌ Error en login:', error);
+      Logger.error('❌ Error en login:', error);
       setIsLoggingIn(false);
       
       const errorMessage = error instanceof Error 

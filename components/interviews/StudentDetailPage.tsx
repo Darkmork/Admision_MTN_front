@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import Card from '../ui/Card';
-import Button from '../ui/Button';
-import Badge from '../ui/Badge';
-import LoadingSpinner from '../ui/LoadingSpinner';
-import {
-  FiArrowLeft,
+import { Logger } from '../src/utils/logger';import Card from '../ui/Card';
+import { Logger } from '../src/utils/logger';import Button from '../ui/Button';
+import { Logger } from '../src/utils/logger';import Badge from '../ui/Badge';
+import { Logger } from '../src/utils/logger';import LoadingSpinner from '../ui/LoadingSpinner';
+import { Logger } from '../src/utils/logger';import {
+import { Logger } from '../src/utils/logger';  FiArrowLeft,
   FiUser,
   FiCalendar,
   FiClock,
@@ -19,7 +19,7 @@ import {
   FiInfo
 } from 'react-icons/fi';
 import {
-  Interview,
+import { Logger } from '../src/utils/logger';  Interview,
   InterviewStatus,
   InterviewResult,
   INTERVIEW_STATUS_LABELS,
@@ -28,9 +28,9 @@ import {
   InterviewUtils
 } from '../../types/interview';
 import { applicationService } from '../../services/applicationService';
-import interviewService from '../../services/interviewService';
-import { interviewerScheduleService } from '../../services/interviewerScheduleService';
-
+import { Logger } from '../src/utils/logger';import interviewService from '../../services/interviewService';
+import { Logger } from '../src/utils/logger';import { interviewerScheduleService } from '../../services/interviewerScheduleService';
+import { Logger } from '../src/utils/logger';
 interface StudentDetailPageProps {
   applicationId: number;
   studentName: string;
@@ -277,7 +277,7 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({
       }
       setError(null);
 
-      console.log('📋 Loading student detail for application:', applicationId);
+      Logger.info('📋 Loading student detail for application:', applicationId);
 
       // Cargar información del estudiante y sus entrevistas en paralelo
       const [applications, interviewsResponse] = await Promise.all([
@@ -291,8 +291,8 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({
         return;
       }
 
-      console.log('📋 Found application:', application);
-      console.log('📋 Found interviews:', interviewsResponse.interviews);
+      Logger.info('📋 Found application:', application);
+      Logger.info('📋 Found interviews:', interviewsResponse.interviews);
 
       const interviews = interviewsResponse.interviews || [];
 
@@ -327,7 +327,7 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({
         }
       });
 
-      console.log('📋 Student detail loaded successfully with progress:', {
+      Logger.info('📋 Student detail loaded successfully with progress:', {
         completed: completedCount,
         scheduled: scheduledCount,
         missing: missingCount,
@@ -335,7 +335,7 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({
       });
 
     } catch (err: any) {
-      console.error('Error loading student detail:', err);
+      Logger.error('Error loading student detail:', err);
       setError('Error al cargar los detalles del estudiante');
     } finally {
       setIsLoading(false);

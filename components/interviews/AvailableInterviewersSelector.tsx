@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { interviewerScheduleService, User } from '../../services/interviewerScheduleService';
-import LoadingSpinner from '../ui/LoadingSpinner';
-import { FiClock, FiUser, FiCalendar } from 'react-icons/fi';
-
+import { Logger } from '../src/utils/logger';import { interviewerScheduleService, User } from '../../services/interviewerScheduleService';
+import { Logger } from '../src/utils/logger';import LoadingSpinner from '../ui/LoadingSpinner';
+import { Logger } from '../src/utils/logger';import { FiClock, FiUser, FiCalendar } from 'react-icons/fi';
+import { Logger } from '../src/utils/logger';
 interface AvailableInterviewersSelectorProps {
   selectedDate: string; // YYYY-MM-DD format
   selectedTime: string; // HH:mm format
@@ -36,14 +36,14 @@ const AvailableInterviewersSelector: React.FC<AvailableInterviewersSelectorProps
       setLoading(true);
       setError(null);
       
-      console.log('🔍 Buscando entrevistadores disponibles para:', { selectedDate, selectedTime });
+      Logger.info('🔍 Buscando entrevistadores disponibles para:', { selectedDate, selectedTime });
       
       const available = await interviewerScheduleService.findAvailableInterviewers(
         selectedDate, 
         selectedTime
       );
       
-      console.log('✅ Entrevistadores disponibles encontrados:', available);
+      Logger.info('✅ Entrevistadores disponibles encontrados:', available);
       setAvailableInterviewers(available);
       
       // Si no hay entrevistadores disponibles, limpiar selección
@@ -56,7 +56,7 @@ const AvailableInterviewersSelector: React.FC<AvailableInterviewersSelectorProps
       }
       
     } catch (error) {
-      console.error('❌ Error buscando entrevistadores disponibles:', error);
+      Logger.error('❌ Error buscando entrevistadores disponibles:', error);
       setError('Error al buscar entrevistadores disponibles');
       setAvailableInterviewers([]);
     } finally {

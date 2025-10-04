@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { FiSave, FiFolder, FiTrash2, FiEdit3, FiStar, FiPlus, FiX, FiCheck } from 'react-icons/fi';
-import Button from './Button';
-import Input from './Input';
-import Modal from './Modal';
-import Badge from './Badge';
-import { FilterCondition } from './AdvancedFilters';
-
+import { Logger } from '../src/utils/logger';import { FiSave, FiFolder, FiTrash2, FiEdit3, FiStar, FiPlus, FiX, FiCheck } from 'react-icons/fi';
+import { Logger } from '../src/utils/logger';import Button from './Button';
+import { Logger } from '../src/utils/logger';import Input from './Input';
+import { Logger } from '../src/utils/logger';import Modal from './Modal';
+import { Logger } from '../src/utils/logger';import Badge from './Badge';
+import { Logger } from '../src/utils/logger';import { FilterCondition } from './AdvancedFilters';
+import { Logger } from '../src/utils/logger';
 export interface SavedFilter {
   id: string;
   name: string;
@@ -225,7 +225,7 @@ const SavedFilters: React.FC<SavedFiltersProps> = ({
           setSavedFilters(defaultPresets);
         }
       } catch (error) {
-        console.error('Error loading saved filters:', error);
+        Logger.error('Error loading saved filters:', error);
         setSavedFilters(defaultPresets);
       }
     };
@@ -240,7 +240,7 @@ const SavedFilters: React.FC<SavedFiltersProps> = ({
       const customFilters = filters.filter(f => !f.isDefault);
       localStorage.setItem(storageKey, JSON.stringify(customFilters));
     } catch (error) {
-      console.error('Error saving filters to localStorage:', error);
+      Logger.error('Error saving filters to localStorage:', error);
     }
   };
 

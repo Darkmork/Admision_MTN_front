@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import DataTable, { TableColumn } from '../ui/DataTable';
-import Badge from '../ui/Badge';
-import Button from '../ui/Button';
-import Modal from '../ui/Modal';
-import { FiEdit, FiTrash2, FiPlus, FiMail, FiKey, FiEye } from 'react-icons/fi';
-import { userService } from '../../services/userService';
-import { useNotifications } from '../../context/AppContext';
-
+import { Logger } from '../src/utils/logger';import DataTable, { TableColumn } from '../ui/DataTable';
+import { Logger } from '../src/utils/logger';import Badge from '../ui/Badge';
+import { Logger } from '../src/utils/logger';import Button from '../ui/Button';
+import { Logger } from '../src/utils/logger';import Modal from '../ui/Modal';
+import { Logger } from '../src/utils/logger';import { FiEdit, FiTrash2, FiPlus, FiMail, FiKey, FiEye } from 'react-icons/fi';
+import { Logger } from '../src/utils/logger';import { userService } from '../../services/userService';
+import { Logger } from '../src/utils/logger';import { useNotifications } from '../../context/AppContext';
+import { Logger } from '../src/utils/logger';
 interface User {
     id: number;
     firstName: string;
@@ -237,7 +237,7 @@ const UsersDataTable: React.FC<UsersDataTableProps> = ({
                 total: response.totalElements || 0
             });
         } catch (error: any) {
-            console.error('Error cargando usuarios:', error);
+            Logger.error('Error cargando usuarios:', error);
             addNotification({
                 type: 'error',
                 title: 'Error',
@@ -341,7 +341,7 @@ const UsersDataTable: React.FC<UsersDataTableProps> = ({
 
     // Cargar datos al montar el componente y cuando cambie la key (prop externa)
     useEffect(() => {
-        console.log('🔄 UsersDataTable montado/remontado - cargando usuarios...');
+        Logger.info('🔄 UsersDataTable montado/remontado - cargando usuarios...');
         loadUsers();
     }, []); // Se recarga automáticamente cuando el componente se desmonta y remonta por el key
 

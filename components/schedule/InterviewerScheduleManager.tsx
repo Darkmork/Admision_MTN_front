@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { interviewerScheduleService, InterviewerSchedule, User, getDayOfWeekOptions, getScheduleTypeOptions, getTimeSlotOptions } from '../../services/interviewerScheduleService';
-import { Calendar, Clock, Plus, Edit, Trash2, Save, X, AlertCircle, CheckCircle, Users, BarChart3 } from 'lucide-react';
-import Card from '../ui/Card';
-import Button from '../ui/Button';
-import Badge from '../ui/Badge';
-
+import { Logger } from '../src/utils/logger';import { interviewerScheduleService, InterviewerSchedule, User, getDayOfWeekOptions, getScheduleTypeOptions, getTimeSlotOptions } from '../../services/interviewerScheduleService';
+import { Logger } from '../src/utils/logger';import { Calendar, Clock, Plus, Edit, Trash2, Save, X, AlertCircle, CheckCircle, Users, BarChart3 } from 'lucide-react';
+import { Logger } from '../src/utils/logger';import Card from '../ui/Card';
+import { Logger } from '../src/utils/logger';import Button from '../ui/Button';
+import { Logger } from '../src/utils/logger';import Badge from '../ui/Badge';
+import { Logger } from '../src/utils/logger';
 interface InterviewerScheduleManagerProps {
     currentUser: User;
     isAdmin?: boolean;
@@ -67,7 +67,7 @@ const InterviewerScheduleManager: React.FC<InterviewerScheduleManagerProps> = ({
             const data = await interviewerScheduleService.getInterviewersWithSchedules(selectedYear);
             setInterviewers(data);
         } catch (err) {
-            console.error('Error loading interviewers:', err);
+            Logger.error('Error loading interviewers:', err);
         }
     };
 

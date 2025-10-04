@@ -4,8 +4,8 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { useOidcAuth, useAuthError } from '../../hooks/useOidcAuth';
-
+import { Logger } from '../src/utils/logger';import { useOidcAuth, useAuthError } from '../../hooks/useOidcAuth';
+import { Logger } from '../src/utils/logger';
 interface OidcCallbackProps {
   /**
    * URL de redirección después del callback exitoso
@@ -56,7 +56,7 @@ export const OidcCallback: React.FC<OidcCallbackProps> = ({
           const errorDescription = urlParams.get('error_description');
           const fullError = errorDescription || error || 'Error desconocido en la autenticación';
           
-          console.error('❌ Error en callback OIDC:', fullError);
+          Logger.error('❌ Error en callback OIDC:', fullError);
           throw new Error(fullError);
         }
 
@@ -75,7 +75,7 @@ export const OidcCallback: React.FC<OidcCallbackProps> = ({
           attempts++;
           
           if (isAuthenticated && user) {
-            console.log('✅ Callback OIDC completado exitosamente');
+            Logger.info('✅ Callback OIDC completado exitosamente');
             setCallbackStatus('success');
             setProcessingMessage('Autenticación exitosa. Redirigiendo...');
             
@@ -111,7 +111,7 @@ export const OidcCallback: React.FC<OidcCallbackProps> = ({
         }
 
       } catch (error) {
-        console.error('❌ Error procesando callback:', error);
+        Logger.error('❌ Error procesando callback:', error);
         
         const errorMessage = error instanceof Error ? error.message : 'Error procesando autenticación';
         

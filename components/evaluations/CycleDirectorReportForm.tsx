@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import Card from '../ui/Card';
-import Button from '../ui/Button';
-import Input from '../ui/Input';
-import { ArrowLeftIcon, SaveIcon, PrinterIcon } from '../icons/Icons';
-import { useNotifications } from '../../context/AppContext';
-import { professorEvaluationService, ProfessorEvaluation } from '../../services/professorEvaluationService';
-
+import { Logger } from '../src/utils/logger';import { useParams, useNavigate } from 'react-router-dom';
+import { Logger } from '../src/utils/logger';import Card from '../ui/Card';
+import { Logger } from '../src/utils/logger';import Button from '../ui/Button';
+import { Logger } from '../src/utils/logger';import Input from '../ui/Input';
+import { Logger } from '../src/utils/logger';import { ArrowLeftIcon, SaveIcon, PrinterIcon } from '../icons/Icons';
+import { Logger } from '../src/utils/logger';import { useNotifications } from '../../context/AppContext';
+import { Logger } from '../src/utils/logger';import { professorEvaluationService, ProfessorEvaluation } from '../../services/professorEvaluationService';
+import { Logger } from '../src/utils/logger';
 interface CycleDirectorReportData {
     studentName: string;
     birthDate: string;
@@ -69,7 +69,7 @@ const CycleDirectorReportForm: React.FC = () => {
             
             try {
                 setIsLoading(true);
-                console.log('🔄 Cargando evaluación director de ciclo:', examId);
+                Logger.info('🔄 Cargando evaluación director de ciclo:', examId);
                 
                 // Cargar la evaluación del director de ciclo
                 const directorEvaluation = await professorEvaluationService.getEvaluationById(parseInt(examId));
@@ -93,9 +93,9 @@ const CycleDirectorReportForm: React.FC = () => {
                     // Cargar todas las evaluaciones del mismo estudiante para obtener resultados académicos
                     await loadSubjectEvaluations(directorEvaluation.applicationId);
                     
-                    console.log('✅ Evaluación director cargada:', directorEvaluation);
+                    Logger.info('✅ Evaluación director cargada:', directorEvaluation);
                 } else {
-                    console.error('❌ Evaluación no encontrada');
+                    Logger.error('❌ Evaluación no encontrada');
                     addNotification({
                         type: 'error',
                         title: 'Error',
@@ -104,7 +104,7 @@ const CycleDirectorReportForm: React.FC = () => {
                 }
                 
             } catch (error: any) {
-                console.error('❌ Error cargando evaluación:', error);
+                Logger.error('❌ Error cargando evaluación:', error);
                 addNotification({
                     type: 'error',
                     title: 'Error',
@@ -131,10 +131,10 @@ const CycleDirectorReportForm: React.FC = () => {
             );
             
             setSubjectEvaluations(subjectEvals);
-            console.log('✅ Evaluaciones académicas cargadas:', subjectEvals);
+            Logger.info('✅ Evaluaciones académicas cargadas:', subjectEvals);
             
         } catch (error) {
-            console.error('❌ Error cargando evaluaciones académicas:', error);
+            Logger.error('❌ Error cargando evaluaciones académicas:', error);
         }
     };
 
@@ -202,7 +202,7 @@ const CycleDirectorReportForm: React.FC = () => {
             }, 1500);
             
         } catch (error) {
-            console.error('❌ Error al guardar informe:', error);
+            Logger.error('❌ Error al guardar informe:', error);
             addNotification({
                 type: 'error',
                 title: 'Error al guardar',

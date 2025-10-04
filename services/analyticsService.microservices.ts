@@ -6,9 +6,9 @@
  */
 
 import { DataAdapter } from './dataAdapter';
-import { userService } from './userService';
-import { applicationService } from './applicationService';
-
+import { Logger } from '../src/utils/logger';import { userService } from './userService';
+import { Logger } from '../src/utils/logger';import { applicationService } from './applicationService';
+import { Logger } from '../src/utils/logger';
 export interface DashboardMetrics {
   totalApplications: number;
   applicationsThisMonth: number;
@@ -86,14 +86,14 @@ class MicroservicesAnalyticsService {
    */
   async getCompleteAnalytics(): Promise<CompleteAnalytics> {
     try {
-      console.log('📊 Calculando analytics desde microservicios...');
+      Logger.info('📊 Calculando analytics desde microservicios...');
       
       // Obtener datos base desde microservicios
       const applications = await applicationService.getAllApplications();
       const usersResponse = await userService.getAllUsers();
       const users = usersResponse.content;
       
-      console.log('✅ Datos obtenidos:', { applications: applications.length, users: users.length });
+      Logger.info('✅ Datos obtenidos:', { applications: applications.length, users: users.length });
       
       // Calcular métricas
       const dashboardMetrics = this.calculateDashboardMetrics(applications, users);
@@ -114,11 +114,11 @@ class MicroservicesAnalyticsService {
         insights
       };
       
-      console.log('✅ Analytics calculados exitosamente');
+      Logger.info('✅ Analytics calculados exitosamente');
       return analytics;
       
     } catch (error: any) {
-      console.error('❌ Error calculando analytics:', error);
+      Logger.error('❌ Error calculando analytics:', error);
       throw new Error('No se pudieron calcular los analytics desde microservicios');
     }
   }

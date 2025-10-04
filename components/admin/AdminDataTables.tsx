@@ -1,23 +1,23 @@
 import React, { useState } from 'react';
-import Card from '../ui/Card';
-import Button from '../ui/Button';
-import { FiUsers, FiFileText, FiBarChart2, FiCalendar, FiBookOpen, FiStar, FiUser, FiMail, FiBell } from 'react-icons/fi';
-import UsersDataTable from './UsersDataTable';
-import ApplicationsDataTable from './ApplicationsDataTable';
-import EnhancedApplicationsDataTable from './EnhancedApplicationsDataTable';
-import PostulantesDataTable from './PostulantesDataTable';
-import EvaluationsDataTable from './EvaluationsDataTable';
-import EmailNotificationsTable from './EmailNotificationsTable';
-import InterviewsDataTable from './InterviewsDataTable';
-import NotificationConfigPanel from './NotificationConfigPanel';
-import ReportsView from './ReportsView';
-import AnalyticsView from './AnalyticsView';
-import Modal from '../ui/Modal';
-import UserForm from '../users/UserForm';
-import { UserFormMode } from '../../types/user';
-import { userService } from '../../services/userService';
-import { useNotifications } from '../../context/AppContext';
-
+import { Logger } from '../src/utils/logger';import Card from '../ui/Card';
+import { Logger } from '../src/utils/logger';import Button from '../ui/Button';
+import { Logger } from '../src/utils/logger';import { FiUsers, FiFileText, FiBarChart2, FiCalendar, FiBookOpen, FiStar, FiUser, FiMail, FiBell } from 'react-icons/fi';
+import { Logger } from '../src/utils/logger';import UsersDataTable from './UsersDataTable';
+import { Logger } from '../src/utils/logger';import ApplicationsDataTable from './ApplicationsDataTable';
+import { Logger } from '../src/utils/logger';import EnhancedApplicationsDataTable from './EnhancedApplicationsDataTable';
+import { Logger } from '../src/utils/logger';import PostulantesDataTable from './PostulantesDataTable';
+import { Logger } from '../src/utils/logger';import EvaluationsDataTable from './EvaluationsDataTable';
+import { Logger } from '../src/utils/logger';import EmailNotificationsTable from './EmailNotificationsTable';
+import { Logger } from '../src/utils/logger';import InterviewsDataTable from './InterviewsDataTable';
+import { Logger } from '../src/utils/logger';import NotificationConfigPanel from './NotificationConfigPanel';
+import { Logger } from '../src/utils/logger';import ReportsView from './ReportsView';
+import { Logger } from '../src/utils/logger';import AnalyticsView from './AnalyticsView';
+import { Logger } from '../src/utils/logger';import Modal from '../ui/Modal';
+import { Logger } from '../src/utils/logger';import UserForm from '../users/UserForm';
+import { Logger } from '../src/utils/logger';import { UserFormMode } from '../../types/user';
+import { Logger } from '../src/utils/logger';import { userService } from '../../services/userService';
+import { Logger } from '../src/utils/logger';import { useNotifications } from '../../context/AppContext';
+import { Logger } from '../src/utils/logger';
 type TableView = 'users' | 'postulantes' | 'applications' | 'evaluations' | 'emails' | 'notifications-config' | 'interviews' | 'reports' | 'analytics';
 
 interface AdminDataTablesProps {
@@ -169,19 +169,19 @@ const AdminDataTables: React.FC<AdminDataTablesProps> = ({ className = '' }) => 
                 return (
                     <PostulantesDataTable
                         onViewPostulante={(postulante) => {
-                            console.log('Ver postulante:', postulante);
+                            Logger.info('Ver postulante:', postulante);
                             // TODO: Implementar modal de vista detallada del postulante
                         }}
                         onEditPostulante={(postulante) => {
-                            console.log('Editar postulante:', postulante);
+                            Logger.info('Editar postulante:', postulante);
                             // TODO: Implementar modal de edición del postulante
                         }}
                         onScheduleInterview={(postulante) => {
-                            console.log('Programar entrevista para:', postulante.nombreCompleto);
+                            Logger.info('Programar entrevista para:', postulante.nombreCompleto);
                             // TODO: Implementar modal de programación de entrevista
                         }}
                         onUpdateStatus={(postulante, newStatus) => {
-                            console.log('Actualizar estado:', postulante.nombreCompleto, 'nuevo estado:', newStatus);
+                            Logger.info('Actualizar estado:', postulante.nombreCompleto, 'nuevo estado:', newStatus);
                             // TODO: Implementar actualización de estado
                         }}
                     />
@@ -191,23 +191,23 @@ const AdminDataTables: React.FC<AdminDataTablesProps> = ({ className = '' }) => 
                 return (
                     <EnhancedApplicationsDataTable
                         onViewApplication={(app) => {
-                            console.log('Ver aplicación completa:', app);
+                            Logger.info('Ver aplicación completa:', app);
                             // TODO: Implementar modal de vista detallada
                         }}
                         onEditApplication={(app) => {
-                            console.log('Editar aplicación:', app);
+                            Logger.info('Editar aplicación:', app);
                             // TODO: Implementar modal de edición
                         }}
                         onScheduleInterview={(app) => {
-                            console.log('Programar entrevista para:', app.studentFullName);
+                            Logger.info('Programar entrevista para:', app.studentFullName);
                             // TODO: Implementar modal de programación de entrevista
                         }}
                         onScheduleExam={(app) => {
-                            console.log('Programar examen para:', app.studentFullName);
+                            Logger.info('Programar examen para:', app.studentFullName);
                             // TODO: Implementar modal de programación de examen
                         }}
                         onUpdateStatus={(app, newStatus) => {
-                            console.log('Actualizar estado:', app.studentFullName, 'nuevo estado:', newStatus);
+                            Logger.info('Actualizar estado:', app.studentFullName, 'nuevo estado:', newStatus);
                             // TODO: Implementar actualización de estado
                         }}
                     />
@@ -217,19 +217,19 @@ const AdminDataTables: React.FC<AdminDataTablesProps> = ({ className = '' }) => 
                 return (
                     <EvaluationsDataTable
                         onViewEvaluation={(evaluation) => {
-                            console.log('Ver evaluación:', evaluation);
+                            Logger.info('Ver evaluación:', evaluation);
                             // TODO: Implementar modal de vista detallada de evaluación
                         }}
                         onEditEvaluation={(evaluation) => {
-                            console.log('Editar evaluación:', evaluation);
+                            Logger.info('Editar evaluación:', evaluation);
                             // TODO: Implementar modal de edición de evaluación
                         }}
                         onScheduleEvaluation={(evaluation) => {
-                            console.log('Programar evaluación para:', evaluation.studentName);
+                            Logger.info('Programar evaluación para:', evaluation.studentName);
                             // TODO: Implementar modal de programación de evaluación
                         }}
                         onUpdateStatus={(evaluation, newStatus) => {
-                            console.log('Actualizar estado de evaluación:', evaluation.studentName, 'nuevo estado:', newStatus);
+                            Logger.info('Actualizar estado de evaluación:', evaluation.studentName, 'nuevo estado:', newStatus);
                             // TODO: Implementar actualización de estado
                         }}
                     />

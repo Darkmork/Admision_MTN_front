@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Interviewer Service</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <h1>🧪 Test del Servicio de Entrevistadores</h1>
+    <div id="results"></div>
+    
+    <script>
+        async function testInterviewerService() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<p>🔄 Probando servicio...</p>';
+            
+            try {
+                console.log('🔍 Llamando al endpoint público...');
+                
+                // Llamar al endpoint directamente
+                const response = await axios.get('http://localhost:8080/api/interviews/public/interviewers');
+                
+                console.log('✅ Respuesta recibida:', response.data);
+                
+                let html = '<h2>✅ Respuesta del Backend:</h2>';
+                html += `<p><strong>Total entrevistadores:</strong> ${response.data.length}</p>`;
+                html += '<ul>';
+                
+                response.data.forEach((interviewer, index) => {
+                    html += `<li>
+                        <strong>${interviewer.name}</strong> 
+                        (ID: ${interviewer.id}, Role: ${interviewer.role})
+                        ${interviewer.subject ? `- ${interviewer.subject}` : ''}
+                        ${interviewer.educationalLevel ? `- ${interviewer.educationalLevel}` : ''}
+                    </li>`;
+                });
+                
+                html += '</ul>';
+                resultsDiv.innerHTML = html;
+                
+            } catch (error) {
+                console.error('❌ Error:', error);
+                resultsDiv.innerHTML = `<p style="color: red;">❌ Error: ${error.message}</p>`;
+            }
+        }
+        
+        // Ejecutar automáticamente cuando cargue la página
+        window.onload = testInterviewerService;
+    </script>
+</body>
+</html>

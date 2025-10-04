@@ -1,6 +1,6 @@
 import api from './api';
-import { 
-  Document, 
+import { Logger } from '../src/utils/logger';import { 
+import { Logger } from '../src/utils/logger';  Document, 
   DocumentType,
   UploadDocumentRequest,
   UploadDocumentResponse,
@@ -68,7 +68,7 @@ class DocumentService {
                 throw new Error('Solo se permiten archivos PDF, JPG y PNG');
             }
 
-            console.log('📤 Subiendo documento:', {
+            Logger.info('📤 Subiendo documento:', {
                 applicationId,
                 fileName: request.file.name,
                 fileSize: request.file.size,
@@ -86,11 +86,11 @@ class DocumentService {
                 },
             });
 
-            console.log('✅ Documento subido exitosamente');
+            Logger.info('✅ Documento subido exitosamente');
             return response.data;
             
         } catch (error: any) {
-            console.error('❌ Error subiendo documento:', error);
+            Logger.error('❌ Error subiendo documento:', error);
             
             if (error.response?.status === 400) {
                 const message = error.response?.data?.message || 'Archivo inválido';
@@ -107,33 +107,33 @@ class DocumentService {
 
     async getDocumentsByApplication(applicationId: number): Promise<DocumentResponse[]> {
         try {
-            console.log('📋 Obteniendo documentos para aplicación:', applicationId);
+            Logger.info('📋 Obteniendo documentos para aplicación:', applicationId);
             
             const response = await api.get(`/api/documents/application/${applicationId}`);
             return response.data;
             
         } catch (error: any) {
-            console.error('❌ Error obteniendo documentos:', error);
+            Logger.error('❌ Error obteniendo documentos:', error);
             throw new Error('Error al obtener los documentos');
         }
     }
 
     async getMyDocuments(): Promise<DocumentResponse[]> {
         try {
-            console.log('📋 Obteniendo mis documentos');
+            Logger.info('📋 Obteniendo mis documentos');
             
             const response = await api.get('/api/documents/my-documents');
             return response.data;
             
         } catch (error: any) {
-            console.error('❌ Error obteniendo mis documentos:', error);
+            Logger.error('❌ Error obteniendo mis documentos:', error);
             throw new Error('Error al obtener los documentos');
         }
     }
 
     async viewDocument(documentId: number): Promise<Blob> {
         try {
-            console.log('👁️ Visualizando documento:', documentId);
+            Logger.info('👁️ Visualizando documento:', documentId);
             
             const response = await api.get(`/api/documents/view/${documentId}`, {
                 responseType: 'blob'
@@ -142,14 +142,14 @@ class DocumentService {
             return response.data;
             
         } catch (error: any) {
-            console.error('❌ Error visualizando documento:', error);
+            Logger.error('❌ Error visualizando documento:', error);
             throw new Error('Error al visualizar el documento');
         }
     }
 
     async downloadDocument(documentId: number, fileName: string): Promise<void> {
         try {
-            console.log('💾 Descargando documento:', documentId);
+            Logger.info('💾 Descargando documento:', documentId);
             
             const response = await api.get(`/api/documents/download/${documentId}`, {
                 responseType: 'blob'
@@ -166,21 +166,21 @@ class DocumentService {
             window.URL.revokeObjectURL(url);
             
         } catch (error: any) {
-            console.error('❌ Error descargando documento:', error);
+            Logger.error('❌ Error descargando documento:', error);
             throw new Error('Error al descargar el documento');
         }
     }
 
     async deleteDocument(documentId: number): Promise<void> {
         try {
-            console.log('🗑️ Eliminando documento:', documentId);
+            Logger.info('🗑️ Eliminando documento:', documentId);
             
             await api.delete(`/api/documents/${documentId}`);
             
-            console.log('✅ Documento eliminado exitosamente');
+            Logger.info('✅ Documento eliminado exitosamente');
             
         } catch (error: any) {
-            console.error('❌ Error eliminando documento:', error);
+            Logger.error('❌ Error eliminando documento:', error);
             throw new Error('Error al eliminar el documento');
         }
     }
@@ -229,7 +229,7 @@ class DocumentService {
 
             return response.data;
         } catch (error: any) {
-            console.error('Error uploading document:', error);
+            Logger.error('Error uploading document:', error);
             throw new Error(
                 error.response?.data?.message || 
                 error.message || 
@@ -249,7 +249,7 @@ class DocumentService {
             const response = await api.get('/documents/public/types');
             return response.data;
         } catch (error) {
-            console.error('Error getting document types:', error);
+            Logger.error('Error getting document types:', error);
             throw error;
         }
     }
@@ -285,7 +285,7 @@ class DocumentService {
                 isComplete: missingRequired.length === 0
             };
         } catch (error) {
-            console.error('Error getting document status:', error);
+            Logger.error('Error getting document status:', error);
             throw error;
         }
     }

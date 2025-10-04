@@ -1,21 +1,21 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import Input from '../components/ui/Input';
-import RutInput from '../components/ui/RutInput';
-import Select from '../components/ui/Select';
-import Button from '../components/ui/Button';
-import Card from '../components/ui/Card';
-import EmailVerification from '../components/ui/EmailVerification';
-import ErrorModal from '../components/ui/ErrorModal';
-import { CheckCircleIcon, LogoIcon, UploadIcon } from '../components/icons/Icons';
-import { useApplications, useNotifications } from '../context/AppContext';
-import { useAuth } from '../context/AuthContext';
-import { educationalLevelsForForm as educationalLevels } from '../services/staticData';
-import api from '../services/api';
-import { applicationService } from '../services/applicationService';
-import { documentService, DOCUMENT_TYPES } from '../services/documentService';
-import profileService from '../services/profileService';
-
+import { Logger } from '../src/utils/logger';import { Link } from 'react-router-dom';
+import { Logger } from '../src/utils/logger';import Input from '../components/ui/Input';
+import { Logger } from '../src/utils/logger';import RutInput from '../components/ui/RutInput';
+import { Logger } from '../src/utils/logger';import Select from '../components/ui/Select';
+import { Logger } from '../src/utils/logger';import Button from '../components/ui/Button';
+import { Logger } from '../src/utils/logger';import Card from '../components/ui/Card';
+import { Logger } from '../src/utils/logger';import EmailVerification from '../components/ui/EmailVerification';
+import { Logger } from '../src/utils/logger';import ErrorModal from '../components/ui/ErrorModal';
+import { Logger } from '../src/utils/logger';import { CheckCircleIcon, LogoIcon, UploadIcon } from '../components/icons/Icons';
+import { Logger } from '../src/utils/logger';import { useApplications, useNotifications } from '../context/AppContext';
+import { Logger } from '../src/utils/logger';import { useAuth } from '../context/AuthContext';
+import { Logger } from '../src/utils/logger';import { educationalLevelsForForm as educationalLevels } from '../services/staticData';
+import { Logger } from '../src/utils/logger';import api from '../services/api';
+import { Logger } from '../src/utils/logger';import { applicationService } from '../services/applicationService';
+import { Logger } from '../src/utils/logger';import { documentService, DOCUMENT_TYPES } from '../services/documentService';
+import { Logger } from '../src/utils/logger';import profileService from '../services/profileService';
+import { Logger } from '../src/utils/logger';
 const steps = [
   "Datos del Postulante",
   "Datos de los Padres",
@@ -36,7 +36,7 @@ const schoolOptions = [
     { value: 'NAZARET', label: 'Nazaret' }
 ];
 
-console.log('📚 School options loaded:', schoolOptions);
+Logger.info('📚 School options loaded:', schoolOptions);
 
 const validationConfig = {
     firstName: { required: true, minLength: 2 },
@@ -167,21 +167,21 @@ const ApplicationForm: React.FC = () => {
     // Función para manejar login
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        console.log('🔐 ApplicationForm - handleLogin: Starting login process');
+        Logger.info('🔐 ApplicationForm - handleLogin: Starting login process');
         setAuthLoading(true);
         setAuthError('');
 
         try {
-            console.log('🔐 ApplicationForm - handleLogin: Calling login with:', authData.email);
+            Logger.info('🔐 ApplicationForm - handleLogin: Calling login with:', authData.email);
             await login(authData.email, authData.password, 'apoderado');
-            console.log('✅ ApplicationForm - handleLogin: Login successful, hiding auth form');
+            Logger.info('✅ ApplicationForm - handleLogin: Login successful, hiding auth form');
             setShowAuthForm(false);
 
             // Pre-llenar el formulario con datos del usuario autenticado
             await loadUserProfileAndPopulate();
-            console.log('✅ ApplicationForm - handleLogin: Profile loaded and populated');
+            Logger.info('✅ ApplicationForm - handleLogin: Profile loaded and populated');
         } catch (err) {
-            console.error('❌ ApplicationForm - handleLogin: Login failed:', err);
+            Logger.error('❌ ApplicationForm - handleLogin: Login failed:', err);
             setAuthError('Credenciales inválidas. Verifique su email y contraseña.');
         } finally {
             setAuthLoading(false);
@@ -191,13 +191,13 @@ const ApplicationForm: React.FC = () => {
     // Función para manejar registro
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
-        console.log('📝 ApplicationForm - handleRegister: Starting registration process');
+        Logger.info('📝 ApplicationForm - handleRegister: Starting registration process');
         setAuthLoading(true);
         setAuthError('');
 
         // Validar verificación de email
         if (!isEmailVerified) {
-            console.warn('⚠️ ApplicationForm - handleRegister: Email not verified');
+            Logger.warn('⚠️ ApplicationForm - handleRegister: Email not verified');
             setAuthError('Debe verificar su dirección de correo electrónico antes de continuar');
             setAuthLoading(false);
             return;
@@ -218,9 +218,9 @@ const ApplicationForm: React.FC = () => {
 
         try {
             // Registrar usuario con información básica
-            console.log('📝 ApplicationForm - handleRegister: Calling register with:', authData.email);
+            Logger.info('📝 ApplicationForm - handleRegister: Calling register with:', authData.email);
             await register(authData, 'apoderado');
-            console.log('✅ ApplicationForm - handleRegister: Registration successful, hiding auth form');
+            Logger.info('✅ ApplicationForm - handleRegister: Registration successful, hiding auth form');
             setShowAuthForm(false);
 
             // Intentar actualizar el perfil con información adicional
@@ -231,7 +231,7 @@ const ApplicationForm: React.FC = () => {
                         profession: authData.profession
                     });
                 } catch (profileError) {
-                    console.warn('No se pudo actualizar el perfil con información adicional:', profileError);
+                    Logger.warn('No se pudo actualizar el perfil con información adicional:', profileError);
                 }
             }
 
@@ -246,7 +246,7 @@ const ApplicationForm: React.FC = () => {
                 profession: authData.profession
             });
         } catch (err: any) {
-            console.error('Error en registro:', err);
+            Logger.error('Error en registro:', err);
 
             // Determinar el mensaje de error específico
             let errorMessage = 'No se pudo crear la cuenta. Por favor, intente nuevamente.';
@@ -314,7 +314,7 @@ const ApplicationForm: React.FC = () => {
                 profession: profile.profession || ''
             });
         } catch (error) {
-            console.warn('No se pudo cargar el perfil completo, usando datos básicos:', error);
+            Logger.warn('No se pudo cargar el perfil completo, usando datos básicos:', error);
             // Fallback: usar datos básicos del usuario autenticado
             populateParentFields({
                 email: user.email,
@@ -350,14 +350,14 @@ const ApplicationForm: React.FC = () => {
 
     // Verificar si el usuario ya está autenticado
     useEffect(() => {
-        console.log('🔍 ApplicationForm - Auth Status Changed:', { isAuthenticated, user: user ? { email: user.email, role: user.role } : null, showAuthForm });
+        Logger.info('🔍 ApplicationForm - Auth Status Changed:', { isAuthenticated, user: user ? { email: user.email, role: user.role } : null, showAuthForm });
         if (isAuthenticated && user) {
-            console.log('✅ ApplicationForm - User authenticated, hiding auth form');
+            Logger.info('✅ ApplicationForm - User authenticated, hiding auth form');
             setShowAuthForm(false);
             // Cargar perfil completo y popular campos
             loadUserProfileAndPopulate();
         } else {
-            console.log('❌ ApplicationForm - User not authenticated, should show auth form');
+            Logger.info('❌ ApplicationForm - User not authenticated, should show auth form');
         }
     }, [isAuthenticated, user, loadUserProfileAndPopulate]);
     
@@ -555,7 +555,7 @@ const ApplicationForm: React.FC = () => {
                     };
                     
                     // Enviar a la API real
-                    console.log('Enviando postulación:', applicationRequest);
+                    Logger.info('Enviando postulación:', applicationRequest);
                     const response = await applicationService.submitApplication(applicationRequest);
                     
                     // Guardar el ID de la aplicación para subir documentos
@@ -564,7 +564,7 @@ const ApplicationForm: React.FC = () => {
                     // Subir documentos si hay alguno seleccionado
                     let documentsUploaded = 0;
                     if (uploadedDocuments.size > 0) {
-                        console.log(`Subiendo ${uploadedDocuments.size} documentos para la aplicación ${response.id}`);
+                        Logger.info(`Subiendo ${uploadedDocuments.size} documentos para la aplicación ${response.id}`);
                         
                         const uploadPromises = Array.from(uploadedDocuments.entries()).map(([docType, file]) => {
                             return applicationService.uploadDocument(response.id, file, docType);
@@ -612,7 +612,7 @@ const ApplicationForm: React.FC = () => {
                     setData({});
                     setCurrentStep(nextStepIndex);
                 } catch (error: any) {
-                    console.error('Error al enviar postulación:', error);
+                    Logger.error('Error al enviar postulación:', error);
 
                     // Determinar el mensaje de error específico
                     let errorMessage = 'No se pudo enviar la postulación. Por favor, intente nuevamente.';
@@ -1611,12 +1611,12 @@ const ApplicationForm: React.FC = () => {
     };
 
     // Si no está autenticado, mostrar formulario de autenticación
-    console.log('🎯 ApplicationForm - Render Decision:', { showAuthForm, isAuthenticated, willShowAuthForm: showAuthForm || !isAuthenticated });
+    Logger.info('🎯 ApplicationForm - Render Decision:', { showAuthForm, isAuthenticated, willShowAuthForm: showAuthForm || !isAuthenticated });
     if (showAuthForm || !isAuthenticated) {
-        console.log('📝 ApplicationForm - Rendering auth form');
+        Logger.info('📝 ApplicationForm - Rendering auth form');
         return renderAuthForm();
     }
-    console.log('📋 ApplicationForm - Rendering application form (user is authenticated)');
+    Logger.info('📋 ApplicationForm - Rendering application form (user is authenticated)');
 
     return (
         <div className="bg-gray-50 py-16">
