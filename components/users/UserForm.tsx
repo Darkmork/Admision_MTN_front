@@ -60,18 +60,18 @@ const UserForm: React.FC<UserFormProps> = ({
   useEffect(() => {
     if (user && (mode === UserFormMode.EDIT || mode === UserFormMode.VIEW)) {
       setFormData({
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        rut: user.rut,
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        email: user.email || '',
+        rut: user.rut || '',
         phone: user.phone || '',
-        role: user.role,
-        educationalLevel: user.educationalLevel,
-        subject: user.subject,
+        role: user.role || UserRole.TEACHER,
+        educationalLevel: user.educationalLevel || undefined,
+        subject: user.subject || undefined,
         password: '',
         sendWelcomeEmail: false,
-        active: user.active,
-        emailVerified: user.emailVerified
+        active: user.active ?? true,
+        emailVerified: user.emailVerified ?? false
       });
     }
   }, [user, mode]);
@@ -446,7 +446,7 @@ const UserForm: React.FC<UserFormProps> = ({
                     <select
                       id="educationalLevel"
                       value={formData.educationalLevel || ''}
-                      onChange={(e) => handleInputChange('educationalLevel', e.target.value as EducationalLevel || undefined)}
+                      onChange={(e) => handleInputChange('educationalLevel', e.target.value ? e.target.value as EducationalLevel : undefined)}
                       className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-azul-monte-tabor focus:border-transparent ${
                         errors.roleCombination ? 'border-red-300 bg-red-50' : 'border-gray-300'
                       }`}
@@ -472,7 +472,7 @@ const UserForm: React.FC<UserFormProps> = ({
                     <select
                       id="subject"
                       value={formData.subject || ''}
-                      onChange={(e) => handleInputChange('subject', e.target.value as Subject || undefined)}
+                      onChange={(e) => handleInputChange('subject', e.target.value ? e.target.value as Subject : undefined)}
                       className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-azul-monte-tabor focus:border-transparent ${
                         errors.roleCombination ? 'border-red-300 bg-red-50' : 'border-gray-300'
                       }`}

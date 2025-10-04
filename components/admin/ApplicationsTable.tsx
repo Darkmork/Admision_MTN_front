@@ -25,7 +25,8 @@ const ApplicationsTable: React.FC<ApplicationsTableProps> = ({
   onArchive,
   className = ''
 }) => {
-  
+  console.log('📊 ApplicationsTable render - applications:', applications.length, 'onView:', !!onView);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -191,7 +192,11 @@ const ApplicationsTable: React.FC<ApplicationsTableProps> = ({
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => onView(application)}
+                        onClick={() => {
+                          console.log('👁️ Ver detalles clicked for application:', application);
+                          console.log('👁️ onView callback exists:', !!onView);
+                          onView(application);
+                        }}
                         title="Ver detalles"
                       >
                         <EyeIcon className="w-4 h-4" />

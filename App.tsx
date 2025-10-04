@@ -30,6 +30,13 @@ import ReportsDashboard from './pages/ReportsDashboard';
 import InterviewSchedulingTest from './pages/InterviewSchedulingTest';
 import MicroservicesTestPage from './pages/MicroservicesTestPage';
 
+// Coordinator Components
+import CoordinatorLayout from './components/layout/CoordinatorLayout';
+import ProtectedCoordinatorRoute from './components/auth/ProtectedCoordinatorRoute';
+import CoordinatorDashboard from './src/components/coordinator/CoordinatorDashboard';
+import TemporalTrendsView from './src/components/coordinator/TemporalTrendsView';
+import AdvancedSearchView from './src/components/coordinator/AdvancedSearchView';
+
 function App() {
     return (
         <AuthProvider>
@@ -101,6 +108,20 @@ function App() {
                                 </ProtectedAdminRoute>
                             } />
                             <Route path="/test-microservices" element={<MicroservicesTestPage />} />
+
+                            {/* Coordinator Routes */}
+                            <Route
+                                path="/coordinador"
+                                element={
+                                    <ProtectedCoordinatorRoute>
+                                        <CoordinatorLayout />
+                                    </ProtectedCoordinatorRoute>
+                                }
+                            >
+                                <Route index element={<CoordinatorDashboard />} />
+                                <Route path="tendencias" element={<TemporalTrendsView />} />
+                                <Route path="busqueda" element={<AdvancedSearchView />} />
+                            </Route>
                         </Routes>
                     </main>
                     <Footer />

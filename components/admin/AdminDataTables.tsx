@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
-import { FiUsers, FiFileText, FiBarChart2, FiCalendar, FiBookOpen, FiStar, FiUser, FiMail } from 'react-icons/fi';
+import { FiUsers, FiFileText, FiBarChart2, FiCalendar, FiBookOpen, FiStar, FiUser, FiMail, FiBell } from 'react-icons/fi';
 import UsersDataTable from './UsersDataTable';
 import ApplicationsDataTable from './ApplicationsDataTable';
 import EnhancedApplicationsDataTable from './EnhancedApplicationsDataTable';
@@ -9,9 +9,16 @@ import PostulantesDataTable from './PostulantesDataTable';
 import EvaluationsDataTable from './EvaluationsDataTable';
 import EmailNotificationsTable from './EmailNotificationsTable';
 import InterviewsDataTable from './InterviewsDataTable';
+import NotificationConfigPanel from './NotificationConfigPanel';
+import ReportsView from './ReportsView';
+import AnalyticsView from './AnalyticsView';
 import Modal from '../ui/Modal';
+import UserForm from '../users/UserForm';
+import { UserFormMode } from '../../types/user';
+import { userService } from '../../services/userService';
+import { useNotifications } from '../../context/AppContext';
 
-type TableView = 'users' | 'postulantes' | 'applications' | 'evaluations' | 'emails' | 'interviews' | 'reports' | 'analytics';
+type TableView = 'users' | 'postulantes' | 'applications' | 'evaluations' | 'emails' | 'notifications-config' | 'interviews' | 'reports' | 'analytics';
 
 interface AdminDataTablesProps {
     className?: string;
@@ -22,6 +29,59 @@ const AdminDataTables: React.FC<AdminDataTablesProps> = ({ className = '' }) => 
     const [showCreateUserModal, setShowCreateUserModal] = useState(false);
     const [showEditUserModal, setShowEditUserModal] = useState(false);
     const [selectedUser, setSelectedUser] = useState<any>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [refreshKey, setRefreshKey] = useState(0);
+    const { addNotification } = useNotifications();
+
+    // Manejar creación de usuario
+    const handleCreateUser = async (data: any) => {
+        setIsSubmitting(true);
+        try {
+            await userService.createUser(data);
+            addNotification({
+                type: 'success',
+                title: 'Usuario creado',
+                message: `El usuario ${data.firstName} ${data.lastName} ha sido creado exitosamente`
+            });
+            setShowCreateUserModal(false);
+            setRefreshKey(prev => prev + 1); // Refrescar la tabla
+        } catch (error: any) {
+            addNotification({
+                type: 'error',
+                title: 'Error al crear usuario',
+                message: error.message || 'No se pudo crear el usuario'
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    // Manejar actualización de usuario
+    const handleUpdateUser = async (data: any) => {
+        if (!selectedUser) return;
+
+        setIsSubmitting(true);
+        try {
+            await userService.updateUser(selectedUser.id, data);
+            addNotification({
+                type: 'success',
+                title: 'Usuario actualizado',
+                message: `El usuario ${data.firstName} ${data.lastName} ha sido actualizado exitosamente`
+            });
+            setShowEditUserModal(false);
+            setSelectedUser(null);
+            // Forzar re-render completo incrementando la key
+            setRefreshKey(prev => prev + 1);
+        } catch (error: any) {
+            addNotification({
+                type: 'error',
+                title: 'Error al actualizar usuario',
+                message: error.message || 'No se pudo actualizar el usuario'
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     // Configuración de las vistas disponibles
     const views = [
@@ -61,6 +121,13 @@ const AdminDataTables: React.FC<AdminDataTablesProps> = ({ className = '' }) => 
             color: 'cyan'
         },
         {
+            key: 'notifications-config' as TableView,
+            title: 'Config. Notificaciones',
+            description: 'Configurar qué eventos generan notificaciones y a quién',
+            icon: FiBell,
+            color: 'indigo'
+        },
+        {
             key: 'interviews' as TableView,
             title: 'Entrevistas',
             description: 'Programación de entrevistas',
@@ -89,6 +156,7 @@ const AdminDataTables: React.FC<AdminDataTablesProps> = ({ className = '' }) => 
             case 'users':
                 return (
                     <UsersDataTable
+                        key={refreshKey}
                         onCreateUser={() => setShowCreateUserModal(true)}
                         onEditUser={(user) => {
                             setSelectedUser(user);
@@ -169,41 +237,18 @@ const AdminDataTables: React.FC<AdminDataTablesProps> = ({ className = '' }) => 
             
             case 'emails':
                 return <EmailNotificationsTable />;
-            
+
+            case 'notifications-config':
+                return <NotificationConfigPanel />;
+
             case 'interviews':
                 return <InterviewsDataTable />;
             
             case 'reports':
-                return (
-                    <Card className="p-8 text-center">
-                        <FiBarChart2 className="mx-auto h-12 w-12 text-indigo-400 mb-4" />
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                            Reportes del Sistema
-                        </h3>
-                        <p className="text-gray-600 mb-4">
-                            Esta sección incluirá reportes detallados con filtros avanzados por período, curso y estado.
-                        </p>
-                        <Button variant="primary">
-                            Próximamente
-                        </Button>
-                    </Card>
-                );
-            
+                return <ReportsView />;
+
             case 'analytics':
-                return (
-                    <Card className="p-8 text-center">
-                        <FiBookOpen className="mx-auto h-12 w-12 text-pink-400 mb-4" />
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                            Análisis de Datos
-                        </h3>
-                        <p className="text-gray-600 mb-4">
-                            Esta sección proporcionará análisis avanzados con filtros por múltiples criterios y visualizaciones.
-                        </p>
-                        <Button variant="primary">
-                            Próximamente
-                        </Button>
-                    </Card>
-                );
+                return <AnalyticsView />;
             
             default:
                 return null;
@@ -259,59 +304,49 @@ const AdminDataTables: React.FC<AdminDataTablesProps> = ({ className = '' }) => 
             {/* Contenido de la vista activa */}
             {renderContent()}
 
-            {/* Modales */}
+            {/* Modal para crear usuario */}
             <Modal
                 isOpen={showCreateUserModal}
-                onClose={() => setShowCreateUserModal(false)}
-                title="Crear Nuevo Usuario"
-                size="lg"
+                onClose={() => {
+                    if (!isSubmitting) {
+                        setShowCreateUserModal(false);
+                    }
+                }}
+                title=""
+                size="xl"
             >
-                <div className="p-6">
-                    <p className="text-gray-600">
-                        Formulario para crear un nuevo usuario del sistema.
-                    </p>
-                    <div className="mt-4 flex justify-end gap-2">
-                        <Button
-                            variant="outline"
-                            onClick={() => setShowCreateUserModal(false)}
-                        >
-                            Cancelar
-                        </Button>
-                        <Button variant="primary">
-                            Guardar Usuario
-                        </Button>
-                    </div>
-                </div>
+                <UserForm
+                    mode={UserFormMode.CREATE}
+                    onSubmit={handleCreateUser}
+                    onCancel={() => setShowCreateUserModal(false)}
+                    isSubmitting={isSubmitting}
+                />
             </Modal>
 
+            {/* Modal para editar usuario */}
             <Modal
                 isOpen={showEditUserModal}
                 onClose={() => {
-                    setShowEditUserModal(false);
-                    setSelectedUser(null);
+                    if (!isSubmitting) {
+                        setShowEditUserModal(false);
+                        setSelectedUser(null);
+                    }
                 }}
-                title="Editar Usuario"
-                size="lg"
+                title=""
+                size="xl"
             >
-                <div className="p-6">
-                    <p className="text-gray-600">
-                        Formulario para editar el usuario: {selectedUser?.firstName} {selectedUser?.lastName}
-                    </p>
-                    <div className="mt-4 flex justify-end gap-2">
-                        <Button
-                            variant="outline"
-                            onClick={() => {
-                                setShowEditUserModal(false);
-                                setSelectedUser(null);
-                            }}
-                        >
-                            Cancelar
-                        </Button>
-                        <Button variant="primary">
-                            Guardar Cambios
-                        </Button>
-                    </div>
-                </div>
+                {selectedUser && (
+                    <UserForm
+                        user={selectedUser}
+                        mode={UserFormMode.EDIT}
+                        onSubmit={handleUpdateUser}
+                        onCancel={() => {
+                            setShowEditUserModal(false);
+                            setSelectedUser(null);
+                        }}
+                        isSubmitting={isSubmitting}
+                    />
+                )}
             </Modal>
         </div>
     );

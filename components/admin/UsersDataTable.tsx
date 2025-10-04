@@ -45,6 +45,7 @@ const UsersDataTable: React.FC<UsersDataTableProps> = ({
     });
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [showDetailModal, setShowDetailModal] = useState(false);
     const { addNotification } = useNotifications();
 
     // Configuración de columnas de la tabla
@@ -254,8 +255,8 @@ const UsersDataTable: React.FC<UsersDataTableProps> = ({
 
     // Ver detalles del usuario
     const handleViewUser = (user: User) => {
-        // Implementar modal de detalles o navegación
-        console.log('Ver usuario:', user);
+        setSelectedUser(user);
+        setShowDetailModal(true);
     };
 
     // Resetear contraseña
@@ -338,10 +339,11 @@ const UsersDataTable: React.FC<UsersDataTableProps> = ({
         document.body.removeChild(link);
     };
 
-    // Cargar datos al montar el componente
+    // Cargar datos al montar el componente y cuando cambie la key (prop externa)
     useEffect(() => {
+        console.log('🔄 UsersDataTable montado/remontado - cargando usuarios...');
         loadUsers();
-    }, []);
+    }, []); // Se recarga automáticamente cuando el componente se desmonta y remonta por el key
 
     return (
         <div className="space-y-6">
@@ -408,6 +410,140 @@ const UsersDataTable: React.FC<UsersDataTableProps> = ({
                         </Button>
                     </div>
                 </div>
+            </Modal>
+
+            {/* Modal de detalles del usuario */}
+            <Modal
+                isOpen={showDetailModal}
+                onClose={() => {
+                    setShowDetailModal(false);
+                    setSelectedUser(null);
+                }}
+                title="Detalles del Usuario"
+                size="md"
+            >
+                {selectedUser && (
+                    <div className="space-y-6">
+                        {/* Información Personal */}
+                        <div className="border-b pb-4">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-3">Información Personal</h3>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <p className="text-sm text-gray-500">Nombre</p>
+                                    <p className="font-medium text-gray-900">{selectedUser.firstName}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-500">Apellido</p>
+                                    <p className="font-medium text-gray-900">{selectedUser.lastName}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-500">RUT</p>
+                                    <p className="font-medium text-gray-900">{selectedUser.rut}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-500">Teléfono</p>
+                                    <p className="font-medium text-gray-900">{selectedUser.phone || '-'}</p>
+                                </div>
+                                <div className="col-span-2">
+                                    <p className="text-sm text-gray-500">Email</p>
+                                    <p className="font-medium text-gray-900">{selectedUser.email}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Información Profesional */}
+                        <div className="border-b pb-4">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-3">Información Profesional</h3>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <p className="text-sm text-gray-500">Rol</p>
+                                    <Badge variant={
+                                        selectedUser.role === 'ADMIN' ? 'red' :
+                                        selectedUser.role === 'TEACHER' ? 'blue' :
+                                        selectedUser.role === 'COORDINATOR' ? 'purple' :
+                                        selectedUser.role === 'PSYCHOLOGIST' ? 'green' :
+                                        'gray'
+                                    } size="sm">
+                                        {selectedUser.roleDisplayName}
+                                    </Badge>
+                                </div>
+                                {selectedUser.educationalLevelDisplayName && (
+                                    <div>
+                                        <p className="text-sm text-gray-500">Nivel Educativo</p>
+                                        <p className="font-medium text-gray-900">{selectedUser.educationalLevelDisplayName}</p>
+                                    </div>
+                                )}
+                                {selectedUser.subjectDisplayName && (
+                                    <div>
+                                        <p className="text-sm text-gray-500">Asignatura</p>
+                                        <p className="font-medium text-gray-900">{selectedUser.subjectDisplayName}</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Estado del Usuario */}
+                        <div className="border-b pb-4">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-3">Estado</h3>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <p className="text-sm text-gray-500">Estado de la Cuenta</p>
+                                    <Badge variant={selectedUser.active ? 'green' : 'red'} size="sm">
+                                        {selectedUser.active ? 'Activo' : 'Inactivo'}
+                                    </Badge>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-500">Email Verificado</p>
+                                    <Badge variant={selectedUser.emailVerified ? 'blue' : 'yellow'} size="sm">
+                                        {selectedUser.emailVerified ? 'Verificado' : 'Sin verificar'}
+                                    </Badge>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Fechas */}
+                        <div>
+                            <h3 className="text-lg font-semibold text-gray-900 mb-3">Información del Sistema</h3>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <p className="text-sm text-gray-500">Fecha de Creación</p>
+                                    <p className="font-medium text-gray-900">
+                                        {new Date(selectedUser.createdAt).toLocaleDateString('es-ES', {
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric'
+                                        })}
+                                    </p>
+                                </div>
+                                {selectedUser.updatedAt && (
+                                    <div>
+                                        <p className="text-sm text-gray-500">Última Actualización</p>
+                                        <p className="font-medium text-gray-900">
+                                            {new Date(selectedUser.updatedAt).toLocaleDateString('es-ES', {
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric'
+                                            })}
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Botón de cerrar */}
+                        <div className="flex justify-end pt-4">
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    setShowDetailModal(false);
+                                    setSelectedUser(null);
+                                }}
+                            >
+                                Cerrar
+                            </Button>
+                        </div>
+                    </div>
+                )}
             </Modal>
         </div>
     );

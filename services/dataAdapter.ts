@@ -115,13 +115,21 @@ export class DataAdapter {
       id: parseInt(simpleUser.id || simpleUser.id),
       firstName: simpleUser.first_name || simpleUser.firstName || '',
       lastName: simpleUser.last_name || simpleUser.lastName || '',
+      fullName: simpleUser.fullName || `${simpleUser.first_name || simpleUser.firstName || ''} ${simpleUser.last_name || simpleUser.lastName || ''}`.trim(),
       email: simpleUser.email || '',
       rut: simpleUser.rut || this.generateMockRut(), // Usar RUT si viene, sino generar mock
       phone: simpleUser.phone || undefined,
       role: simpleUser.role || 'APODERADO',
+      roleDisplayName: simpleUser.roleDisplayName || simpleUser.role || 'APODERADO',
+      subject: simpleUser.subject || undefined,
+      subjectDisplayName: simpleUser.subjectDisplayName || simpleUser.subject || undefined,
+      educationalLevel: simpleUser.educationalLevel || simpleUser.educational_level || undefined,
+      educationalLevelDisplayName: simpleUser.educationalLevelDisplayName || simpleUser.educationalLevel || simpleUser.educational_level || undefined,
       active: simpleUser.active !== undefined ? simpleUser.active : true,
+      emailVerified: simpleUser.emailVerified !== undefined ? simpleUser.emailVerified : (simpleUser.email_verified !== undefined ? simpleUser.email_verified : false),
       createdAt: simpleUser.created_at || simpleUser.createdAt || new Date().toISOString(),
-      updatedAt: simpleUser.updated_at || simpleUser.updatedAt || simpleUser.created_at || simpleUser.createdAt || new Date().toISOString()
+      updatedAt: simpleUser.updated_at || simpleUser.updatedAt || simpleUser.created_at || simpleUser.createdAt || new Date().toISOString(),
+      lastLogin: simpleUser.lastLogin || simpleUser.last_login || undefined
     };
   }
 

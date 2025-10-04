@@ -272,10 +272,10 @@ class ApplicationService {
     async getApplicationById(id: number): Promise<Application> {
         try {
             console.log('📄 Obteniendo postulación:', id);
-            
+
             const response = await api.get(`/api/applications/${id}`);
-            
-            return response.data;
+
+            return response.data.data;
             
         } catch (error: any) {
             console.error('❌ Error obteniendo postulación:', error);
@@ -349,21 +349,76 @@ class ApplicationService {
     async archiveApplication(id: number): Promise<void> {
         try {
             console.log('📂 Admin: Archivando postulación:', id);
-            
+
             await api.put(`/api/applications/${id}/archive`);
-            
+
             console.log('✅ Admin: Postulación archivada exitosamente');
-            
+
         } catch (error: any) {
             console.error('❌ Error archivando postulación:', error);
-            
+
             if (error.response?.status === 404) {
                 throw new Error('Postulación no encontrada');
             } else if (error.response?.status === 403) {
                 throw new Error('No tienes permisos para archivar esta postulación');
             }
-            
+
             throw new Error('Error al archivar la postulación');
+        }
+    }
+
+    // US-9: Change application status with audit trail
+    async updateApplicationStatus(
+        id: number,
+        newStatus: string,
+        changeNote?: string
+    ): Promise<{ success: boolean; message: string; data: any }> {
+        try {
+            console.log('🔄 Admin: Cambiando estado de postulación:', { id, newStatus, changeNote });
+
+            const response = await api.patch(`/api/applications/${id}/status`, {
+                newStatus,
+                changeNote
+            });
+
+            console.log('✅ Admin: Estado actualizado exitosamente:', response.data);
+
+            return response.data;
+
+        } catch (error: any) {
+            console.error('❌ Error actualizando estado:', error);
+
+            if (error.response?.status === 404) {
+                throw new Error('Postulación no encontrada');
+            } else if (error.response?.status === 400) {
+                throw new Error(error.response.data?.error || 'Estado inválido');
+            } else if (error.response?.status === 403) {
+                throw new Error('No tienes permisos para cambiar el estado');
+            }
+
+            throw new Error('Error al actualizar el estado de la postulación');
+        }
+    }
+
+    // US-9: Get status change history for an application
+    async getApplicationStatusHistory(id: number): Promise<any[]> {
+        try {
+            console.log('📜 Admin: Obteniendo historial de estados:', id);
+
+            const response = await api.get(`/api/applications/${id}/status-history`);
+
+            console.log('✅ Admin: Historial obtenido:', response.data);
+
+            return response.data.data || [];
+
+        } catch (error: any) {
+            console.error('❌ Error obteniendo historial:', error);
+
+            if (error.response?.status === 404) {
+                throw new Error('Postulación no encontrada');
+            }
+
+            throw new Error('Error al obtener el historial de estados');
         }
     }
 
