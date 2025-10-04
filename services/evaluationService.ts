@@ -434,11 +434,6 @@ class EvaluationService {
         return response.data;
     }
 
-    async getEvaluationById(evaluationId: number): Promise<Evaluation> {
-        const response = await api.get(`/evaluations/${evaluationId}`);
-        return response.data;
-    }
-
     // Métodos auxiliares
 
     getEvaluationTypeLabel(type: EvaluationType): string {
@@ -572,6 +567,82 @@ class EvaluationService {
             isValid: errors.length === 0,
             errors
         };
+    }
+
+    // ============= ADMIN: VISUALIZACIÓN DE EVALUACIONES =============
+
+    /**
+     * Obtener todas las evaluaciones (para administradores)
+     * GET /api/evaluations
+     */
+    async getAllEvaluations(): Promise<Evaluation[]> {
+        try {
+            console.log('📊 Obteniendo todas las evaluaciones...');
+
+            const response = await api.get('/api/evaluations');
+
+            if (response.data.success) {
+                console.log(`✅ ${response.data.count} evaluaciones obtenidas`);
+                return response.data.data;
+            }
+
+            throw new Error('Respuesta inválida del servidor');
+        } catch (error: any) {
+            console.error('❌ Error obteniendo evaluaciones:', error);
+            throw new Error(
+                error.response?.data?.message ||
+                error.message ||
+                'Error al obtener evaluaciones'
+            );
+        }
+    }
+
+    /**
+     * Obtener una evaluación por ID con detalles completos
+     * GET /api/evaluations/:evaluationId
+     */
+    async getEvaluationById(evaluationId: number): Promise<Evaluation> {
+        try {
+            console.log(`📋 Obteniendo evaluación ${evaluationId}...`);
+
+            const response = await api.get(`/api/evaluations/${evaluationId}`);
+
+            if (response.data.success) {
+                console.log('✅ Evaluación obtenida');
+                return response.data.data;
+            }
+
+            throw new Error('Respuesta inválida del servidor');
+        } catch (error: any) {
+            console.error('❌ Error obteniendo evaluación:', error);
+            throw new Error(
+                error.response?.data?.message ||
+                error.message ||
+                'Error al obtener la evaluación'
+            );
+        }
+    }
+
+    /**
+     * Obtener evaluaciones por application_id
+     * GET /api/evaluations/application/:applicationId
+     */
+    async getEvaluationsByApplicationId(applicationId: number): Promise<Evaluation[]> {
+        try {
+            console.log(`📋 Obteniendo evaluaciones para application ${applicationId}...`);
+
+            const response = await api.get(`/api/evaluations/application/${applicationId}`);
+
+            console.log(`✅ ${response.data.length} evaluaciones obtenidas`);
+            return response.data;
+        } catch (error: any) {
+            console.error('❌ Error obteniendo evaluaciones por application:', error);
+            throw new Error(
+                error.response?.data?.message ||
+                error.message ||
+                'Error al obtener evaluaciones de la aplicación'
+            );
+        }
     }
 }
 

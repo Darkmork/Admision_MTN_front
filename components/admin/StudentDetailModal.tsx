@@ -12,6 +12,8 @@ import { useNotifications } from '../../context/AppContext';
 import { applicationService, Application } from '../../services/applicationService';
 import interviewService from '../../services/interviewService';
 import { Interview, InterviewStatus, INTERVIEW_TYPE_LABELS } from '../../types/interview';
+import evaluationService from '../../services/evaluationService';
+import { Evaluation } from '../../types/evaluation';
 
 interface Postulante {
     id: number;
@@ -88,18 +90,23 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
     onUpdateStatus,
     onScheduleInterview
 }) => {
-    const [activeTab, setActiveTab] = useState<'info' | 'familia' | 'academico' | 'entrevistas' | 'documentos' | 'historial'>('info');
+    const [activeTab, setActiveTab] = useState<'info' | 'familia' | 'academico' | 'entrevistas' | 'evaluaciones' | 'documentos' | 'historial'>('info');
     const [fullApplication, setFullApplication] = useState<Application | null>(null);
     const [interviews, setInterviews] = useState<Interview[]>([]);
+    const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
     const [loading, setLoading] = useState(false);
     const [interviewsLoading, setInterviewsLoading] = useState(false);
+    const [evaluationsLoading, setEvaluationsLoading] = useState(false);
+    const [selectedEvaluation, setSelectedEvaluation] = useState<Evaluation | null>(null);
+    const [showEvaluationDetail, setShowEvaluationDetail] = useState(false);
     const { addNotification } = useNotifications();
 
-    // Cargar información completa de la aplicación y entrevistas
+    // Cargar información completa de la aplicación, entrevistas y evaluaciones
     useEffect(() => {
         if (postulante && isOpen) {
             loadFullApplication();
             loadInterviews();
+            loadEvaluations();
         }
     }, [postulante, isOpen]);
 
@@ -137,11 +144,31 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
         }
     };
 
-    const refreshData = async () => {
-        await Promise.all([loadFullApplication(), loadInterviews()]);
+    const loadEvaluations = async () => {
+        if (!postulante) return;
+
+        setEvaluationsLoading(true);
+        try {
+            const evaluationsData = await evaluationService.getEvaluationsByApplicationId(postulante.id);
+            setEvaluations(evaluationsData || []);
+        } catch (error) {
+            console.error('Error loading evaluations:', error);
+            setEvaluations([]);
+        } finally {
+            setEvaluationsLoading(false);
+        }
     };
 
-    if (!postulante) return null;
+    const refreshData = async () => {
+        await Promise.all([loadFullApplication(), loadInterviews(), loadEvaluations()]);
+    };
+
+    console.log('🎭 StudentDetailModal render - isOpen:', isOpen, 'postulante:', postulante, 'activeTab:', activeTab, 'loading:', loading);
+    if (!postulante) {
+        console.log('⚠️ StudentDetailModal - No postulante provided, returning null');
+        return null;
+    }
+    console.log('✅ StudentDetailModal - Will render modal content');
 
     const getStatusVariant = (status: string) => {
         switch (status) {
@@ -219,7 +246,9 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
         </div>
     );
 
-    const renderInfoTab = () => (
+    const renderInfoTab = () => {
+        console.log('📝 renderInfoTab called');
+        return (
         <div className="space-y-6">
             {/* Header con foto y datos básicos */}
             <div className="flex items-start gap-4 p-4 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg">
@@ -349,7 +378,8 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                 </div>
             </div>
         </div>
-    );
+        );
+    };
 
     const renderFamiliaTab = () => (
         <div className="space-y-6">
@@ -745,14 +775,14 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                 <FiClock className="w-5 h-5" />
                 Historial del Proceso
             </h3>
-            
+
             <div className="space-y-4">
                 <div className="flex items-start gap-3 p-3 bg-blue-50 border-l-4 border-blue-400 rounded-r-lg">
                     <FiCheckCircle className="w-5 h-5 text-blue-600 mt-0.5" />
                     <div className="flex-1">
                         <h4 className="font-medium text-blue-900">Postulación Creada</h4>
                         <p className="text-sm text-blue-700">
-                            {new Date(postulante.fechaCreacion).toLocaleDateString('es-ES')} - 
+                            {new Date(postulante.fechaCreacion).toLocaleDateString('es-ES')} -
                             Creada por: {postulante.creadoPor}
                         </p>
                     </div>
@@ -791,11 +821,179 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
         </div>
     );
 
+    const getEvaluationTypeLabel = (type: string) => {
+        const labels: Record<string, string> = {
+            'MATHEMATICS_EXAM': 'Examen de Matemática',
+            'LANGUAGE_EXAM': 'Examen de Lenguaje',
+            'ENGLISH_EXAM': 'Examen de Inglés',
+            'PSYCHOLOGICAL_INTERVIEW': 'Entrevista Psicológica',
+            'DIRECTOR_INTERVIEW': 'Entrevista con Director(a)',
+            'COORDINATOR_INTERVIEW': 'Entrevista con Coordinador(a)'
+        };
+        return labels[type] || type;
+    };
+
+    const getEvaluationIcon = (type: string) => {
+        const icons: Record<string, string> = {
+            'MATHEMATICS_EXAM': '🔢',
+            'LANGUAGE_EXAM': '📖',
+            'ENGLISH_EXAM': '🌐',
+            'PSYCHOLOGICAL_INTERVIEW': '🧠',
+            'DIRECTOR_INTERVIEW': '👔',
+            'COORDINATOR_INTERVIEW': '👨‍🏫'
+        };
+        return icons[type] || '📋';
+    };
+
+    const REQUIRED_EVALUATION_TYPES = [
+        { type: 'MATHEMATICS_EXAM', title: 'Examen de Matemática', icon: '🔢', required: true },
+        { type: 'LANGUAGE_EXAM', title: 'Examen de Lenguaje', icon: '📖', required: true },
+        { type: 'ENGLISH_EXAM', title: 'Examen de Inglés', icon: '🌐', required: true },
+        { type: 'PSYCHOLOGICAL_INTERVIEW', title: 'Entrevista Psicológica', icon: '🧠', required: true },
+        { type: 'CYCLE_DIRECTOR_INTERVIEW', title: 'Entrevista Director(a) de Ciclo', icon: '👔', required: true },
+        { type: 'CYCLE_DIRECTOR_REPORT', title: 'Informe Director(a) de Ciclo', icon: '📋', required: false }
+    ];
+
+    const renderEvaluationsTab = () => {
+        const requiredTypes = REQUIRED_EVALUATION_TYPES.filter(t => t.required);
+        const completedEvaluations = evaluations.filter(e => e.status === 'COMPLETED').length;
+        const inProgressEvaluations = evaluations.filter(e => e.status === 'IN_PROGRESS').length;
+        const missingEvaluations = requiredTypes.filter(type =>
+            !evaluations.some(evaluation => evaluation.evaluationType === type.type)
+        ).length;
+
+        const progress = Math.round(((completedEvaluations + inProgressEvaluations) / requiredTypes.length) * 100);
+
+        return (
+            <div className="space-y-6">
+                {/* Header con refresh */}
+                <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                        <FiCheckCircle className="w-5 h-5" />
+                        Sistema de Evaluaciones
+                    </h3>
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={loadEvaluations}
+                        disabled={evaluationsLoading}
+                    >
+                        <FiRefreshCw className={`w-4 h-4 mr-1 ${evaluationsLoading ? 'animate-spin' : ''}`} />
+                        Actualizar
+                    </Button>
+                </div>
+
+                {/* Progreso general */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-gray-700">Progreso de Evaluaciones Obligatorias</span>
+                        <span className="text-sm text-gray-600">{completedEvaluations + inProgressEvaluations} de {requiredTypes.length}</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+                        <div
+                            className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${progress}%` }}
+                        ></div>
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-600">
+                        <span>{completedEvaluations} completadas</span>
+                        <span>{inProgressEvaluations} en progreso</span>
+                        <span>{missingEvaluations} pendientes</span>
+                    </div>
+                </div>
+
+                {/* Estado de cada tipo de evaluación */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {REQUIRED_EVALUATION_TYPES.map(type => {
+                        const evaluation = evaluations.find(e => e.evaluationType === type.type);
+                        const hasEvaluation = !!evaluation;
+                        const isCompleted = evaluation?.status === 'COMPLETED';
+                        const isInProgress = evaluation?.status === 'IN_PROGRESS';
+
+                        return (
+                            <div key={type.type} className={`p-4 rounded-lg border-2 ${
+                                isCompleted ? 'border-green-200 bg-green-50' :
+                                isInProgress ? 'border-blue-200 bg-blue-50' :
+                                type.required ? 'border-orange-200 bg-orange-50' :
+                                'border-gray-200 bg-gray-50'
+                            }`}>
+                                <div className="flex items-center justify-between mb-2">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-lg">{type.icon}</span>
+                                        <span className="font-medium text-gray-900">{type.title}</span>
+                                        {type.required && <span className="text-red-500 text-xs">*</span>}
+                                    </div>
+                                    <Badge
+                                        variant="neutral"
+                                        size="sm"
+                                        className={`text-xs ${
+                                            isCompleted ? 'text-green-700 bg-green-100' :
+                                            isInProgress ? 'text-blue-700 bg-blue-100' :
+                                            type.required ? 'text-orange-700 bg-orange-100' :
+                                            'text-gray-600 bg-gray-100'
+                                        }`}
+                                    >
+                                        {isCompleted ? 'Completada' :
+                                         isInProgress ? 'En Progreso' :
+                                         type.required ? 'Requerida' : 'Opcional'}
+                                    </Badge>
+                                </div>
+
+                                {evaluation && (
+                                    <div className="space-y-1 text-xs text-gray-600">
+                                        {evaluation.score !== null && evaluation.score !== undefined && (
+                                            <p className="font-medium text-blue-600">📊 Puntaje: {evaluation.score}{type.type.includes('EXAM') ? '/100' : ''}</p>
+                                        )}
+                                        {evaluation.evaluator && (
+                                            <p>👤 {evaluation.evaluator.firstName} {evaluation.evaluator.lastName}</p>
+                                        )}
+                                        {evaluation.completionDate && (
+                                            <p>✅ {new Date(evaluation.completionDate).toLocaleDateString('es-CL')}</p>
+                                        )}
+                                    </div>
+                                )}
+
+                                {!hasEvaluation && (
+                                    <p className="text-xs text-gray-500 mt-2">⏳ Evaluación pendiente</p>
+                                )}
+
+                                {hasEvaluation && (
+                                    <div className="mt-3">
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="w-full text-xs"
+                                            onClick={() => {
+                                                setSelectedEvaluation(evaluation);
+                                                setShowEvaluationDetail(true);
+                                            }}
+                                        >
+                                            <FiEye className="w-3 h-3 mr-1" />
+                                            Ver Detalles
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+
+                {evaluationsLoading && (
+                    <div className="text-center py-4">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+                        <p className="text-sm text-gray-600 mt-2">Cargando evaluaciones...</p>
+                    </div>
+                )}
+            </div>
+        );
+    };
+
     const tabs = [
         { key: 'info', label: 'Información General', icon: FiUser },
         { key: 'familia', label: 'Familia', icon: FiUsers },
         { key: 'academico', label: 'Académico', icon: FiAward },
         { key: 'entrevistas', label: 'Entrevistas', icon: FiCalendar },
+        { key: 'evaluaciones', label: 'Evaluaciones', icon: FiCheckCircle },
         { key: 'documentos', label: 'Documentos', icon: FiFileText },
         { key: 'historial', label: 'Historial', icon: FiClock }
     ];
@@ -807,7 +1005,7 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
             title="Información Detallada del Estudiante"
             size="max"
         >
-            <div className="flex flex-col h-full">
+            <div className="flex flex-col min-h-[600px]">
                 {/* Tabs */}
                 <div className="flex border-b border-gray-200 mb-6 overflow-x-auto">
                     {tabs.map((tab) => {
@@ -841,6 +1039,7 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                             {activeTab === 'familia' && renderFamiliaTab()}
                             {activeTab === 'academico' && renderAcademicoTab()}
                             {activeTab === 'entrevistas' && renderEntrevistasTab()}
+                            {activeTab === 'evaluaciones' && renderEvaluationsTab()}
                             {activeTab === 'documentos' && renderDocumentosTab()}
                             {activeTab === 'historial' && renderHistorialTab()}
                         </>
@@ -870,6 +1069,179 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                     )}
                 </div>
             </div>
+
+            {/* Modal de Detalles de Evaluación */}
+            {showEvaluationDetail && selectedEvaluation && (
+                <Modal
+                    isOpen={showEvaluationDetail}
+                    onClose={() => {
+                        setShowEvaluationDetail(false);
+                        setSelectedEvaluation(null);
+                    }}
+                    title="Detalles de la Evaluación"
+                    size="lg"
+                >
+                    {console.log('📊 Selected Evaluation:', selectedEvaluation)}
+                    <div className="space-y-6">
+                        {/* Header */}
+                        <div className="bg-blue-50 p-4 rounded-lg">
+                            <h3 className="text-lg font-bold text-blue-900">
+                                {selectedEvaluation.evaluationType === 'MATHEMATICS_EXAM' && '📐 Examen de Matemática'}
+                                {selectedEvaluation.evaluationType === 'LANGUAGE_EXAM' && '📚 Examen de Lenguaje'}
+                                {selectedEvaluation.evaluationType === 'ENGLISH_EXAM' && '🌎 Examen de Inglés'}
+                                {selectedEvaluation.evaluationType === 'PSYCHOLOGICAL_INTERVIEW' && '🧠 Entrevista Psicológica'}
+                                {selectedEvaluation.evaluationType === 'DIRECTOR_INTERVIEW' && '👔 Entrevista Director(a) de Ciclo'}
+                                {selectedEvaluation.evaluationType === 'DIRECTOR_REPORT' && '📋 Informe Director(a) de Ciclo'}
+                            </h3>
+                            <div className="flex items-center gap-4 mt-2 text-sm text-blue-700">
+                                <span>👤 {selectedEvaluation.evaluator?.firstName} {selectedEvaluation.evaluator?.lastName}</span>
+                                {selectedEvaluation.completionDate && (
+                                    <span>📅 {new Date(selectedEvaluation.completionDate).toLocaleDateString('es-CL', { dateStyle: 'long' })}</span>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Puntaje */}
+                        {selectedEvaluation.score !== null && selectedEvaluation.score !== undefined && (
+                            <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-lg font-semibold text-green-900">Puntaje Obtenido:</span>
+                                    <span className="text-3xl font-bold text-green-700">
+                                        {selectedEvaluation.score}
+                                        {selectedEvaluation.evaluationType && selectedEvaluation.evaluationType.includes('EXAM') ? '/100' : '/10'}
+                                    </span>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Observaciones Generales */}
+                        {selectedEvaluation.observations && (
+                            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                                <h4 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
+                                    <FiMessageSquare className="w-5 h-5" />
+                                    Observaciones Generales
+                                </h4>
+                                <p className="text-gray-700 whitespace-pre-wrap">{selectedEvaluation.observations}</p>
+                            </div>
+                        )}
+
+                        {/* Fortalezas */}
+                        {selectedEvaluation.strengths && (
+                            <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                                <h4 className="font-semibold text-green-900 mb-2 flex items-center gap-2">
+                                    <FiCheckCircle className="w-5 h-5" />
+                                    Fortalezas Identificadas
+                                </h4>
+                                <p className="text-gray-700 whitespace-pre-wrap">{selectedEvaluation.strengths}</p>
+                            </div>
+                        )}
+
+                        {/* Áreas de Mejora */}
+                        {selectedEvaluation.areasForImprovement && (
+                            <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                                <h4 className="font-semibold text-orange-900 mb-2 flex items-center gap-2">
+                                    <FiAlertCircle className="w-5 h-5" />
+                                    Áreas de Mejora
+                                </h4>
+                                <p className="text-gray-700 whitespace-pre-wrap">{selectedEvaluation.areasForImprovement}</p>
+                            </div>
+                        )}
+
+                        {/* Recomendaciones */}
+                        {selectedEvaluation.recommendations && (
+                            <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                                <h4 className="font-semibold text-purple-900 mb-2 flex items-center gap-2">
+                                    <FiStar className="w-5 h-5" />
+                                    Recomendaciones
+                                </h4>
+                                <p className="text-gray-700 whitespace-pre-wrap">{selectedEvaluation.recommendations}</p>
+                            </div>
+                        )}
+
+                        {/* Campos específicos para Entrevista Psicológica */}
+                        {selectedEvaluation.evaluationType === 'PSYCHOLOGICAL_INTERVIEW' && (
+                            <div className="space-y-4">
+                                {selectedEvaluation.socialSkillsAssessment && (
+                                    <div className="bg-teal-50 p-4 rounded-lg border border-teal-200">
+                                        <h4 className="font-semibold text-teal-900 mb-2">🤝 Habilidades Sociales</h4>
+                                        <p className="text-gray-700 whitespace-pre-wrap">{selectedEvaluation.socialSkillsAssessment}</p>
+                                    </div>
+                                )}
+                                {selectedEvaluation.emotionalMaturity && (
+                                    <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-200">
+                                        <h4 className="font-semibold text-indigo-900 mb-2">💎 Madurez Emocional</h4>
+                                        <p className="text-gray-700 whitespace-pre-wrap">{selectedEvaluation.emotionalMaturity}</p>
+                                    </div>
+                                )}
+                                {selectedEvaluation.motivationAssessment && (
+                                    <div className="bg-pink-50 p-4 rounded-lg border border-pink-200">
+                                        <h4 className="font-semibold text-pink-900 mb-2">🎯 Motivación</h4>
+                                        <p className="text-gray-700 whitespace-pre-wrap">{selectedEvaluation.motivationAssessment}</p>
+                                    </div>
+                                )}
+                                {selectedEvaluation.familySupportAssessment && (
+                                    <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+                                        <h4 className="font-semibold text-amber-900 mb-2">👨‍👩‍👧‍👦 Apoyo Familiar</h4>
+                                        <p className="text-gray-700 whitespace-pre-wrap">{selectedEvaluation.familySupportAssessment}</p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Campos específicos para Evaluación Director de Ciclo */}
+                        {(selectedEvaluation.evaluationType === 'DIRECTOR_INTERVIEW' || selectedEvaluation.evaluationType === 'CYCLE_DIRECTOR_INTERVIEW' || selectedEvaluation.evaluationType === 'CYCLE_DIRECTOR_REPORT') && (
+                            <div className="space-y-4">
+                                {selectedEvaluation.academicReadiness && (
+                                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                                        <h4 className="font-semibold text-blue-900 mb-2">📚 Preparación Académica</h4>
+                                        <p className="text-gray-700 whitespace-pre-wrap">{selectedEvaluation.academicReadiness}</p>
+                                    </div>
+                                )}
+                                {selectedEvaluation.behavioralAssessment && (
+                                    <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                                        <h4 className="font-semibold text-purple-900 mb-2">🎭 Evaluación Conductual</h4>
+                                        <p className="text-gray-700 whitespace-pre-wrap">{selectedEvaluation.behavioralAssessment}</p>
+                                    </div>
+                                )}
+                                {selectedEvaluation.integrationPotential && (
+                                    <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                                        <h4 className="font-semibold text-green-900 mb-2">🌟 Potencial de Integración</h4>
+                                        <p className="text-gray-700 whitespace-pre-wrap">{selectedEvaluation.integrationPotential}</p>
+                                    </div>
+                                )}
+                                {selectedEvaluation.finalRecommendation !== undefined && (
+                                    <div className={`p-4 rounded-lg border-2 ${selectedEvaluation.finalRecommendation ? 'bg-green-50 border-green-400' : 'bg-red-50 border-red-400'}`}>
+                                        <h4 className={`font-bold mb-2 ${selectedEvaluation.finalRecommendation ? 'text-green-900' : 'text-red-900'}`}>
+                                            {selectedEvaluation.finalRecommendation ? '✅ Recomendación Positiva' : '❌ No Recomendado'}
+                                        </h4>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Estado */}
+                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                            <span className="font-medium text-gray-700">Estado de la Evaluación:</span>
+                            <Badge variant={selectedEvaluation.status === 'COMPLETED' ? 'success' : 'warning'} size="lg">
+                                {selectedEvaluation.status === 'COMPLETED' ? 'Completada' : 'En Proceso'}
+                            </Badge>
+                        </div>
+
+                        {/* Botones de Acción */}
+                        <div className="flex justify-end gap-3 pt-4 border-t">
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    setShowEvaluationDetail(false);
+                                    setSelectedEvaluation(null);
+                                }}
+                            >
+                                Cerrar
+                            </Button>
+                        </div>
+                    </div>
+                </Modal>
+            )}
         </Modal>
     );
 };

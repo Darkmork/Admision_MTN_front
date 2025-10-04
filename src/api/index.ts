@@ -12,11 +12,15 @@ export * from './interviews.types';
 export * from './notifications.types';
 export * from './files.types';
 export * from './auth.types';
+export * from './dashboard.types';
+export * from './search.types';
 
 // Service Clients
 export * from './users.client';
 export * from './applications.client';
 export * from './evaluations.client';
+export * from './dashboard.client';
+export * from './search.client';
 
 // Unified API Client
 export * from './client';

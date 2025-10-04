@@ -103,7 +103,11 @@ const DataTable = <T extends Record<string, any>>({
 
         // Aplicar filtros por columna
         Object.entries(filters).forEach(([field, filter]) => {
-            if (!filter.value && filter.value !== 0 && filter.value !== false) return;
+            // Solo aplicar filtro si hay un valor (permitir 0 y false, pero no string vacío)
+            if (filter.value === null || filter.value === undefined ||
+                (typeof filter.value === 'string' && filter.value.trim() === '')) {
+                return;
+            }
 
             result = result.filter(item => {
                 const itemValue = item[field];
@@ -203,7 +207,8 @@ const DataTable = <T extends Record<string, any>>({
 
     // Manejar filtros
     const handleFilter = (field: string, value: any, type: string, operator = 'contains') => {
-        if (!value && value !== 0 && value !== false) {
+        // Solo remover filtro si es null o undefined (no si es string vacío, 0, o false)
+        if (value === null || value === undefined) {
             // Remover filtro
             const newFilters = { ...filters };
             delete newFilters[field];
@@ -237,100 +242,142 @@ const DataTable = <T extends Record<string, any>>({
             <div className="relative">
                 <button
                     onClick={() => setActiveFilterColumn(isActive ? null : column.dataIndex as string)}
-                    className={`p-1 rounded hover:bg-gray-100 ${
-                        currentFilter ? 'text-blue-600 bg-blue-50' : 'text-gray-400'
+                    className={`p-1.5 rounded-md transition-all duration-200 ${
+                        currentFilter
+                            ? 'text-blue-600 bg-blue-50 hover:bg-blue-100'
+                            : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
                     }`}
+                    title="Filtrar columna"
                 >
                     <FiFilter size={14} />
                 </button>
 
                 {isActive && (
-                    <div className="absolute top-8 left-0 z-50 bg-white border border-gray-200 rounded-lg shadow-lg p-3 min-w-[200px]">
-                        {filterType === 'select' ? (
-                            <select
-                                value={currentFilter?.value || ''}
-                                onChange={(e) => handleFilter(column.dataIndex as string, e.target.value, filterType)}
-                                className="w-full p-2 border border-gray-300 rounded"
-                            >
-                                <option value="">Todos</option>
-                                {options.map((option, idx) => (
-                                    <option key={idx} value={option.value}>
-                                        {option.label}
-                                    </option>
-                                ))}
-                            </select>
-                        ) : filterType === 'number' ? (
-                            <div className="space-y-2">
-                                <select
-                                    value={currentFilter?.operator || 'equals'}
-                                    onChange={(e) => {
-                                        if (currentFilter) {
-                                            handleFilter(column.dataIndex as string, currentFilter.value, filterType, e.target.value);
-                                        }
-                                    }}
-                                    className="w-full p-1 border border-gray-300 rounded text-sm"
-                                >
-                                    <option value="equals">Igual a</option>
-                                    <option value="gt">Mayor que</option>
-                                    <option value="lt">Menor que</option>
-                                    <option value="gte">Mayor o igual</option>
-                                    <option value="lte">Menor o igual</option>
-                                </select>
-                                <input
-                                    type="number"
-                                    value={currentFilter?.value || ''}
-                                    onChange={(e) => handleFilter(column.dataIndex as string, e.target.value, filterType, currentFilter?.operator)}
-                                    placeholder="Valor..."
-                                    className="w-full p-2 border border-gray-300 rounded"
-                                />
-                            </div>
-                        ) : filterType === 'boolean' ? (
-                            <select
-                                value={currentFilter?.value === undefined ? '' : String(currentFilter.value)}
-                                onChange={(e) => {
-                                    const value = e.target.value === '' ? null : e.target.value === 'true';
-                                    handleFilter(column.dataIndex as string, value, filterType);
-                                }}
-                                className="w-full p-2 border border-gray-300 rounded"
-                            >
-                                <option value="">Todos</option>
-                                <option value="true">Sí</option>
-                                <option value="false">No</option>
-                            </select>
-                        ) : (
-                            <div className="space-y-2">
-                                <select
-                                    value={currentFilter?.operator || 'contains'}
-                                    onChange={(e) => {
-                                        if (currentFilter) {
-                                            handleFilter(column.dataIndex as string, currentFilter.value, filterType, e.target.value);
-                                        }
-                                    }}
-                                    className="w-full p-1 border border-gray-300 rounded text-sm"
-                                >
-                                    <option value="contains">Contiene</option>
-                                    <option value="equals">Igual a</option>
-                                    <option value="startsWith">Empieza con</option>
-                                    <option value="endsWith">Termina con</option>
-                                </select>
-                                <input
-                                    type="text"
-                                    value={currentFilter?.value || ''}
-                                    onChange={(e) => handleFilter(column.dataIndex as string, e.target.value, filterType, currentFilter?.operator)}
-                                    placeholder="Buscar..."
-                                    className="w-full p-2 border border-gray-300 rounded"
-                                />
-                            </div>
-                        )}
+                    <div className="absolute top-full mt-2 left-0 z-50 bg-white border border-gray-300 rounded-lg shadow-xl p-4 min-w-[240px]">
+                        <div className="space-y-3">
+                            {filterType === 'select' ? (
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                                        Seleccionar valor
+                                    </label>
+                                    <select
+                                        value={currentFilter?.value || ''}
+                                        onChange={(e) => handleFilter(column.dataIndex as string, e.target.value, filterType)}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                    >
+                                        <option value="">Todos</option>
+                                        {options.map((option, idx) => (
+                                            <option key={idx} value={option.value}>
+                                                {option.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            ) : filterType === 'number' ? (
+                                <div className="space-y-2.5">
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                                            Operador
+                                        </label>
+                                        <select
+                                            value={currentFilter?.operator || 'equals'}
+                                            onChange={(e) => {
+                                                if (currentFilter) {
+                                                    handleFilter(column.dataIndex as string, currentFilter.value, filterType, e.target.value);
+                                                }
+                                            }}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                        >
+                                            <option value="equals">Igual a</option>
+                                            <option value="gt">Mayor que</option>
+                                            <option value="lt">Menor que</option>
+                                            <option value="gte">Mayor o igual</option>
+                                            <option value="lte">Menor o igual</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                                            Valor
+                                        </label>
+                                        <input
+                                            type="number"
+                                            value={currentFilter?.value || ''}
+                                            onChange={(e) => handleFilter(column.dataIndex as string, e.target.value, filterType, currentFilter?.operator || 'equals')}
+                                            placeholder="Ingrese un número..."
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                        />
+                                    </div>
+                                </div>
+                            ) : filterType === 'boolean' ? (
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                                        Seleccionar estado
+                                    </label>
+                                    <select
+                                        value={currentFilter?.value === undefined ? '' : String(currentFilter.value)}
+                                        onChange={(e) => {
+                                            const value = e.target.value === '' ? null : e.target.value === 'true';
+                                            handleFilter(column.dataIndex as string, value, filterType);
+                                        }}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                    >
+                                        <option value="">Todos</option>
+                                        <option value="true">Sí</option>
+                                        <option value="false">No</option>
+                                    </select>
+                                </div>
+                            ) : (
+                                <div className="space-y-2.5">
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                                            Tipo de búsqueda
+                                        </label>
+                                        <select
+                                            value={currentFilter?.operator || 'contains'}
+                                            onChange={(e) => {
+                                                if (currentFilter) {
+                                                    handleFilter(column.dataIndex as string, currentFilter.value, filterType, e.target.value);
+                                                }
+                                            }}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                        >
+                                            <option value="contains">Contiene</option>
+                                            <option value="equals">Igual a</option>
+                                            <option value="startsWith">Empieza con</option>
+                                            <option value="endsWith">Termina con</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                                            Texto a buscar
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={currentFilter?.value || ''}
+                                            onChange={(e) => handleFilter(column.dataIndex as string, e.target.value, filterType, currentFilter?.operator || 'contains')}
+                                            placeholder="Ingrese texto..."
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                            autoFocus
+                                        />
+                                    </div>
+                                </div>
+                            )}
 
-                        {currentFilter && (
-                            <button
-                                onClick={() => handleFilter(column.dataIndex as string, null, filterType)}
-                                className="mt-2 text-sm text-red-600 hover:text-red-800"
-                            >
-                                Limpiar filtro
-                            </button>
-                        )}
+                            {currentFilter && (
+                                <div className="pt-2 border-t border-gray-200">
+                                    <button
+                                        onClick={() => {
+                                            handleFilter(column.dataIndex as string, null, filterType);
+                                            setActiveFilterColumn(null);
+                                        }}
+                                        className="w-full px-3 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-200 flex items-center justify-center gap-2"
+                                    >
+                                        <FiX size={14} />
+                                        Limpiar filtro
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 )}
             </div>

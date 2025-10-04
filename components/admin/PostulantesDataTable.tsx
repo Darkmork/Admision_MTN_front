@@ -477,8 +477,10 @@ const PostulantesDataTable: React.FC<PostulantesDataTableProps> = ({
 
     // Abrir modal de detalles del postulante
     const handleViewPostulanteDetail = (postulante: Postulante) => {
+        console.log('🔍 PostulantesDataTable - handleViewPostulanteDetail called with:', postulante);
         setSelectedPostulante(postulante);
         setIsDetailModalOpen(true);
+        console.log('📖 PostulantesDataTable - Modal state set to open');
         // Llamar al callback original si existe
         onViewPostulante?.(postulante);
     };
