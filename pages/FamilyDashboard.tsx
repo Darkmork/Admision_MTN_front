@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
@@ -50,7 +50,6 @@ const sections = [
   { key: 'documentos', label: 'Documentos' },
   { key: 'calendario', label: 'Mi Calendario' },
   { key: 'entrevistas', label: 'Mis Entrevistas' },
-  { key: 'historial', label: 'Historial de Acciones' },
   { key: 'ayuda', label: 'Ayuda y Soporte' },
 ];
 
@@ -77,6 +76,7 @@ const getDocumentStatusIcon = (status: Document['status']) => {
 
 
 const FamilyDashboard: React.FC = () => {
+  const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState('resumen');
   const [realApplications, setRealApplications] = useState<Application[]>([]);
   const [documents, setDocuments] = useState<any[]>([]);
@@ -403,8 +403,28 @@ const FamilyDashboard: React.FC = () => {
       case 'datos':
         return (
           <Card className="p-6">
-            <h2 className="text-xl font-bold text-azul-monte-tabor mb-6">Datos del Postulante y Apoderados</h2>
-            
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-azul-monte-tabor">Datos del Postulante y Apoderados</h2>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => {
+                  // Redirect to application form in edit mode
+                  // The application ID will be passed to pre-fill the form
+                  navigate('/postulacion', {
+                    state: {
+                      editMode: true,
+                      applicationId: myApplication.id,
+                      applicationData: myApplication
+                    }
+                  });
+                }}
+              >
+                <FiEdit className="w-4 h-4 mr-2" />
+                Editar Datos
+              </Button>
+            </div>
+
             {hasRealApplication ? (
               <div className="space-y-8">
                 {/* Datos del Estudiante */}
@@ -606,13 +626,6 @@ const FamilyDashboard: React.FC = () => {
         );
       case 'entrevistas':
         return <FamilyInterviews />;
-      case 'historial':
-        return (
-          <Card className="p-6">
-            <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">Historial de Acciones</h2>
-            <p className="text-gris-piedra">(Aquí se mostrará el historial de acciones realizadas por la familia en el sistema.)</p>
-          </Card>
-        );
       case 'ayuda':
         return (
           <Card className="p-6">

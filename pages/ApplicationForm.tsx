@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import Input from '../components/ui/Input';
 import RutInput from '../components/ui/RutInput';
 import Select from '../components/ui/Select';
@@ -74,6 +74,7 @@ const validationConfig = {
 };
 
 const ApplicationForm: React.FC = () => {
+    const location = useLocation();
     const [currentStep, setCurrentStep] = useState(0);
     const [accountCreated, setAccountCreated] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -88,6 +89,7 @@ const ApplicationForm: React.FC = () => {
     const [authError, setAuthError] = useState('');
     const [submittedApplicationId, setSubmittedApplicationId] = useState<number | null>(null);
     const [uploadedDocuments, setUploadedDocuments] = useState<Map<string, File>>(new Map());
+    const [existingDocuments, setExistingDocuments] = useState<any[]>([]);
 
     // Estado para el modal de errores
     const [showErrorModal, setShowErrorModal] = useState(false);
@@ -96,7 +98,7 @@ const ApplicationForm: React.FC = () => {
         message: '',
         errors: [] as string[]
     });
-    
+
     const { addApplication } = useApplications();
     const { addNotification } = useNotifications();
     const { user, isAuthenticated, login, register } = useAuth();
@@ -115,7 +117,8 @@ const ApplicationForm: React.FC = () => {
         rut: '',
         confirmPassword: '',
         address: '',
-        profession: ''
+        profession: '',
+        guardianType: '' // ex-alumno, funcionario, nuevo
     });
     
     // Estado para verificación de email
@@ -204,14 +207,20 @@ const ApplicationForm: React.FC = () => {
         }
 
         // Validaciones
+        if (!authData.guardianType) {
+            setAuthError('Debe seleccionar el tipo de apoderado');
+            setAuthLoading(false);
+            return;
+        }
+
         if (authData.password !== authData.confirmPassword) {
             setAuthError('Las contraseñas no coinciden');
             setAuthLoading(false);
             return;
         }
 
-        if (authData.password.length < 6) {
-            setAuthError('La contraseña debe tener al menos 6 caracteres');
+        if (authData.password.length < 8 || authData.password.length > 10) {
+            setAuthError('La contraseña debe tener entre 8 y 10 caracteres');
             setAuthLoading(false);
             return;
         }
@@ -369,7 +378,7 @@ const ApplicationForm: React.FC = () => {
             updateField('applicationYear', applicationYear);
         }
     }, []);
-    
+
     // Helper function to check if current school is required
     const requiresCurrentSchool = useCallback((grade: string): boolean => {
         const schoolRequiredGrades = [
@@ -377,6 +386,185 @@ const ApplicationForm: React.FC = () => {
             '1medio', '2medio', '3medio', '4medio'
         ];
         return schoolRequiredGrades.includes(grade);
+    }, []);
+
+    // Helper function to parse address from backend into separate fields
+    const parseAddress = useCallback((fullAddress: string): {
+        street: string;
+        number: string;
+        commune: string;
+        apartment: string;
+    } => {
+        if (!fullAddress) {
+            return { street: '', number: '', commune: '', apartment: '' };
+        }
+
+        // Format expected: "CALLE NUMERO, COMUNA, DEPTO"
+        // Example: "AV. PROVIDENCIA 1234, PROVIDENCIA, DEPTO 302"
+        const parts = fullAddress.split(',').map(p => p.trim());
+
+        // First part: street and number
+        const streetAndNumber = parts[0] || '';
+        const lastSpace = streetAndNumber.lastIndexOf(' ');
+
+        const street = lastSpace > 0 ? streetAndNumber.substring(0, lastSpace).trim() : streetAndNumber;
+        const number = lastSpace > 0 ? streetAndNumber.substring(lastSpace + 1).trim() : '';
+
+        // Second part: commune
+        const commune = parts[1] || '';
+
+        // Third part: apartment (optional)
+        const apartment = parts[2] || '';
+
+        return { street, number, commune, apartment };
+    }, []);
+
+    // Pre-fill form when in edit mode (from dashboard)
+    useEffect(() => {
+        const loadEditModeData = async () => {
+            if (location.state?.editMode && location.state?.applicationData) {
+                const appData = location.state.applicationData;
+                console.log('✏️ Edit mode detected, pre-filling form with:', appData);
+
+                // Hide auth form when in edit mode
+                setShowAuthForm(false);
+
+                // Helper to split full name into first and last name
+                const splitFullName = (fullName: string) => {
+                    if (!fullName) return { firstName: '', lastName: '' };
+                    const parts = fullName.trim().split(' ');
+                    if (parts.length === 1) return { firstName: parts[0], lastName: '' };
+                    const firstName = parts[0];
+                    const lastName = parts.slice(1).join(' ');
+                    return { firstName, lastName };
+                };
+
+                // Map backend data structure to form data structure
+                setData({
+                    // Student data
+                    firstName: appData.student?.firstName || '',
+                    paternalLastName: appData.student?.paternalLastName || (splitFullName(appData.student?.lastName || '').firstName || ''),
+                    maternalLastName: appData.student?.maternalLastName || (splitFullName(appData.student?.lastName || '').lastName || ''),
+                    rut: appData.student?.rut || '',
+                    birthDate: appData.student?.birthDate ? appData.student.birthDate.split('T')[0] : '',
+                    grade: appData.student?.gradeApplied || '',
+                    schoolApplied: appData.schoolApplied || appData.student?.schoolApplied || '',
+                    studentAddress: appData.student?.address || '',
+                    studentEmail: appData.student?.email || '',
+                    currentSchool: appData.student?.currentSchool || '',
+                    additionalNotes: appData.student?.additionalNotes || '',
+                    applicationYear: appData.applicationYear || new Date().getFullYear() + 1,
+
+                    // Father data (parent1)
+                    parent1Name: appData.father?.fullName || '',
+                    parent1Email: appData.father?.email || '',
+                    parent1Phone: appData.father?.phone || '',
+                    parent1Rut: appData.father?.rut || '',
+                    parent1Address: appData.father?.address || '',
+                    parent1Profession: appData.father?.profession || '',
+
+                    // Mother data (parent2)
+                    parent2Name: appData.mother?.fullName || '',
+                    parent2Email: appData.mother?.email || '',
+                    parent2Phone: appData.mother?.phone || '',
+                    parent2Rut: appData.mother?.rut || '',
+                    parent2Address: appData.mother?.address || '',
+                    parent2Profession: appData.mother?.profession || '',
+
+                    // Supporter data
+                    supporterName: appData.supporter?.fullName || '',
+                    supporterEmail: appData.supporter?.email || '',
+                    supporterPhone: appData.supporter?.phone || '',
+                    supporterRut: appData.supporter?.rut || '',
+                    supporterRelation: appData.supporter?.relationship || '',
+
+                    // Guardian data
+                    guardianName: appData.guardian?.fullName || '',
+                    guardianEmail: appData.guardian?.email || '',
+                    guardianPhone: appData.guardian?.phone || '',
+                    guardianRut: appData.guardian?.rut || '',
+                    guardianRelation: appData.guardian?.relationship || ''
+                });
+
+                console.log('✅ Form pre-filled successfully');
+
+                // Load existing documents
+                if (location.state.applicationId) {
+                    try {
+                        console.log('📄 Loading existing documents for application:', location.state.applicationId);
+                        const response = await applicationService.getApplicationDocuments(location.state.applicationId);
+                        // El endpoint devuelve { success: true, documents: [...] }
+                        const documents = response.documents || response || [];
+                        setExistingDocuments(documents);
+                        console.log('✅ Existing documents loaded:', documents);
+                    } catch (error) {
+                        console.error('❌ Error loading documents:', error);
+                        setExistingDocuments([]);
+                    }
+                }
+            }
+        };
+
+        loadEditModeData();
+    }, [location.state]);
+
+    // Parse address from backend when studentAddress is loaded
+    useEffect(() => {
+        if (data.studentAddress && !data.studentAddressStreet) {
+            // Only parse if we have the combined address but not the separate fields
+            console.log('📍 Parsing address from backend:', data.studentAddress);
+            const parsed = parseAddress(data.studentAddress);
+            console.log('✅ Parsed address:', parsed);
+
+            // Update separate fields without triggering re-combination
+            setData((prev: any) => ({
+                ...prev,
+                studentAddressStreet: parsed.street,
+                studentAddressNumber: parsed.number,
+                studentAddressCommune: parsed.commune,
+                studentAddressApartment: parsed.apartment
+            }));
+        }
+    }, [data.studentAddress, data.studentAddressStreet, parseAddress]);
+
+    // Helper function to validate birth date coherence with grade
+    const validateBirthDateForGrade = useCallback((birthDate: string, grade: string): { valid: boolean; message?: string } => {
+        if (!birthDate || !grade) return { valid: true };
+
+        const birth = new Date(birthDate);
+        const currentYear = new Date().getFullYear();
+        const age = currentYear - birth.getFullYear();
+
+        // Define expected ages for each grade (approximate range)
+        const gradeAgeRanges: { [key: string]: { min: number; max: number; name: string } } = {
+            'playgroup': { min: 2, max: 3, name: 'Playgroup' },
+            'prekinder': { min: 3, max: 5, name: 'Pre-Kínder' },
+            'kinder': { min: 4, max: 6, name: 'Kínder' },
+            '1basico': { min: 5, max: 7, name: '1° Básico' },
+            '2basico': { min: 6, max: 8, name: '2° Básico' },
+            '3basico': { min: 7, max: 9, name: '3° Básico' },
+            '4basico': { min: 8, max: 10, name: '4° Básico' },
+            '5basico': { min: 9, max: 11, name: '5° Básico' },
+            '6basico': { min: 10, max: 12, name: '6° Básico' },
+            '7basico': { min: 11, max: 13, name: '7° Básico' },
+            '8basico': { min: 12, max: 14, name: '8° Básico' },
+            '1medio': { min: 13, max: 15, name: '1° Medio' },
+            '2medio': { min: 14, max: 16, name: '2° Medio' },
+            '3medio': { min: 15, max: 17, name: '3° Medio' },
+            '4medio': { min: 16, max: 18, name: '4° Medio' }
+        };
+
+        const range = gradeAgeRanges[grade];
+        if (!range) return { valid: true };
+
+        if (age < range.min || age > range.max) {
+            return {
+                valid: false,
+                message: `La edad del postulante (${age} años) no es apropiada para ${range.name}. Se espera una edad entre ${range.min} y ${range.max} años.`
+            };
+        }
+
+        return { valid: true };
     }, []);
 
     // Helper function to auto-fill data when parent is selected
@@ -421,14 +609,20 @@ const ApplicationForm: React.FC = () => {
         switch (currentStep) {
             case 0:
                 // Validate postulant data
-                if (!data.firstName?.trim() || !data.paternalLastName?.trim() || !data.maternalLastName?.trim() || 
-                    !data.rut?.trim() || !data.birthDate || !data.grade || !data.schoolApplied || !data.studentAddress?.trim()) {
+                if (!data.firstName?.trim() || !data.paternalLastName?.trim() || !data.maternalLastName?.trim() ||
+                    !data.rut?.trim() || !data.birthDate || !data.grade || !data.schoolApplied ||
+                    !data.studentAddressStreet?.trim() || !data.studentAddressNumber?.trim() || !data.studentAddressCommune?.trim()) {
                     return false;
                 }
                 // Validate application year (must be current year + 1)
                 const currentYear = new Date().getFullYear();
                 const applicationYear = parseInt(data.applicationYear);
                 if (!data.applicationYear || applicationYear !== currentYear + 1) {
+                    return false;
+                }
+                // Validate birth date coherence with grade
+                const birthDateValidation = validateBirthDateForGrade(data.birthDate, data.grade);
+                if (!birthDateValidation.valid) {
                     return false;
                 }
                 // Check for school if required
@@ -508,66 +702,125 @@ const ApplicationForm: React.FC = () => {
             if (currentStep === 4) {
                 setIsSubmitting(true);
                 try {
-                    // Preparar datos para la API
-                    const applicationRequest = {
-                        // Datos del estudiante
-                        firstName: data.firstName,
-                        paternalLastName: data.paternalLastName,
-                        maternalLastName: data.maternalLastName,
-                        rut: data.rut,
-                        birthDate: data.birthDate,
-                        studentEmail: data.studentEmail,
-                        studentAddress: data.studentAddress,
-                        grade: data.grade,
-                        schoolApplied: data.schoolApplied,
-                        currentSchool: data.currentSchool,
-                        additionalNotes: data.additionalNotes,
+                    // Determinar si estamos en modo edición o creación
+                    const isEditMode = location.state?.editMode && location.state?.applicationId;
+                    let applicationRequest: any;
+                    let response;
 
-                        // Datos del padre
-                        parent1Name: data.parent1Name,
-                        parent1Rut: data.parent1Rut,
-                        parent1Email: data.parent1Email,
-                        parent1Phone: data.parent1Phone,
-                        parent1Address: data.parent1Address,
-                        parent1Profession: data.parent1Profession,
+                    if (isEditMode) {
+                        // Formato anidado para PUT (actualización)
+                        applicationRequest = {
+                            student: {
+                                firstName: data.firstName,
+                                paternalLastName: data.paternalLastName,
+                                maternalLastName: data.maternalLastName,
+                                rut: data.rut,
+                                birthDate: data.birthDate,
+                                email: data.studentEmail,
+                                address: data.studentAddress,
+                                gradeApplied: data.grade,
+                                currentSchool: data.currentSchool,
+                                additionalNotes: data.additionalNotes
+                            },
+                            father: {
+                                fullName: data.parent1Name,
+                                rut: data.parent1Rut,
+                                email: data.parent1Email,
+                                phone: data.parent1Phone,
+                                address: data.parent1Address,
+                                profession: data.parent1Profession
+                            },
+                            mother: {
+                                fullName: data.parent2Name,
+                                rut: data.parent2Rut,
+                                email: data.parent2Email,
+                                phone: data.parent2Phone,
+                                address: data.parent2Address,
+                                profession: data.parent2Profession
+                            },
+                            supporter: {
+                                fullName: data.supporterName,
+                                rut: data.supporterRut,
+                                email: data.supporterEmail,
+                                phone: data.supporterPhone,
+                                relationship: data.supporterRelation
+                            },
+                            guardian: {
+                                fullName: data.guardianName,
+                                rut: data.guardianRut,
+                                email: data.guardianEmail,
+                                phone: data.guardianPhone,
+                                relationship: data.guardianRelation
+                            },
+                            schoolApplied: data.schoolApplied
+                        };
 
-                        // Datos de la madre
-                        parent2Name: data.parent2Name,
-                        parent2Rut: data.parent2Rut,
-                        parent2Email: data.parent2Email,
-                        parent2Phone: data.parent2Phone,
-                        parent2Address: data.parent2Address,
-                        parent2Profession: data.parent2Profession,
+                        // Actualizar aplicación existente
+                        console.log('Actualizando postulación:', location.state.applicationId, applicationRequest);
+                        response = await applicationService.updateApplication(location.state.applicationId, applicationRequest);
+                    } else {
+                        // Formato plano para POST (creación)
+                        applicationRequest = {
+                            // Datos del estudiante
+                            firstName: data.firstName,
+                            paternalLastName: data.paternalLastName,
+                            maternalLastName: data.maternalLastName,
+                            rut: data.rut,
+                            birthDate: data.birthDate,
+                            studentEmail: data.studentEmail,
+                            studentAddress: data.studentAddress,
+                            grade: data.grade,
+                            schoolApplied: data.schoolApplied,
+                            currentSchool: data.currentSchool,
+                            additionalNotes: data.additionalNotes,
 
-                        // Datos del sostenedor
-                        supporterName: data.supporterName,
-                        supporterRut: data.supporterRut,
-                        supporterEmail: data.supporterEmail,
-                        supporterPhone: data.supporterPhone,
-                        supporterRelation: data.supporterRelation,
+                            // Datos del padre
+                            parent1Name: data.parent1Name,
+                            parent1Rut: data.parent1Rut,
+                            parent1Email: data.parent1Email,
+                            parent1Phone: data.parent1Phone,
+                            parent1Address: data.parent1Address,
+                            parent1Profession: data.parent1Profession,
 
-                        // Datos del apoderado
-                        guardianName: data.guardianName,
-                        guardianRut: data.guardianRut,
-                        guardianEmail: data.guardianEmail,
-                        guardianPhone: data.guardianPhone,
-                        guardianRelation: data.guardianRelation
-                    };
-                    
-                    // Enviar a la API real
-                    console.log('Enviando postulación:', applicationRequest);
-                    const response = await applicationService.submitApplication(applicationRequest);
-                    
+                            // Datos de la madre
+                            parent2Name: data.parent2Name,
+                            parent2Rut: data.parent2Rut,
+                            parent2Email: data.parent2Email,
+                            parent2Phone: data.parent2Phone,
+                            parent2Address: data.parent2Address,
+                            parent2Profession: data.parent2Profession,
+
+                            // Datos del sostenedor
+                            supporterName: data.supporterName,
+                            supporterRut: data.supporterRut,
+                            supporterEmail: data.supporterEmail,
+                            supporterPhone: data.supporterPhone,
+                            supporterRelation: data.supporterRelation,
+
+                            // Datos del apoderado
+                            guardianName: data.guardianName,
+                            guardianRut: data.guardianRut,
+                            guardianEmail: data.guardianEmail,
+                            guardianPhone: data.guardianPhone,
+                            guardianRelation: data.guardianRelation
+                        };
+
+                        // Crear nueva aplicación
+                        console.log('Enviando postulación:', applicationRequest);
+                        response = await applicationService.submitApplication(applicationRequest);
+                    }
+
                     // Guardar el ID de la aplicación para subir documentos
-                    setSubmittedApplicationId(response.id);
+                    const applicationId = isEditMode ? location.state.applicationId : response.id;
+                    setSubmittedApplicationId(applicationId);
                     
                     // Subir documentos si hay alguno seleccionado
                     let documentsUploaded = 0;
                     if (uploadedDocuments.size > 0) {
-                        console.log(`Subiendo ${uploadedDocuments.size} documentos para la aplicación ${response.id}`);
-                        
+                        console.log(`Subiendo ${uploadedDocuments.size} documentos para la aplicación ${applicationId}`);
+
                         const uploadPromises = Array.from(uploadedDocuments.entries()).map(([docType, file]) => {
-                            return applicationService.uploadDocument(response.id, file, docType);
+                            return applicationService.uploadDocument(applicationId, file, docType);
                         });
 
                         await Promise.all(uploadPromises);
@@ -585,7 +838,7 @@ const ApplicationForm: React.FC = () => {
                     
                     // Agregar a la lista local (opcional, para compatibilidad con el contexto existente)
                     addApplication({
-                        id: response.id?.toString() || Date.now().toString(),
+                        id: applicationId?.toString() || Date.now().toString(),
                         studentName: response.studentName || `${data.firstName} ${data.paternalLastName} ${data.maternalLastName}`,
                         grade: response.grade || data.grade,
                         status: response.status || 'pending',
@@ -676,9 +929,26 @@ const ApplicationForm: React.FC = () => {
 
     // Funciones para manejar documentos
     const handleFileSelect = (documentType: string, file: File) => {
+        // Validate file size (5MB max)
+        const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+        if (file.size > maxSize) {
+            addNotification({
+                type: 'error',
+                title: 'Archivo demasiado grande',
+                message: `El archivo "${file.name}" excede el tamaño máximo de 5MB. Por favor, comprima el archivo o use uno más pequeño.`
+            });
+            return;
+        }
+
         const newDocs = new Map(uploadedDocuments);
         newDocs.set(documentType, file);
         setUploadedDocuments(newDocs);
+
+        addNotification({
+            type: 'success',
+            title: 'Archivo seleccionado',
+            message: `"${file.name}" (${(file.size / 1024 / 1024).toFixed(2)} MB) está listo para subir.`
+        });
     };
 
     // Esta función ya no se necesita - los documentos se suben automáticamente al enviar la postulación
@@ -807,14 +1077,34 @@ const ApplicationForm: React.FC = () => {
                                     Iniciar Sesión y Postular
                                 </Button>
 
-                                <div className="text-center">
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowRegister(true)}
-                                        className="text-azul-monte-tabor hover:underline"
-                                    >
-                                        ¿No tiene cuenta? Regístrese aquí
-                                    </button>
+                                <div className="text-center space-y-2">
+                                    <div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowRegister(true)}
+                                            className="text-azul-monte-tabor hover:underline"
+                                        >
+                                            ¿No tiene cuenta? Regístrese aquí
+                                        </button>
+                                    </div>
+                                    <div>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const email = prompt('Ingrese su correo electrónico:');
+                                                if (email) {
+                                                    addNotification({
+                                                        type: 'info',
+                                                        title: 'Solicitud enviada',
+                                                        message: `Se ha enviado un enlace de recuperación a ${email}. Por favor, revise su correo.`
+                                                    });
+                                                }
+                                            }}
+                                            className="text-gris-piedra hover:text-azul-monte-tabor hover:underline text-sm"
+                                        >
+                                            ¿Olvidó su contraseña?
+                                        </button>
+                                    </div>
                                 </div>
                             </form>
                         ) : (
@@ -852,6 +1142,20 @@ const ApplicationForm: React.FC = () => {
                                     value={authData.rut}
                                     onChange={(value) => updateAuthField('rut', value)}
                                     required
+                                />
+
+                                <Select
+                                    id="guardianType"
+                                    label="Tipo de Apoderado"
+                                    options={[
+                                        { value: '', label: 'Seleccione...' },
+                                        { value: 'nuevo', label: 'Nuevo (sin vínculo previo con el colegio)' },
+                                        { value: 'ex-alumno', label: 'Ex-Alumno del colegio' },
+                                        { value: 'funcionario', label: 'Funcionario del colegio' }
+                                    ]}
+                                    isRequired
+                                    value={authData.guardianType}
+                                    onChange={(e) => updateAuthField('guardianType', e.target.value)}
                                 />
 
                                 <EmailVerification
@@ -894,12 +1198,13 @@ const ApplicationForm: React.FC = () => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <Input
                                         id="password-register"
-                                        label="Contraseña"
+                                        label="Contraseña (8-10 caracteres)"
                                         type="password"
                                         placeholder="••••••••"
                                         value={authData.password}
                                         onChange={(e) => updateAuthField('password', e.target.value)}
                                         isRequired
+                                        helpText="Debe contener entre 8 y 10 caracteres"
                                     />
                                     <Input
                                         id="confirmPassword"
@@ -996,30 +1301,43 @@ const ApplicationForm: React.FC = () => {
                             />
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <RutInput 
-                                name="rut" 
-                                label="RUT del Postulante" 
-                                placeholder="12.345.678-9" 
-                                required 
+                            <RutInput
+                                name="rut"
+                                label="RUT del Postulante"
+                                placeholder="12.345.678-9"
+                                required
                                 value={data.rut || ''}
                                 onChange={(value) => updateField('rut', value)}
                                 onBlur={() => touchField('rut')}
                                 error={errors.rut}
                             />
-                            <Input 
-                                id="birthDate" 
-                                label="Fecha de Nacimiento" 
-                                type="date" 
-                                isRequired 
-                                value={data.birthDate || ''}
-                                onChange={(e) => updateField('birthDate', e.target.value)}
-                                onBlur={() => touchField('birthDate')}
-                                error={errors.birthDate}
-                            />
+                            <div>
+                                <Input
+                                    id="birthDate"
+                                    label="Fecha de Nacimiento"
+                                    type="date"
+                                    isRequired
+                                    value={data.birthDate || ''}
+                                    onChange={(e) => updateField('birthDate', e.target.value)}
+                                    onBlur={() => touchField('birthDate')}
+                                    error={errors.birthDate}
+                                />
+                                {data.birthDate && data.grade && (() => {
+                                    const validation = validateBirthDateForGrade(data.birthDate, data.grade);
+                                    if (!validation.valid) {
+                                        return (
+                                            <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg">
+                                                <p className="text-sm text-red-700">{validation.message}</p>
+                                            </div>
+                                        );
+                                    }
+                                    return null;
+                                })()}
+                            </div>
                         </div>
-                        <Input 
-                            id="studentEmail" 
-                            label="Correo Electrónico (opcional)" 
+                        <Input
+                            id="studentEmail"
+                            label="Correo Electrónico (opcional)"
                             type="email"
                             placeholder="estudiante@ejemplo.com"
                             value={data.studentEmail || ''}
@@ -1027,57 +1345,110 @@ const ApplicationForm: React.FC = () => {
                             onBlur={() => touchField('studentEmail')}
                             error={errors.studentEmail}
                         />
-                        <Input 
-                            id="studentAddress" 
-                            label="Dirección de Residencia" 
-                            placeholder="Av. Providencia 1234, Providencia, Santiago"
-                            isRequired 
-                            value={data.studentAddress || ''}
-                            onChange={(e) => updateField('studentAddress', e.target.value)}
-                            onBlur={() => touchField('studentAddress')}
-                            error={errors.studentAddress}
+
+                        {/* Dirección segmentada */}
+                        <div className="space-y-4">
+                            <h4 className="font-medium text-azul-monte-tabor">Dirección de Residencia</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <Input
+                                    id="studentAddressStreet"
+                                    label="Calle"
+                                    placeholder="Av. Providencia"
+                                    isRequired
+                                    value={data.studentAddressStreet || ''}
+                                    onChange={(e) => {
+                                        updateField('studentAddressStreet', e.target.value);
+                                        // Update combined address
+                                        const combined = `${e.target.value || ''} ${data.studentAddressNumber || ''}, ${data.studentAddressCommune || ''}, ${data.studentAddressApartment || ''}`.trim();
+                                        updateField('studentAddress', combined);
+                                    }}
+                                    onBlur={() => touchField('studentAddressStreet')}
+                                />
+                                <Input
+                                    id="studentAddressNumber"
+                                    label="Número"
+                                    placeholder="1234"
+                                    isRequired
+                                    value={data.studentAddressNumber || ''}
+                                    onChange={(e) => {
+                                        updateField('studentAddressNumber', e.target.value);
+                                        // Update combined address
+                                        const combined = `${data.studentAddressStreet || ''} ${e.target.value || ''}, ${data.studentAddressCommune || ''}, ${data.studentAddressApartment || ''}`.trim();
+                                        updateField('studentAddress', combined);
+                                    }}
+                                    onBlur={() => touchField('studentAddressNumber')}
+                                />
+                                <Input
+                                    id="studentAddressCommune"
+                                    label="Comuna"
+                                    placeholder="Providencia"
+                                    isRequired
+                                    value={data.studentAddressCommune || ''}
+                                    onChange={(e) => {
+                                        updateField('studentAddressCommune', e.target.value);
+                                        // Update combined address
+                                        const combined = `${data.studentAddressStreet || ''} ${data.studentAddressNumber || ''}, ${e.target.value || ''}, ${data.studentAddressApartment || ''}`.trim();
+                                        updateField('studentAddress', combined);
+                                    }}
+                                    onBlur={() => touchField('studentAddressCommune')}
+                                />
+                            </div>
+                            <Input
+                                id="studentAddressApartment"
+                                label="Departamento/Casa (opcional)"
+                                placeholder="Depto. 302 / Casa 15"
+                                value={data.studentAddressApartment || ''}
+                                onChange={(e) => {
+                                    updateField('studentAddressApartment', e.target.value);
+                                    // Update combined address
+                                    const combined = `${data.studentAddressStreet || ''} ${data.studentAddressNumber || ''}, ${data.studentAddressCommune || ''}, ${e.target.value || ''}`.trim();
+                                    updateField('studentAddress', combined);
+                                }}
+                                onBlur={() => touchField('studentAddressApartment')}
+                            />
+                        </div>
+                        <Select
+                            id="grade"
+                            label="Nivel al que postula"
+                            options={gradeOptions}
+                            isRequired
+                            value={data.grade || ''}
+                            onChange={(e) => updateField('grade', e.target.value)}
+                            onBlur={() => touchField('grade')}
+                            error={errors.grade}
                         />
-                        {/* Campo condicional para Colegio de Procedencia */}
+
+                        {/* Campo condicional para Colegio de Procedencia - MOVIDO DESPUÉS DEL NIVEL */}
                         {requiresCurrentSchool(data.grade || '') && (
-                            <Input 
-                                id="currentSchool" 
-                                label="Colegio de Procedencia" 
+                            <Input
+                                id="currentSchool"
+                                label="Colegio de Procedencia"
                                 placeholder="Colegio San José"
-                                isRequired 
+                                isRequired
                                 value={data.currentSchool || ''}
                                 onChange={(e) => updateField('currentSchool', e.target.value)}
                                 onBlur={() => touchField('currentSchool')}
                                 error={(!data.currentSchool || data.currentSchool.trim().length < 2) ? 'Este campo es requerido para estudiantes desde 2° básico' : ''}
                             />
                         )}
-                        
+
                         {/* Mensaje informativo para niveles que no requieren colegio anterior */}
                         {!requiresCurrentSchool(data.grade || '') && data.grade && (
                             <div className="p-4 bg-blue-50 rounded-lg">
                                 <p className="text-sm text-blue-800">
                                     <strong>Nota:</strong> Para el nivel seleccionado no es necesario indicar colegio de procedencia.
-                                    {['playgroup', 'prekinder', 'kinder'].includes(data.grade) 
+                                    {['playgroup', 'prekinder', 'kinder'].includes(data.grade)
                                         ? ' Si viene de un jardín infantil, puede mencionarlo en observaciones adicionales.'
                                         : ' Es su primer año escolar formal.'}
                                 </p>
                             </div>
                         )}
-                        <Select 
-                            id="grade" 
-                            label="Nivel al que postula" 
-                            options={gradeOptions}
-                            isRequired 
-                            value={data.grade || ''}
-                            onChange={(e) => updateField('grade', e.target.value)}
-                            onBlur={() => touchField('grade')}
-                            error={errors.grade}
-                        />
-                        
-                        <Select 
-                            id="schoolApplied" 
-                            label="Colegio al que postula" 
+
+                        <Select
+                            id="schoolApplied"
+                            label="Colegio al que postula"
                             options={schoolOptions}
-                            isRequired 
+                            isRequired
                             value={data.schoolApplied || ''}
                             onChange={(e) => updateField('schoolApplied', e.target.value)}
                             onBlur={() => touchField('schoolApplied')}
@@ -1472,14 +1843,42 @@ const ApplicationForm: React.FC = () => {
                     { key: 'PSYCHOLOGICAL_REPORT', label: 'Informe Psicológico (si aplica)', required: false }
                 ];
 
+                // Función para traducir tipos de documentos a español
+                const getDocumentLabel = (documentType: string): string => {
+                    const doc = documentTypes.find(d => d.key === documentType);
+                    return doc ? doc.label : documentType;
+                };
+
                 return (
                     <div>
                         <h3 className="text-xl font-bold text-azul-monte-tabor mb-4">Carga de Documentos</h3>
                         
                         {/* Permitir subir documentos antes de crear la aplicación */}
                         <>
-                            <p className="text-gris-piedra mb-6">Por favor, adjunte los siguientes documentos en formato PDF, JPG o PNG (máximo 10MB cada uno).</p>
-                                
+                            <p className="text-gris-piedra mb-6">Por favor, adjunte los siguientes documentos en formato PDF, JPG o PNG (máximo 5MB cada uno).</p>
+
+                                {/* Documentos existentes (en modo edición) */}
+                                {existingDocuments && existingDocuments.length > 0 && (
+                                    <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                        <h4 className="text-lg font-semibold text-azul-monte-tabor mb-3">📎 Documentos Actuales ({existingDocuments.length})</h4>
+                                        <div className="space-y-2">
+                                            {existingDocuments.map((doc: any, index: number) => (
+                                                <div key={doc.id || index} className="flex justify-between items-center p-2 bg-white rounded border border-blue-100">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-verde-esperanza">✓</span>
+                                                        <span className="text-sm font-medium">{getDocumentLabel(doc.document_type || doc.documentType)}</span>
+                                                        <span className="text-xs text-gris-piedra">({doc.file_name || doc.fileName || 'archivo'})</span>
+                                                    </div>
+                                                    <span className="text-xs text-verde-esperanza">Ya cargado</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <p className="text-xs text-gris-piedra mt-3">
+                                            ℹ️ Los documentos anteriores se mantendrán. Solo suba documentos si desea reemplazarlos.
+                                        </p>
+                                    </div>
+                                )}
+
                                 <div className="space-y-6">
                                     {/* Documentos obligatorios */}
                                     <div className="mb-6">
@@ -1683,14 +2082,17 @@ const ApplicationForm: React.FC = () => {
                         <Button variant="outline" onClick={prevStep} disabled={currentStep === 0}>
                             Anterior
                         </Button>
-                        <Button 
-                            variant="primary" 
+                        <Button
+                            variant="primary"
                             onClick={nextStep}
                             isLoading={isSubmitting}
-                            loadingText="Enviando..."
+                            loadingText={location.state?.editMode ? "Guardando..." : "Enviando..."}
                             disabled={!canProceedToNextStep && !isSubmitting}
                         >
-                            {currentStep === 4 ? 'Enviar Postulación' : 'Siguiente'}
+                            {currentStep === 4
+                                ? (location.state?.editMode ? 'Guardar Cambios' : 'Enviar Postulación')
+                                : 'Siguiente'
+                            }
                         </Button>
                     </div>
                 )}

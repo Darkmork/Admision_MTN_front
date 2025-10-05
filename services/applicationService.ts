@@ -485,6 +485,41 @@ class ApplicationService {
         }
     }
 
+    // Función para actualizar una postulación existente
+    async updateApplication(applicationId: number, applicationData: any): Promise<any> {
+        try {
+            console.log('✏️ Actualizando postulación:', applicationId, applicationData);
+
+            const response = await api.put(`/api/applications/${applicationId}`, applicationData);
+
+            console.log('✅ Postulación actualizada exitosamente:', response.data);
+            return response.data;
+        } catch (error: any) {
+            console.error('❌ Error actualizando postulación:', error);
+
+            if (error.response) {
+                const { status, data } = error.response;
+                switch (status) {
+                    case 400:
+                        if (data.errors && Array.isArray(data.errors)) {
+                            throw new Error(data.errors.join(', '));
+                        }
+                        throw new Error(data.message || 'Error de validación en los datos');
+                    case 404:
+                        throw new Error('Postulación no encontrada');
+                    case 500:
+                        throw new Error('Error interno del servidor. Intenta nuevamente.');
+                    default:
+                        throw new Error(data.message || 'Error desconocido al actualizar la postulación');
+                }
+            } else if (error.request) {
+                throw new Error('No se pudo conectar con el servidor. Verifica tu conexión.');
+            } else {
+                throw new Error(error.message || 'Error inesperado al actualizar la postulación');
+            }
+        }
+    }
+
     // Función para subir documentos
     async uploadDocument(applicationId: number, file: File, documentType: string): Promise<any> {
         try {
