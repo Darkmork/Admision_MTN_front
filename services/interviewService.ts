@@ -689,42 +689,55 @@ class InterviewService {
     try {
       // Validar y usar duración por defecto si es inválida
       const validDuration = (duration && !isNaN(duration) && duration > 0) ? duration : 60;
-      
+
       const params = new URLSearchParams({
         interviewerId: interviewerId.toString(),
         date,
         duration: validDuration.toString()
       });
-      
-      const response = await api.get<string[]>(`${this.baseUrl}/available-slots?${params}`);
-      
+
+      const response = await api.get<any>(`${this.baseUrl}/available-slots?${params}`);
+
       console.log('🔍 Respuesta completa de available-slots:', response);
       console.log('🔍 Data de respuesta:', response.data);
       console.log('🔍 Tipo de data:', typeof response.data, Array.isArray(response.data));
-      
-      // Logging detallado de cada elemento en el array
-      if (Array.isArray(response.data)) {
-        response.data.forEach((item, index) => {
-          console.log(`🔍 Item ${index}:`, item);
-          console.log(`🔍 Item ${index} keys:`, Object.keys(item || {}));
-          console.log(`🔍 Item ${index} type:`, typeof item);
-        });
-      }
-      
+
       // Verificar si la respuesta es del placeholder (microservicio no implementado)
       if (response.data && typeof response.data === 'object' && 'error' in response.data) {
         console.log('⚠️ Available slots service no implementado, usando horarios por defecto');
         return this.getDefaultTimeSlots();
       }
-      
-      // Verificar si es un array válido
+
+      // CASO 1: Backend devuelve estructura { success: true, data: { availableSlots: [...] } }
+      if (response.data && response.data.success && response.data.data && response.data.data.availableSlots) {
+        const slots = response.data.data.availableSlots;
+        console.log('🔍 Slots extraídos de response.data.data.availableSlots:', slots);
+
+        // Si los slots son objetos con estructura { time, available, duration }
+        if (Array.isArray(slots) && slots.length > 0 && typeof slots[0] === 'object' && 'time' in slots[0]) {
+          console.log('✅ Procesando slots con formato completo del backend');
+          const availableSlots = slots
+            .filter(slot => slot.available === true)
+            .map(slot => slot.time);
+          console.log('✅ Slots disponibles filtrados:', availableSlots);
+          return availableSlots;
+        }
+
+        // Si los slots ya son strings
+        if (Array.isArray(slots) && (slots.length === 0 || typeof slots[0] === 'string')) {
+          console.log('✅ Devolviendo slots del backend (strings):', slots);
+          return slots;
+        }
+      }
+
+      // CASO 2: Verificar si es un array directo (legacy)
       if (Array.isArray(response.data)) {
         // Si es un array de strings (formato esperado)
         if (response.data.length === 0 || typeof response.data[0] === 'string') {
-          console.log('✅ Devolviendo slots del backend (strings):', response.data);
+          console.log('✅ Devolviendo slots del backend (strings directo):', response.data);
           return response.data;
         }
-        
+
         // Si es un array con objetos que contienen message/slots (formato backend sin horarios)
         if (response.data.length > 0 && response.data[0] && typeof response.data[0] === 'object' && 'slots' in response.data[0]) {
           const slotsData = response.data[0].slots;
@@ -733,21 +746,18 @@ class InterviewService {
             return slotsData;
           }
         }
-        
+
         // Si es un array de objetos slot directos (formato backend con horarios)
         if (response.data.length > 0 && response.data[0] && typeof response.data[0] === 'object' && 'time' in response.data[0]) {
-          console.log('✅ Procesando slots con formato completo del backend');
+          console.log('✅ Procesando slots con formato completo del backend (array directo)');
           const availableSlots = response.data
             .filter(slot => slot.available === true)
             .map(slot => slot.time);
           console.log('✅ Slots disponibles filtrados:', availableSlots);
           return availableSlots;
         }
-        
-        console.log('✅ Devolviendo slots del backend (mixed):', response.data);
-        return response.data;
       }
-      
+
       console.log('⚠️ Estructura de respuesta inesperada para available slots, usando horarios por defecto');
       console.log('⚠️ Data recibida:', response.data);
       return this.getDefaultTimeSlots();
@@ -833,6 +843,39 @@ class InterviewService {
       '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
       '14:00', '14:30', '15:00', '15:30', '16:00', '16:30'
     ];
+  }
+
+  /**
+   * Enviar resumen de entrevistas al apoderado
+   * @param applicationId ID de la aplicación
+   * @returns Promise con resultado del envío
+   */
+  async sendInterviewSummary(applicationId: number): Promise<{
+    success: boolean;
+    message: string;
+    data?: any;
+    error?: string;
+    details?: any;
+  }> {
+    try {
+      console.log(`📧 Enviando resumen de entrevistas para aplicación ${applicationId}`);
+      const response = await api.post(`/api/interviews/application/${applicationId}/send-summary`);
+      console.log('✅ Resumen de entrevistas enviado:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error enviando resumen de entrevistas:', error);
+
+      // Extraer mensaje de error del backend
+      const errorMessage = error.response?.data?.error || 'Error al enviar resumen de entrevistas';
+      const errorDetails = error.response?.data?.details || null;
+
+      return {
+        success: false,
+        message: errorMessage,
+        error: errorMessage,
+        details: errorDetails
+      };
+    }
   }
 }
 

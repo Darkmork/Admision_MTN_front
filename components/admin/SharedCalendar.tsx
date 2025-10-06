@@ -76,6 +76,8 @@ const SharedCalendar: React.FC<SharedCalendarProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [selectedInterview, setSelectedInterview] = useState<Interview | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [selectedDayInterviews, setSelectedDayInterviews] = useState<Interview[]>([]);
+  const [showDayInterviews, setShowDayInterviews] = useState(false);
   const [filters, setFilters] = useState({
     interviewerId: '',
     status: '',
@@ -200,6 +202,12 @@ const SharedCalendar: React.FC<SharedCalendarProps> = ({
     setShowDetails(true);
   };
 
+  const handleShowMoreClick = (e: React.MouseEvent, interviews: Interview[]) => {
+    e.stopPropagation(); // Prevenir que se dispare el click del día
+    setSelectedDayInterviews(interviews);
+    setShowDayInterviews(true);
+  };
+
   const getStatusColor = (status: InterviewStatus): string => {
     return INTERVIEW_CONFIG.COLORS[status] || '#6B7280';
   };
@@ -312,9 +320,12 @@ const SharedCalendar: React.FC<SharedCalendarProps> = ({
         {/* Entrevistas del día */}
         <div className="space-y-1">
           {day.interviews.slice(0, 2).map(interview => renderInterviewEvent(interview))}
-          
+
           {day.interviews.length > 2 && (
-            <div className="text-xs text-gray-500 font-medium bg-gray-100 rounded px-1">
+            <div
+              onClick={(e) => handleShowMoreClick(e, day.interviews)}
+              className="text-xs text-gray-500 font-medium bg-gray-100 hover:bg-gray-200 rounded px-1 cursor-pointer transition-colors"
+            >
               +{day.interviews.length - 2} más
             </div>
           )}
@@ -527,55 +538,55 @@ const SharedCalendar: React.FC<SharedCalendarProps> = ({
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
               Detalles de la Entrevista
             </h3>
-            
+
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-gray-600">Estudiante</label>
                   <p className="text-gray-900">{selectedInterview.studentName}</p>
                 </div>
-                
+
                 <div>
                   <label className="text-sm font-medium text-gray-600">Entrevistador</label>
                   <p className="text-gray-900">{selectedInterview.interviewerName}</p>
                 </div>
-                
+
                 <div>
                   <label className="text-sm font-medium text-gray-600">Tipo</label>
                   <p className="text-gray-900">{INTERVIEW_TYPE_LABELS[selectedInterview.type]}</p>
                 </div>
-                
+
                 <div>
                   <label className="text-sm font-medium text-gray-600">Estado</label>
                   <Badge variant={getStatusColor(selectedInterview.status)}>
                     {INTERVIEW_STATUS_LABELS[selectedInterview.status]}
                   </Badge>
                 </div>
-                
+
                 <div>
                   <label className="text-sm font-medium text-gray-600">Fecha y Hora</label>
                   <p className="text-gray-900">
                     {new Date(selectedInterview.scheduledDate).toLocaleDateString('es-CL')} - {formatTime(selectedInterview.scheduledTime)}
                   </p>
                 </div>
-                
+
                 <div>
                   <label className="text-sm font-medium text-gray-600">Duración</label>
                   <p className="text-gray-900">{InterviewUtils.formatDuration(selectedInterview.duration)}</p>
                 </div>
               </div>
-              
+
               {selectedInterview.location && (
                 <div>
                   <label className="text-sm font-medium text-gray-600">Ubicación</label>
                   <p className="text-gray-900">{selectedInterview.location}</p>
                 </div>
               )}
-              
+
               {selectedInterview.virtualMeetingLink && (
                 <div>
                   <label className="text-sm font-medium text-gray-600">Enlace Virtual</label>
-                  <a 
+                  <a
                     href={selectedInterview.virtualMeetingLink}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -585,7 +596,7 @@ const SharedCalendar: React.FC<SharedCalendarProps> = ({
                   </a>
                 </div>
               )}
-              
+
               {selectedInterview.notes && (
                 <div>
                   <label className="text-sm font-medium text-gray-600">Notas</label>
@@ -593,7 +604,7 @@ const SharedCalendar: React.FC<SharedCalendarProps> = ({
                 </div>
               )}
             </div>
-            
+
             <div className="flex justify-end mt-6">
               <Button variant="outline" onClick={() => setShowDetails(false)}>
                 Cerrar
@@ -601,6 +612,57 @@ const SharedCalendar: React.FC<SharedCalendarProps> = ({
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* Modal de entrevistas del día */}
+      <Modal isOpen={showDayInterviews} onClose={() => setShowDayInterviews(false)}>
+        <div className="p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Entrevistas del Día - {selectedDayInterviews[0] && new Date(selectedDayInterviews[0].scheduledDate).toLocaleDateString('es-CL')}
+          </h3>
+
+          <div className="space-y-3 max-h-96 overflow-y-auto">
+            {selectedDayInterviews.map((interview) => (
+              <div
+                key={interview.id}
+                onClick={() => {
+                  setShowDayInterviews(false);
+                  handleInterviewClick(interview);
+                }}
+                className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                style={{
+                  borderLeft: `4px solid ${getStatusColor(interview.status)}`
+                }}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center space-x-2">
+                    <span className="font-medium text-gray-900">{formatTime(interview.scheduledTime)}</span>
+                    {getModeIcon(interview.mode)}
+                    <span className="text-sm text-gray-600">
+                      {InterviewUtils.formatDuration(interview.duration)}
+                    </span>
+                  </div>
+                  <Badge variant={getStatusColor(interview.status)}>
+                    {INTERVIEW_STATUS_LABELS[interview.status]}
+                  </Badge>
+                </div>
+
+                <div className="text-sm">
+                  <p className="font-medium text-gray-900">{interview.studentName}</p>
+                  <p className="text-gray-600">
+                    {INTERVIEW_TYPE_LABELS[interview.type]} - {interview.interviewerName}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex justify-end mt-6">
+            <Button variant="outline" onClick={() => setShowDayInterviews(false)}>
+              Cerrar
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

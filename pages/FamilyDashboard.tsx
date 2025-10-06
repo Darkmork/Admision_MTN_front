@@ -43,13 +43,13 @@ import useUserProfile from '../hooks/useUserProfile';
 import applicationWorkflowService, { type ApplicationDraft } from '../services/applicationWorkflowService';
 import documentGatewayService from '../services/documentGatewayService';
 import FamilyInterviews from '../components/family/FamilyInterviews';
+import FamilyCalendar from '../components/family/FamilyCalendar';
 
 const sections = [
   { key: 'resumen', label: 'Resumen de Postulación' },
   { key: 'datos', label: 'Datos del Postulante y Apoderados' },
   { key: 'documentos', label: 'Documentos' },
-  { key: 'calendario', label: 'Mi Calendario' },
-  { key: 'entrevistas', label: 'Mis Entrevistas' },
+  { key: 'calendario', label: 'Calendario de Entrevistas' },
   { key: 'ayuda', label: 'Ayuda y Soporte' },
 ];
 
@@ -200,45 +200,9 @@ const FamilyDashboard: React.FC = () => {
                   </div>
                 </div>
                 <div className="text-right">
-                  {hasRealApplication ? (
-                    <Badge variant="success" size="sm">Datos Reales</Badge>
-                  ) : (
-                    <Badge variant="warning" size="sm">Datos de Ejemplo</Badge>
-                  )}
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="ml-2 text-white border-white hover:bg-white hover:text-azul-monte-tabor"
-                    onClick={() => window.location.reload()}
-                  >
-                    <FiRefreshCw className="w-4 h-4 mr-2" />
-                  Actualizar
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="ml-2 text-white border-white hover:bg-white hover:text-azul-monte-tabor"
-                    onClick={async () => {
-                      try {
-                        setIsLoading(true);
-                        const dashboardData = await applicationService.getDashboardData();
-                        if (dashboardData && Array.isArray(dashboardData.applications)) {
-                          setRealApplications(dashboardData.applications);
-                          setError(null);
-                        }
-                      } catch (error: any) {
-                        setError('Error al cargar datos: ' + error.message);
-                      } finally {
-                        setIsLoading(false);
-                      }
-                    }}
-                  >
-                    <FiBarChart2 className="w-4 h-4 mr-2" />
-                  Cargar Datos
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     className="ml-2 text-white border-white hover:bg-red-500 hover:text-white hover:border-red-500"
                     onClick={() => {
                       if (window.confirm('¿Está seguro que desea cerrar sesión?')) {
@@ -603,29 +567,7 @@ const FamilyDashboard: React.FC = () => {
           </Card>
         );
       case 'calendario':
-        return (
-          <Card className="p-6">
-            <h2 className="text-xl font-bold text-azul-monte-tabor mb-6 flex items-center gap-2">
-              <CalendarIcon className="w-6 h-6" />
-              Mi Calendario Personal
-            </h2>
-
-            <div className="text-center py-12">
-              <CalendarIcon className="w-16 h-16 mx-auto text-gris-piedra mb-4" />
-              <h3 className="text-lg font-semibold text-azul-monte-tabor mb-2">
-                No hay eventos programados
-              </h3>
-              <p className="text-gris-piedra mb-4">
-                Cuando el equipo de admisiones programe entrevistas o eventos, aparecerán aquí.
-              </p>
-              <p className="text-sm text-gris-piedra">
-                💡 Recibirás una notificación por correo electrónico cuando se programe un evento
-              </p>
-            </div>
-          </Card>
-        );
-      case 'entrevistas':
-        return <FamilyInterviews />;
+        return <FamilyCalendar />;
       case 'ayuda':
         return (
           <Card className="p-6">

@@ -268,7 +268,19 @@ const InterviewManagement: React.FC<InterviewManagementProps> = ({ className = '
       
     } catch (err: any) {
       console.error('Error procesando entrevista:', err);
-      showToast(err.message || 'Error al procesar la entrevista', 'error');
+
+      // Extraer mensaje específico del backend si existe
+      let errorMessage = 'Error al procesar la entrevista';
+
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.response?.data?.error === 'SLOT_ALREADY_TAKEN') {
+        errorMessage = 'Este horario ya está reservado. Por favor seleccione otro horario.';
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+
+      showToast(errorMessage, 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -759,6 +771,8 @@ const StudentDetailView: React.FC<StudentDetailViewProps> = ({
 }) => {
   const [studentInterviews, setStudentInterviews] = useState<Interview[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSendingSummary, setIsSendingSummary] = useState(false);
+  const [summaryToast, setSummaryToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   useEffect(() => {
     loadStudentInterviews();
@@ -789,12 +803,55 @@ const StudentDetailView: React.FC<StudentDetailViewProps> = ({
       // Usar el servicio normal
       const response = await interviewService.getInterviewsByApplication(applicationId);
       console.log(`✅ StudentDetailView: Entrevistas obtenidas para aplicación ${applicationId}:`, response);
+
+      // DEBUG: Log types of all interviews
+      if (response.interviews && response.interviews.length > 0) {
+        console.log('📋 Tipos de entrevista encontrados:', response.interviews.map(i => ({id: i.id, type: i.type})));
+      }
+
       setStudentInterviews(response.interviews || []);
     } catch (error) {
       console.error(`❌ StudentDetailView: Error loading student interviews for ${applicationId}:`, error);
       setStudentInterviews([]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Función para enviar resumen de entrevistas al apoderado
+  const handleSendInterviewSummary = async () => {
+    try {
+      setIsSendingSummary(true);
+      console.log(`📧 Iniciando envío de resumen para aplicación ${applicationId}`);
+
+      const result = await interviewService.sendInterviewSummary(applicationId);
+
+      if (result.success) {
+        setSummaryToast({
+          message: `✅ ${result.message || 'Resumen de entrevistas enviado exitosamente'}`,
+          type: 'success'
+        });
+      } else {
+        // Mostrar detalles específicos del error
+        let errorMsg = result.error || 'Error al enviar resumen';
+        if (result.details && result.details.missing) {
+          errorMsg += ` - Faltan: ${result.details.missing.join(', ')}`;
+        }
+        setSummaryToast({
+          message: `❌ ${errorMsg}`,
+          type: 'error'
+        });
+      }
+    } catch (error) {
+      console.error('Error enviando resumen:', error);
+      setSummaryToast({
+        message: '❌ Error inesperado al enviar resumen de entrevistas',
+        type: 'error'
+      });
+    } finally {
+      setIsSendingSummary(false);
+      // Auto-ocultar toast después de 5 segundos
+      setTimeout(() => setSummaryToast(null), 5000);
     }
   };
 
@@ -807,19 +864,28 @@ const StudentDetailView: React.FC<StudentDetailViewProps> = ({
   ];
 
   const getInterviewForType = (type: string) => {
-    console.log(`🔍 StudentDetailView: Buscando entrevista tipo "${type}" para aplicación ${applicationId}`);
-    console.log(`📋 StudentDetailView: Entrevistas disponibles:`, studentInterviews.map(i => ({id: i.id, type: i.type, status: i.status, interviewer: i.interviewerName, date: i.scheduledDate})));
-
-    // SOLO buscar por tipo exacto - NO crear entrevistas falsas
+    // Buscar entrevista por tipo exacto
     const found = studentInterviews.find(interview => interview.type === type);
 
-    console.log(`${found ? '✅' : '❌'} StudentDetailView: Entrevista tipo "${type}" ${found ? 'encontrada: ' + found.id : 'no encontrada'}`);
+    // Log solo para debugging - es normal no tener todas las entrevistas agendadas
+    if (found) {
+      console.log(`✅ Entrevista ${type} encontrada (ID: ${found.id}, Estado: ${found.status})`);
+    }
 
     return found;
   };
 
   return (
     <div className="space-y-6">
+      {/* Toast para mensajes de envío de resumen */}
+      {summaryToast && (
+        <SimpleToast
+          message={summaryToast.message}
+          type={summaryToast.type}
+          onClose={() => setSummaryToast(null)}
+        />
+      )}
+
       <Card className="p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -828,12 +894,21 @@ const StudentDetailView: React.FC<StudentDetailViewProps> = ({
           </div>
           <div className="flex gap-2">
             <Button
+              variant="primary"
+              size="sm"
+              onClick={handleSendInterviewSummary}
+              disabled={isSendingSummary || isLoading}
+            >
+              <FiMail className="w-4 h-4 mr-2" />
+              {isSendingSummary ? 'Enviando...' : 'Enviar Resumen por Email'}
+            </Button>
+            <Button
               variant="outline"
               size="sm"
               onClick={loadStudentInterviews}
               disabled={isLoading}
             >
-              🔄 Debug Reload
+              🔄 Recargar
             </Button>
             <Button variant="outline" onClick={onBack}>
               <FiArrowLeft className="w-4 h-4 mr-2" />

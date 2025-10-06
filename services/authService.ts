@@ -1,4 +1,5 @@
 import api from './api';
+import encryptionService from './encryptionService';
 
 export interface LoginRequest {
     email: string;
@@ -25,10 +26,26 @@ export interface AuthResponse {
 }
 
 class AuthService {
-    
+
     async login(request: LoginRequest): Promise<AuthResponse> {
         try {
-            const response = await api.post('/api/auth/login', request);
+            // Encrypt credentials before sending
+            let payload: any;
+
+            if (encryptionService.isEncryptionAvailable()) {
+                console.log('[Auth] Encrypting credentials...');
+                payload = await encryptionService.encryptCredentials({
+                    email: request.email,
+                    password: request.password
+                });
+                console.log('[Auth] Credentials encrypted successfully');
+            } else {
+                // Fallback to plain text if encryption not supported
+                console.warn('[Auth] Encryption not available, falling back to plain text');
+                payload = request;
+            }
+
+            const response = await api.post('/api/auth/login', payload);
             return response.data;
             
         } catch (error: any) {
@@ -46,7 +63,36 @@ class AuthService {
     
     async register(request: RegisterRequest): Promise<AuthResponse> {
         try {
-            const response = await api.post('/api/auth/register', request);
+            // Encrypt password before sending (keep other fields as is)
+            let payload: any;
+
+            if (encryptionService.isEncryptionAvailable()) {
+                console.log('[Auth] Encrypting registration password...');
+
+                // Create temporary credentials object for encryption
+                const tempCredentials = {
+                    email: request.email,
+                    password: request.password
+                };
+
+                const encryptedCreds = await encryptionService.encryptCredentials(tempCredentials);
+
+                // Combine encrypted password with other registration fields
+                payload = {
+                    ...encryptedCreds,
+                    firstName: request.firstName,
+                    lastName: request.lastName,
+                    rut: request.rut,
+                    phone: request.phone
+                };
+
+                console.log('[Auth] Registration password encrypted successfully');
+            } else {
+                console.warn('[Auth] Encryption not available, falling back to plain text');
+                payload = request;
+            }
+
+            const response = await api.post('/api/auth/register', payload);
             return response.data;
             
         } catch (error: any) {

@@ -1,4 +1,5 @@
 import api from './api';
+import encryptionService from './encryptionService';
 
 export interface ProfessorLoginRequest {
     email: string;
@@ -29,12 +30,27 @@ export interface ProfessorUser {
 }
 
 class ProfessorAuthService {
-    
+
     async login(request: ProfessorLoginRequest): Promise<ProfessorAuthResponse> {
         try {
             console.log('🔐 Intentando login de profesor:', request.email);
-            
-            const response = await api.post('/api/auth/login', request);
+
+            // Encrypt credentials before sending
+            let payload: any;
+
+            if (encryptionService.isEncryptionAvailable()) {
+                console.log('[Professor Auth] Encrypting credentials...');
+                payload = await encryptionService.encryptCredentials({
+                    email: request.email,
+                    password: request.password
+                });
+                console.log('[Professor Auth] Credentials encrypted successfully');
+            } else {
+                console.warn('[Professor Auth] Encryption not available, falling back to plain text');
+                payload = request;
+            }
+
+            const response = await api.post('/api/auth/login', payload);
             const data = response.data;
             
             console.log('✅ Login exitoso para profesor:', data);

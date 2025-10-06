@@ -10,6 +10,7 @@ interface User {
     role: 'APODERADO' | 'ADMIN' | 'TEACHER' | 'COORDINATOR' | 'CYCLE_DIRECTOR' | 'PSYCHOLOGIST' | 'TEACHER_LANGUAGE' | 'TEACHER_MATHEMATICS' | 'TEACHER_ENGLISH';
     phone?: string;
     rut?: string;
+    applicationId?: number;
 }
 
 interface AuthContextType {
@@ -84,11 +85,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             if (response.success && response.token && response.email) {
                 // Login success logging removed for security
                 const userData: User = {
-                    id: Date.now().toString(), // Temporal, el backend debería devolver el ID
+                    id: response.id || Date.now().toString(),
                     email: response.email,
                     firstName: response.firstName,
                     lastName: response.lastName,
-                    role: mapBackendRole(response.role || 'TEACHER')
+                    role: mapBackendRole(response.role || 'TEACHER'),
+                    applicationId: response.applicationId // Include applicationId from backend
                 };
                 
                 // ✅ Si es admin, también configurar información de profesor para compatibilidad
@@ -172,11 +174,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     const logout = () => {
         authService.logout();
-        // ✅ También limpiar datos de profesor/admin
+        // ✅ También limpiar datos de profesor/admin/apoderado
         localStorage.removeItem('currentProfessor');
         localStorage.removeItem('professor_token');
         localStorage.removeItem('professor_user');
+        localStorage.removeItem('apoderado_token');
+        localStorage.removeItem('apoderado_user');
+        localStorage.removeItem('auth_token');
         setUser(null);
+        // Redirigir al login de apoderado
+        window.location.href = '/apoderado-login';
     };
 
     const value: AuthContextType = {
