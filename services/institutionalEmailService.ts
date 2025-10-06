@@ -107,6 +107,29 @@ class InstitutionalEmailService {
   }
 
   /**
+   * Enviar notificación sobre revisión de documentos
+   */
+  async sendDocumentReviewEmail(
+    applicationId: number,
+    data: {
+      approvedDocuments: string[];
+      rejectedDocuments: string[];
+      allApproved: boolean;
+    }
+  ): Promise<EmailResponse> {
+    try {
+      const response = await api.post(`${this.baseUrl}/document-review/${applicationId}`, data);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error sending document review email:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Error enviando notificación de revisión de documentos'
+      };
+    }
+  }
+
+  /**
    * Obtener estadísticas de la cola
    */
   async getQueueStatistics(): Promise<StatisticsResponse> {

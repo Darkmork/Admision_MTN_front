@@ -82,8 +82,12 @@ const AdmissionReportForm: React.FC = () => {
 
                 if (!response.ok) throw new Error('Error al cargar evaluación');
 
-                const evaluationData = await response.json();
-                console.log('✅ Evaluación cargada desde backend:', evaluationData);
+                const responseData = await response.json();
+                console.log('✅ Respuesta completa desde backend:', responseData);
+
+                // El backend retorna { success: true, data: {...} }
+                const evaluationData = responseData.data || responseData;
+                console.log('✅ Evaluación extraída:', evaluationData);
 
                 if (evaluationData) {
                     setEvaluation(evaluationData);
@@ -113,9 +117,9 @@ const AdmissionReportForm: React.FC = () => {
                             getSubjectName(evaluationData.evaluator_subject) :
                             getSubjectName(evaluationData.evaluation_type),
                         score: evaluationData.score || 0,
-                        maxScore: defaultMaxScore,
-                        percentage: evaluationData.score && defaultMaxScore ?
-                            Math.round((evaluationData.score / defaultMaxScore) * 100) : 0,
+                        maxScore: evaluationData.max_score || defaultMaxScore,
+                        percentage: evaluationData.score && (evaluationData.max_score || defaultMaxScore) ?
+                            Math.round((evaluationData.score / (evaluationData.max_score || defaultMaxScore)) * 100) : 0,
 
                         // Campos específicos de evaluación
                         strengths: evaluationData.strengths || '',
@@ -233,15 +237,9 @@ const AdmissionReportForm: React.FC = () => {
                 message: 'El informe de admisión ha sido guardado y marcado como completado'
             });
 
-            // Navegar de regreso al dashboard después de guardar exitosamente
+            // Navegar de regreso al dashboard del profesor después de guardar exitosamente
             setTimeout(() => {
-                // Verificar el token correcto y navegar al dashboard del profesor
-                const token = localStorage.getItem('professor_token') || localStorage.getItem('auth_token');
-                if (token) {
-                    window.location.href = '/profesor';
-                } else {
-                    navigate('/');
-                }
+                navigate('/profesor');
             }, 1500);
             
         } catch (error) {

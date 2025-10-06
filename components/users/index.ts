@@ -1,5 +1,7 @@
 // User Management Components
 export { default as UserManagement } from './UserManagement';
+export { default as StaffManagement } from './StaffManagement';
+export { default as GuardianManagement } from './GuardianManagement';
 export { default as UserForm } from './UserForm';
 export { default as UserTable } from './UserTable';
 export { default as UserFilters } from './UserFilters';

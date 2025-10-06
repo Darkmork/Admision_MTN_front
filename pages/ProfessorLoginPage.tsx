@@ -278,7 +278,6 @@ const ProfessorLoginPage: React.FC = () => {
                 <Card className="p-8 bg-blanco-pureza">
                     <div className="space-y-6">
                         <div className="text-center">
-                            <UserIcon className="mx-auto h-12 w-12 text-azul-monte-tabor mb-4" />
                             <h3 className="text-lg font-semibold text-azul-monte-tabor">
                                 Iniciar Sesión
                             </h3>

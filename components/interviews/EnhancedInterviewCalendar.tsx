@@ -1,15 +1,15 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import Badge from '../ui/Badge';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 import Modal from '../ui/Modal';
-import { 
-  FiCalendar, 
-  FiChevronLeft, 
-  FiChevronRight, 
-  FiClock, 
-  FiUser, 
-  FiMapPin, 
+import {
+  FiCalendar,
+  FiChevronLeft,
+  FiChevronRight,
+  FiClock,
+  FiUser,
+  FiMapPin,
   FiVideo,
   FiMove,
   FiCheck,
@@ -26,6 +26,7 @@ import {
   InterviewUtils,
   INTERVIEW_CONFIG
 } from '../../types/interview';
+import interviewService from '../../services/interviewService';
 
 const DAYS_OF_WEEK = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 const MONTHS = [
@@ -173,8 +174,8 @@ const EnhancedInterviewCalendar: React.FC<EnhancedInterviewCalendarProps> = ({
     setDropTarget(null);
   }, []);
 
-  // Manejar drop
-  const handleDrop = useCallback((e: React.DragEvent, date: string, time?: string) => {
+  // Manejar drop con validación de disponibilidad en tiempo real
+  const handleDrop = useCallback(async (e: React.DragEvent, date: string, time?: string) => {
     e.preventDefault();
     setDropTarget(null);
 
@@ -189,8 +190,28 @@ const EnhancedInterviewCalendar: React.FC<EnhancedInterviewCalendarProps> = ({
       return;
     }
 
-    // Verificar conflictos
-    const conflicts = interviews.filter(interview => 
+    // 🔒 VALIDACIÓN EN TIEMPO REAL: Verificar disponibilidad con el backend
+    try {
+      const isAvailable = await interviewService.checkInterviewerAvailability(
+        draggedInterview.interview.interviewerId,
+        newDate,
+        newTime,
+        draggedInterview.interview.id // Excluir la entrevista que se está moviendo
+      );
+
+      if (!isAvailable) {
+        // El slot está ocupado - mostrar error
+        alert('⚠️ Este horario ya no está disponible. Por favor seleccione otro horario.');
+        setDraggedInterview(null);
+        return;
+      }
+    } catch (error) {
+      console.error('Error verificando disponibilidad:', error);
+      // Continuar con validación local como fallback
+    }
+
+    // Verificar conflictos locales (fallback adicional)
+    const conflicts = interviews.filter(interview =>
       interview.id !== draggedInterview.interview.id &&
       interview.scheduledDate === newDate &&
       interview.scheduledTime === newTime &&
@@ -209,7 +230,7 @@ const EnhancedInterviewCalendar: React.FC<EnhancedInterviewCalendarProps> = ({
     setDraggedInterview(null);
   }, [draggedInterview, interviews]);
 
-  // Confirmar reprogramación
+  // Confirmar reprogramación con manejo de errores 409
   const confirmReschedule = async () => {
     if (!rescheduleConfirmation) return;
 
@@ -221,12 +242,27 @@ const EnhancedInterviewCalendar: React.FC<EnhancedInterviewCalendarProps> = ({
         rescheduleConfirmation.newDate,
         rescheduleConfirmation.newTime
       );
-      
+
       setShowRescheduleModal(false);
       setRescheduleConfirmation(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error al reprogramar:', error);
-      // El error se maneja en el componente padre
+
+      // 🔒 MANEJO DE ERROR 409: Slot ya tomado
+      if (error?.response?.status === 409) {
+        const errorData = error.response.data;
+        alert(
+          `❌ ${errorData.message || 'Este horario ya está reservado'}\n\n` +
+          `Por favor seleccione otro horario disponible.`
+        );
+
+        // Cerrar modal y permitir seleccionar otro horario
+        setShowRescheduleModal(false);
+        setRescheduleConfirmation(null);
+      } else {
+        // Otros errores se manejan en el componente padre
+        throw error;
+      }
     } finally {
       setIsRescheduling(false);
     }
@@ -287,18 +323,41 @@ const EnhancedInterviewCalendar: React.FC<EnhancedInterviewCalendarProps> = ({
     );
   };
 
-  // Renderizar slot disponible
+  // Renderizar slot con estados visuales mejorados
   const renderAvailableSlot = (day: CalendarDay, time: string) => {
     const dateStr = day.date.toISOString().split('T')[0];
     const isDropTarget = dropTarget?.date === dateStr && dropTarget?.time === time;
-    
+
+    // Verificar si está ocupado (aunque esté en availableSlots, hacer doble check)
+    const isOccupied = day.interviews.some(interview =>
+      interview.scheduledTime === time &&
+      (interview.status === 'SCHEDULED' || interview.status === 'CONFIRMED' || interview.status === 'IN_PROGRESS')
+    );
+
+    if (isOccupied) {
+      // Slot ocupado - mostrar en rojo, no clickeable
+      return (
+        <div
+          key={time}
+          className="mb-1 p-2 border-2 border-red-300 bg-red-50 rounded text-xs cursor-not-allowed opacity-60"
+          title={`Slot ocupado: ${time}`}
+        >
+          <div className="flex items-center justify-center text-red-600">
+            <FiX className="w-3 h-3 mr-1" />
+            <span>{time}</span>
+          </div>
+        </div>
+      );
+    }
+
+    // Slot disponible - verde, clickeable
     return (
       <div
         key={time}
         className={`
           mb-1 p-2 border-2 border-dashed rounded text-xs cursor-pointer transition-all duration-200
-          hover:border-green-400 hover:bg-green-50
-          ${isDropTarget ? 'border-blue-400 bg-blue-50' : 'border-gray-300'}
+          hover:border-green-500 hover:bg-green-100 hover:scale-105
+          ${isDropTarget ? 'border-blue-500 bg-blue-100 scale-105 shadow-md' : 'border-green-300 bg-green-50'}
         `}
         onDragOver={(e) => handleDragOver(e, dateStr, time)}
         onDragLeave={handleDragLeave}
@@ -309,9 +368,9 @@ const EnhancedInterviewCalendar: React.FC<EnhancedInterviewCalendarProps> = ({
           date: dateStr,
           time
         })}
-        title={`Slot disponible: ${time}`}
+        title={`✅ Slot disponible: ${time}`}
       >
-        <div className="flex items-center justify-center text-gray-500">
+        <div className="flex items-center justify-center text-green-700 font-medium">
           <FiClock className="w-3 h-3 mr-1" />
           <span>{time}</span>
         </div>
@@ -351,11 +410,11 @@ const EnhancedInterviewCalendar: React.FC<EnhancedInterviewCalendarProps> = ({
         </div>
       </div>
 
-      {/* Leyenda de colores */}
+      {/* Leyenda de colores mejorada */}
       <div className="flex flex-wrap gap-4 text-xs">
         {Object.entries(INTERVIEW_CONFIG.COLORS).map(([status, color]) => (
           <div key={status} className="flex items-center space-x-1">
-            <div 
+            <div
               className="w-3 h-3 rounded"
               style={{ backgroundColor: color }}
             />
@@ -363,8 +422,16 @@ const EnhancedInterviewCalendar: React.FC<EnhancedInterviewCalendarProps> = ({
           </div>
         ))}
         <div className="flex items-center space-x-1">
-          <div className="w-3 h-3 border-2 border-dashed border-gray-400 rounded" />
-          <span>Slots disponibles</span>
+          <div className="w-3 h-3 border-2 border-dashed border-green-300 bg-green-50 rounded" />
+          <span>✅ Slot disponible</span>
+        </div>
+        <div className="flex items-center space-x-1">
+          <div className="w-3 h-3 border-2 border-red-300 bg-red-50 rounded" />
+          <span>❌ Slot ocupado</span>
+        </div>
+        <div className="flex items-center space-x-1">
+          <div className="w-3 h-3 border-2 border-blue-500 bg-blue-100 rounded" />
+          <span>🎯 Seleccionando...</span>
         </div>
       </div>
 

@@ -14,6 +14,7 @@ import interviewService from '../../services/interviewService';
 import { Interview, InterviewStatus, INTERVIEW_TYPE_LABELS } from '../../types/interview';
 import evaluationService from '../../services/evaluationService';
 import { Evaluation } from '../../types/evaluation';
+import institutionalEmailService from '../../services/institutionalEmailService';
 
 interface Postulante {
     id: number;
@@ -99,6 +100,8 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
     const [evaluationsLoading, setEvaluationsLoading] = useState(false);
     const [selectedEvaluation, setSelectedEvaluation] = useState<Evaluation | null>(null);
     const [showEvaluationDetail, setShowEvaluationDetail] = useState(false);
+    const [documentApprovalStatus, setDocumentApprovalStatus] = useState<Record<number, boolean>>({});
+    const [sendingNotification, setSendingNotification] = useState(false);
     const { addNotification } = useNotifications();
 
     // Cargar información completa de la aplicación, entrevistas y evaluaciones
@@ -159,16 +162,129 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
         }
     };
 
+    const toggleDocumentApproval = (docIndex: number) => {
+        setDocumentApprovalStatus(prev => ({
+            ...prev,
+            [docIndex]: !prev[docIndex]
+        }));
+    };
+
+    const handleSendDocumentNotification = async () => {
+        if (!fullApplication || !postulante) {
+            addNotification({
+                type: 'error',
+                title: 'Error',
+                message: 'No se pudo cargar la información de la postulación'
+            });
+            return;
+        }
+
+        // Caso 1: No hay documentos subidos - enviar recordatorio
+        if (!fullApplication.documents || fullApplication.documents.length === 0) {
+            setSendingNotification(true);
+            try {
+                // Enviar recordatorio de que debe subir documentos (todos rechazados = debe subir)
+                const response = await institutionalEmailService.sendDocumentReviewEmail(
+                    postulante.id,
+                    {
+                        approvedDocuments: [],
+                        rejectedDocuments: ['Certificado de Nacimiento', 'Certificado de Notas', 'Informe de Personalidad'],
+                        allApproved: false
+                    }
+                );
+
+                if (response.success) {
+                    addNotification({
+                        type: 'success',
+                        title: 'Recordatorio Enviado',
+                        message: 'Se notificó al apoderado que debe subir los documentos requeridos'
+                    });
+                } else {
+                    addNotification({
+                        type: 'error',
+                        title: 'Error',
+                        message: response.message || 'No se pudo enviar el recordatorio'
+                    });
+                }
+            } catch (error) {
+                console.error('Error sending reminder:', error);
+                addNotification({
+                    type: 'error',
+                    title: 'Error',
+                    message: 'Ocurrió un error al enviar el recordatorio'
+                });
+            } finally {
+                setSendingNotification(false);
+            }
+            return;
+        }
+
+        // Caso 2: Hay documentos subidos - validar revisión
+        const totalDocuments = fullApplication.documents.length;
+        const approvedDocs = fullApplication.documents.filter((_, index) => documentApprovalStatus[index] === true);
+        const rejectedDocs = fullApplication.documents.filter((_, index) => documentApprovalStatus[index] === false);
+
+        // Validar que al menos haya ALGÚN documento revisado
+        if (approvedDocs.length === 0 && rejectedDocs.length === 0) {
+            addNotification({
+                type: 'warning',
+                title: 'Sin revisión',
+                message: 'Debes marcar al menos un documento como aprobado o rechazado antes de enviar la notificación.'
+            });
+            return;
+        }
+
+        setSendingNotification(true);
+        try {
+            // Todos aprobados = TODOS los documentos están aprobados (ninguno rechazado, ninguno sin revisar)
+            const allApproved = approvedDocs.length === totalDocuments && rejectedDocs.length === 0;
+
+            // Llamada real al servicio de email
+            const response = await institutionalEmailService.sendDocumentReviewEmail(
+                postulante.id,
+                {
+                    approvedDocuments: approvedDocs.map(doc => doc.fileName || doc.documentType || 'Documento'),
+                    rejectedDocuments: rejectedDocs.map(doc => doc.fileName || doc.documentType || 'Documento'),
+                    allApproved
+                }
+            );
+
+            if (response.success) {
+                addNotification({
+                    type: 'success',
+                    title: 'Notificación Enviada',
+                    message: allApproved
+                        ? `Se notificó al apoderado que todos los documentos fueron aprobados`
+                        : `Se notificó al apoderado que ${rejectedDocs.length} documento(s) deben ser resubidos`
+                });
+
+                // Resetear estado de aprobación
+                setDocumentApprovalStatus({});
+            } else {
+                addNotification({
+                    type: 'error',
+                    title: 'Error al enviar',
+                    message: response.message || 'No se pudo enviar la notificación'
+                });
+            }
+        } catch (error: any) {
+            addNotification({
+                type: 'error',
+                title: 'Error',
+                message: error.message || 'No se pudo enviar la notificación'
+            });
+        } finally {
+            setSendingNotification(false);
+        }
+    };
+
     const refreshData = async () => {
         await Promise.all([loadFullApplication(), loadInterviews(), loadEvaluations()]);
     };
 
-    console.log('🎭 StudentDetailModal render - isOpen:', isOpen, 'postulante:', postulante, 'activeTab:', activeTab, 'loading:', loading);
     if (!postulante) {
-        console.log('⚠️ StudentDetailModal - No postulante provided, returning null');
         return null;
     }
-    console.log('✅ StudentDetailModal - Will render modal content');
 
     const getStatusVariant = (status: string) => {
         switch (status) {
@@ -708,66 +824,171 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
         );
     };
 
-    const renderDocumentosTab = () => (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                    <FiFileText className="w-5 h-5" />
-                    Documentos de la Postulación
-                </h3>
-                <Badge variant={postulante.documentosCompletos ? 'green' : 'red'} size="sm">
-                    {postulante.documentosCompletos ? 'Completos' : 'Incompletos'}
-                </Badge>
-            </div>
+    const renderDocumentosTab = () => {
+        const hasDocuments = fullApplication?.documents && fullApplication.documents.length > 0;
+        const approvedCount = hasDocuments ? fullApplication.documents.filter((_, index) => documentApprovalStatus[index]).length : 0;
+        const rejectedCount = hasDocuments ? fullApplication.documents.filter((_, index) => documentApprovalStatus[index] === false).length : 0;
 
-            <div className="bg-gray-50 p-4 rounded-lg">
-                <div className="flex items-center gap-2 mb-3">
-                    <FiInfo className="w-5 h-5 text-blue-500" />
-                    <span className="font-medium">Estado de Documentos</span>
+        return (
+            <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                        <FiFileText className="w-5 h-5" />
+                        Documentos de la Postulación
+                    </h3>
+                    <Badge variant={postulante.documentosCompletos ? 'green' : 'red'} size="sm">
+                        {postulante.documentosCompletos ? 'Completos' : 'Incompletos'}
+                    </Badge>
                 </div>
-                <div className="text-sm text-gray-700">
-                    <p>Total de documentos: <span className="font-medium">{postulante.cantidadDocumentos}</span></p>
-                    <p className="mt-1">
-                        Estado: <Badge variant={postulante.documentosCompletos ? 'green' : 'red'} size="xs">
-                            {postulante.documentosCompletos ? 'Documentación completa' : 'Faltan documentos'}
-                        </Badge>
-                    </p>
-                </div>
-            </div>
 
-            {fullApplication?.documents && fullApplication.documents.length > 0 ? (
-                <div className="space-y-3">
-                    <h4 className="font-medium text-gray-900">Lista de Documentos</h4>
-                    {fullApplication.documents.map((doc, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg">
-                            <div className="flex items-center gap-3">
-                                <FiFileText className="w-4 h-4 text-blue-500" />
-                                <div>
-                                    <span className="text-sm font-medium text-gray-900">
-                                        {doc.fileName || `Documento ${index + 1}`}
-                                    </span>
-                                    <div className="text-xs text-gray-500">
-                                        {doc.documentType || 'Tipo no especificado'}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                    <div className="flex items-center gap-2 mb-3">
+                        <FiInfo className="w-5 h-5 text-blue-500" />
+                        <span className="font-medium">Estado de Documentos</span>
+                    </div>
+                    <div className="text-sm text-gray-700">
+                        <p>Total de documentos: <span className="font-medium">{postulante.cantidadDocumentos}</span></p>
+                        <p className="mt-1">
+                            Estado: <Badge variant={postulante.documentosCompletos ? 'green' : 'red'} size="xs">
+                                {postulante.documentosCompletos ? 'Documentación completa' : 'Faltan documentos'}
+                            </Badge>
+                        </p>
+                    </div>
+                </div>
+
+                {hasDocuments ? (
+                    <>
+                        <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                                <h4 className="font-medium text-gray-900">Lista de Documentos</h4>
+                                {approvedCount > 0 && (
+                                    <div className="text-sm text-gray-600">
+                                        <span className="text-green-600 font-medium">{approvedCount} aprobados</span>
+                                        {rejectedCount > 0 && <span className="text-red-600 font-medium ml-2">{rejectedCount} rechazados</span>}
+                                    </div>
+                                )}
+                            </div>
+                            {fullApplication.documents.map((doc, index) => {
+                                const isApproved = documentApprovalStatus[index];
+                                const isRejected = documentApprovalStatus[index] === false;
+
+                                return (
+                                    <div
+                                        key={index}
+                                        className={`flex items-center justify-between p-3 bg-white border-2 rounded-lg transition-all ${
+                                            isApproved ? 'border-green-300 bg-green-50' :
+                                            isRejected ? 'border-red-300 bg-red-50' :
+                                            'border-gray-200'
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-3 flex-1">
+                                            <label className="flex items-center cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={documentApprovalStatus[index] || false}
+                                                    onChange={() => toggleDocumentApproval(index)}
+                                                    className="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500 cursor-pointer"
+                                                />
+                                            </label>
+                                            <FiFileText className={`w-4 h-4 ${isApproved ? 'text-green-600' : isRejected ? 'text-red-600' : 'text-blue-500'}`} />
+                                            <div className="flex-1">
+                                                <span className="text-sm font-medium text-gray-900">
+                                                    {doc.fileName || `Documento ${index + 1}`}
+                                                </span>
+                                                <div className="text-xs text-gray-500">
+                                                    {doc.documentType || 'Tipo no especificado'}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            {isApproved && (
+                                                <Badge variant="success" size="xs">
+                                                    <FiCheckCircle className="w-3 h-3 mr-1 inline" />
+                                                    Aprobado
+                                                </Badge>
+                                            )}
+                                            {isRejected && (
+                                                <Badge variant="error" size="xs">
+                                                    <FiX className="w-3 h-3 mr-1 inline" />
+                                                    Rechazado
+                                                </Badge>
+                                            )}
+                                            <Button variant="ghost" size="sm">
+                                                <FiDownload className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* Botón de enviar notificación */}
+                        <div className="border-t pt-4">
+                            <div className="bg-blue-50 p-4 rounded-lg mb-3">
+                                <div className="flex items-start gap-2">
+                                    <FiInfo className="w-5 h-5 text-blue-600 mt-0.5" />
+                                    <div className="text-sm text-blue-800">
+                                        <p className="font-medium mb-1">Instrucciones:</p>
+                                        <ul className="list-disc list-inside space-y-1">
+                                            <li>Marca cada documento con ✓ para aprobar o sin marcar para rechazar</li>
+                                            <li>Una vez revisados todos, presiona el botón para notificar al apoderado</li>
+                                            <li>Si todos están aprobados, se enviará confirmación</li>
+                                            <li>Si hay rechazados, se solicitará resubir los documentos pendientes</li>
+                                        </ul>
                                     </div>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <Badge variant="green" size="xs">Subido</Badge>
-                                <Button variant="ghost" size="sm">
-                                    <FiDownload className="w-4 h-4" />
-                                </Button>
+                            <Button
+                                variant="primary"
+                                size="lg"
+                                onClick={handleSendDocumentNotification}
+                                disabled={sendingNotification}
+                                isLoading={sendingNotification}
+                                loadingText="Enviando notificación..."
+                                className="w-full"
+                            >
+                                <FiMail className="w-5 h-5 mr-2" />
+                                Enviar Notificación al Apoderado
+                            </Button>
+                        </div>
+                    </>
+                ) : (
+                    <div className="space-y-6">
+                        <div className="text-center py-8 text-gray-500">
+                            <FiFileText className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                            <p className="mb-2">No hay documentos disponibles para mostrar</p>
+                            <p className="text-sm text-gray-400">El apoderado aún no ha subido ningún documento</p>
+                        </div>
+
+                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                            <div className="flex items-start gap-3">
+                                <FiAlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
+                                <div className="flex-1">
+                                    <p className="font-medium text-yellow-900 mb-2">Recordatorio de Documentos</p>
+                                    <p className="text-sm text-yellow-700 mb-3">
+                                        Puedes enviar un correo al apoderado recordándole que debe subir los documentos requeridos para continuar con el proceso de admisión.
+                                    </p>
+                                </div>
                             </div>
                         </div>
-                    ))}
-                </div>
-            ) : (
-                <div className="text-center py-8 text-gray-500">
-                    <FiFileText className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                    <p>No hay documentos disponibles para mostrar</p>
-                </div>
-            )}
-        </div>
-    );
+
+                        <Button
+                            variant="primary"
+                            size="lg"
+                            onClick={handleSendDocumentNotification}
+                            disabled={sendingNotification}
+                            isLoading={sendingNotification}
+                            loadingText="Enviando recordatorio..."
+                            className="w-full"
+                        >
+                            <FiMail className="w-5 h-5 mr-2" />
+                            Enviar Recordatorio al Apoderado
+                        </Button>
+                    </div>
+                )}
+            </div>
+        );
+    };
 
     const renderHistorialTab = () => (
         <div className="space-y-6">

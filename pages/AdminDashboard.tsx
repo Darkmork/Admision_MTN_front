@@ -50,8 +50,7 @@ import {
 import EvaluationManagement from '../components/admin/EvaluationManagement';
 import EvaluationStatistics from '../components/admin/EvaluationStatistics';
 import EvaluationReports from '../components/admin/EvaluationReports';
-import EvaluatorManagement from '../components/admin/EvaluatorManagement';
-import { UserManagement } from '../components/users';
+import { GuardianManagement, StaffManagement } from '../components/users';
 import { InterviewManagement } from '../components/interviews';
 import SharedCalendar from '../components/admin/SharedCalendar';
 import { Application, applicationService } from '../services/applicationService';
@@ -61,13 +60,13 @@ import ApplicationsTable from '../components/admin/ApplicationsTable';
 import SimpleToast from '../components/ui/SimpleToast';
 import AdminDataTables from '../components/admin/AdminDataTables';
 import StudentDetailModal from '../components/admin/StudentDetailModal';
+import ApplicationDecisionModal from '../components/admin/ApplicationDecisionModal';
 
 const sections = [
   { key: 'dashboard', label: 'Dashboard General' },
   { key: 'tablas', label: 'Tablas de Datos' },
   { key: 'postulaciones', label: 'Gestión de Postulaciones' },
   { key: 'evaluaciones', label: 'Gestión de Evaluaciones' },
-  { key: 'evaluadores', label: 'Gestión de Evaluadores' },
   { key: 'entrevistas', label: 'Gestión de Entrevistas' },
   { key: 'calendario', label: 'Calendario Global' },
   { key: 'usuarios', label: 'Gestión de Usuarios' },
@@ -119,16 +118,15 @@ const AdminDashboard: React.FC = () => {
   const [evaluationSubsection, setEvaluationSubsection] = useState<'management' | 'statistics' | 'reports'>('management');
   const [showAssignEvaluationModal, setShowAssignEvaluationModal] = useState(false);
   const [selectedApplicationForEvaluation, setSelectedApplicationForEvaluation] = useState<Application | null>(null);
+
+  // User management subsection state
+  const [userSubsection, setUserSubsection] = useState<'staff' | 'guardians'>('staff');
   
   // Estados para aplicaciones reales
   const { applications } = useApplications();
   const { addNotification } = useNotifications();
   const { user, logout } = useAuth();
   const { dispatch } = useAppContext();
-  
-  // Estado local para aplicaciones (para evaluadores)
-  const [localApplications, setLocalApplications] = useState<Application[]>([]);
-  const [isLoadingLocalApplications, setIsLoadingLocalApplications] = useState(false);
 
   // Estados para gestión de postulaciones
   const [adminApplications, setAdminApplications] = useState<Application[]>([]);
@@ -145,15 +143,19 @@ const AdminDashboard: React.FC = () => {
     message: ''
   });
 
+  // Estado para modal de decisión final
+  const [decisionModal, setDecisionModal] = useState<{
+    show: boolean;
+    application: Application | null;
+  }>({
+    show: false,
+    application: null
+  });
+
 
   useEffect(() => {
     loadApplications();
-    if (activeSection === 'usuarios') {
-      loadUsers();
-    }
-    if (activeSection === 'evaluadores') {
-      loadLocalApplications();
-    }
+    loadUsers(); // Cargar usuarios siempre para mostrar estadísticas correctas
     if (activeSection === 'postulaciones') {
       loadAdminApplications();
     }
@@ -174,24 +176,10 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const loadLocalApplications = async () => {
-    try {
-      setIsLoadingLocalApplications(true);
-      const apps = await applicationService.getAllApplications();
-      setLocalApplications(apps);
-    } catch (error) {
-      console.error('Error loading local applications:', error);
-      // Fallback a datos estáticos
-      // Fallback eliminado - solo datos reales del backend
-    } finally {
-      setIsLoadingLocalApplications(false);
-    }
-  };
-
   const loadUsers = async () => {
     try {
       setIsLoadingUsers(true);
-      const usersData = await userService.getSchoolStaffUsers();
+      const usersData = await userService.getSchoolStaffUsersPublic();
       // userService devuelve PagedResponse, necesitamos solo el contenido (solo staff del colegio)
       setUsers(usersData.content || []);
     } catch (error) {
@@ -392,37 +380,75 @@ Esta acción:
             </Card>
 
             {/* Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <Card className="p-4 text-center">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              <Card
+                className="p-4 text-center cursor-pointer hover:shadow-lg transition-shadow"
+                onClick={() => {
+                  setStatusFilter('all');
+                  setActiveSection('postulaciones');
+                }}
+              >
                 <FileTextIcon className="w-8 h-8 text-blue-500 mx-auto mb-2" />
                 <p className="text-2xl font-bold text-blue-600">
                   {applications.length}
                 </p>
                 <p className="text-sm text-gris-piedra">Total Postulaciones</p>
               </Card>
-              
-              <Card className="p-4 text-center">
+
+              <Card
+                className="p-4 text-center cursor-pointer hover:shadow-lg transition-shadow"
+                onClick={() => {
+                  setStatusFilter('PENDIENTE');
+                  setActiveSection('postulaciones');
+                }}
+              >
                 <ClockIcon className="w-8 h-8 text-yellow-500 mx-auto mb-2" />
                 <p className="text-2xl font-bold text-yellow-600">
-                  {applications.filter(app => app.status === 'PENDING').length}
+                  {applications.filter(app => app.status === 'PENDIENTE').length}
                 </p>
                 <p className="text-sm text-gris-piedra">Pendientes</p>
               </Card>
-              
-              <Card className="p-4 text-center">
+
+              <Card
+                className="p-4 text-center cursor-pointer hover:shadow-lg transition-shadow"
+                onClick={() => {
+                  setStatusFilter('EN_REVISION');
+                  setActiveSection('postulaciones');
+                }}
+              >
+                <FiBookOpen className="w-8 h-8 text-blue-400 mx-auto mb-2" />
+                <p className="text-2xl font-bold text-blue-500">
+                  {applications.filter(app => app.status === 'EN_REVISION').length}
+                </p>
+                <p className="text-sm text-gris-piedra">En Revisión</p>
+              </Card>
+
+              <Card
+                className="p-4 text-center cursor-pointer hover:shadow-lg transition-shadow"
+                onClick={() => {
+                  setStatusFilter('EXAMEN_PROGRAMADO');
+                  setActiveSection('postulaciones');
+                }}
+              >
+                <FiCalendar className="w-8 h-8 text-orange-500 mx-auto mb-2" />
+                <p className="text-2xl font-bold text-orange-600">
+                  {applications.filter(app => app.status === 'EXAMEN_PROGRAMADO').length}
+                </p>
+                <p className="text-sm text-gris-piedra">Examen Programado</p>
+              </Card>
+
+              <Card
+                className="p-4 text-center cursor-pointer hover:shadow-lg transition-shadow"
+                onClick={() => {
+                  setStatusFilter('APROBADA');
+                  setActiveSection('postulaciones');
+                }}
+              >
                 <CheckCircleIcon className="w-8 h-8 text-green-500 mx-auto mb-2" />
                 <p className="text-2xl font-bold text-green-600">
-                  {applications.filter(app => app.status === 'APPROVED').length}
+                  {applications.filter(app => app.status === 'APROBADA').length}
                 </p>
                 <p className="text-sm text-gris-piedra">Aprobadas</p>
-              </Card>
-              
-              <Card className="p-4 text-center">
-                <UsersIcon className="w-8 h-8 text-purple-500 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-purple-600">
-                  {users.length}
-                </p>
-                <p className="text-sm text-gris-piedra">Usuarios Sistema</p>
               </Card>
             </div>
           </div>
@@ -473,17 +499,25 @@ Esta acción:
           </div>
         );
 
-      case 'evaluadores':
-        return (
-          <div className="space-y-6">
-            <EvaluatorManagement 
-              applications={localApplications} 
-              onRefresh={loadLocalApplications}
-            />
-          </div>
-        );
-
       case 'postulaciones':
+        const getStatusLabel = (status: string) => {
+          const labels: Record<string, string> = {
+            'all': 'Todas las Postulaciones',
+            'PENDIENTE': 'Pendientes',
+            'EN_REVISION': 'En Revisión',
+            'EXAMEN_PROGRAMADO': 'Examen Programado',
+            'APROBADA': 'Aprobadas'
+          };
+          return labels[status] || status;
+        };
+
+        // Usar applications del contexto si adminApplications está vacío
+        const applicationsToFilter = adminApplications.length > 0 ? adminApplications : applications;
+
+        const filteredApplications = statusFilter === 'all'
+          ? applicationsToFilter
+          : applicationsToFilter.filter(app => app.status === statusFilter);
+
         return (
           <div className="space-y-6">
             {/* Header */}
@@ -495,12 +529,26 @@ Esta acción:
                     Gestión de Postulaciones
                   </h1>
                   <p className="text-sm text-gray-600">
-                    Administra todas las postulaciones del sistema
+                    {statusFilter !== 'all' && (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-2">
+                        Filtro: {getStatusLabel(statusFilter)}
+                      </span>
+                    )}
+                    Mostrando {filteredApplications.length} de {adminApplications.length} postulaciones
                   </p>
                 </div>
               </div>
 
               <div className="flex items-center space-x-3">
+                {statusFilter !== 'all' && (
+                  <Button
+                    variant="outline"
+                    onClick={() => setStatusFilter('all')}
+                  >
+                    <FiX className="w-5 h-5 mr-2" />
+                    Limpiar Filtro
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   onClick={loadAdminApplications}
@@ -517,31 +565,31 @@ Esta acción:
               <Card className="p-4 text-center">
                 <FileTextIcon className="w-6 h-6 text-blue-500 mx-auto mb-2" />
                 <p className="text-2xl font-bold text-blue-600">
-                  {adminApplications.length}
+                  {applicationsToFilter.length}
                 </p>
                 <p className="text-sm text-gray-600">Total Activas</p>
               </Card>
-              
+
               <Card className="p-4 text-center">
                 <ClockIcon className="w-6 h-6 text-yellow-500 mx-auto mb-2" />
                 <p className="text-2xl font-bold text-yellow-600">
-                  {adminApplications.filter(app => app.status === 'SUBMITTED').length}
+                  {applicationsToFilter.filter(app => app.status === 'SUBMITTED').length}
                 </p>
                 <p className="text-sm text-gray-600">Nuevas</p>
               </Card>
-              
+
               <Card className="p-4 text-center">
                 <CheckCircleIcon className="w-6 h-6 text-green-500 mx-auto mb-2" />
                 <p className="text-2xl font-bold text-green-600">
-                  {adminApplications.filter(app => app.status === 'APPROVED').length}
+                  {applicationsToFilter.filter(app => app.status === 'APPROVED').length}
                 </p>
                 <p className="text-sm text-gray-600">Aceptadas</p>
               </Card>
-              
+
               <Card className="p-4 text-center">
                 <UsersIcon className="w-6 h-6 text-purple-500 mx-auto mb-2" />
                 <p className="text-2xl font-bold text-purple-600">
-                  {adminApplications.filter(app => app.status === 'UNDER_REVIEW').length}
+                  {applicationsToFilter.filter(app => app.status === 'EN_REVISION').length}
                 </p>
                 <p className="text-sm text-gray-600">En Revisión</p>
               </Card>
@@ -550,10 +598,11 @@ Esta acción:
             {/* Tabla de postulaciones */}
             <Card className="p-6">
               <ApplicationsTable
-                applications={adminApplications}
+                applications={filteredApplications}
                 isLoading={isLoadingAdminApplications}
                 onView={handleViewApplicationDetail}
                 onArchive={confirmArchive}
+                onDecision={(application) => setDecisionModal({ show: true, application })}
               />
             </Card>
           </div>
@@ -562,7 +611,30 @@ Esta acción:
       case 'usuarios':
         return (
           <div className="space-y-6">
-            <UserManagement onBack={() => setActiveSection('dashboard')} />
+            {/* Navigation tabs for subsections */}
+            <div className="flex gap-2">
+              <Button
+                variant={userSubsection === 'staff' ? 'primary' : 'outline'}
+                onClick={() => setUserSubsection('staff')}
+              >
+                <FiUser className="w-5 h-5 mr-2" />
+                Personal del Colegio
+              </Button>
+              <Button
+                variant={userSubsection === 'guardians' ? 'primary' : 'outline'}
+                onClick={() => setUserSubsection('guardians')}
+              >
+                <UsersIcon className="w-5 h-5 mr-2" />
+                Apoderados
+              </Button>
+            </div>
+
+            {/* Render appropriate subsection */}
+            {userSubsection === 'staff' ? (
+              <StaffManagement onBack={() => setActiveSection('dashboard')} />
+            ) : (
+              <GuardianManagement onBack={() => setActiveSection('dashboard')} />
+            )}
           </div>
         );
 
@@ -709,6 +781,20 @@ Esta acción:
         onUpdateStatus={(postulante, status) => {
           handleCloseDetailModal();
           // TODO: Implementar actualización de estado si se necesita
+        }}
+      />
+
+      {/* Modal de decisión final */}
+      <ApplicationDecisionModal
+        isOpen={decisionModal.show}
+        onClose={() => setDecisionModal({ show: false, application: null })}
+        application={decisionModal.application}
+        onDecisionMade={() => {
+          loadAdminApplications();
+          setApplicationToast({
+            message: 'Decisión registrada exitosamente',
+            type: 'success'
+          });
         }}
       />
     </div>

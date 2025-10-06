@@ -7,7 +7,8 @@ import {
   FileTextIcon,
   EyeIcon,
   ArchiveIcon,
-  UserIcon
+  UserIcon,
+  CheckCircleIcon
 } from '../icons/Icons';
 
 interface ApplicationsTableProps {
@@ -15,6 +16,7 @@ interface ApplicationsTableProps {
   isLoading?: boolean;
   onView?: (application: Application) => void;
   onArchive?: (application: Application) => void;
+  onDecision?: (application: Application) => void;
   className?: string;
 }
 
@@ -23,6 +25,7 @@ const ApplicationsTable: React.FC<ApplicationsTableProps> = ({
   isLoading = false,
   onView,
   onArchive,
+  onDecision,
   className = ''
 }) => {
   console.log('📊 ApplicationsTable render - applications:', applications.length, 'onView:', !!onView);
@@ -53,10 +56,13 @@ const ApplicationsTable: React.FC<ApplicationsTableProps> = ({
   const getStatusColor = (status: string): 'success' | 'warning' | 'error' | 'info' | 'gray' => {
     switch (status?.toUpperCase()) {
       case 'SUBMITTED':
+      case 'PENDING':
       case 'ENVIADA':
         return 'info';
       case 'UNDER_REVIEW':
       case 'EN_REVISION':
+        return 'warning';
+      case 'EXAM_SCHEDULED':
         return 'warning';
       case 'INTERVIEW_SCHEDULED':
       case 'ENTREVISTA_PROGRAMADA':
@@ -78,9 +84,12 @@ const ApplicationsTable: React.FC<ApplicationsTableProps> = ({
   const getStatusLabel = (status: string): string => {
     switch (status?.toUpperCase()) {
       case 'SUBMITTED':
+      case 'PENDING':
         return 'Enviada';
       case 'UNDER_REVIEW':
         return 'En Revisión';
+      case 'EXAM_SCHEDULED':
+        return 'Examen Agendado';
       case 'INTERVIEW_SCHEDULED':
         return 'Entrevista Programada';
       case 'APPROVED':
@@ -200,6 +209,19 @@ const ApplicationsTable: React.FC<ApplicationsTableProps> = ({
                         title="Ver detalles"
                       >
                         <EyeIcon className="w-4 h-4" />
+                      </Button>
+                    )}
+
+                    {/* Decisión Final */}
+                    {onDecision && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onDecision(application)}
+                        title="Decisión final de admisión"
+                        className="text-green-600 hover:text-green-700 border-green-300 hover:border-green-400"
+                      >
+                        <CheckCircleIcon className="w-4 h-4" />
                       </Button>
                     )}
 
