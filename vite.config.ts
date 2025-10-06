@@ -84,7 +84,21 @@ export default defineConfig(({ command, mode }) => {
       // Clear the output directory before building
       emptyOutDir: true,
       // Performance budget warnings
-      chunkSizeWarningLimit: env.VITE_PERFORMANCE_BUDGET === 'true' ? 500 : 1000,
+      chunkSizeWarningLimit: 1000,
+      // Terser optimization options
+      terserOptions: mode === 'production' ? {
+        compress: {
+          drop_console: true,
+          drop_debugger: true,
+          pure_funcs: ['console.log', 'console.info', 'console.debug'],
+        },
+        mangle: {
+          safari10: true,
+        },
+        format: {
+          comments: false,
+        },
+      } : undefined,
     },
     
     // Environment-specific optimizations

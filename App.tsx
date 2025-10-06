@@ -1,50 +1,64 @@
 
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
 import { AuthProvider } from './context/AuthContext';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import ToastContainer from './components/ui/ToastContainer';
-import HomePage from './pages/HomePage';
-import ApplicationForm from './pages/ApplicationForm';
-import FamilyDashboard from './pages/FamilyDashboard';
-import AdminDashboard from './pages/AdminDashboard';
-import LoginPage from './pages/AdminLoginPage';
-import ApoderadoLogin from './pages/ApoderadoLogin';
-import ExamPortal from './pages/ExamPortal';
-import ExamSubjectDetail from './pages/ExamSubjectDetail';
-import ProfessorDashboard from './pages/ProfessorDashboard';
-import ProfessorLoginPage from './pages/ProfessorLoginPage';
-import AdmissionReportForm from './components/evaluations/AdmissionReportForm';
-import CycleDirectorReportForm from './components/evaluations/CycleDirectorReportForm';
-import CycleDirectorInterviewForm from './components/evaluations/CycleDirectorInterviewForm';
-import EvaluationForm from './pages/EvaluationForm';
-import StudentProfile from './pages/StudentProfile';
+import { ErrorBoundary } from './components/ErrorBoundary';
+
+// Protected Route Components (load eagerly as they're wrappers)
 import ProtectedProfessorRoute from './components/auth/ProtectedProfessorRoute';
 import ProtectedAdminRoute from './components/auth/ProtectedAdminRoute';
 import ProtectedApoderadoRoute from './components/auth/ProtectedApoderadoRoute';
-import CalendarNotifications from './pages/CalendarNotifications';
-import InterviewModule from './pages/InterviewModule';
-import ReportsDashboard from './pages/ReportsDashboard';
-import InterviewSchedulingTest from './pages/InterviewSchedulingTest';
-import MicroservicesTestPage from './pages/MicroservicesTestPage';
+import ProtectedCoordinatorRoute from './components/auth/ProtectedCoordinatorRoute';
+
+// Lazy-loaded page components
+const HomePage = lazy(() => import('./pages/HomePage'));
+const ApplicationForm = lazy(() => import('./pages/ApplicationForm'));
+const FamilyDashboard = lazy(() => import('./pages/FamilyDashboard'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const LoginPage = lazy(() => import('./pages/AdminLoginPage'));
+const ApoderadoLogin = lazy(() => import('./pages/ApoderadoLogin'));
+const ExamPortal = lazy(() => import('./pages/ExamPortal'));
+const ExamSubjectDetail = lazy(() => import('./pages/ExamSubjectDetail'));
+const ProfessorDashboard = lazy(() => import('./pages/ProfessorDashboard'));
+const ProfessorLoginPage = lazy(() => import('./pages/ProfessorLoginPage'));
+const AdmissionReportForm = lazy(() => import('./components/evaluations/AdmissionReportForm'));
+const CycleDirectorReportForm = lazy(() => import('./components/evaluations/CycleDirectorReportForm'));
+const CycleDirectorInterviewForm = lazy(() => import('./components/evaluations/CycleDirectorInterviewForm'));
+const EvaluationForm = lazy(() => import('./pages/EvaluationForm'));
+const StudentProfile = lazy(() => import('./pages/StudentProfile'));
+const CalendarNotifications = lazy(() => import('./pages/CalendarNotifications'));
+const InterviewModule = lazy(() => import('./pages/InterviewModule'));
+const ReportsDashboard = lazy(() => import('./pages/ReportsDashboard'));
+const InterviewSchedulingTest = lazy(() => import('./pages/InterviewSchedulingTest'));
+const MicroservicesTestPage = lazy(() => import('./pages/MicroservicesTestPage'));
 
 // Coordinator Components
-import CoordinatorLayout from './components/layout/CoordinatorLayout';
-import ProtectedCoordinatorRoute from './components/auth/ProtectedCoordinatorRoute';
-import CoordinatorDashboard from './src/components/coordinator/CoordinatorDashboard';
-import TemporalTrendsView from './src/components/coordinator/TemporalTrendsView';
-import AdvancedSearchView from './src/components/coordinator/AdvancedSearchView';
+const CoordinatorLayout = lazy(() => import('./components/layout/CoordinatorLayout'));
+const CoordinatorDashboard = lazy(() => import('./src/components/coordinator/CoordinatorDashboard'));
+const TemporalTrendsView = lazy(() => import('./src/components/coordinator/TemporalTrendsView'));
+const AdvancedSearchView = lazy(() => import('./src/components/coordinator/AdvancedSearchView'));
+
+// Loading fallback component
+const LoadingFallback = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-azul-monte-tabor"></div>
+  </div>
+);
 
 function App() {
     return (
-        <AuthProvider>
-            <AppProvider>
-                <div className="flex flex-col min-h-screen font-sans bg-blanco-pureza text-gray-800">
-                    <Header />
-                    <main className="flex-grow">
-                        <Routes>
+        <ErrorBoundary>
+            <AuthProvider>
+                <AppProvider>
+                    <div className="flex flex-col min-h-screen font-sans bg-blanco-pureza text-gray-800">
+                        <Header />
+                        <main className="flex-grow">
+                            <Suspense fallback={<LoadingFallback />}>
+                                <Routes>
                             <Route path="/" element={<HomePage />} />
                             <Route path="/login" element={<LoginPage />} />
                             <Route path="/postulacion" element={<ApplicationForm />} />
@@ -122,13 +136,15 @@ function App() {
                                 <Route path="tendencias" element={<TemporalTrendsView />} />
                                 <Route path="busqueda" element={<AdvancedSearchView />} />
                             </Route>
-                        </Routes>
-                    </main>
-                    <Footer />
-                    <ToastContainer />
-                </div>
-            </AppProvider>
-        </AuthProvider>
+                            </Routes>
+                            </Suspense>
+                        </main>
+                        <Footer />
+                        <ToastContainer />
+                    </div>
+                </AppProvider>
+            </AuthProvider>
+        </ErrorBoundary>
     );
 }
 
