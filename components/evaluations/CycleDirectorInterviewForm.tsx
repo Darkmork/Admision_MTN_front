@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
@@ -57,6 +57,8 @@ const CycleDirectorInterviewForm: React.FC = () => {
     const [evaluation, setEvaluation] = useState<ProfessorEvaluation | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [loadError, setLoadError] = useState<string | null>(null);
+    const notificationShownRef = useRef(false);
     
     const [interviewData, setInterviewData] = useState<CycleDirectorInterviewData>({
         // Datos básicos del estudiante
@@ -109,16 +111,16 @@ const CycleDirectorInterviewForm: React.FC = () => {
     useEffect(() => {
         const loadEvaluation = async () => {
             if (!examId) return;
-            
+
             try {
                 setIsLoading(true);
                 console.log('🔄 Cargando evaluación para entrevista director de ciclo:', examId);
-                
+
                 const foundEvaluation = await professorEvaluationService.getEvaluationById(parseInt(examId));
-                
+
                 if (foundEvaluation) {
                     setEvaluation(foundEvaluation);
-                    
+
                     // Calcular edad automáticamente si hay fecha de nacimiento
                     const calculateAge = (birthDate: string): string => {
                         if (!birthDate) return '';
@@ -131,46 +133,96 @@ const CycleDirectorInterviewForm: React.FC = () => {
                         }
                         return age.toString();
                     };
-                    
+
+                    // Formatear fecha para input type="date" (YYYY-MM-DD)
+                    const formatDateForInput = (dateString: string | undefined): string => {
+                        if (!dateString) return '';
+                        // Si ya está en formato YYYY-MM-DD, retornar tal cual
+                        if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return dateString;
+                        // Si es ISO format, extraer la fecha
+                        return dateString.split('T')[0];
+                    };
+
                     // Auto-rellenar datos básicos del estudiante desde la postulación
                     const birthDate = foundEvaluation.studentBirthDate || foundEvaluation.application?.student?.birthDate;
+                    const formattedBirthDate = formatDateForInput(birthDate);
+
+                    // Intentar recuperar datos guardados desde el campo strengths (JSON)
+                    let savedInterviewData = null;
+                    if (foundEvaluation.strengths) {
+                        try {
+                            savedInterviewData = JSON.parse(foundEvaluation.strengths);
+                            console.log('✅ Datos de entrevista recuperados desde strengths:', savedInterviewData);
+                        } catch (e) {
+                            console.warn('⚠️ No se pudo parsear strengths como JSON:', e);
+                            setLoadError('json_parse_error');
+                        }
+                    }
+
                     setInterviewData(prev => ({
                         ...prev,
+                        // Datos básicos del estudiante (siempre desde la evaluación)
                         studentName: foundEvaluation.studentName || '',
                         gradeApplied: foundEvaluation.studentGrade || '',
-                        birthDate: birthDate || '',
+                        birthDate: formattedBirthDate,
                         currentSchool: foundEvaluation.currentSchool || foundEvaluation.application?.student?.currentSchool || '',
-                        age: birthDate ? calculateAge(birthDate) : '',
-                        
-                        // Si hay datos previos guardados, cargarlos
-                        relevantBackground: foundEvaluation.observations || '',
-                        // Aquí podríamos mapear otros campos si ya existen en la evaluación
+                        age: formattedBirthDate ? calculateAge(formattedBirthDate) : '',
+
+                        // Si hay datos guardados en JSON, restaurarlos
+                        ...(savedInterviewData || {})
                     }));
-                    
+
                     console.log('✅ Evaluación cargada para entrevista:', foundEvaluation);
+                    console.log('📊 Student data:', {
+                        name: foundEvaluation.studentName,
+                        birthDate: formattedBirthDate,
+                        school: foundEvaluation.currentSchool,
+                        grade: foundEvaluation.studentGrade
+                    });
                 } else {
                     console.error('❌ Evaluación no encontrada');
-                    addNotification({
-                        type: 'error',
-                        title: 'Error',
-                        message: 'Evaluación no encontrada'
-                    });
+                    setEvaluation(null);
+                    setLoadError('not_found');
                 }
-                
+
             } catch (error: any) {
                 console.error('❌ Error cargando evaluación:', error);
-                addNotification({
-                    type: 'error',
-                    title: 'Error',
-                    message: 'No se pudo cargar la evaluación'
-                });
+                setEvaluation(null);
+                setLoadError('network_error');
             } finally {
                 setIsLoading(false);
             }
         };
 
         loadEvaluation();
-    }, [examId, addNotification]);
+    }, [examId]); // Solo examId como dependencia - SIN addNotification para evitar bucle infinito
+
+    // Effect separado para mostrar notificaciones (se ejecuta solo cuando cambia loadError)
+    useEffect(() => {
+        if (!isLoading && loadError && !notificationShownRef.current) {
+            notificationShownRef.current = true; // Marcar como mostrado para evitar repetición
+
+            if (loadError === 'not_found') {
+                addNotification({
+                    type: 'error',
+                    title: 'Evaluación no encontrada',
+                    message: 'No se encontró la evaluación solicitada'
+                });
+            } else if (loadError === 'network_error') {
+                addNotification({
+                    type: 'error',
+                    title: 'Error de conexión',
+                    message: 'No se pudo cargar la evaluación'
+                });
+            } else if (loadError === 'json_parse_error') {
+                addNotification({
+                    type: 'warning',
+                    title: 'Datos previos corruptos',
+                    message: 'No se pudieron recuperar los datos guardados previamente. Puedes llenar la entrevista nuevamente.'
+                });
+            }
+        }
+    }, [isLoading, loadError]); // NO incluir addNotification aquí tampoco
 
     const updateInterviewData = (field: keyof CycleDirectorInterviewData, value: string) => {
         setInterviewData(prev => ({
@@ -185,10 +237,17 @@ const CycleDirectorInterviewForm: React.FC = () => {
         setIsSubmitting(true);
         
         try {
+            // Guardar datos estructurados en JSON para recuperación posterior
+            const interviewDataJSON = JSON.stringify(interviewData);
+
             // Consolidar toda la información de la entrevista en los campos de la evaluación
             const updatedEvaluation: Partial<ProfessorEvaluation> = {
+                // Guardar datos estructurados en JSON en el campo strengths
+                strengths: interviewDataJSON,
+
+                // Mantener formato legible en observations para revisión
                 observations: `ENTREVISTA DIRECTOR DE CICLO
-                
+
 ANTECEDENTES RELEVANTES:
 ${interviewData.relevantBackground}
 
@@ -215,7 +274,7 @@ EXPECTATIVAS DEL CAMBIO:
 • Conocimiento del colegio: ${interviewData.schoolKnowledge}
 • Aporte personal: ${interviewData.personalContribution}
 • Preocupaciones: ${interviewData.changeConcerns}`,
-                
+
                 recommendations: `OBSERVACIONES DE LA ENTREVISTA:
 • Contacto afectivo: ${interviewData.affectiveContact}
 • Adaptación a la entrevista: ${interviewData.interviewAdaptation}
@@ -223,9 +282,11 @@ EXPECTATIVAS DEL CAMBIO:
 • Observaciones sociales/individuales: ${interviewData.socialIndividualObservations}
 
 Entrevistador: ${currentProfessor?.firstName} ${currentProfessor?.lastName}`,
-                
+
                 status: 'COMPLETED'
             };
+
+            console.log('💾 Guardando datos de entrevista en JSON:', interviewDataJSON.substring(0, 200) + '...');
             
             await professorEvaluationService.updateEvaluation(evaluation.id, updatedEvaluation);
             
@@ -260,7 +321,7 @@ Entrevistador: ${currentProfessor?.firstName} ${currentProfessor?.lastName}`,
                 newWindow.document.write(`
                     <html>
                         <head>
-                            <title>Pauta Entrevista - Examen de Admisión 2025</title>
+                            <title>Pauta Entrevista - Examen de Admisión 2026</title>
                             <style>
                                 body { font-family: Arial, sans-serif; margin: 20px; }
                                 .header { text-align: center; margin-bottom: 30px; }
@@ -344,7 +405,7 @@ Entrevistador: ${currentProfessor?.firstName} ${currentProfessor?.lastName}`,
                             PAUTA ENTREVISTA
                         </h1>
                         <h2 className="text-xl font-bold text-azul-monte-tabor">
-                            EXAMEN DE ADMISIÓN 2025
+                            EXAMEN DE ADMISIÓN 2026
                         </h2>
                     </div>
 
@@ -355,12 +416,9 @@ Entrevistador: ${currentProfessor?.firstName} ${currentProfessor?.lastName}`,
                                 <label className="field-label">
                                     Nombre <span className="text-xs text-gray-500">(desde postulación)</span>
                                 </label>
-                                <Input
-                                    value={interviewData.studentName}
-                                    readOnly
-                                    className="bg-gray-50 font-medium"
-                                    placeholder="Se obtiene automáticamente desde la postulación"
-                                />
+                                <div className="px-3 py-2 font-medium text-gray-900">
+                                    {interviewData.studentName || 'Se obtiene automáticamente desde la postulación'}
+                                </div>
                             </div>
                             
                             <div className="field">
@@ -393,24 +451,18 @@ Entrevistador: ${currentProfessor?.firstName} ${currentProfessor?.lastName}`,
                                 <label className="field-label">
                                     Colegio actual <span className="text-xs text-gray-500">(desde postulación)</span>
                                 </label>
-                                <Input
-                                    value={interviewData.currentSchool}
-                                    readOnly
-                                    className="bg-gray-50"
-                                    placeholder="Se obtiene automáticamente desde la postulación"
-                                />
+                                <div className="px-3 py-2 text-gray-900">
+                                    {interviewData.currentSchool || 'Se obtiene automáticamente desde la postulación'}
+                                </div>
                             </div>
                             
                             <div className="field">
                                 <label className="field-label">
                                     Curso al que postula <span className="text-xs text-gray-500">(desde postulación)</span>
                                 </label>
-                                <Input
-                                    value={interviewData.gradeApplied}
-                                    readOnly
-                                    className="bg-gray-50"
-                                    placeholder="Se obtiene automáticamente desde la postulación"
-                                />
+                                <div className="px-3 py-2 text-gray-900">
+                                    {interviewData.gradeApplied || 'Se obtiene automáticamente desde la postulación'}
+                                </div>
                             </div>
                         </div>
                     </div>

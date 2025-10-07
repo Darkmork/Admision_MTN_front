@@ -175,10 +175,10 @@ const ApplicationsTable: React.FC<ApplicationsTableProps> = ({
                 {/* Apoderado */}
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-900">
-                    {application.applicantUser?.firstName || 'N/A'} {application.applicantUser?.lastName || ''}
+                    {application.guardian?.fullName || application.applicantUser?.firstName + ' ' + application.applicantUser?.lastName || 'N/A'}
                   </div>
                   <div className="text-sm text-gray-500">
-                    {application.applicantUser?.email || 'Sin información de apoderado'}
+                    {application.guardian?.email || application.applicantUser?.email || 'Sin información de apoderado'}
                   </div>
                 </td>
 

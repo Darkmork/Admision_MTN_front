@@ -859,8 +859,7 @@ const StudentDetailView: React.FC<StudentDetailViewProps> = ({
     { key: 'INDIVIDUAL', label: 'Entrevista Individual' },
     { key: 'FAMILY', label: 'Entrevista Familiar' },
     { key: 'PSYCHOLOGICAL', label: 'Entrevista Psicológica' },
-    { key: 'ACADEMIC', label: 'Entrevista Académica' },
-    { key: 'BEHAVIORAL', label: 'Entrevista Conductual' }
+    { key: 'ACADEMIC', label: 'Entrevista Académica' }
   ];
 
   const getInterviewForType = (type: string) => {

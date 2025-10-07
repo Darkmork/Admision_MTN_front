@@ -45,17 +45,18 @@ class ProfessorEvaluationService {
      */
     async getMyEvaluations(): Promise<ProfessorEvaluation[]> {
         try {
-            
+
             const response = await api.get('/api/evaluations/my-evaluations');
-            const evaluations = response.data;
-            
-            
+            // Handle response wrapper: {success, data}
+            const evaluations = response.data?.data || response.data;
+
+
             const mappedEvaluations = this.mapToProfessorEvaluations(evaluations);
-            
+
             return mappedEvaluations;
-            
+
         } catch (error: any) {
-            
+
             if (error.response?.status === 401) {
                 throw new Error('No tienes permisos para acceder a las evaluaciones. Verifica tu autenticación.');
             } else if (error.response?.status === 404) {
@@ -63,7 +64,7 @@ class ProfessorEvaluationService {
             } else if (error.response?.status === 500) {
                 throw new Error('Error del servidor al obtener evaluaciones.');
             }
-            
+
             throw new Error('Error al obtener las evaluaciones asignadas. Verifica tu conexión.');
         }
     }
@@ -73,20 +74,21 @@ class ProfessorEvaluationService {
      */
     async getMyPendingEvaluations(): Promise<ProfessorEvaluation[]> {
         try {
-            
+
             const response = await api.get('/api/evaluations/my-pending');
-            const evaluations = response.data;
-            
+            // Handle response wrapper: {success, data}
+            const evaluations = response.data?.data || response.data;
+
             return this.mapToProfessorEvaluations(evaluations);
-            
+
         } catch (error: any) {
-            
+
             if (error.response?.status === 401) {
                 throw new Error('No tienes permisos para acceder a las evaluaciones pendientes.');
             } else if (error.response?.status === 404) {
                 throw new Error('No se encontraron evaluaciones pendientes.');
             }
-            
+
             throw new Error('Error al obtener las evaluaciones pendientes.');
         }
     }
@@ -126,14 +128,15 @@ class ProfessorEvaluationService {
      */
     async updateEvaluation(evaluationId: number, evaluationData: Partial<ProfessorEvaluation>): Promise<ProfessorEvaluation> {
         try {
-            
+
             const response = await api.put(`/api/evaluations/${evaluationId}`, evaluationData);
-            const updatedEvaluation = response.data;
-            
+            // Handle response wrapper: {success, data}
+            const updatedEvaluation = response.data?.data || response.data;
+
             return this.mapToProfessorEvaluation(updatedEvaluation);
-            
+
         } catch (error: any) {
-            
+
             if (error.response?.status === 401) {
                 throw new Error('No tienes permisos para actualizar esta evaluación.');
             } else if (error.response?.status === 404) {
@@ -141,7 +144,7 @@ class ProfessorEvaluationService {
             } else if (error.response?.status === 400) {
                 throw new Error('Datos de evaluación inválidos.');
             }
-            
+
             throw new Error('Error al actualizar la evaluación. Intenta nuevamente.');
         }
     }
@@ -151,20 +154,21 @@ class ProfessorEvaluationService {
      */
     async getEvaluationById(evaluationId: number): Promise<ProfessorEvaluation> {
         try {
-            
+
             const response = await api.get(`/api/evaluations/${evaluationId}`);
-            const evaluation = response.data;
-            
+            // Handle response wrapper: {success, data}
+            const evaluation = response.data?.data || response.data;
+
             return this.mapToProfessorEvaluation(evaluation);
-            
+
         } catch (error: any) {
-            
+
             if (error.response?.status === 401) {
                 throw new Error('No tienes permisos para acceder a esta evaluación.');
             } else if (error.response?.status === 404) {
                 throw new Error('Evaluación no encontrada.');
             }
-            
+
             throw new Error('Error al obtener la evaluación.');
         }
     }
@@ -219,21 +223,24 @@ class ProfessorEvaluationService {
     }
     
     private getStudentName(apiEvaluation: any): string {
-        // Primero intentar obtener del estudiante directo
-        if (apiEvaluation.student) {
-            return `${apiEvaluation.student.firstName || ''} ${apiEvaluation.student.lastName || ''}`.trim();
+        // Primero intentar del campo directo (snake_case y camelCase)
+        if (apiEvaluation.student_name) {
+            return apiEvaluation.student_name;
         }
-        
-        // Luego intentar obtener del estudiante anidado en application
-        if (apiEvaluation.application?.student) {
-            return `${apiEvaluation.application.student.firstName || ''} ${apiEvaluation.application.student.lastName || ''}`.trim();
-        }
-        
-        // Finalmente intentar del campo directo
         if (apiEvaluation.studentName) {
             return apiEvaluation.studentName;
         }
-        
+
+        // Luego intentar obtener del estudiante directo
+        if (apiEvaluation.student) {
+            return `${apiEvaluation.student.firstName || ''} ${apiEvaluation.student.lastName || ''}`.trim();
+        }
+
+        // Finalmente intentar obtener del estudiante anidado en application
+        if (apiEvaluation.application?.student) {
+            return `${apiEvaluation.application.student.firstName || ''} ${apiEvaluation.application.student.lastName || ''}`.trim();
+        }
+
         return 'Estudiante no especificado';
     }
     
@@ -262,34 +269,35 @@ class ProfessorEvaluationService {
     }
     
     private getStudentBirthDate(apiEvaluation: any): string | undefined {
-        // ✅ ORDEN ACTUALIZADO: Primero application.student (ahora incluye birthDate desde backend)
-        if (apiEvaluation.application?.student?.birthDate) return apiEvaluation.application.student.birthDate;
-        if (apiEvaluation.application?.student?.birth_date) return apiEvaluation.application.student.birth_date;
-        
-        // Luego intentar del estudiante directo (para compatibilidad)
-        if (apiEvaluation.student?.birthDate) return apiEvaluation.student.birthDate;
-        if (apiEvaluation.student?.birth_date) return apiEvaluation.student.birth_date;
-        
-        // Finalmente intentar de otros campos
+        // Primero intentar del campo directo (snake_case y camelCase)
+        if (apiEvaluation.student_birthdate) return apiEvaluation.student_birthdate;
         if (apiEvaluation.studentBirthDate) return apiEvaluation.studentBirthDate;
         if (apiEvaluation.student_birth_date) return apiEvaluation.student_birth_date;
-        
+
+        // Luego intentar de application.student
+        if (apiEvaluation.application?.student?.birthDate) return apiEvaluation.application.student.birthDate;
+        if (apiEvaluation.application?.student?.birth_date) return apiEvaluation.application.student.birth_date;
+
+        // Finalmente intentar del estudiante directo
+        if (apiEvaluation.student?.birthDate) return apiEvaluation.student.birthDate;
+        if (apiEvaluation.student?.birth_date) return apiEvaluation.student.birth_date;
+
         return undefined;
     }
     
     private getCurrentSchool(apiEvaluation: any): string | undefined {
-        // ✅ ORDEN ACTUALIZADO: Primero application.student (ahora incluye currentSchool desde backend)
+        // Primero intentar del campo directo (snake_case y camelCase)
+        if (apiEvaluation.current_school) return apiEvaluation.current_school;
+        if (apiEvaluation.currentSchool) return apiEvaluation.currentSchool;
+
+        // Luego intentar de application.student
         if (apiEvaluation.application?.student?.currentSchool) return apiEvaluation.application.student.currentSchool;
         if (apiEvaluation.application?.student?.current_school) return apiEvaluation.application.student.current_school;
-        
-        // Luego intentar del estudiante directo (para compatibilidad)
+
+        // Finalmente intentar del estudiante directo
         if (apiEvaluation.student?.currentSchool) return apiEvaluation.student.currentSchool;
         if (apiEvaluation.student?.current_school) return apiEvaluation.student.current_school;
-        
-        // Finalmente intentar de otros campos
-        if (apiEvaluation.currentSchool) return apiEvaluation.currentSchool;
-        if (apiEvaluation.current_school) return apiEvaluation.current_school;
-        
+
         return undefined;
     }
 }

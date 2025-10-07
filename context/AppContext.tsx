@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useReducer, ReactNode, useEffect, useCallback } from 'react';
 import { Application, ApplicationStatus } from '../types';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
@@ -193,19 +193,19 @@ export const useAuth = () => {
 
 export const useNotifications = () => {
     const { state, dispatch } = useAppContext();
-    
-    const addNotification = (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
+
+    const addNotification = useCallback((notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
         dispatch({ type: 'ADD_NOTIFICATION', payload: notification });
-    };
-    
-    const markAsRead = (id: string) => {
+    }, [dispatch]);
+
+    const markAsRead = useCallback((id: string) => {
         dispatch({ type: 'MARK_NOTIFICATION_READ', payload: id });
-    };
-    
-    const clearAll = () => {
+    }, [dispatch]);
+
+    const clearAll = useCallback(() => {
         dispatch({ type: 'CLEAR_NOTIFICATIONS' });
-    };
-    
+    }, [dispatch]);
+
     return {
         notifications: state.notifications,
         unreadCount: state.notifications.filter(n => !n.read).length,

@@ -314,28 +314,58 @@ const EvaluationManagement: React.FC<EvaluationManagementProps> = ({
                     </Badge>
                   </td>
                   <td className="px-4 py-4">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-600">
-                        {application.completedEvaluations}/{application.totalEvaluations}
-                      </span>
-                      {application.pendingEvaluations > 0 && (
-                        <Badge variant="warning" size="sm">
-                          {application.pendingEvaluations} pendientes
-                        </Badge>
-                      )}
-                    </div>
+                    {(() => {
+                      // Filtrar solo exámenes académicos (Math, Language, English)
+                      const academicExams = (application.evaluations || []).filter(
+                        (e: any) =>
+                          e.evaluationType === 'MATHEMATICS_EXAM' ||
+                          e.evaluationType === 'LANGUAGE_EXAM' ||
+                          e.evaluationType === 'ENGLISH_EXAM'
+                      );
+                      const totalAcademicExams = 3; // Siempre 3 exámenes académicos
+                      const completedAcademicExams = academicExams.filter(
+                        (e: any) => e.status === 'COMPLETED'
+                      ).length;
+                      const pendingAcademicExams = totalAcademicExams - completedAcademicExams;
+
+                      return (
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm text-gray-600">
+                            {completedAcademicExams}/{totalAcademicExams}
+                          </span>
+                          {pendingAcademicExams > 0 && (
+                            <Badge variant="warning" size="sm">
+                              {pendingAcademicExams} pendientes
+                            </Badge>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </td>
                   <td className="px-4 py-4">
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div
-                        className="bg-azul-monte-tabor h-2 rounded-full"
-                        style={{
-                          width: `${application.totalEvaluations > 0
-                            ? (application.completedEvaluations / application.totalEvaluations) * 100
-                            : 0}%`
-                        }}
-                      ></div>
-                    </div>
+                    {(() => {
+                      // Calcular progreso solo con exámenes académicos
+                      const academicExams = (application.evaluations || []).filter(
+                        (e: any) =>
+                          e.evaluationType === 'MATHEMATICS_EXAM' ||
+                          e.evaluationType === 'LANGUAGE_EXAM' ||
+                          e.evaluationType === 'ENGLISH_EXAM'
+                      );
+                      const totalAcademicExams = 3;
+                      const completedAcademicExams = academicExams.filter(
+                        (e: any) => e.status === 'COMPLETED'
+                      ).length;
+                      const progressPercentage = (completedAcademicExams / totalAcademicExams) * 100;
+
+                      return (
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className="bg-azul-monte-tabor h-2 rounded-full"
+                            style={{ width: `${progressPercentage}%` }}
+                          ></div>
+                        </div>
+                      );
+                    })()}
                   </td>
                   <td className="px-4 py-4">
                     <div className="flex items-center space-x-2">

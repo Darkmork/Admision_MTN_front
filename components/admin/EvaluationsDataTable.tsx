@@ -32,6 +32,39 @@ const EvaluationsDataTable: React.FC<EvaluationsDataTableProps> = ({
         refresh
     } = useDataTable<Evaluation>(dataService.getEvaluations.bind(dataService));
 
+    // Estado para estadísticas globales
+    const [globalStats, setGlobalStats] = React.useState({
+        total: 0,
+        completed: 0,
+        inProgress: 0,
+        pending: 0
+    });
+
+    // Cargar estadísticas globales
+    React.useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const response = await fetch('http://localhost:8080/api/evaluations/stats', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+                    }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    setGlobalStats({
+                        total: data.data.total,
+                        completed: data.data.completedCount,
+                        inProgress: data.data.inProgressCount,
+                        pending: data.data.pendingCount
+                    });
+                }
+            } catch (error) {
+                console.error('Error fetching evaluation stats:', error);
+            }
+        };
+        fetchStats();
+    }, []);
+
 
     // Función para obtener el color del badge según el tipo de evaluación
     const getEvaluationTypeColor = (type: string): 'blue' | 'green' | 'purple' | 'orange' | 'pink' => {
@@ -285,13 +318,13 @@ const EvaluationsDataTable: React.FC<EvaluationsDataTableProps> = ({
 
     return (
         <div className="space-y-6">
-            {/* Header con estadísticas */}
+            {/* Header con estadísticas globales */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="bg-blue-50 rounded-lg p-4">
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-sm font-medium text-blue-600">Total Evaluaciones</p>
-                            <p className="text-2xl font-bold text-blue-700">{pagination.total}</p>
+                            <p className="text-2xl font-bold text-blue-700">{globalStats.total}</p>
                         </div>
                         <FiBookOpen className="h-8 w-8 text-blue-500" />
                     </div>
@@ -301,7 +334,7 @@ const EvaluationsDataTable: React.FC<EvaluationsDataTableProps> = ({
                         <div>
                             <p className="text-sm font-medium text-green-600">Completadas</p>
                             <p className="text-2xl font-bold text-green-700">
-                                {evaluations.filter(e => e.status === 'COMPLETED' || e.status === 'REVIEWED').length}
+                                {globalStats.completed}
                             </p>
                         </div>
                         <FiCheckCircle className="h-8 w-8 text-green-500" />
@@ -312,7 +345,7 @@ const EvaluationsDataTable: React.FC<EvaluationsDataTableProps> = ({
                         <div>
                             <p className="text-sm font-medium text-yellow-600">En Progreso</p>
                             <p className="text-2xl font-bold text-yellow-700">
-                                {evaluations.filter(e => e.status === 'IN_PROGRESS').length}
+                                {globalStats.inProgress}
                             </p>
                         </div>
                         <FiClock className="h-8 w-8 text-yellow-500" />
@@ -323,7 +356,7 @@ const EvaluationsDataTable: React.FC<EvaluationsDataTableProps> = ({
                         <div>
                             <p className="text-sm font-medium text-red-600">Pendientes</p>
                             <p className="text-2xl font-bold text-red-700">
-                                {evaluations.filter(e => e.status === 'PENDING').length}
+                                {globalStats.pending}
                             </p>
                         </div>
                         <FiAlertCircle className="h-8 w-8 text-red-500" />
