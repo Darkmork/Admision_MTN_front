@@ -292,6 +292,31 @@ const AdminDashboard: React.FC = () => {
     setTimeout(() => setApplicationToast(null), 5000);
   };
 
+  // Manejar asignación de evaluadores
+  const handleAssignEvaluator = async (applicationId: number, assignments: any[]) => {
+    try {
+      // Iterar por cada asignación y llamar al backend
+      const promises = assignments.map(assignment =>
+        evaluationService.assignSpecificEvaluation(
+          applicationId,
+          assignment.evaluationType,
+          assignment.evaluatorId
+        )
+      );
+
+      await Promise.all(promises);
+
+      // Recargar aplicaciones para reflejar los cambios
+      await loadApplications();
+
+      // No mostrar notificación aquí, el modal ya la muestra
+    } catch (error: any) {
+      console.error('Error asignando evaluadores:', error);
+      // Re-lanzar el error para que el modal lo maneje
+      throw error;
+    }
+  };
+
   // Confirmar archivado de postulación
   const confirmArchive = (application: Application) => {
     const message = `⚠️ ¿Estás seguro de que deseas ARCHIVAR la postulación de ${application.student.firstName} ${application.student.lastName}?
@@ -432,7 +457,7 @@ Esta acción:
               >
                 <FiCalendar className="w-8 h-8 text-orange-500 mx-auto mb-2" />
                 <p className="text-2xl font-bold text-orange-600">
-                  {applications.filter(app => app.status === 'EXAMEN_PROGRAMADO').length}
+                  {applications.filter(app => app.status === 'EXAMEN_PROGRAMADO' || app.status === 'ENTREVISTA_PROGRAMADA').length}
                 </p>
                 <p className="text-sm text-gris-piedra">Examen Programado</p>
               </Card>
@@ -484,9 +509,10 @@ Esta acción:
 
             {/* Render appropriate subsection */}
             {evaluationSubsection === 'management' ? (
-              <EvaluationManagement 
-                applications={applications} 
+              <EvaluationManagement
+                applications={applications}
                 onRefresh={loadApplications}
+                onAssign={handleAssignEvaluator}
               />
             ) : evaluationSubsection === 'statistics' ? (
               <EvaluationStatistics />

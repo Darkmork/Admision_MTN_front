@@ -13,8 +13,9 @@ import { applicationService, Application } from '../../services/applicationServi
 import interviewService from '../../services/interviewService';
 import { Interview, InterviewStatus, INTERVIEW_TYPE_LABELS } from '../../types/interview';
 import evaluationService from '../../services/evaluationService';
-import { Evaluation } from '../../types/evaluation';
+import { Evaluation, EvaluationType } from '../../types/evaluation';
 import institutionalEmailService from '../../services/institutionalEmailService';
+import { userService } from '../../services/userService';
 
 interface Postulante {
     id: number;
@@ -81,6 +82,7 @@ interface StudentDetailModalProps {
     onEdit?: (postulante: Postulante) => void;
     onUpdateStatus?: (postulante: Postulante, newStatus: string) => void;
     onScheduleInterview?: (postulante: Postulante, interviewType?: string) => void;
+    onAssignEvaluator?: (applicationId: number, evaluationType: string, evaluatorId: number) => Promise<void>;
 }
 
 const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
@@ -89,7 +91,8 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
     postulante,
     onEdit,
     onUpdateStatus,
-    onScheduleInterview
+    onScheduleInterview,
+    onAssignEvaluator
 }) => {
     const [activeTab, setActiveTab] = useState<'info' | 'familia' | 'academico' | 'entrevistas' | 'evaluaciones' | 'documentos' | 'historial'>('info');
     const [fullApplication, setFullApplication] = useState<Application | null>(null);
@@ -102,6 +105,13 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
     const [showEvaluationDetail, setShowEvaluationDetail] = useState(false);
     const [documentApprovalStatus, setDocumentApprovalStatus] = useState<Record<number, boolean>>({});
     const [sendingNotification, setSendingNotification] = useState(false);
+    const [showAssignEvaluatorModal, setShowAssignEvaluatorModal] = useState(false);
+    const [selectedEvaluationType, setSelectedEvaluationType] = useState<string | null>(null);
+    const [availableEvaluators, setAvailableEvaluators] = useState<any[]>([]);
+    const [selectedEvaluatorId, setSelectedEvaluatorId] = useState<number>(0);
+    const [isAssigning, setIsAssigning] = useState(false);
+    const [assignMessage, setAssignMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+    const [sendingReminders, setSendingReminders] = useState(false);
     const { addNotification } = useNotifications();
 
     // Cargar información completa de la aplicación, entrevistas y evaluaciones
@@ -159,6 +169,166 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
             setEvaluations([]);
         } finally {
             setEvaluationsLoading(false);
+        }
+    };
+
+    const handleAssignEvaluatorFromDetail = async (evaluationType: string) => {
+        if (!postulante) {
+            addNotification({
+                type: 'error',
+                title: 'Error',
+                message: 'No se puede asignar evaluador en este momento'
+            });
+            return;
+        }
+
+        // Configurar el tipo de evaluación seleccionado
+        setSelectedEvaluationType(evaluationType);
+        setSelectedEvaluatorId(0);
+        setAssignMessage(null);
+
+        // Cargar evaluadores disponibles para este tipo de evaluación
+        try {
+            const staffResponse = await userService.getSchoolStaffUsersPublic();
+            const allStaff = staffResponse.content || [];
+
+            // Filtrar evaluadores según el tipo de evaluación
+            let filteredEvaluators: any[] = [];
+
+            switch (evaluationType) {
+                case 'MATHEMATICS_EXAM':
+                    filteredEvaluators = allStaff.filter(user =>
+                        user.role === 'TEACHER' && user.subject === 'MATHEMATICS'
+                    );
+                    break;
+                case 'LANGUAGE_EXAM':
+                    filteredEvaluators = allStaff.filter(user =>
+                        user.role === 'TEACHER' && user.subject === 'LANGUAGE'
+                    );
+                    break;
+                case 'ENGLISH_EXAM':
+                    filteredEvaluators = allStaff.filter(user =>
+                        user.role === 'TEACHER' && user.subject === 'ENGLISH'
+                    );
+                    break;
+                case 'PSYCHOLOGICAL_INTERVIEW':
+                    filteredEvaluators = allStaff.filter(user => user.role === 'PSYCHOLOGIST');
+                    break;
+                case 'CYCLE_DIRECTOR_INTERVIEW':
+                case 'CYCLE_DIRECTOR_REPORT':
+                    filteredEvaluators = allStaff.filter(user => user.role === 'CYCLE_DIRECTOR');
+                    break;
+                default:
+                    filteredEvaluators = allStaff.filter(user =>
+                        user.role === 'TEACHER' || user.role === 'COORDINATOR'
+                    );
+            }
+
+            setAvailableEvaluators(filteredEvaluators);
+            setShowAssignEvaluatorModal(true);
+        } catch (error) {
+            console.error('Error loading evaluators:', error);
+            addNotification({
+                type: 'error',
+                title: 'Error',
+                message: 'No se pudieron cargar los evaluadores disponibles'
+            });
+        }
+    };
+
+    const handleConfirmAssignment = async () => {
+        if (!postulante || !selectedEvaluationType || selectedEvaluatorId === 0) {
+            setAssignMessage({ type: 'error', text: 'Debe seleccionar un evaluador' });
+            return;
+        }
+
+        setIsAssigning(true);
+        setAssignMessage({ type: 'success', text: 'Asignando evaluador... Por favor espere.' });
+
+        try {
+            await evaluationService.assignSpecificEvaluation(
+                postulante.id,
+                selectedEvaluationType as EvaluationType,
+                selectedEvaluatorId
+            );
+
+            setAssignMessage({
+                type: 'success',
+                text: 'Evaluador asignado correctamente. Se ha enviado notificación por email.'
+            });
+
+            // Recargar evaluaciones para mostrar la nueva asignación
+            await loadEvaluations();
+
+            // Cerrar modal después de 2 segundos
+            setTimeout(() => {
+                setShowAssignEvaluatorModal(false);
+                setAssignMessage(null);
+                setIsAssigning(false);
+            }, 2000);
+        } catch (error: any) {
+            console.error('Error assigning evaluator:', error);
+            setAssignMessage({
+                type: 'error',
+                text: `Error: ${error.message || 'No se pudo asignar el evaluador'}`
+            });
+            setIsAssigning(false);
+        }
+    };
+
+    const handleSendReminders = async () => {
+        if (!postulante) {
+            addNotification({
+                type: 'error',
+                title: 'Error',
+                message: 'No se puede enviar recordatorios en este momento'
+            });
+            return;
+        }
+
+        // Filtrar evaluaciones pendientes o en progreso que tengan evaluador asignado
+        const pendingEvaluations = evaluations.filter(
+            e => (e.status === 'PENDING' || e.status === 'IN_PROGRESS') && e.evaluator
+        );
+
+        if (pendingEvaluations.length === 0) {
+            addNotification({
+                type: 'info',
+                title: 'Sin Recordatorios',
+                message: 'No hay evaluaciones pendientes con evaluadores asignados'
+            });
+            return;
+        }
+
+        setSendingReminders(true);
+
+        try {
+            // Reenviar la asignación (que automáticamente envía el email)
+            const promises = pendingEvaluations.map(async (evaluation) => {
+                // Usamos el servicio de asignación que ya envía el email automáticamente
+                return evaluationService.assignSpecificEvaluation(
+                    postulante.id,
+                    evaluation.evaluationType,
+                    evaluation.evaluator.id
+                );
+            });
+
+            await Promise.all(promises);
+
+            addNotification({
+                type: 'success',
+                title: 'Recordatorios Enviados',
+                message: `Se enviaron ${pendingEvaluations.length} recordatorio(s) por email a los evaluadores`
+            });
+        } catch (error: any) {
+            console.error('Error sending reminders:', error);
+            addNotification({
+                type: 'error',
+                title: 'Error',
+                message: error.message || 'No se pudieron enviar los recordatorios'
+            });
+        } finally {
+            setSendingReminders(false);
         }
     };
 
@@ -721,7 +891,6 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                             }`}>
                                 <div className="flex items-center justify-between mb-2">
                                     <div className="flex items-center gap-2">
-                                        <span className="text-lg">{type.icon}</span>
                                         <span className="font-medium text-gray-900">{type.title}</span>
                                         {type.required && <span className="text-red-500 text-xs">*</span>}
                                     </div>
@@ -784,9 +953,6 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                                 <div key={interview.id} className="border rounded-lg p-3 bg-white">
                                     <div className="flex items-start justify-between">
                                         <div className="flex items-center gap-2">
-                                            <span className="text-base">
-                                                {REQUIRED_INTERVIEW_TYPES.find(t => t.type === interview.type)?.icon || '📋'}
-                                            </span>
                                             <div>
                                                 <h5 className="font-medium text-gray-900">
                                                     {INTERVIEW_TYPE_LABELS[interview.type as keyof typeof INTERVIEW_TYPE_LABELS] || interview.type}
@@ -1093,15 +1259,27 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                         <FiCheckCircle className="w-5 h-5" />
                         Sistema de Evaluaciones
                     </h3>
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={loadEvaluations}
-                        disabled={evaluationsLoading}
-                    >
-                        <FiRefreshCw className={`w-4 h-4 mr-1 ${evaluationsLoading ? 'animate-spin' : ''}`} />
-                        Actualizar
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={handleSendReminders}
+                            disabled={sendingReminders || evaluationsLoading}
+                            isLoading={sendingReminders}
+                        >
+                            <FiMail className="w-4 h-4 mr-1" />
+                            {sendingReminders ? 'Enviando...' : 'Enviar Recordatorios'}
+                        </Button>
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={loadEvaluations}
+                            disabled={evaluationsLoading}
+                        >
+                            <FiRefreshCw className={`w-4 h-4 mr-1 ${evaluationsLoading ? 'animate-spin' : ''}`} />
+                            Actualizar
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Progreso general */}
@@ -1140,7 +1318,6 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                             }`}>
                                 <div className="flex items-center justify-between mb-2">
                                     <div className="flex items-center gap-2">
-                                        <span className="text-lg">{type.icon}</span>
                                         <span className="font-medium text-gray-900">{type.title}</span>
                                         {type.required && <span className="text-red-500 text-xs">*</span>}
                                     </div>
@@ -1163,22 +1340,47 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                                 {evaluation && (
                                     <div className="space-y-1 text-xs text-gray-600">
                                         {evaluation.score !== null && evaluation.score !== undefined && (
-                                            <p className="font-medium text-blue-600">📊 Puntaje: {evaluation.score}{type.type.includes('EXAM') ? '/100' : ''}</p>
+                                            <p className="font-medium text-blue-600">Puntaje: {evaluation.score}{type.type.includes('EXAM') ? '/100' : ''}</p>
                                         )}
                                         {evaluation.evaluator && (
-                                            <p>👤 {evaluation.evaluator.firstName} {evaluation.evaluator.lastName}</p>
+                                            <p className="font-medium">{evaluation.evaluator.firstName} {evaluation.evaluator.lastName}</p>
                                         )}
                                         {evaluation.completionDate && (
-                                            <p>✅ {new Date(evaluation.completionDate).toLocaleDateString('es-CL')}</p>
+                                            <p>{new Date(evaluation.completionDate).toLocaleDateString('es-CL')}</p>
                                         )}
                                     </div>
                                 )}
 
                                 {!hasEvaluation && (
-                                    <p className="text-xs text-gray-500 mt-2">⏳ Evaluación pendiente</p>
+                                    <div className="mt-3">
+                                        <p className="text-xs text-gray-500 mb-2">Evaluación pendiente</p>
+                                        <Button
+                                            size="sm"
+                                            variant="primary"
+                                            className="w-full text-xs"
+                                            onClick={() => handleAssignEvaluatorFromDetail(type.type)}
+                                        >
+                                            <FiUser className="w-3 h-3 mr-1" />
+                                            Asignar Evaluador
+                                        </Button>
+                                    </div>
                                 )}
 
-                                {hasEvaluation && (
+                                {hasEvaluation && evaluation.status === 'PENDING' && (
+                                    <div className="mt-3">
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="w-full text-xs"
+                                            onClick={() => handleAssignEvaluatorFromDetail(type.type)}
+                                        >
+                                            <FiEdit className="w-3 h-3 mr-1" />
+                                            Asignar Evaluador
+                                        </Button>
+                                    </div>
+                                )}
+
+                                {hasEvaluation && (evaluation.status === 'IN_PROGRESS' || evaluation.status === 'COMPLETED') && (
                                     <div className="mt-3">
                                         <Button
                                             size="sm"
@@ -1307,15 +1509,15 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                         {/* Header */}
                         <div className="bg-blue-50 p-4 rounded-lg">
                             <h3 className="text-lg font-bold text-blue-900">
-                                {selectedEvaluation.evaluationType === 'MATHEMATICS_EXAM' && '📐 Examen de Matemática'}
-                                {selectedEvaluation.evaluationType === 'LANGUAGE_EXAM' && '📚 Examen de Lenguaje'}
-                                {selectedEvaluation.evaluationType === 'ENGLISH_EXAM' && '🌎 Examen de Inglés'}
-                                {selectedEvaluation.evaluationType === 'PSYCHOLOGICAL_INTERVIEW' && '🧠 Entrevista Psicológica'}
-                                {selectedEvaluation.evaluationType === 'DIRECTOR_INTERVIEW' && '👔 Entrevista Director(a) de Ciclo'}
-                                {selectedEvaluation.evaluationType === 'DIRECTOR_REPORT' && '📋 Informe Director(a) de Ciclo'}
+                                {selectedEvaluation.evaluationType === 'MATHEMATICS_EXAM' && 'Examen de Matemática'}
+                                {selectedEvaluation.evaluationType === 'LANGUAGE_EXAM' && 'Examen de Lenguaje'}
+                                {selectedEvaluation.evaluationType === 'ENGLISH_EXAM' && 'Examen de Inglés'}
+                                {selectedEvaluation.evaluationType === 'PSYCHOLOGICAL_INTERVIEW' && 'Entrevista Psicológica'}
+                                {selectedEvaluation.evaluationType === 'DIRECTOR_INTERVIEW' && 'Entrevista Director(a) de Ciclo'}
+                                {selectedEvaluation.evaluationType === 'DIRECTOR_REPORT' && 'Informe Director(a) de Ciclo'}
                             </h3>
                             <div className="flex items-center gap-4 mt-2 text-sm text-blue-700">
-                                <span>👤 {selectedEvaluation.evaluator?.firstName} {selectedEvaluation.evaluator?.lastName}</span>
+                                <span className="font-medium">Evaluador: {selectedEvaluation.evaluator?.firstName} {selectedEvaluation.evaluator?.lastName}</span>
                                 {selectedEvaluation.completionDate && (
                                     <span>📅 {new Date(selectedEvaluation.completionDate).toLocaleDateString('es-CL', { dateStyle: 'long' })}</span>
                                 )}
@@ -1414,26 +1616,26 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                             <div className="space-y-4">
                                 {selectedEvaluation.academicReadiness && (
                                     <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                                        <h4 className="font-semibold text-blue-900 mb-2">📚 Preparación Académica</h4>
+                                        <h4 className="font-semibold text-blue-900 mb-2">Preparación Académica</h4>
                                         <p className="text-gray-700 whitespace-pre-wrap">{selectedEvaluation.academicReadiness}</p>
                                     </div>
                                 )}
                                 {selectedEvaluation.behavioralAssessment && (
                                     <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-                                        <h4 className="font-semibold text-purple-900 mb-2">🎭 Evaluación Conductual</h4>
+                                        <h4 className="font-semibold text-purple-900 mb-2">Evaluación Conductual</h4>
                                         <p className="text-gray-700 whitespace-pre-wrap">{selectedEvaluation.behavioralAssessment}</p>
                                     </div>
                                 )}
                                 {selectedEvaluation.integrationPotential && (
                                     <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                                        <h4 className="font-semibold text-green-900 mb-2">🌟 Potencial de Integración</h4>
+                                        <h4 className="font-semibold text-green-900 mb-2">Potencial de Integración</h4>
                                         <p className="text-gray-700 whitespace-pre-wrap">{selectedEvaluation.integrationPotential}</p>
                                     </div>
                                 )}
                                 {selectedEvaluation.finalRecommendation !== undefined && (
                                     <div className={`p-4 rounded-lg border-2 ${selectedEvaluation.finalRecommendation ? 'bg-green-50 border-green-400' : 'bg-red-50 border-red-400'}`}>
                                         <h4 className={`font-bold mb-2 ${selectedEvaluation.finalRecommendation ? 'text-green-900' : 'text-red-900'}`}>
-                                            {selectedEvaluation.finalRecommendation ? '✅ Recomendación Positiva' : '❌ No Recomendado'}
+                                            {selectedEvaluation.finalRecommendation ? 'Recomendación Positiva' : 'No Recomendado'}
                                         </h4>
                                     </div>
                                 )}
@@ -1458,6 +1660,106 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                                 }}
                             >
                                 Cerrar
+                            </Button>
+                        </div>
+                    </div>
+                </Modal>
+            )}
+
+            {/* Modal de Asignación de Evaluador Individual */}
+            {showAssignEvaluatorModal && selectedEvaluationType && (
+                <Modal
+                    isOpen={showAssignEvaluatorModal}
+                    onClose={() => {
+                        setShowAssignEvaluatorModal(false);
+                        setAssignMessage(null);
+                        setIsAssigning(false);
+                    }}
+                    title="Asignar Evaluador"
+                    size="md"
+                >
+                    <div className="space-y-4">
+                        {/* Información del estudiante */}
+                        <div className="bg-blue-50 p-4 rounded-lg">
+                            <h4 className="font-medium text-blue-800 mb-1">
+                                {postulante?.nombreCompleto}
+                            </h4>
+                            <p className="text-blue-600 text-sm">
+                                Curso: {postulante?.cursoPostulado}
+                            </p>
+                        </div>
+
+                        {/* Tipo de evaluación */}
+                        <div className="bg-gray-50 p-3 rounded-lg">
+                            <p className="text-sm text-gray-600">Tipo de Evaluación:</p>
+                            <p className="font-medium text-gray-900">
+                                {selectedEvaluationType === 'MATHEMATICS_EXAM' && 'Examen de Matemática'}
+                                {selectedEvaluationType === 'LANGUAGE_EXAM' && 'Examen de Lenguaje'}
+                                {selectedEvaluationType === 'ENGLISH_EXAM' && 'Examen de Inglés'}
+                                {selectedEvaluationType === 'PSYCHOLOGICAL_INTERVIEW' && 'Entrevista Psicológica'}
+                                {selectedEvaluationType === 'CYCLE_DIRECTOR_INTERVIEW' && 'Entrevista Director(a) de Ciclo'}
+                                {selectedEvaluationType === 'CYCLE_DIRECTOR_REPORT' && 'Informe Director(a) de Ciclo'}
+                            </p>
+                        </div>
+
+                        {/* Selector de evaluador */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Seleccionar Evaluador
+                            </label>
+                            <select
+                                value={selectedEvaluatorId}
+                                onChange={(e) => setSelectedEvaluatorId(Number(e.target.value))}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                disabled={isAssigning}
+                            >
+                                <option value={0}>-- Seleccione un evaluador --</option>
+                                {availableEvaluators.map((evaluator) => (
+                                    <option key={evaluator.id} value={evaluator.id}>
+                                        {evaluator.firstName} {evaluator.lastName}
+                                        {evaluator.subject && ` - ${evaluator.subject}`}
+                                        {evaluator.role && ` (${evaluator.role})`}
+                                    </option>
+                                ))}
+                            </select>
+                            {availableEvaluators.length === 0 && (
+                                <p className="text-sm text-amber-600 mt-2">
+                                    No hay evaluadores disponibles para este tipo de evaluación
+                                </p>
+                            )}
+                        </div>
+
+                        {/* Mensaje de feedback */}
+                        {assignMessage && (
+                            <div className={`p-4 rounded-lg ${
+                                assignMessage.type === 'success'
+                                    ? 'bg-green-50 border border-green-200 text-green-800'
+                                    : 'bg-red-50 border border-red-200 text-red-800'
+                            }`}>
+                                <p className="text-sm font-medium">{assignMessage.text}</p>
+                            </div>
+                        )}
+
+                        {/* Botones */}
+                        <div className="flex justify-end gap-3 pt-4 border-t">
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    setShowAssignEvaluatorModal(false);
+                                    setAssignMessage(null);
+                                    setIsAssigning(false);
+                                }}
+                                disabled={isAssigning}
+                            >
+                                Cancelar
+                            </Button>
+                            <Button
+                                variant="primary"
+                                onClick={handleConfirmAssignment}
+                                disabled={isAssigning || selectedEvaluatorId === 0}
+                                isLoading={isAssigning}
+                            >
+                                {isAssigning ? 'Asignando...' : 'Asignar Evaluador'}
                             </Button>
                         </div>
                     </div>

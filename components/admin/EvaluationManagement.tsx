@@ -44,6 +44,7 @@ import {
 interface EvaluationManagementProps {
   applications: Application[];
   onRefresh: () => void;
+  onAssign: (applicationId: number, assignments: EvaluatorAssignment[]) => Promise<void>;
 }
 
 interface EvaluatorAssignment {
@@ -58,7 +59,8 @@ interface EvaluatorCache {
 
 const EvaluationManagement: React.FC<EvaluationManagementProps> = ({
   applications,
-  onRefresh
+  onRefresh,
+  onAssign
 }) => {
   const [evaluators, setEvaluators] = useState<any[]>([]);
   const [evaluatorCache, setEvaluatorCache] = useState<EvaluatorCache>({});
@@ -404,6 +406,8 @@ const CustomAssignmentModal: React.FC<CustomAssignmentModalProps> = ({
   getEvaluatorsByType
 }) => {
   const [assignments, setAssignments] = useState<EvaluatorAssignment[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
   const requiredEvaluations = [
     EvaluationType.LANGUAGE_EXAM,
@@ -422,6 +426,8 @@ const CustomAssignmentModal: React.FC<CustomAssignmentModalProps> = ({
         evaluatorName: ''
       }));
       setAssignments(initialAssignments);
+      setSubmitMessage(null); // Limpiar mensajes previos
+      setIsSubmitting(false);
     }
   }, [isOpen]);
 
@@ -439,13 +445,35 @@ const CustomAssignmentModal: React.FC<CustomAssignmentModalProps> = ({
     ));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const validAssignments = assignments.filter(a => a.evaluatorId > 0);
     if (validAssignments.length === 0) {
-      alert('Debe asignar al menos un evaluador');
+      setSubmitMessage({ type: 'error', text: 'Debe asignar al menos un evaluador' });
       return;
     }
-    onAssign(application.id, validAssignments);
+
+    setIsSubmitting(true);
+    setSubmitMessage({ type: 'success', text: `Asignando ${validAssignments.length} evaluador(es)... Por favor espere.` });
+
+    try {
+      await onAssign(application.id, validAssignments);
+      setSubmitMessage({
+        type: 'success',
+        text: `✅ Se asignaron ${validAssignments.length} evaluador(es) correctamente. Se han enviado notificaciones por email.`
+      });
+
+      // Cerrar modal después de 2 segundos para que el usuario vea el mensaje
+      setTimeout(() => {
+        onClose();
+      }, 2000);
+    } catch (error: any) {
+      console.error('Error en handleSubmit:', error);
+      setSubmitMessage({
+        type: 'error',
+        text: `❌ Error: ${error.message || 'No se pudieron asignar los evaluadores. Por favor intente nuevamente.'}`
+      });
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -509,21 +537,32 @@ const CustomAssignmentModal: React.FC<CustomAssignmentModalProps> = ({
           })}
         </div>
 
+        {/* Mensaje de feedback */}
+        {submitMessage && (
+          <div className={`p-4 rounded-lg ${
+            submitMessage.type === 'success'
+              ? 'bg-green-50 border border-green-200 text-green-800'
+              : 'bg-red-50 border border-red-200 text-red-800'
+          }`}>
+            <p className="text-sm font-medium">{submitMessage.text}</p>
+          </div>
+        )}
+
         <div className="flex justify-end space-x-3 pt-4 border-t">
           <Button
             variant="outline"
             onClick={onClose}
-            disabled={isLoading}
+            disabled={isSubmitting}
           >
             Cancelar
           </Button>
           <Button
             variant="primary"
             onClick={handleSubmit}
-            disabled={isLoading}
-            isLoading={isLoading}
+            disabled={isSubmitting}
+            isLoading={isSubmitting}
           >
-            Asignar Evaluadores
+            {isSubmitting ? 'Asignando...' : 'Asignar Evaluadores'}
           </Button>
         </div>
       </div>
