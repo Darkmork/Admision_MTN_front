@@ -363,9 +363,19 @@ const ProfessorDashboard: React.FC = () => {
                     <Button
                         size="sm"
                         variant="primary"
-                        onClick={() => navigate(`/profesor/informe/${evaluation.id}`)}
+                        onClick={() => navigate(
+                            evaluation.evaluationType === 'CYCLE_DIRECTOR_INTERVIEW'
+                                ? `/profesor/entrevista-director/${evaluation.id}`
+                                : evaluation.evaluationType === 'CYCLE_DIRECTOR_REPORT'
+                                ? `/profesor/informe-director/${evaluation.id}`
+                                : `/profesor/informe/${evaluation.id}`
+                        )}
                     >
-                        {evaluation.status === EvaluationStatus.COMPLETED ? "Ver Informe" : "Completar Informe"}
+                        {evaluation.evaluationType === 'CYCLE_DIRECTOR_INTERVIEW'
+                            ? (evaluation.status === EvaluationStatus.COMPLETED ? "Ver Entrevista" : "Crear Entrevista")
+                            : evaluation.evaluationType === 'CYCLE_DIRECTOR_REPORT'
+                            ? (evaluation.status === EvaluationStatus.COMPLETED ? "Ver Informe" : "Completar Informe")
+                            : (evaluation.status === EvaluationStatus.COMPLETED ? "Ver Informe" : "Completar Informe")}
                     </Button>
                 )
             }
@@ -506,8 +516,10 @@ const ProfessorDashboard: React.FC = () => {
                                 )}
                                 title={getEvaluationTypeLabel(evaluation.evaluationType)}
                             >
-                                {evaluation.evaluationType === 'CYCLE_DIRECTOR_INTERVIEW' 
+                                {evaluation.evaluationType === 'CYCLE_DIRECTOR_INTERVIEW'
                                     ? (evaluation.status === EvaluationStatus.COMPLETED ? "Ver Entrevista" : "Entrevista")
+                                    : evaluation.evaluationType === 'CYCLE_DIRECTOR_REPORT'
+                                    ? (evaluation.status === EvaluationStatus.COMPLETED ? "Ver Informe" : "Informe")
                                     : (evaluation.status === EvaluationStatus.COMPLETED ? "Ver Informe" : "Evaluar")}
                             </Button>
                         ))}

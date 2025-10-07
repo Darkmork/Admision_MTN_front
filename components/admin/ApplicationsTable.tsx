@@ -29,6 +29,7 @@ const ApplicationsTable: React.FC<ApplicationsTableProps> = ({
   className = ''
 }) => {
   console.log('📊 ApplicationsTable render - applications:', applications.length, 'onView:', !!onView);
+  console.log('📊 First application data:', applications[0]);
 
   if (isLoading) {
     return (
@@ -151,13 +152,13 @@ const ApplicationsTable: React.FC<ApplicationsTableProps> = ({
                     <div className="flex-shrink-0 h-10 w-10">
                       <div className="h-10 w-10 rounded-full bg-azul-monte-tabor bg-opacity-10 flex items-center justify-center">
                         <span className="text-sm font-medium text-azul-monte-tabor">
-                          {application.student?.firstName?.charAt(0) || 'N'}{application.student?.lastName?.charAt(0) || 'N'}
+                          {application.student?.firstName?.charAt(0) || 'N'}{(application.student?.paternalLastName || application.student?.lastName)?.charAt(0) || 'N'}
                         </span>
                       </div>
                     </div>
                     <div className="ml-4">
                       <div className="text-sm font-medium text-gray-900">
-                        {application.student?.firstName || 'N/A'} {application.student?.lastName || 'N/A'}
+                        {application.student?.firstName || 'N/A'} {application.student?.paternalLastName || application.student?.lastName || 'N/A'} {application.student?.maternalLastName || ''}
                       </div>
                       <div className="text-sm text-gray-500">
                         RUT: {application.student?.rut || 'N/A'}
@@ -174,10 +175,10 @@ const ApplicationsTable: React.FC<ApplicationsTableProps> = ({
                 {/* Apoderado */}
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-900">
-                    {application.applicantUser?.firstName || 'N/A'} {application.applicantUser?.lastName || ''}
+                    {application.guardian?.fullName || application.applicantUser?.firstName + ' ' + application.applicantUser?.lastName || 'N/A'}
                   </div>
                   <div className="text-sm text-gray-500">
-                    {application.applicantUser?.email || 'Sin información de apoderado'}
+                    {application.guardian?.email || application.applicantUser?.email || 'Sin información de apoderado'}
                   </div>
                 </td>
 

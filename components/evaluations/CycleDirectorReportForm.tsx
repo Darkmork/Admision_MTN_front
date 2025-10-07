@@ -120,39 +120,88 @@ const CycleDirectorReportForm: React.FC = () => {
 
     const loadSubjectEvaluations = async (applicationId: number) => {
         try {
-            // Obtener todas las evaluaciones del profesor actual
-            const allEvaluations = await professorEvaluationService.getMyEvaluations();
-            
-            // Filtrar solo las evaluaciones académicas de la misma aplicación
-            const subjectEvals = allEvaluations.filter(evalItem => 
-                evalItem.applicationId === applicationId && 
+            console.log('🔄 Cargando evaluaciones académicas para application:', applicationId);
+
+            // Obtener todas las evaluaciones de esta aplicación desde el backend
+            const response = await fetch(`http://localhost:8080/api/evaluations?applicationId=${applicationId}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('professor_token') || localStorage.getItem('auth_token')}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Error al obtener evaluaciones');
+            }
+
+            const data = await response.json();
+            const allEvaluations = data.data || data;
+
+            console.log('📊 Todas las evaluaciones de la aplicación:', allEvaluations);
+
+            // Filtrar solo las evaluaciones académicas completadas
+            const subjectEvals = allEvaluations.filter((evalItem: any) =>
                 ['MATHEMATICS_EXAM', 'LANGUAGE_EXAM', 'ENGLISH_EXAM'].includes(evalItem.evaluationType) &&
                 evalItem.status === 'COMPLETED'
             );
-            
-            setSubjectEvaluations(subjectEvals);
-            console.log('✅ Evaluaciones académicas cargadas:', subjectEvals);
-            
+
+            // Mapear al formato esperado por el componente
+            const mappedEvals = subjectEvals.map((evalItem: any) => ({
+                id: evalItem.id,
+                applicationId: evalItem.applicationId,
+                evaluationType: evalItem.evaluationType,
+                status: evalItem.status,
+                score: evalItem.score,
+                maxScore: evalItem.maxScore || getMaxScoreForType(evalItem.evaluationType),
+                observations: evalItem.observations || '',
+                recommendations: evalItem.recommendations || '',
+                strengths: evalItem.strengths || '',
+                areasForImprovement: evalItem.areasForImprovement || '',
+                studentName: evalItem.student ? `${evalItem.student.firstName} ${evalItem.student.lastName}` : '',
+                studentGrade: evalItem.student ? evalItem.student.gradeApplied : ''
+            }));
+
+            setSubjectEvaluations(mappedEvals as any);
+            console.log('✅ Evaluaciones académicas cargadas y mapeadas:', mappedEvals);
+
         } catch (error) {
             console.error('❌ Error cargando evaluaciones académicas:', error);
+            addNotification({
+                type: 'warning',
+                title: 'Atención',
+                message: 'No se pudieron cargar algunas evaluaciones académicas. Los resultados pueden estar incompletos.'
+            });
         }
     };
 
     const getSubjectResults = (): SubjectResult[] => {
         const subjects = ['Matemática', 'Lenguaje', 'Inglés'];
         const evaluationTypes = ['MATHEMATICS_EXAM', 'LANGUAGE_EXAM', 'ENGLISH_EXAM'];
-        
+
         return subjects.map((subject, index) => {
-            const evaluation = subjectEvaluations.find(evalItem => 
+            const evaluation = subjectEvaluations.find(evalItem =>
                 evalItem.evaluationType === evaluationTypes[index]
             );
-            
+
+            if (!evaluation) {
+                return {
+                    subject,
+                    score: 0,
+                    percentage: 0,
+                    comments: 'Evaluación pendiente',
+                    recommendations: ''
+                };
+            }
+
+            const maxScore = (evaluation as any).maxScore || getMaxScoreForType(evaluationTypes[index]);
+            const score = evaluation.score || 0;
+            const percentage = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
+
             return {
                 subject,
-                score: evaluation?.score || 0,
-                percentage: evaluation?.score ? Math.round((evaluation.score / getMaxScoreForType(evaluationTypes[index])) * 100) : 0,
-                comments: evaluation?.observations || '',
-                recommendations: evaluation?.recommendations || ''
+                score,
+                percentage,
+                comments: evaluation.observations || '',
+                recommendations: evaluation.recommendations || (evaluation as any).areasForImprovement || ''
             };
         });
     };
@@ -221,7 +270,7 @@ const CycleDirectorReportForm: React.FC = () => {
                 newWindow.document.write(`
                     <html>
                         <head>
-                            <title>Informe Admisión 2025 - Director de Ciclo</title>
+                            <title>Informe Admisión ${new Date().getFullYear() + 1} - Director de Ciclo</title>
                             <style>
                                 body { font-family: Arial, sans-serif; margin: 20px; }
                                 .header { text-align: center; margin-bottom: 30px; }
@@ -276,7 +325,7 @@ const CycleDirectorReportForm: React.FC = () => {
                     
                     <div className="flex justify-between items-center">
                         <h1 className="text-2xl font-bold text-azul-monte-tabor">
-                            Informe Director de Ciclo 2025
+                            Informe Director de Ciclo {new Date().getFullYear() + 1}
                         </h1>
                         <div className="flex gap-3">
                             <Button
@@ -304,7 +353,7 @@ const CycleDirectorReportForm: React.FC = () => {
                     {/* Encabezado del informe */}
                     <div className="text-center mb-8">
                         <h1 className="text-2xl font-bold text-azul-monte-tabor mb-2">
-                            INFORME ADMISIÓN 2025 - DIRECTOR DE CICLO
+                            INFORME ADMISIÓN {new Date().getFullYear() + 1} - DIRECTOR DE CICLO
                         </h1>
                     </div>
 
@@ -489,7 +538,7 @@ const CycleDirectorReportForm: React.FC = () => {
                     <div className="mt-8 pt-4 border-t border-gray-300 text-xs text-gray-600">
                         <p>Fecha de evaluación: {new Date().toLocaleDateString('es-CL')}</p>
                         <p>Director de Ciclo: {currentProfessor?.firstName} {currentProfessor?.lastName}</p>
-                        <p>Colegio Monte Tabor y Nazaret - Sistema de Admisión 2025</p>
+                        <p>Colegio Monte Tabor y Nazaret - Sistema de Admisión {new Date().getFullYear() + 1}</p>
                     </div>
                 </Card>
             </div>

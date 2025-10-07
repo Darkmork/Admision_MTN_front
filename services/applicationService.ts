@@ -60,6 +60,8 @@ export interface ApplicationResponse {
 export interface Application {
     id: number;
     student: {
+        id?: string;
+        fullName?: string;
         firstName: string;
         lastName: string;
         paternalLastName?: string;
@@ -67,8 +69,8 @@ export interface Application {
         rut: string;
         birthDate: string;
         email?: string;
-        address: string;
-        gradeApplied: string;
+        address?: string;
+        gradeApplied?: string;
         currentSchool?: string;
         additionalNotes?: string;
         // Campos de categorías especiales
@@ -132,11 +134,15 @@ class ApplicationService {
             try {
                 console.log('🔄 Probando endpoint principal: /api/applications');
                 const response = await api.get('/api/applications');
-                console.log('✅ Éxito con endpoint principal:', response.data?.length, 'aplicaciones');
+                console.log('✅ Respuesta del endpoint principal:', response.data);
+
+                // El backend devuelve {success: true, data: [...]}
+                const applications = response.data?.data || response.data || [];
+                console.log('✅ Aplicaciones recibidas:', applications.length);
 
                 // El endpoint /api/applications ya devuelve la estructura correcta
                 // No necesitamos adaptador, solo filtrar las aplicaciones válidas
-                const validApplications = (response.data || []).filter((app: any) =>
+                const validApplications = applications.filter((app: any) =>
                     app &&
                     app.id &&
                     app.student &&
@@ -147,7 +153,14 @@ class ApplicationService {
                 );
 
                 console.log('✅ Aplicaciones válidas filtradas:', validApplications.length);
-                console.log('📋 Primera aplicación:', validApplications[0]?.student);
+                if (validApplications.length > 0) {
+                    console.log('📋 Primera aplicación completa:', validApplications[0]);
+                    console.log('📋 Student object:', validApplications[0]?.student);
+                    console.log('📋 firstName:', validApplications[0]?.student?.firstName);
+                    console.log('📋 lastName:', validApplications[0]?.student?.lastName);
+                    console.log('📋 paternalLastName:', validApplications[0]?.student?.paternalLastName);
+                    console.log('📋 maternalLastName:', validApplications[0]?.student?.maternalLastName);
+                }
                 return validApplications;
 
             } catch (mainError) {

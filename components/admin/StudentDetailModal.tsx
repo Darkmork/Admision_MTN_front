@@ -5,7 +5,7 @@ import Button from '../ui/Button';
 import {
     FiUser, FiPhone, FiMail, FiMapPin, FiHome, FiBookOpen, FiCalendar,
     FiFileText, FiEdit, FiDownload, FiClock, FiCheckCircle, FiAlertCircle,
-    FiUsers, FiBriefcase, FiHeart, FiStar, FiEye,
+    FiUsers, FiBriefcase, FiHeart, FiStar, FiEye, FiCheck,
     FiX, FiChevronRight, FiInfo, FiMessageSquare, FiAward, FiRefreshCw
 } from 'react-icons/fi';
 import { useNotifications } from '../../context/AppContext';
@@ -117,6 +117,7 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
     // Cargar información completa de la aplicación, entrevistas y evaluaciones
     useEffect(() => {
         if (postulante && isOpen) {
+            console.log('📊 StudentDetailModal - postulante recibido:', postulante);
             loadFullApplication();
             loadInterviews();
             loadEvaluations();
@@ -1366,16 +1367,35 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                                     </div>
                                 )}
 
-                                {hasEvaluation && evaluation.status === 'PENDING' && (
+                                {hasEvaluation && evaluation.status === 'PENDING' && !evaluation.evaluator && (
                                     <div className="mt-3">
+                                        <p className="text-xs text-orange-600 mb-2">Evaluación creada sin evaluador</p>
+                                        <Button
+                                            size="sm"
+                                            variant="primary"
+                                            className="w-full text-xs"
+                                            onClick={() => handleAssignEvaluatorFromDetail(type.type)}
+                                        >
+                                            <FiUser className="w-3 h-3 mr-1" />
+                                            Asignar Evaluador
+                                        </Button>
+                                    </div>
+                                )}
+
+                                {hasEvaluation && evaluation.status === 'PENDING' && evaluation.evaluator && (
+                                    <div className="mt-3">
+                                        <p className="text-xs text-gray-600 mb-2">
+                                            Ya asignada a: <span className="font-medium">{evaluation.evaluator.firstName} {evaluation.evaluator.lastName}</span>
+                                        </p>
                                         <Button
                                             size="sm"
                                             variant="outline"
                                             className="w-full text-xs"
-                                            onClick={() => handleAssignEvaluatorFromDetail(type.type)}
+                                            disabled
+                                            title="Ya existe una asignación para esta evaluación"
                                         >
-                                            <FiEdit className="w-3 h-3 mr-1" />
-                                            Asignar Evaluador
+                                            <FiCheck className="w-3 h-3 mr-1" />
+                                            Evaluador Asignado
                                         </Button>
                                     </div>
                                 )}

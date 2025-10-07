@@ -4,11 +4,12 @@ import Button from '../ui/Button';
 import { FiUsers, FiFileText, FiBarChart2, FiCalendar, FiBookOpen, FiStar, FiUser, FiMail, FiBell } from 'react-icons/fi';
 import UsersDataTable from './UsersDataTable';
 import ApplicationsDataTable from './ApplicationsDataTable';
-import EnhancedApplicationsDataTable from './EnhancedApplicationsDataTable';
 import PostulantesDataTable from './PostulantesDataTable';
 import EvaluationsDataTable from './EvaluationsDataTable';
+import EvaluationsOverviewTable from './EvaluationsOverviewTable';
 import EmailNotificationsTable from './EmailNotificationsTable';
 import InterviewsDataTable from './InterviewsDataTable';
+import InterviewsOverviewTable from './InterviewsOverviewTable';
 import NotificationConfigPanel from './NotificationConfigPanel';
 import ReportsView from './ReportsView';
 import AnalyticsView from './AnalyticsView';
@@ -18,7 +19,7 @@ import { UserFormMode } from '../../types/user';
 import { userService } from '../../services/userService';
 import { useNotifications } from '../../context/AppContext';
 
-type TableView = 'users' | 'postulantes' | 'applications' | 'evaluations' | 'emails' | 'notifications-config' | 'interviews' | 'reports' | 'analytics';
+type TableView = 'users' | 'postulantes' | 'evaluations' | 'emails' | 'notifications-config' | 'interviews' | 'reports' | 'analytics';
 
 interface AdminDataTablesProps {
     className?: string;
@@ -100,13 +101,6 @@ const AdminDataTables: React.FC<AdminDataTablesProps> = ({ className = '' }) => 
             color: 'teal'
         },
         {
-            key: 'applications' as TableView,
-            title: 'Postulaciones Avanzadas',
-            description: 'Gestión completa con filtros avanzados y exportación',
-            icon: FiFileText,
-            color: 'green'
-        },
-        {
             key: 'evaluations' as TableView,
             title: 'Evaluaciones',
             description: 'Seguimiento de evaluaciones',
@@ -186,54 +180,9 @@ const AdminDataTables: React.FC<AdminDataTablesProps> = ({ className = '' }) => 
                         }}
                     />
                 );
-            
-            case 'applications':
-                return (
-                    <EnhancedApplicationsDataTable
-                        onViewApplication={(app) => {
-                            console.log('Ver aplicación completa:', app);
-                            // TODO: Implementar modal de vista detallada
-                        }}
-                        onEditApplication={(app) => {
-                            console.log('Editar aplicación:', app);
-                            // TODO: Implementar modal de edición
-                        }}
-                        onScheduleInterview={(app) => {
-                            console.log('Programar entrevista para:', app.studentFullName);
-                            // TODO: Implementar modal de programación de entrevista
-                        }}
-                        onScheduleExam={(app) => {
-                            console.log('Programar examen para:', app.studentFullName);
-                            // TODO: Implementar modal de programación de examen
-                        }}
-                        onUpdateStatus={(app, newStatus) => {
-                            console.log('Actualizar estado:', app.studentFullName, 'nuevo estado:', newStatus);
-                            // TODO: Implementar actualización de estado
-                        }}
-                    />
-                );
-            
+
             case 'evaluations':
-                return (
-                    <EvaluationsDataTable
-                        onViewEvaluation={(evaluation) => {
-                            console.log('Ver evaluación:', evaluation);
-                            // TODO: Implementar modal de vista detallada de evaluación
-                        }}
-                        onEditEvaluation={(evaluation) => {
-                            console.log('Editar evaluación:', evaluation);
-                            // TODO: Implementar modal de edición de evaluación
-                        }}
-                        onScheduleEvaluation={(evaluation) => {
-                            console.log('Programar evaluación para:', evaluation.studentName);
-                            // TODO: Implementar modal de programación de evaluación
-                        }}
-                        onUpdateStatus={(evaluation, newStatus) => {
-                            console.log('Actualizar estado de evaluación:', evaluation.studentName, 'nuevo estado:', newStatus);
-                            // TODO: Implementar actualización de estado
-                        }}
-                    />
-                );
+                return <EvaluationsOverviewTable />;
             
             case 'emails':
                 return <EmailNotificationsTable />;
@@ -242,7 +191,7 @@ const AdminDataTables: React.FC<AdminDataTablesProps> = ({ className = '' }) => 
                 return <NotificationConfigPanel />;
 
             case 'interviews':
-                return <InterviewsDataTable />;
+                return <InterviewsOverviewTable />;
             
             case 'reports':
                 return <ReportsView />;
