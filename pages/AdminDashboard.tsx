@@ -196,20 +196,23 @@ const AdminDashboard: React.FC = () => {
 
   // Transformar datos de Application a Postulante para el modal
   const transformApplicationToPostulante = (app: Application): any => {
+    console.log('🔄 transformApplicationToPostulante - app.student:', app.student);
+
     const birthDate = new Date(app.student.birthDate);
     const today = new Date();
-    const age = today.getFullYear() - birthDate.getFullYear() - 
-               (today.getMonth() < birthDate.getMonth() || 
+    const age = today.getFullYear() - birthDate.getFullYear() -
+               (today.getMonth() < birthDate.getMonth() ||
                 (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate()) ? 1 : 0);
-    
-    const nombreCompleto = `${app.student.firstName} ${app.student.lastName}${app.student.maternalLastName ? ' ' + app.student.maternalLastName : ''}`;
-    
+
+    const nombreCompleto = `${app.student.firstName} ${app.student.paternalLastName || app.student.lastName} ${app.student.maternalLastName || ''}`.trim();
+    console.log('✅ nombreCompleto construido:', nombreCompleto);
+
     return {
       id: app.id,
       // Datos básicos del estudiante
       nombreCompleto,
       nombres: app.student.firstName,
-      apellidoPaterno: app.student.lastName,
+      apellidoPaterno: app.student.paternalLastName || app.student.lastName,
       apellidoMaterno: app.student.maternalLastName || '',
       rut: app.student.rut,
       fechaNacimiento: app.student.birthDate,
