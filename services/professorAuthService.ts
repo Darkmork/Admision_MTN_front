@@ -39,14 +39,21 @@ class ProfessorAuthService {
             let payload: any;
 
             if (encryptionService.isEncryptionAvailable()) {
-                console.log('[Professor Auth] Encrypting credentials...');
-                payload = await encryptionService.encryptCredentials({
+                console.log('[Professor Auth] Attempting credential encryption...');
+                const encryptedPayload = await encryptionService.encryptCredentials({
                     email: request.email,
                     password: request.password
                 });
-                console.log('[Professor Auth] Credentials encrypted successfully');
+
+                if (encryptedPayload) {
+                    console.log('[Professor Auth] Credentials encrypted successfully');
+                    payload = encryptedPayload;
+                } else {
+                    console.warn('[Professor Auth] Backend encryption not available, using plaintext');
+                    payload = request;
+                }
             } else {
-                console.warn('[Professor Auth] Encryption not available, falling back to plain text');
+                console.warn('[Professor Auth] Web Crypto API not available, using plaintext');
                 payload = request;
             }
 

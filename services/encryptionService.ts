@@ -48,7 +48,15 @@ class EncryptionService {
         }
 
         try {
-            const response = await api.get<RSAPublicKeyResponse>('/api/auth/public-key');
+            const response = await api.get<any>('/api/auth/public-key');
+
+            // Check if encryption is available
+            if (!response.data || response.data.encryptionAvailable === false) {
+                console.log('[Encryption] Backend encryption not available, using plaintext');
+                this.rsaPublicKey = null;
+                this.keyId = null;
+                return;
+            }
 
             if (!response.data.success || !response.data.publicKey) {
                 throw new Error('Failed to fetch public key from backend');
@@ -92,13 +100,14 @@ class EncryptionService {
      * @param credentials - Object containing email and password
      * @returns Encrypted payload with encryptedData, encryptedKey, iv, authTag
      */
-    async encryptCredentials(credentials: { email: string; password: string }): Promise<EncryptedPayload> {
+    async encryptCredentials(credentials: { email: string; password: string }): Promise<EncryptedPayload | null> {
         try {
             // Ensure we have the latest public key
             await this.fetchPublicKey();
 
             if (!this.rsaPublicKey) {
-                throw new Error('RSA public key not available');
+                console.log('[Encryption] No RSA key available, returning null (plaintext mode)');
+                return null; // Return null to signal plaintext mode
             }
 
             // Step 1: Generate random AES-256 key

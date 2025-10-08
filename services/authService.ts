@@ -33,15 +33,21 @@ class AuthService {
             let payload: any;
 
             if (encryptionService.isEncryptionAvailable()) {
-                console.log('[Auth] Encrypting credentials...');
-                payload = await encryptionService.encryptCredentials({
+                console.log('[Auth] Attempting credential encryption...');
+                const encryptedPayload = await encryptionService.encryptCredentials({
                     email: request.email,
                     password: request.password
                 });
-                console.log('[Auth] Credentials encrypted successfully');
+
+                if (encryptedPayload) {
+                    console.log('[Auth] Credentials encrypted successfully');
+                    payload = encryptedPayload;
+                } else {
+                    console.warn('[Auth] Backend encryption not available, using plaintext');
+                    payload = request;
+                }
             } else {
-                // Fallback to plain text if encryption not supported
-                console.warn('[Auth] Encryption not available, falling back to plain text');
+                console.warn('[Auth] Web Crypto API not available, using plaintext');
                 payload = request;
             }
 
@@ -67,7 +73,7 @@ class AuthService {
             let payload: any;
 
             if (encryptionService.isEncryptionAvailable()) {
-                console.log('[Auth] Encrypting registration password...');
+                console.log('[Auth] Attempting to encrypt registration password...');
 
                 // Create temporary credentials object for encryption
                 const tempCredentials = {
@@ -77,18 +83,22 @@ class AuthService {
 
                 const encryptedCreds = await encryptionService.encryptCredentials(tempCredentials);
 
-                // Combine encrypted password with other registration fields
-                payload = {
-                    ...encryptedCreds,
-                    firstName: request.firstName,
-                    lastName: request.lastName,
-                    rut: request.rut,
-                    phone: request.phone
-                };
-
-                console.log('[Auth] Registration password encrypted successfully');
+                if (encryptedCreds) {
+                    // Combine encrypted password with other registration fields
+                    payload = {
+                        ...encryptedCreds,
+                        firstName: request.firstName,
+                        lastName: request.lastName,
+                        rut: request.rut,
+                        phone: request.phone
+                    };
+                    console.log('[Auth] Registration password encrypted successfully');
+                } else {
+                    console.warn('[Auth] Backend encryption not available, using plaintext');
+                    payload = request;
+                }
             } else {
-                console.warn('[Auth] Encryption not available, falling back to plain text');
+                console.warn('[Auth] Web Crypto API not available, using plaintext');
                 payload = request;
             }
 
