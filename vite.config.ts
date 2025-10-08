@@ -69,7 +69,8 @@ export default defineConfig(({ command, mode }) => {
     
     build: {
       // Security and performance optimizations
-      minify: mode === 'production' ? 'terser' : false,
+      // CHANGED: Disabled terser to prevent build-time optimization of runtime code
+      minify: mode === 'production' ? 'esbuild' : false,
       sourcemap: env.VITE_SOURCE_MAPS === 'true',
       rollupOptions: {
         output: {

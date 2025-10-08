@@ -47,14 +47,10 @@ class HttpClient {
   constructor() {
     this.retryConfig = DEFAULT_RETRY_CONFIG;
 
-    // Get API base URL using runtime detection
-    const baseURL = getApiBaseUrl();
-
-    console.log('🔧 HttpClient initialized with baseURL:', baseURL);
-
-    // Crear instancia de Axios
+    // Create axios instance WITHOUT baseURL
+    // baseURL will be set dynamically in the request interceptor
     this.client = axios.create({
-      baseURL,
+      // NO baseURL - will be set in interceptor
       timeout: DEFAULT_TIMEOUT,
       headers: {
         'Content-Type': 'application/json',
@@ -71,9 +67,19 @@ class HttpClient {
     // Request Interceptor
     this.client.interceptors.request.use(
       async (config) => {
-        const correlationId = crypto.randomUUID();
+        // CRITICAL: Set baseURL at REQUEST TIME to ensure runtime evaluation
+        // This runs in the browser, so getApiBaseUrl() will detect the correct hostname
+        const runtimeBaseURL = getApiBaseUrl();
 
-        console.log('📤 http.ts - Making request to:', config.url);
+        // Build full URL if config.url is relative
+        if (config.url && !config.url.startsWith('http')) {
+          config.url = runtimeBaseURL + config.url;
+        }
+
+        console.log('📤 http.ts - Runtime baseURL:', runtimeBaseURL);
+        console.log('📤 http.ts - Full URL:', config.url);
+
+        const correlationId = crypto.randomUUID();
 
         // Agregar headers de autenticación y correlación
         const token = await this.getAccessToken();
