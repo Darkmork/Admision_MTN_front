@@ -12,6 +12,7 @@
 
 import axios, { AxiosInstance, AxiosResponse, AxiosError } from 'axios';
 import axiosRetry from 'axios-retry';
+import { getApiBaseUrl } from '../../config/api.config';
 
 class HttpClient {
   private axiosInstance: AxiosInstance;
@@ -23,11 +24,10 @@ class HttpClient {
   };
 
   constructor() {
-    // Get base URL from environment variables (API Gateway)
-    const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
-
+    // CRITICAL: Do NOT set baseURL here - it must be set at runtime
+    // Setting it here causes it to be evaluated at build time
     this.axiosInstance = axios.create({
-      baseURL,
+      // NO baseURL - will be set in request interceptor at runtime
       // Timeout set to 10s for better UX - prevents long waits on slow connections
       timeout: parseInt(import.meta.env.VITE_API_TIMEOUT) || 10000,
       headers: {
@@ -85,12 +85,23 @@ class HttpClient {
     // Request interceptor
     this.axiosInstance.interceptors.request.use(
       (config) => {
+        // CRITICAL: Set baseURL at runtime on EVERY request
+        // This ensures the URL is evaluated in the browser, not at build time
+        const runtimeBaseURL = getApiBaseUrl();
+
+        // Only log once to avoid spam
+        if (this.metrics.requestCount === 0) {
+          console.log('📤 http.ts - Runtime baseURL:', runtimeBaseURL);
+        }
+
+        config.baseURL = runtimeBaseURL;
+
         this.metrics.requestCount++;
         this.metrics.lastRequestTime = new Date();
-        
+
         // Add timestamp for response time calculation
         (config as any).startTime = Date.now();
-        
+
         // Request logging removed for security
         return config;
       },

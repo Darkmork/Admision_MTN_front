@@ -6,11 +6,6 @@ export default defineConfig(({ command, mode }) => {
   // Load env file based on `mode` in the current working directory.
   const env = loadEnv(mode, process.cwd(), '');
 
-  // Use Railway URL in production, localhost in development
-  const apiBaseUrl = mode === 'production'
-    ? 'https://admisionmtnbackendv2-production.up.railway.app'
-    : (process.env.VITE_API_BASE_URL || env.VITE_API_BASE_URL || 'http://localhost:8080');
-
   // Security headers for production
   const securityHeaders = mode === 'production' ? {
     'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
@@ -23,10 +18,11 @@ export default defineConfig(({ command, mode }) => {
 
   return {
     // Make env variables available to the client
+    // CRITICAL: DO NOT define VITE_API_BASE_URL here - it must be detected at runtime
     define: {
       'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-      'import.meta.env.VITE_API_BASE_URL': JSON.stringify(apiBaseUrl),
+      // REMOVED: 'import.meta.env.VITE_API_BASE_URL' - now using runtime detection
       '__APP_VERSION__': JSON.stringify(env.VITE_APP_VERSION || '1.0.0'),
       '__BUILD_TIME__': JSON.stringify(new Date().toISOString()),
     },
@@ -93,11 +89,12 @@ export default defineConfig(({ command, mode }) => {
       // Performance budget warnings
       chunkSizeWarningLimit: 1000,
       // Terser optimization options
+      // TEMPORARILY disabled console dropping for production debugging
       terserOptions: mode === 'production' ? {
         compress: {
-          drop_console: true,
+          drop_console: false,  // Keep console logs for now
           drop_debugger: true,
-          pure_funcs: ['console.log', 'console.info', 'console.debug'],
+          pure_funcs: [],  // Don't remove any console methods
         },
         mangle: {
           safari10: true,
@@ -125,8 +122,9 @@ export default defineConfig(({ command, mode }) => {
       define: {
         global: 'globalThis',
       },
-      // Drop console and debugger in production
-      drop: mode === 'production' ? ['console', 'debugger'] : [],
+      // TEMPORARILY keep console logs for production debugging
+      // TODO: Re-enable console dropping after Vercel deployment is verified
+      drop: mode === 'production' ? ['debugger'] : [],
     },
     
     // CSS configuration
