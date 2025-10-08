@@ -6,8 +6,10 @@ export default defineConfig(({ command, mode }) => {
   // Load env file based on `mode` in the current working directory.
   const env = loadEnv(mode, process.cwd(), '');
 
-  // Prioritize Vercel environment variables over .env files
-  const apiBaseUrl = process.env.VITE_API_BASE_URL || env.VITE_API_BASE_URL || 'http://localhost:8080';
+  // Use Railway URL in production, localhost in development
+  const apiBaseUrl = mode === 'production'
+    ? 'https://admisionmtnbackendv2-production.up.railway.app'
+    : (process.env.VITE_API_BASE_URL || env.VITE_API_BASE_URL || 'http://localhost:8080');
 
   // Security headers for production
   const securityHeaders = mode === 'production' ? {
