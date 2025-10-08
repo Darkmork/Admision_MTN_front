@@ -5,6 +5,7 @@
 
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 import { oidcService } from './oidcService';
+import { getApiBaseUrl } from '../config/api.config';
 
 // Tipos
 interface RetryConfig {
@@ -46,12 +47,8 @@ class HttpClient {
   constructor() {
     this.retryConfig = DEFAULT_RETRY_CONFIG;
 
-    // Usar variable de entorno o Railway URL por defecto en producción
-    // VITE_API_BASE_URL debe estar configurado en Vercel
-    const baseURL = import.meta.env.VITE_API_BASE_URL
-      || (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')
-        ? 'https://admisionmtnbackendv2-production.up.railway.app'
-        : 'http://localhost:8080');
+    // Get API base URL using runtime detection
+    const baseURL = getApiBaseUrl();
 
     console.log('🔧 HttpClient initialized with baseURL:', baseURL);
 
