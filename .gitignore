@@ -159,3 +159,4 @@ docker-compose.override.yml
 .snyk
 security-report.*
 vulnerability-report.*
+.vercel
