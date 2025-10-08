@@ -1,9 +1,11 @@
 import axios from 'axios';
 import { csrfService } from './csrfService';
+import { getApiBaseUrl } from '../config/api.config';
 
 // Configuración base de axios - Using nginx gateway for microservices
+// NO baseURL here - will be set in request interceptor for runtime detection
 const api = axios.create({
-    baseURL: 'http://localhost:8080',
+    // baseURL will be set dynamically in the interceptor below
     timeout: 30000, // Aumentado a 30 segundos para consultas complejas
     headers: {
         'Content-Type': 'application/json',
@@ -33,9 +35,18 @@ const isPublicRoute = (url: string): boolean => {
 // Interceptor para agregar el token de autenticación y CSRF token
 api.interceptors.request.use(
     async (config) => {
+        // CRITICAL: Set baseURL at runtime for each request
+        const runtimeBaseURL = getApiBaseUrl();
+
+        // Build full URL if config.url is relative
+        if (config.url && !config.url.startsWith('http')) {
+            config.url = runtimeBaseURL + config.url;
+        }
+
         const url = config.url || '';
         const isPublic = isPublicRoute(url);
 
+        console.log(`📤 api.ts - Runtime baseURL: ${runtimeBaseURL}`);
         console.log(`🔍 API Request: ${url} - Is Public: ${isPublic}`);
 
         // Solo agregar token de autenticación si NO es una ruta pública
