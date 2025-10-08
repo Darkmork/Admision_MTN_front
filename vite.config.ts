@@ -21,6 +21,7 @@ export default defineConfig(({ command, mode }) => {
     define: {
       'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
+      'import.meta.env.VITE_API_BASE_URL': JSON.stringify(env.VITE_API_BASE_URL || 'http://localhost:8080'),
       '__APP_VERSION__': JSON.stringify(env.VITE_APP_VERSION || '1.0.0'),
       '__BUILD_TIME__': JSON.stringify(new Date().toISOString()),
     },
