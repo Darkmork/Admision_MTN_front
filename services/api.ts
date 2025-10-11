@@ -19,6 +19,7 @@ const isPublicRoute = (url: string): boolean => {
         '/api/auth/login',
         '/api/auth/register',
         '/api/auth/refresh',
+        '/api/auth/public-key',
         '/api/email/',
         '/api/usuario-auth/',
         '/api/public/',

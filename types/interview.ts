@@ -14,11 +14,8 @@ export enum InterviewStatus {
 
 // Enum de tipos de entrevista
 export enum InterviewType {
-  INDIVIDUAL = 'INDIVIDUAL',
   FAMILY = 'FAMILY',
-  PSYCHOLOGICAL = 'PSYCHOLOGICAL',
-  ACADEMIC = 'ACADEMIC',
-  BEHAVIORAL = 'BEHAVIORAL'
+  CYCLE_DIRECTOR = 'CYCLE_DIRECTOR'
 }
 
 // Enum de modalidad de entrevista
@@ -50,11 +47,8 @@ export const INTERVIEW_STATUS_LABELS: Record<InterviewStatus, string> = {
 };
 
 export const INTERVIEW_TYPE_LABELS: Record<InterviewType, string> = {
-  [InterviewType.INDIVIDUAL]: 'Individual',
   [InterviewType.FAMILY]: 'Familiar',
-  [InterviewType.PSYCHOLOGICAL]: 'Psicológica',
-  [InterviewType.ACADEMIC]: 'Académica',
-  [InterviewType.BEHAVIORAL]: 'Conductual'
+  [InterviewType.CYCLE_DIRECTOR]: 'Director de Ciclo'
 };
 
 export const INTERVIEW_MODE_LABELS: Record<InterviewMode, string> = {
@@ -77,6 +71,8 @@ export interface Interview {
   applicationId: number;
   interviewerId: number;
   interviewerName: string;
+  secondInterviewerId?: number; // Segundo entrevistador (requerido para entrevistas familiares)
+  secondInterviewerName?: string;
   studentName: string;
   parentNames: string;
   gradeApplied: string;
@@ -85,6 +81,7 @@ export interface Interview {
   mode: InterviewMode;
   scheduledDate: string;
   scheduledTime: string;
+  fullScheduledDateTime?: string; // Fecha/hora completa ISO para display
   duration: number; // en minutos
   location?: string;
   virtualMeetingLink?: string;
@@ -104,6 +101,7 @@ export interface Interview {
 export interface CreateInterviewRequest {
   applicationId: number;
   interviewerId: number;
+  secondInterviewerId?: number; // Segundo entrevistador (requerido para FAMILY)
   type: InterviewType;
   mode: InterviewMode;
   scheduledDate: string;
@@ -118,6 +116,7 @@ export interface CreateInterviewRequest {
 
 export interface UpdateInterviewRequest {
   interviewerId?: number;
+  secondInterviewerId?: number; // Segundo entrevistador (requerido para FAMILY)
   status?: InterviewStatus;
   type?: InterviewType;
   mode?: InterviewMode;
@@ -197,6 +196,16 @@ export interface InterviewStats {
   followUpRequired: number;
   upcomingInterviews: number;
   overdueInterviews: number;
+  averageDuration: number;
+  popularTimeSlots: string[];
+  interviewerPerformance: Array<{
+    interviewerId: number;
+    interviewerName: string;
+    totalInterviews: number;
+    completedInterviews: number;
+    averageScore: number;
+    completionRate: number;
+  }>;
 }
 
 // Interface para calendario de entrevistas

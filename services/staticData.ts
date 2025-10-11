@@ -69,7 +69,7 @@ export const educationalLevelsForForm = [
 export const examSubjects: any[] = [
   {
     id: 'MATH',
-    name: 'Matemáticas',
+    name: 'Matemática',
     description: 'Evaluación de conocimientos matemáticos básicos',
     educationalLevel: ['BASIC', 'HIGH_SCHOOL'],
     duration: 80,
@@ -87,7 +87,7 @@ export const examSubjects: any[] = [
   },
   {
     id: 'SPANISH',
-    name: 'Lenguaje y Comunicación',
+    name: 'Lenguaje',
     description: 'Evaluación de comprensión lectora y expresión escrita',
     educationalLevel: ['BASIC', 'HIGH_SCHOOL'],
     duration: 80,

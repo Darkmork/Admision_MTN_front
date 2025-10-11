@@ -586,8 +586,7 @@ const CycleDirectorReportForm: React.FC = () => {
                                 <thead>
                                     <tr className="bg-gray-100">
                                         <th className="border border-gray-400 px-4 py-2 text-left font-bold">ASIGNATURA</th>
-                                        <th className="border border-gray-400 px-4 py-2 text-left font-bold">PUNTAJE</th>
-                                        <th className="border border-gray-400 px-4 py-2 text-left font-bold">%</th>
+                                        <th className="border border-gray-400 px-4 py-2 text-center font-bold">PORCENTAJE</th>
                                         <th className="border border-gray-400 px-4 py-2 text-left font-bold">COMENTARIOS</th>
                                         <th className="border border-gray-400 px-4 py-2 text-left font-bold">ÁREAS A TRABAJAR/ RECOMENDACIONES</th>
                                     </tr>
@@ -598,10 +597,7 @@ const CycleDirectorReportForm: React.FC = () => {
                                             <td className="border border-gray-400 px-4 py-2 font-medium">
                                                 {result.subject}
                                             </td>
-                                            <td className="border border-gray-400 px-4 py-2 text-center">
-                                                {result.score > 0 ? result.score : '-'}
-                                            </td>
-                                            <td className="border border-gray-400 px-4 py-2 text-center">
+                                            <td className="border border-gray-400 px-4 py-2 text-center font-semibold text-blue-600">
                                                 {result.percentage > 0 ? `${result.percentage}%` : '-'}
                                             </td>
                                             <td className="border border-gray-400 px-4 py-2">

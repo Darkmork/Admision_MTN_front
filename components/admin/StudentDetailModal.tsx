@@ -16,6 +16,7 @@ import evaluationService from '../../services/evaluationService';
 import { Evaluation, EvaluationType } from '../../types/evaluation';
 import institutionalEmailService from '../../services/institutionalEmailService';
 import { userService } from '../../services/userService';
+import { DocumentType } from '../../types/document';
 
 interface Postulante {
     id: number;
@@ -69,10 +70,7 @@ interface Postulante {
 // Tipos de entrevistas requeridas
 const REQUIRED_INTERVIEW_TYPES = [
   { type: 'FAMILY', title: 'Familiar', icon: '👨‍👩‍👧‍👦', required: true },
-  { type: 'INDIVIDUAL', title: 'Individual', icon: '👤', required: true },
-  { type: 'PSYCHOLOGICAL', title: 'Psicológica', icon: '🧠', required: true },
-  { type: 'ACADEMIC', title: 'Académica', icon: '📚', required: true },
-  { type: 'OTHER', title: 'Adicional', icon: '➕', required: false }
+  { type: 'CYCLE_DIRECTOR', title: 'Director de Ciclo', icon: '👔', required: true }
 ];
 
 interface StudentDetailModalProps {
@@ -95,6 +93,7 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
     onAssignEvaluator
 }) => {
     const [activeTab, setActiveTab] = useState<'info' | 'familia' | 'academico' | 'entrevistas' | 'evaluaciones' | 'documentos' | 'historial'>('info');
+    const [documentSubTab, setDocumentSubTab] = useState<'academic' | 'other'>('academic');
     const [fullApplication, setFullApplication] = useState<Application | null>(null);
     const [interviews, setInterviews] = useState<Interview[]>([]);
     const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
@@ -112,6 +111,8 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
     const [isAssigning, setIsAssigning] = useState(false);
     const [assignMessage, setAssignMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [sendingReminders, setSendingReminders] = useState(false);
+    const [viewingDocument, setViewingDocument] = useState<any>(null);
+    const [showDocumentViewer, setShowDocumentViewer] = useState(false);
     const { addNotification } = useNotifications();
 
     // Cargar información completa de la aplicación, entrevistas y evaluaciones
@@ -129,10 +130,30 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
 
         setLoading(true);
         try {
+            console.log('🔍 Cargando aplicación completa para postulante ID:', postulante.id);
             const app = await applicationService.getApplicationById(postulante.id);
+            console.log('✅ Aplicación cargada:', app);
+            console.log('📄 Documentos recibidos:', app?.documents);
+            console.log('📊 Cantidad de documentos:', app?.documents?.length);
             setFullApplication(app);
+
+            // Initialize document approval status from database
+            if (app?.documents) {
+                const approvalStatus: Record<number, boolean> = {};
+                app.documents.forEach((doc: any, index: number) => {
+                    // approval_status from DB: 'PENDING', 'APPROVED', 'REJECTED'
+                    if (doc.approval_status === 'APPROVED') {
+                        approvalStatus[index] = true;
+                    } else if (doc.approval_status === 'REJECTED') {
+                        approvalStatus[index] = false;
+                    }
+                    // PENDING documents are not set (undefined) so checkbox is unchecked
+                });
+                console.log('📋 Estado de aprobación inicializado:', approvalStatus);
+                setDocumentApprovalStatus(approvalStatus);
+            }
         } catch (error) {
-            console.error('Error loading full application:', error);
+            console.error('❌ Error loading full application:', error);
             addNotification({
                 type: 'warning',
                 title: 'Información limitada',
@@ -333,11 +354,89 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
         }
     };
 
-    const toggleDocumentApproval = (docIndex: number) => {
-        setDocumentApprovalStatus(prev => ({
-            ...prev,
-            [docIndex]: !prev[docIndex]
-        }));
+    const toggleDocumentApproval = async (docIndex: number) => {
+        if (!fullApplication?.documents) return;
+
+        const document = fullApplication.documents[docIndex];
+        if (!document) return;
+
+        // LOCK: Prevent toggling if document is already approved in database (permanent lock)
+        if (document.approval_status === 'APPROVED') {
+            addNotification({
+                type: 'info',
+                title: 'Documento Bloqueado',
+                message: 'Este documento ya fue aprobado y no puede ser modificado. Solo se permite aprobar una vez.'
+            });
+            return;
+        }
+
+        try {
+            // Get current approval status
+            const currentStatus = documentApprovalStatus[docIndex];
+
+            // Determine new status:
+            // undefined/null -> true (APPROVED)
+            // true (APPROVED) -> false (REJECTED)
+            // false (REJECTED) -> undefined (PENDING)
+            let newLocalStatus: boolean | undefined;
+            let newBackendStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
+
+            if (currentStatus === undefined || currentStatus === null) {
+                newLocalStatus = true;
+                newBackendStatus = 'APPROVED';
+            } else if (currentStatus === true) {
+                newLocalStatus = false;
+                newBackendStatus = 'REJECTED';
+            } else {
+                newLocalStatus = undefined;
+                newBackendStatus = 'PENDING';
+            }
+
+            // Update local state immediately for responsive UI
+            setDocumentApprovalStatus(prev => ({
+                ...prev,
+                [docIndex]: newLocalStatus
+            }));
+
+            // Call backend to persist the change
+            await applicationService.updateDocumentApprovalStatus(document.id, newBackendStatus);
+
+            console.log(`✅ Documento ${document.id} actualizado a ${newBackendStatus}`);
+
+        } catch (error: any) {
+            console.error('❌ Error actualizando estado de aprobación:', error);
+
+            // Revert local state on error
+            setDocumentApprovalStatus(prev => ({
+                ...prev,
+                [docIndex]: documentApprovalStatus[docIndex]
+            }));
+
+            addNotification({
+                type: 'error',
+                title: 'Error',
+                message: error.message || 'No se pudo actualizar el estado de aprobación del documento'
+            });
+        }
+    };
+
+    const handleViewDocument = (doc: any) => {
+        console.log('👁️ Abriendo visor para documento:', doc);
+        setViewingDocument(doc);
+        setShowDocumentViewer(true);
+    };
+
+    const getDocumentViewUrl = (doc: any) => {
+        // Construir URL para visualizar el documento con token de autenticación
+        const token = localStorage.getItem('auth_token') || localStorage.getItem('admin_token');
+        const baseUrl = 'http://localhost:8080';
+
+        if (doc.filePath) {
+            // Si tenemos filePath, usar endpoint de view
+            return `${baseUrl}/api/applications/documents/view/${doc.id}?token=${token}`;
+        }
+
+        return null;
     };
 
     const handleSendDocumentNotification = async () => {
@@ -395,7 +494,21 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
         const approvedDocs = fullApplication.documents.filter((_, index) => documentApprovalStatus[index] === true);
         const rejectedDocs = fullApplication.documents.filter((_, index) => documentApprovalStatus[index] === false);
 
-        // Validar que al menos haya ALGÚN documento revisado
+        // LOCK: Check if there are documents that were ALREADY approved in a previous session
+        const alreadyApprovedDocs = (fullApplication?.documents || []).filter(doc =>
+            doc.approval_status === 'APPROVED'
+        );
+
+        if (alreadyApprovedDocs.length > 0) {
+            addNotification({
+                type: 'warning',
+                title: 'Documentos ya aprobados',
+                message: `Hay ${alreadyApprovedDocs.length} documento(s) que ya fueron aprobados previamente. No se puede enviar notificación nuevamente para documentos bloqueados.`
+            });
+            return;
+        }
+
+        // Validar que al menos haya ALGÚN documento revisado (en esta sesión)
         if (approvedDocs.length === 0 && rejectedDocs.length === 0) {
             addNotification({
                 type: 'warning',
@@ -414,8 +527,8 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
             const response = await institutionalEmailService.sendDocumentReviewEmail(
                 postulante.id,
                 {
-                    approvedDocuments: approvedDocs.map(doc => doc.fileName || doc.documentType || 'Documento'),
-                    rejectedDocuments: rejectedDocs.map(doc => doc.fileName || doc.documentType || 'Documento'),
+                    approvedDocuments: approvedDocs.map(doc => doc.fileName || doc.name || 'Documento'),
+                    rejectedDocuments: rejectedDocs.map(doc => doc.fileName || doc.name || 'Documento'),
                     allApproved
                 }
             );
@@ -429,8 +542,12 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                         : `Se notificó al apoderado que ${rejectedDocs.length} documento(s) deben ser resubidos`
                 });
 
-                // Resetear estado de aprobación
-                setDocumentApprovalStatus({});
+                // REMOVED: Do NOT reset approval status - let database persist
+                // The approval status should remain locked after sending notification
+                // setDocumentApprovalStatus({});  // ❌ DELETED - This was causing data loss
+
+                // Refresh application data to get updated approval status from database
+                await loadFullApplication();
             } else {
                 addNotification({
                     type: 'error',
@@ -991,10 +1108,47 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
         );
     };
 
+    // Helper function to classify academic documents (grades only)
+    const isAcademicDocument = (doc: any): boolean => {
+        const academicTypes = [
+            DocumentType.GRADES_2023,
+            DocumentType.GRADES_2024,
+            DocumentType.GRADES_2025_SEMESTER_1
+        ];
+        // Backend sends 'name' field, not 'documentType'
+        return doc.name && academicTypes.includes(doc.name);
+    };
+
+    // Helper function to classify other documents (non-academic)
+    const isOtherDocument = (doc: any): boolean => {
+        return !isAcademicDocument(doc);
+    };
+
     const renderDocumentosTab = () => {
+        console.log('📋 renderDocumentosTab - fullApplication:', fullApplication);
+        console.log('📋 renderDocumentosTab - fullApplication?.documents:', fullApplication?.documents);
+
         const hasDocuments = fullApplication?.documents && fullApplication.documents.length > 0;
+        console.log('📋 hasDocuments:', hasDocuments);
+
+        // Filter documents based on active sub-tab
+        const filteredDocuments = hasDocuments
+            ? fullApplication.documents.filter(doc =>
+                documentSubTab === 'academic' ? isAcademicDocument(doc) : isOtherDocument(doc)
+              )
+            : [];
+
+        console.log('📋 filteredDocuments:', filteredDocuments);
+        console.log('📋 documentSubTab:', documentSubTab);
+
         const approvedCount = hasDocuments ? fullApplication.documents.filter((_, index) => documentApprovalStatus[index]).length : 0;
         const rejectedCount = hasDocuments ? fullApplication.documents.filter((_, index) => documentApprovalStatus[index] === false).length : 0;
+
+        // Get counts for each category
+        const academicDocsCount = hasDocuments ? fullApplication.documents.filter(isAcademicDocument).length : 0;
+        const otherDocsCount = hasDocuments ? fullApplication.documents.filter(isOtherDocument).length : 0;
+
+        console.log('📋 academicDocsCount:', academicDocsCount, 'otherDocsCount:', otherDocsCount);
 
         return (
             <div className="space-y-6">
@@ -1014,7 +1168,7 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                         <span className="font-medium">Estado de Documentos</span>
                     </div>
                     <div className="text-sm text-gray-700">
-                        <p>Total de documentos: <span className="font-medium">{postulante.cantidadDocumentos}</span></p>
+                        <p>Total de documentos: <span className="font-medium">{fullApplication?.documents?.length || postulante.cantidadDocumentos || 0}</span></p>
                         <p className="mt-1">
                             Estado: <Badge variant={postulante.documentosCompletos ? 'green' : 'red'} size="xs">
                                 {postulante.documentosCompletos ? 'Documentación completa' : 'Faltan documentos'}
@@ -1025,9 +1179,43 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
 
                 {hasDocuments ? (
                     <>
+                        {/* Sub-tabs for document categories */}
+                        <div className="flex gap-2 border-b border-gray-200">
+                            <button
+                                onClick={() => setDocumentSubTab('academic')}
+                                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                                    documentSubTab === 'academic'
+                                        ? 'border-blue-500 text-blue-600'
+                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                }`}
+                            >
+                                <FiBookOpen className="w-4 h-4" />
+                                Documentos Académicos
+                                <Badge variant={documentSubTab === 'academic' ? 'blue' : 'gray'} size="xs">
+                                    {academicDocsCount}
+                                </Badge>
+                            </button>
+                            <button
+                                onClick={() => setDocumentSubTab('other')}
+                                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                                    documentSubTab === 'other'
+                                        ? 'border-blue-500 text-blue-600'
+                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                }`}
+                            >
+                                <FiFileText className="w-4 h-4" />
+                                Otros Documentos
+                                <Badge variant={documentSubTab === 'other' ? 'blue' : 'gray'} size="xs">
+                                    {otherDocsCount}
+                                </Badge>
+                            </button>
+                        </div>
+
                         <div className="space-y-3">
                             <div className="flex items-center justify-between">
-                                <h4 className="font-medium text-gray-900">Lista de Documentos</h4>
+                                <h4 className="font-medium text-gray-900">
+                                    {documentSubTab === 'academic' ? 'Notas y Certificados Académicos' : 'Certificados y Documentos Adicionales'}
+                                </h4>
                                 {approvedCount > 0 && (
                                     <div className="text-sm text-gray-600">
                                         <span className="text-green-600 font-medium">{approvedCount} aprobados</span>
@@ -1035,58 +1223,118 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                                     </div>
                                 )}
                             </div>
-                            {fullApplication.documents.map((doc, index) => {
-                                const isApproved = documentApprovalStatus[index];
-                                const isRejected = documentApprovalStatus[index] === false;
 
-                                return (
-                                    <div
-                                        key={index}
-                                        className={`flex items-center justify-between p-3 bg-white border-2 rounded-lg transition-all ${
-                                            isApproved ? 'border-green-300 bg-green-50' :
-                                            isRejected ? 'border-red-300 bg-red-50' :
-                                            'border-gray-200'
-                                        }`}
-                                    >
-                                        <div className="flex items-center gap-3 flex-1">
-                                            <label className="flex items-center cursor-pointer">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={documentApprovalStatus[index] || false}
-                                                    onChange={() => toggleDocumentApproval(index)}
-                                                    className="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500 cursor-pointer"
-                                                />
-                                            </label>
-                                            <FiFileText className={`w-4 h-4 ${isApproved ? 'text-green-600' : isRejected ? 'text-red-600' : 'text-blue-500'}`} />
-                                            <div className="flex-1">
-                                                <span className="text-sm font-medium text-gray-900">
-                                                    {doc.fileName || `Documento ${index + 1}`}
-                                                </span>
-                                                <div className="text-xs text-gray-500">
-                                                    {doc.documentType || 'Tipo no especificado'}
+                            {filteredDocuments.length > 0 ? (
+                                <>
+                                    {filteredDocuments.map((doc, docIndex) => {
+                                        // Get original index from full documents array
+                                        const originalIndex = fullApplication.documents.indexOf(doc);
+                                        const isApproved = documentApprovalStatus[originalIndex];
+                                        const isRejected = documentApprovalStatus[originalIndex] === false;
+                                        // LOCK: Check if document is permanently locked (approved in database)
+                                        const isLocked = doc.approval_status === 'APPROVED';
+
+                                        return (
+                                            <div
+                                                key={originalIndex}
+                                                className={`flex items-center justify-between p-3 bg-white border-2 rounded-lg transition-all ${
+                                                    isLocked ? 'border-green-400 bg-green-100 opacity-90' :
+                                                    isApproved ? 'border-green-300 bg-green-50' :
+                                                    isRejected ? 'border-red-300 bg-red-50' :
+                                                    'border-gray-200'
+                                                }`}
+                                            >
+                                                <div className="flex items-center gap-3 flex-1">
+                                                    <label className={`flex items-center ${isLocked ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={isLocked || documentApprovalStatus[originalIndex] || false}
+                                                            onChange={() => toggleDocumentApproval(originalIndex)}
+                                                            disabled={isLocked}
+                                                            className={`w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500 ${
+                                                                isLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
+                                                            }`}
+                                                        />
+                                                    </label>
+                                                    <FiFileText className={`w-4 h-4 ${
+                                                        isLocked ? 'text-green-700' :
+                                                        isApproved ? 'text-green-600' :
+                                                        isRejected ? 'text-red-600' :
+                                                        'text-blue-500'
+                                                    }`} />
+                                                    <div className="flex-1">
+                                                        <span className="text-sm font-medium text-gray-900">
+                                                            {doc.fileName || `Documento ${originalIndex + 1}`}
+                                                        </span>
+                                                        <div className="text-xs text-gray-500">
+                                                            {doc.name || 'Tipo no especificado'}
+                                                            {isLocked && (
+                                                                <span className="ml-2 text-green-700 font-semibold">
+                                                                    🔒 BLOQUEADO
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    {isLocked && (
+                                                        <Badge variant="success" size="xs">
+                                                            <FiCheckCircle className="w-3 h-3 mr-1 inline" />
+                                                            Aprobado Permanente
+                                                        </Badge>
+                                                    )}
+                                                    {!isLocked && isApproved && (
+                                                        <Badge variant="success" size="xs">
+                                                            <FiCheckCircle className="w-3 h-3 mr-1 inline" />
+                                                            Aprobado
+                                                        </Badge>
+                                                    )}
+                                                    {!isLocked && isRejected && (
+                                                        <Badge variant="error" size="xs">
+                                                            <FiX className="w-3 h-3 mr-1 inline" />
+                                                            Rechazado
+                                                        </Badge>
+                                                    )}
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => handleViewDocument(doc)}
+                                                        title="Ver documento"
+                                                    >
+                                                        <FiEye className="w-4 h-4" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => {
+                                                            const url = getDocumentViewUrl(doc);
+                                                            if (url) {
+                                                                const link = document.createElement('a');
+                                                                link.href = url.replace('/view/', '/download/');
+                                                                link.download = doc.fileName || 'documento.pdf';
+                                                                link.click();
+                                                            }
+                                                        }}
+                                                        title="Descargar documento"
+                                                    >
+                                                        <FiDownload className="w-4 h-4" />
+                                                    </Button>
                                                 </div>
                                             </div>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            {isApproved && (
-                                                <Badge variant="success" size="xs">
-                                                    <FiCheckCircle className="w-3 h-3 mr-1 inline" />
-                                                    Aprobado
-                                                </Badge>
-                                            )}
-                                            {isRejected && (
-                                                <Badge variant="error" size="xs">
-                                                    <FiX className="w-3 h-3 mr-1 inline" />
-                                                    Rechazado
-                                                </Badge>
-                                            )}
-                                            <Button variant="ghost" size="sm">
-                                                <FiDownload className="w-4 h-4" />
-                                            </Button>
-                                        </div>
-                                    </div>
-                                );
-                            })}
+                                        );
+                                    })}
+                                </>
+                            ) : (
+                                <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
+                                    <FiFileText className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                                    <p className="mb-2">No hay documentos en esta categoría</p>
+                                    <p className="text-sm text-gray-400">
+                                        {documentSubTab === 'academic'
+                                            ? 'No se han subido certificados de notas'
+                                            : 'No se han subido otros documentos'}
+                                    </p>
+                                </div>
+                            )}
                         </div>
 
                         {/* Botón de enviar notificación */}
@@ -1213,10 +1461,7 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
         const labels: Record<string, string> = {
             'MATHEMATICS_EXAM': 'Examen de Matemática',
             'LANGUAGE_EXAM': 'Examen de Lenguaje',
-            'ENGLISH_EXAM': 'Examen de Inglés',
-            'PSYCHOLOGICAL_INTERVIEW': 'Entrevista Psicológica',
-            'DIRECTOR_INTERVIEW': 'Entrevista con Director(a)',
-            'COORDINATOR_INTERVIEW': 'Entrevista con Coordinador(a)'
+            'ENGLISH_EXAM': 'Examen de Inglés'
         };
         return labels[type] || type;
     };
@@ -1225,10 +1470,7 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
         const icons: Record<string, string> = {
             'MATHEMATICS_EXAM': '🔢',
             'LANGUAGE_EXAM': '📖',
-            'ENGLISH_EXAM': '🌐',
-            'PSYCHOLOGICAL_INTERVIEW': '🧠',
-            'DIRECTOR_INTERVIEW': '👔',
-            'COORDINATOR_INTERVIEW': '👨‍🏫'
+            'ENGLISH_EXAM': '🌐'
         };
         return icons[type] || '📋';
     };
@@ -1236,10 +1478,7 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
     const REQUIRED_EVALUATION_TYPES = [
         { type: 'MATHEMATICS_EXAM', title: 'Examen de Matemática', icon: '🔢', required: true },
         { type: 'LANGUAGE_EXAM', title: 'Examen de Lenguaje', icon: '📖', required: true },
-        { type: 'ENGLISH_EXAM', title: 'Examen de Inglés', icon: '🌐', required: true },
-        { type: 'PSYCHOLOGICAL_INTERVIEW', title: 'Entrevista Psicológica', icon: '🧠', required: true },
-        { type: 'CYCLE_DIRECTOR_INTERVIEW', title: 'Entrevista Director(a) de Ciclo', icon: '👔', required: true },
-        { type: 'CYCLE_DIRECTOR_REPORT', title: 'Informe Director(a) de Ciclo', icon: '📋', required: false }
+        { type: 'ENGLISH_EXAM', title: 'Examen de Inglés', icon: '🌐', required: true }
     ];
 
     const renderEvaluationsTab = () => {
@@ -1532,9 +1771,6 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                                 {selectedEvaluation.evaluationType === 'MATHEMATICS_EXAM' && 'Examen de Matemática'}
                                 {selectedEvaluation.evaluationType === 'LANGUAGE_EXAM' && 'Examen de Lenguaje'}
                                 {selectedEvaluation.evaluationType === 'ENGLISH_EXAM' && 'Examen de Inglés'}
-                                {selectedEvaluation.evaluationType === 'PSYCHOLOGICAL_INTERVIEW' && 'Entrevista Psicológica'}
-                                {selectedEvaluation.evaluationType === 'DIRECTOR_INTERVIEW' && 'Entrevista Director(a) de Ciclo'}
-                                {selectedEvaluation.evaluationType === 'DIRECTOR_REPORT' && 'Informe Director(a) de Ciclo'}
                             </h3>
                             <div className="flex items-center gap-4 mt-2 text-sm text-blue-700">
                                 <span className="font-medium">Evaluador: {selectedEvaluation.evaluator?.firstName} {selectedEvaluation.evaluator?.lastName}</span>
@@ -1601,66 +1837,6 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                             </div>
                         )}
 
-                        {/* Campos específicos para Entrevista Psicológica */}
-                        {selectedEvaluation.evaluationType === 'PSYCHOLOGICAL_INTERVIEW' && (
-                            <div className="space-y-4">
-                                {selectedEvaluation.socialSkillsAssessment && (
-                                    <div className="bg-teal-50 p-4 rounded-lg border border-teal-200">
-                                        <h4 className="font-semibold text-teal-900 mb-2">🤝 Habilidades Sociales</h4>
-                                        <p className="text-gray-700 whitespace-pre-wrap">{selectedEvaluation.socialSkillsAssessment}</p>
-                                    </div>
-                                )}
-                                {selectedEvaluation.emotionalMaturity && (
-                                    <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-200">
-                                        <h4 className="font-semibold text-indigo-900 mb-2">💎 Madurez Emocional</h4>
-                                        <p className="text-gray-700 whitespace-pre-wrap">{selectedEvaluation.emotionalMaturity}</p>
-                                    </div>
-                                )}
-                                {selectedEvaluation.motivationAssessment && (
-                                    <div className="bg-pink-50 p-4 rounded-lg border border-pink-200">
-                                        <h4 className="font-semibold text-pink-900 mb-2">🎯 Motivación</h4>
-                                        <p className="text-gray-700 whitespace-pre-wrap">{selectedEvaluation.motivationAssessment}</p>
-                                    </div>
-                                )}
-                                {selectedEvaluation.familySupportAssessment && (
-                                    <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
-                                        <h4 className="font-semibold text-amber-900 mb-2">👨‍👩‍👧‍👦 Apoyo Familiar</h4>
-                                        <p className="text-gray-700 whitespace-pre-wrap">{selectedEvaluation.familySupportAssessment}</p>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        {/* Campos específicos para Evaluación Director de Ciclo */}
-                        {(selectedEvaluation.evaluationType === 'DIRECTOR_INTERVIEW' || selectedEvaluation.evaluationType === 'CYCLE_DIRECTOR_INTERVIEW' || selectedEvaluation.evaluationType === 'CYCLE_DIRECTOR_REPORT') && (
-                            <div className="space-y-4">
-                                {selectedEvaluation.academicReadiness && (
-                                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                                        <h4 className="font-semibold text-blue-900 mb-2">Preparación Académica</h4>
-                                        <p className="text-gray-700 whitespace-pre-wrap">{selectedEvaluation.academicReadiness}</p>
-                                    </div>
-                                )}
-                                {selectedEvaluation.behavioralAssessment && (
-                                    <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-                                        <h4 className="font-semibold text-purple-900 mb-2">Evaluación Conductual</h4>
-                                        <p className="text-gray-700 whitespace-pre-wrap">{selectedEvaluation.behavioralAssessment}</p>
-                                    </div>
-                                )}
-                                {selectedEvaluation.integrationPotential && (
-                                    <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                                        <h4 className="font-semibold text-green-900 mb-2">Potencial de Integración</h4>
-                                        <p className="text-gray-700 whitespace-pre-wrap">{selectedEvaluation.integrationPotential}</p>
-                                    </div>
-                                )}
-                                {selectedEvaluation.finalRecommendation !== undefined && (
-                                    <div className={`p-4 rounded-lg border-2 ${selectedEvaluation.finalRecommendation ? 'bg-green-50 border-green-400' : 'bg-red-50 border-red-400'}`}>
-                                        <h4 className={`font-bold mb-2 ${selectedEvaluation.finalRecommendation ? 'text-green-900' : 'text-red-900'}`}>
-                                            {selectedEvaluation.finalRecommendation ? 'Recomendación Positiva' : 'No Recomendado'}
-                                        </h4>
-                                    </div>
-                                )}
-                            </div>
-                        )}
 
                         {/* Estado */}
                         <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
@@ -1716,9 +1892,6 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                                 {selectedEvaluationType === 'MATHEMATICS_EXAM' && 'Examen de Matemática'}
                                 {selectedEvaluationType === 'LANGUAGE_EXAM' && 'Examen de Lenguaje'}
                                 {selectedEvaluationType === 'ENGLISH_EXAM' && 'Examen de Inglés'}
-                                {selectedEvaluationType === 'PSYCHOLOGICAL_INTERVIEW' && 'Entrevista Psicológica'}
-                                {selectedEvaluationType === 'CYCLE_DIRECTOR_INTERVIEW' && 'Entrevista Director(a) de Ciclo'}
-                                {selectedEvaluationType === 'CYCLE_DIRECTOR_REPORT' && 'Informe Director(a) de Ciclo'}
                             </p>
                         </div>
 
@@ -1780,6 +1953,86 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                                 isLoading={isAssigning}
                             >
                                 {isAssigning ? 'Asignando...' : 'Asignar Evaluador'}
+                            </Button>
+                        </div>
+                    </div>
+                </Modal>
+            )}
+
+            {/* Modal de Visor de Documentos */}
+            {showDocumentViewer && viewingDocument && (
+                <Modal
+                    isOpen={showDocumentViewer}
+                    onClose={() => {
+                        setShowDocumentViewer(false);
+                        setViewingDocument(null);
+                    }}
+                    title={`Visualizando: ${viewingDocument.fileName || 'Documento'}`}
+                    size="max"
+                >
+                    <div className="space-y-4">
+                        {/* Información del documento */}
+                        <div className="bg-gray-50 p-3 rounded-lg">
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                    <span className="text-gray-600">Tipo:</span>
+                                    <span className="ml-2 font-medium">{viewingDocument.name || 'No especificado'}</span>
+                                </div>
+                                <div>
+                                    <span className="text-gray-600">Subido:</span>
+                                    <span className="ml-2 font-medium">
+                                        {viewingDocument.uploadDate ? new Date(viewingDocument.uploadDate).toLocaleDateString('es-CL') : 'Desconocido'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Visor del documento */}
+                        <div className="border rounded-lg overflow-hidden bg-white" style={{ height: '70vh' }}>
+                            {viewingDocument.fileName && (
+                                viewingDocument.fileName.toLowerCase().endsWith('.pdf') ? (
+                                    <iframe
+                                        src={getDocumentViewUrl(viewingDocument) || ''}
+                                        className="w-full h-full"
+                                        title={viewingDocument.fileName}
+                                    />
+                                ) : (
+                                    <div className="flex items-center justify-center h-full">
+                                        <img
+                                            src={getDocumentViewUrl(viewingDocument) || ''}
+                                            alt={viewingDocument.fileName}
+                                            className="max-w-full max-h-full object-contain"
+                                        />
+                                    </div>
+                                )
+                            )}
+                        </div>
+
+                        {/* Botones de acción */}
+                        <div className="flex justify-between items-center pt-4 border-t">
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    const url = getDocumentViewUrl(viewingDocument);
+                                    if (url) {
+                                        const link = document.createElement('a');
+                                        link.href = url.replace('/view/', '/download/');
+                                        link.download = viewingDocument.fileName || 'documento.pdf';
+                                        link.click();
+                                    }
+                                }}
+                            >
+                                <FiDownload className="w-4 h-4 mr-2" />
+                                Descargar
+                            </Button>
+                            <Button
+                                variant="primary"
+                                onClick={() => {
+                                    setShowDocumentViewer(false);
+                                    setViewingDocument(null);
+                                }}
+                            >
+                                Cerrar
                             </Button>
                         </div>
                     </div>

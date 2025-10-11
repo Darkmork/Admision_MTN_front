@@ -287,9 +287,11 @@ class ApplicationService {
             console.log('📄 Obteniendo postulación:', id);
 
             const response = await api.get(`/api/applications/${id}`);
+            console.log('📄 Respuesta completa del backend:', response.data);
 
-            return response.data.data;
-            
+            // El backend devuelve los datos directamente, no en response.data.data
+            return response.data;
+
         } catch (error: any) {
             console.error('❌ Error obteniendo postulación:', error);
             throw new Error('Error al obtener la postulación');
@@ -589,6 +591,43 @@ class ApplicationService {
                 throw new Error(data.message || data.error || 'Error al cargar documentos');
             }
             throw new Error('Error de conexión al cargar documentos');
+        }
+    }
+
+    // Update document approval status
+    async updateDocumentApprovalStatus(
+        documentId: number,
+        approvalStatus: 'PENDING' | 'APPROVED' | 'REJECTED'
+    ): Promise<any> {
+        try {
+            console.log(`📋 Actualizando estado de aprobación del documento ${documentId} a ${approvalStatus}`);
+
+            const response = await api.put(
+                `/api/applications/documents/${documentId}/approval`,
+                { approvalStatus }
+            );
+
+            console.log('✅ Estado de aprobación actualizado:', response.data);
+            return response.data;
+
+        } catch (error: any) {
+            console.error('❌ Error actualizando estado de aprobación:', error);
+
+            if (error.response) {
+                const { status, data } = error.response;
+                switch (status) {
+                    case 400:
+                        throw new Error(data.error || 'Datos inválidos');
+                    case 403:
+                        throw new Error('No tienes permisos para aprobar documentos');
+                    case 404:
+                        throw new Error('Documento no encontrado');
+                    default:
+                        throw new Error(data.error || 'Error al actualizar estado de aprobación');
+                }
+            }
+
+            throw new Error('Error de conexión al actualizar estado de aprobación');
         }
     }
 }

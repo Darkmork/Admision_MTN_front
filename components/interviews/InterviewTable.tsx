@@ -9,19 +9,20 @@ import {
   CalendarIcon,
   ClockIcon
 } from '../icons/Icons';
-import { 
-  FiEdit, 
-  FiEye, 
-  FiCheck, 
-  FiX, 
-  FiCalendar, 
-  FiClock, 
-  FiMapPin, 
+import {
+  FiEdit,
+  FiEye,
+  FiCheck,
+  FiX,
+  FiCalendar,
+  FiClock,
+  FiMapPin,
   FiVideo,
   FiRefreshCw,
   FiUser,
   FiMail,
-  FiBell
+  FiBell,
+  FiTrash2
 } from 'react-icons/fi';
 import {
   Interview,
@@ -49,6 +50,37 @@ const InterviewTable: React.FC<InterviewTableProps> = ({
   onSendReminder,
   className = ''
 }) => {
+  const [deletingId, setDeletingId] = React.useState<number | null>(null);
+
+  const handleDelete = async (interview: Interview) => {
+    if (!confirm(`¿Está seguro que desea eliminar esta entrevista cancelada? Esta acción no se puede deshacer.`)) {
+      return;
+    }
+
+    try {
+      setDeletingId(interview.id);
+      const response = await fetch(`http://localhost:8080/api/interviews/${interview.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token') || localStorage.getItem('professor_token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Error al eliminar la entrevista');
+      }
+
+      // Reload page to refresh the list
+      window.location.reload();
+    } catch (error) {
+      console.error('Error deleting interview:', error);
+      alert(`Error al eliminar la entrevista: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const getStatusBadge = (status: InterviewStatus) => {
     const variant = InterviewUtils.getStatusColor(status);
@@ -257,12 +289,18 @@ const InterviewTable: React.FC<InterviewTableProps> = ({
                     {getModeIcon(interview.mode, interview.location, interview.virtualMeetingLink)}
                   </td>
 
-                  {/* Entrevistador */}
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <FiUser className="w-4 h-4 text-gray-400 mr-2" />
+                  {/* Entrevistador(es) */}
+                  <td className="px-6 py-4">
+                    <div className="flex items-start">
+                      <FiUser className="w-4 h-4 text-gray-400 mr-2 mt-0.5 flex-shrink-0" />
                       <div className="text-sm text-gray-900">
-                        {interview.interviewerName}
+                        <div>{interview.interviewerName}</div>
+                        {interview.secondInterviewerName && (
+                          <div className="text-xs text-gray-600 mt-1 flex items-center">
+                            <span className="mr-1">&</span>
+                            {interview.secondInterviewerName}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </td>
@@ -381,6 +419,30 @@ const InterviewTable: React.FC<InterviewTableProps> = ({
                           className="text-red-600 hover:text-red-700 hover:bg-red-50"
                         >
                           <FiX className="w-4 h-4" />
+                        </Button>
+                      )}
+
+                      {/* Eliminar (solo para canceladas) */}
+                      {interview.status === InterviewStatus.CANCELLED && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDelete(interview)}
+                          disabled={deletingId === interview.id}
+                          title="Eliminar entrevista cancelada permanentemente"
+                          className="text-red-700 hover:text-red-800 hover:bg-red-100 border-red-300 font-medium"
+                        >
+                          {deletingId === interview.id ? (
+                            <>
+                              <FiRefreshCw className="w-4 h-4 animate-spin mr-1" />
+                              <span className="text-xs">Eliminando...</span>
+                            </>
+                          ) : (
+                            <>
+                              <FiTrash2 className="w-4 h-4 mr-1" />
+                              <span className="text-xs">Eliminar</span>
+                            </>
+                          )}
                         </Button>
                       )}
                     </div>

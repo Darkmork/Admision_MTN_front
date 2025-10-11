@@ -25,11 +25,13 @@ import { professorEvaluationService, ProfessorEvaluation, ProfessorEvaluationSta
 import { professorAuthService } from '../services/professorAuthService';
 import { EvaluationStatus, EvaluationType } from '../types/evaluation';
 import { FiRefreshCw, FiBarChart2 } from 'react-icons/fi';
+import AvailabilityScheduleManager from '../components/AvailabilityScheduleManager';
 
 const baseSections = [
     { key: 'dashboard', label: 'Dashboard General', icon: DashboardIcon },
     { key: 'evaluaciones', label: 'Evaluaciones Pendientes', icon: ClockIcon },
     { key: 'estudiantes', label: 'Mis Estudiantes', icon: UsersIcon },
+    { key: 'horarios', label: 'Mis Horarios', icon: ClockIcon },
     { key: 'reportes', label: 'Reportes y Estadísticas', icon: FileTextIcon },
     { key: 'configuracion', label: 'Configuración', icon: BookOpenIcon }
 ];
@@ -64,7 +66,31 @@ const ProfessorDashboard: React.FC = () => {
         averageScore: 0
     });
     const [isLoading, setIsLoading] = useState(true);
-    
+
+    // Estado para el tab activo en la sección de evaluaciones
+    const [activeEvaluationTab, setActiveEvaluationTab] = useState<'academicas' | 'psicologicas' | 'familiares'>('psicologicas');
+
+    // Determinar tab inicial basado en las evaluaciones disponibles
+    useEffect(() => {
+        if (evaluations.length > 0) {
+            const hasPsychologicalEvaluations = evaluations.some(e =>
+                ['PSYCHOLOGICAL_INTERVIEW', 'CYCLE_DIRECTOR_INTERVIEW', 'CYCLE_DIRECTOR_REPORT'].includes(e.evaluationType)
+            );
+            const hasFamilyEvaluations = evaluations.some(e => e.evaluationType === 'FAMILY_INTERVIEW');
+            const hasAcademicEvaluations = evaluations.some(e =>
+                ['MATHEMATICS_EXAM', 'LANGUAGE_EXAM', 'ENGLISH_EXAM'].includes(e.evaluationType)
+            );
+
+            // Establecer tab inicial según disponibilidad
+            if (hasPsychologicalEvaluations) {
+                setActiveEvaluationTab('psicologicas');
+            } else if (hasFamilyEvaluations) {
+                setActiveEvaluationTab('familiares');
+            } else if (hasAcademicEvaluations) {
+                setActiveEvaluationTab('academicas');
+            }
+        }
+    }, [evaluations]); // Solo cuando cambien las evaluaciones
 
     // Cargar evaluaciones del profesor - SOLO UNA VEZ al montar
     // Cargar datos actualizados del profesor desde el backend
@@ -216,13 +242,14 @@ const ProfessorDashboard: React.FC = () => {
     };
 
     const getEvaluationTypeLabel = (type: EvaluationType) => {
-        const labels: { [key in EvaluationType]: string } = {
+        const labels: { [key in EvaluationType]: string} = {
             [EvaluationType.MATHEMATICS_EXAM]: 'Examen de Matemáticas',
             [EvaluationType.LANGUAGE_EXAM]: 'Examen de Lenguaje',
             [EvaluationType.ENGLISH_EXAM]: 'Examen de Inglés',
             [EvaluationType.PSYCHOLOGICAL_INTERVIEW]: 'Entrevista Psicológica',
             [EvaluationType.CYCLE_DIRECTOR_INTERVIEW]: 'Entrevista Director de Ciclo',
-            [EvaluationType.CYCLE_DIRECTOR_REPORT]: 'Informe Director de Ciclo'
+            [EvaluationType.CYCLE_DIRECTOR_REPORT]: 'Informe Director de Ciclo',
+            [EvaluationType.FAMILY_INTERVIEW]: 'Entrevista Familiar'
         };
         return labels[type] || type;
     };
@@ -264,7 +291,7 @@ const ProfessorDashboard: React.FC = () => {
                 
                 <Card className="p-6 text-center">
                     <UsersIcon className="w-8 h-8 text-azul-monte-tabor mx-auto mb-3" />
-                    <div className="text-2xl font-bold text-azul-monte-tabor">{evaluationStats.averageScore} pts</div>
+                    <div className="text-2xl font-bold text-azul-monte-tabor">{evaluationStats.averageScore}%</div>
                     <div className="text-sm text-gris-piedra">Promedio General</div>
                 </Card>
             </div>
@@ -296,18 +323,26 @@ const ProfessorDashboard: React.FC = () => {
                                 </div>
                                 <div className="flex items-center gap-2">
                                     {getEvaluationStatusBadge(evaluation.status)}
-                                    <Button 
-                                        size="sm" 
+                                    <Button
+                                        size="sm"
                                         variant="primary"
                                         onClick={() => navigate(
                                             evaluation.evaluationType === 'CYCLE_DIRECTOR_INTERVIEW'
                                                 ? `/profesor/entrevista-director/${evaluation.id}`
+                                                : evaluation.evaluationType === 'PSYCHOLOGICAL_INTERVIEW'
+                                                ? `/profesor/entrevista-director/${evaluation.id}`
                                                 : evaluation.evaluationType === 'CYCLE_DIRECTOR_REPORT'
                                                 ? `/profesor/informe-director/${evaluation.id}`
+                                                : evaluation.evaluationType === 'FAMILY_INTERVIEW'
+                                                ? `/profesor/entrevista-familiar/${evaluation.id}`
                                                 : `/profesor/informe/${evaluation.id}`
                                         )}
                                     >
-                                        {evaluation.evaluationType === 'CYCLE_DIRECTOR_INTERVIEW' 
+                                        {evaluation.evaluationType === 'CYCLE_DIRECTOR_INTERVIEW'
+                                            ? (evaluation.status === EvaluationStatus.COMPLETED ? "Ver Entrevista" : "Crear Entrevista")
+                                            : evaluation.evaluationType === 'PSYCHOLOGICAL_INTERVIEW'
+                                            ? (evaluation.status === EvaluationStatus.COMPLETED ? "Ver Entrevista" : "Crear Entrevista")
+                                            : evaluation.evaluationType === 'FAMILY_INTERVIEW'
                                             ? (evaluation.status === EvaluationStatus.COMPLETED ? "Ver Entrevista" : "Crear Entrevista")
                                             : (evaluation.status === EvaluationStatus.COMPLETED ? "Ver Informe" : "Crear Informe")}
                                     </Button>
@@ -325,7 +360,32 @@ const ProfessorDashboard: React.FC = () => {
     );
 
     const renderEvaluaciones = () => {
-        const evaluationColumns = [
+        // Filtrar evaluaciones por tipo
+        const academicEvaluations = evaluations.filter(e =>
+            ['MATHEMATICS_EXAM', 'LANGUAGE_EXAM', 'ENGLISH_EXAM'].includes(e.evaluationType)
+        );
+
+        const psychologicalEvaluations = evaluations.filter(e =>
+            ['PSYCHOLOGICAL_INTERVIEW', 'CYCLE_DIRECTOR_INTERVIEW', 'CYCLE_DIRECTOR_REPORT'].includes(e.evaluationType)
+        );
+
+        const familyEvaluations = evaluations.filter(e =>
+            e.evaluationType === 'FAMILY_INTERVIEW'
+        );
+
+        // Determinar qué tabs mostrar según qué evaluaciones tiene el usuario
+        const hasAcademicEvaluations = academicEvaluations.length > 0;
+        const hasPsychologicalEvaluations = psychologicalEvaluations.length > 0;
+        const hasFamilyEvaluations = familyEvaluations.length > 0;
+
+        // Determinar qué evaluaciones mostrar según la pestaña activa
+        const currentEvaluations =
+            activeEvaluationTab === 'academicas' ? academicEvaluations :
+            activeEvaluationTab === 'psicologicas' ? psychologicalEvaluations :
+            familyEvaluations;
+
+        // Columnas base que siempre se muestran
+        const baseColumns = [
             {
                 key: 'student' as keyof ProfessorEvaluation,
                 header: 'Estudiante',
@@ -350,42 +410,110 @@ const ProfessorDashboard: React.FC = () => {
                 key: 'status' as keyof ProfessorEvaluation,
                 header: 'Estado',
                 render: (status: EvaluationStatus) => getEvaluationStatusBadge(status)
-            },
-            {
-                key: 'score' as keyof ProfessorEvaluation,
-                header: 'Puntaje',
-                render: (score: number) => score ? `${score} pts` : '-'
-            },
-            {
-                key: 'actions' as keyof ProfessorEvaluation,
-                header: 'Acciones',
-                render: (value: any, evaluation: ProfessorEvaluation) => (
-                    <Button
-                        size="sm"
-                        variant="primary"
-                        onClick={() => navigate(
-                            evaluation.evaluationType === 'CYCLE_DIRECTOR_INTERVIEW'
-                                ? `/profesor/entrevista-director/${evaluation.id}`
-                                : evaluation.evaluationType === 'CYCLE_DIRECTOR_REPORT'
-                                ? `/profesor/informe-director/${evaluation.id}`
-                                : `/profesor/informe/${evaluation.id}`
-                        )}
-                    >
-                        {evaluation.evaluationType === 'CYCLE_DIRECTOR_INTERVIEW'
-                            ? (evaluation.status === EvaluationStatus.COMPLETED ? "Ver Entrevista" : "Crear Entrevista")
-                            : evaluation.evaluationType === 'CYCLE_DIRECTOR_REPORT'
-                            ? (evaluation.status === EvaluationStatus.COMPLETED ? "Ver Informe" : "Completar Informe")
-                            : (evaluation.status === EvaluationStatus.COMPLETED ? "Ver Informe" : "Completar Informe")}
-                    </Button>
-                )
             }
         ];
+
+        // Columna de porcentaje solo para exámenes académicos
+        const scoreColumn = {
+            key: 'score' as keyof ProfessorEvaluation,
+            header: 'Porcentaje',
+            render: (score: number, evaluation: ProfessorEvaluation) => {
+                if (!score) return '-';
+                const maxScore = evaluation.maxScore || 100;
+                const percentage = Math.round((score / maxScore) * 100);
+                return `${percentage}%`;
+            }
+        };
+
+        // Columna de acciones
+        const actionsColumn = {
+            key: 'actions' as keyof ProfessorEvaluation,
+            header: 'Acciones',
+            render: (value: any, evaluation: ProfessorEvaluation) => (
+                <Button
+                    size="sm"
+                    variant="primary"
+                    onClick={() => navigate(
+                        evaluation.evaluationType === 'CYCLE_DIRECTOR_INTERVIEW'
+                            ? `/profesor/entrevista-director/${evaluation.id}`
+                            : evaluation.evaluationType === 'PSYCHOLOGICAL_INTERVIEW'
+                            ? `/profesor/entrevista-director/${evaluation.id}`
+                            : evaluation.evaluationType === 'CYCLE_DIRECTOR_REPORT'
+                            ? `/profesor/informe-director/${evaluation.id}`
+                            : evaluation.evaluationType === 'FAMILY_INTERVIEW'
+                            ? `/profesor/entrevista-familiar/${evaluation.id}`
+                            : `/profesor/informe/${evaluation.id}`
+                    )}
+                >
+                    {evaluation.evaluationType === 'CYCLE_DIRECTOR_INTERVIEW'
+                        ? (evaluation.status === EvaluationStatus.COMPLETED ? "Ver Entrevista" : "Crear Entrevista")
+                        : evaluation.evaluationType === 'PSYCHOLOGICAL_INTERVIEW'
+                        ? (evaluation.status === EvaluationStatus.COMPLETED ? "Ver Entrevista" : "Crear Entrevista")
+                        : evaluation.evaluationType === 'CYCLE_DIRECTOR_REPORT'
+                        ? (evaluation.status === EvaluationStatus.COMPLETED ? "Ver Informe" : "Completar Informe")
+                        : evaluation.evaluationType === 'FAMILY_INTERVIEW'
+                        ? (evaluation.status === EvaluationStatus.COMPLETED ? "Ver Entrevista" : "Crear Entrevista")
+                        : (evaluation.status === EvaluationStatus.COMPLETED ? "Ver Informe" : "Completar Informe")}
+                </Button>
+            )
+        };
+
+        // Determinar qué columnas mostrar según el tab activo
+        const evaluationColumns = activeEvaluationTab === 'academicas'
+            ? [...baseColumns, scoreColumn, actionsColumn]
+            : [...baseColumns, actionsColumn];
 
         return (
             <Card className="p-6">
                 <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">
                     Mis Evaluaciones Asignadas ({evaluations.length})
                 </h2>
+
+                {/* Tabs de filtrado - Solo mostrar tabs con evaluaciones */}
+                {(hasAcademicEvaluations || hasPsychologicalEvaluations || hasFamilyEvaluations) && (
+                    <div className="flex gap-2 mb-6 border-b border-gray-200 pb-2">
+                        {hasAcademicEvaluations && (
+                            <button
+                                onClick={() => setActiveEvaluationTab('academicas')}
+                                className={`px-4 py-2 font-semibold rounded-t-lg transition-colors ${
+                                    activeEvaluationTab === 'academicas'
+                                        ? 'bg-azul-monte-tabor text-blanco-pureza'
+                                        : 'bg-gray-100 text-gris-piedra hover:bg-gray-200'
+                                }`}
+                            >
+                                Exámenes Académicos
+                                <Badge variant="info" className="ml-2">{academicEvaluations.length}</Badge>
+                            </button>
+                        )}
+                        {hasPsychologicalEvaluations && (
+                            <button
+                                onClick={() => setActiveEvaluationTab('psicologicas')}
+                                className={`px-4 py-2 font-semibold rounded-t-lg transition-colors ${
+                                    activeEvaluationTab === 'psicologicas'
+                                        ? 'bg-azul-monte-tabor text-blanco-pureza'
+                                        : 'bg-gray-100 text-gris-piedra hover:bg-gray-200'
+                                }`}
+                            >
+                                Entrevistas Psicológicas/Director
+                                <Badge variant="info" className="ml-2">{psychologicalEvaluations.length}</Badge>
+                            </button>
+                        )}
+                        {hasFamilyEvaluations && (
+                            <button
+                                onClick={() => setActiveEvaluationTab('familiares')}
+                                className={`px-4 py-2 font-semibold rounded-t-lg transition-colors ${
+                                    activeEvaluationTab === 'familiares'
+                                        ? 'bg-azul-monte-tabor text-blanco-pureza'
+                                        : 'bg-gray-100 text-gris-piedra hover:bg-gray-200'
+                                }`}
+                            >
+                                Entrevistas Familiares
+                                <Badge variant="info" className="ml-2">{familyEvaluations.length}</Badge>
+                            </button>
+                        )}
+                    </div>
+                )}
+
                 {(() => { console.log('🔄 Renderizando evaluaciones - isLoading:', isLoading, 'evaluations:', evaluations); return null; })()}
                 {isLoading ? (
                     <div className="text-center py-8">
@@ -393,10 +521,14 @@ const ProfessorDashboard: React.FC = () => {
                         <p className="text-gris-piedra mt-2">Cargando evaluaciones...</p>
                     </div>
                 ) : (
-                    <Table 
-                        data={evaluations}
+                    <Table
+                        data={currentEvaluations}
                         columns={evaluationColumns}
-                        emptyMessage="No hay evaluaciones asignadas"
+                        emptyMessage={`No hay evaluaciones ${
+                            activeEvaluationTab === 'academicas' ? 'académicas' :
+                            activeEvaluationTab === 'psicologicas' ? 'psicológicas/director' :
+                            'familiares'
+                        } asignadas`}
                     />
                 )}
             </Card>
@@ -420,10 +552,16 @@ const ProfessorDashboard: React.FC = () => {
             }
             uniqueStudents.get(studentId).evaluations.push(evaluation);
         });
-        
+
         const myStudents = Array.from(uniqueStudents.values());
 
-        const studentColumns = [
+        // Determinar si mostrar columna de promedio (solo si hay evaluaciones con puntajes)
+        const hasAcademicEvaluations = evaluations.some(e =>
+            ['MATHEMATICS_EXAM', 'LANGUAGE_EXAM', 'ENGLISH_EXAM'].includes(e.evaluationType)
+        );
+
+        // Columnas base
+        const baseStudentColumns = [
             {
                 key: 'name' as const,
                 header: 'Estudiante',
@@ -459,11 +597,11 @@ const ProfessorDashboard: React.FC = () => {
                 key: 'status' as const,
                 header: 'Estado',
                 render: (value: any, student: any) => {
-                    const completedEvaluations = student.evaluations.filter((e: ProfessorEvaluation) => 
+                    const completedEvaluations = student.evaluations.filter((e: ProfessorEvaluation) =>
                         e.status === EvaluationStatus.COMPLETED
                     );
                     const totalEvaluations = student.evaluations.length;
-                    
+
                     if (completedEvaluations.length === totalEvaluations) {
                         return <Badge variant="success">Completo ({completedEvaluations.length}/{totalEvaluations})</Badge>;
                     } else if (completedEvaluations.length > 0) {
@@ -472,61 +610,82 @@ const ProfessorDashboard: React.FC = () => {
                         return <Badge variant="info">Pendiente ({completedEvaluations.length}/{totalEvaluations})</Badge>;
                     }
                 }
-            },
-            {
-                key: 'averageScore' as const,
-                header: 'Promedio',
-                render: (value: any, student: any) => {
-                    const completedWithScore = student.evaluations.filter((e: ProfessorEvaluation) => 
-                        e.status === EvaluationStatus.COMPLETED && e.score
-                    );
-                    
-                    if (completedWithScore.length === 0) {
-                        return <span className="text-gris-piedra">-</span>;
-                    }
-                    
-                    const average = completedWithScore.reduce((sum: number, e: ProfessorEvaluation) => 
-                        sum + (e.score || 0), 0) / completedWithScore.length;
-                    
-                    return (
-                        <div className="text-center">
-                            <span className="font-semibold text-azul-monte-tabor">
-                                {Math.round(average)} pts
-                            </span>
-                        </div>
-                    );
+            }
+        ];
+
+        // Columna de promedio (solo para evaluaciones académicas)
+        const averageScoreColumn = {
+            key: 'averageScore' as const,
+            header: 'Promedio',
+            render: (value: any, student: any) => {
+                const completedWithScore = student.evaluations.filter((e: ProfessorEvaluation) =>
+                    e.status === EvaluationStatus.COMPLETED && e.score
+                );
+
+                if (completedWithScore.length === 0) {
+                    return <span className="text-gris-piedra">-</span>;
                 }
-            },
-            {
-                key: 'actions' as const,
-                header: 'Acciones',
-                render: (value: any, student: any) => (
+
+                // Calculate average percentage from all completed evaluations with scores
+                const averagePercentage = completedWithScore.reduce((sum: number, e: ProfessorEvaluation) => {
+                    const maxScore = e.maxScore || 100;
+                    const percentage = (e.score || 0) / maxScore * 100;
+                    return sum + percentage;
+                }, 0) / completedWithScore.length;
+
+                return (
+                    <div className="text-center">
+                        <span className="font-semibold text-azul-monte-tabor">
+                            {Math.round(averagePercentage)}%
+                        </span>
+                    </div>
+                );
+            }
+        };
+
+        // Columna de acciones
+        const actionsStudentColumn = {
+            key: 'actions' as const,
+            header: 'Acciones',
+            render: (value: any, student: any) => (
                     <div className="flex gap-2">
                         {student.evaluations.map((evaluation: ProfessorEvaluation) => (
-                            <Button 
+                            <Button
                                 key={evaluation.id}
-                                size="sm" 
+                                size="sm"
                                 variant={evaluation.status === EvaluationStatus.COMPLETED ? "outline" : "primary"}
                                 onClick={() => navigate(
                                     evaluation.evaluationType === 'CYCLE_DIRECTOR_INTERVIEW'
                                         ? `/profesor/entrevista-director/${evaluation.id}`
+                                        : evaluation.evaluationType === 'PSYCHOLOGICAL_INTERVIEW'
+                                        ? `/profesor/entrevista-director/${evaluation.id}`
                                         : evaluation.evaluationType === 'CYCLE_DIRECTOR_REPORT'
                                         ? `/profesor/informe-director/${evaluation.id}`
+                                        : evaluation.evaluationType === 'FAMILY_INTERVIEW'
+                                        ? `/profesor/entrevista-familiar/${evaluation.id}`
                                         : `/profesor/informe/${evaluation.id}`
                                 )}
                                 title={getEvaluationTypeLabel(evaluation.evaluationType)}
                             >
                                 {evaluation.evaluationType === 'CYCLE_DIRECTOR_INTERVIEW'
                                     ? (evaluation.status === EvaluationStatus.COMPLETED ? "Ver Entrevista" : "Entrevista")
+                                    : evaluation.evaluationType === 'PSYCHOLOGICAL_INTERVIEW'
+                                    ? (evaluation.status === EvaluationStatus.COMPLETED ? "Ver Entrevista" : "Entrevista")
                                     : evaluation.evaluationType === 'CYCLE_DIRECTOR_REPORT'
                                     ? (evaluation.status === EvaluationStatus.COMPLETED ? "Ver Informe" : "Informe")
+                                    : evaluation.evaluationType === 'FAMILY_INTERVIEW'
+                                    ? (evaluation.status === EvaluationStatus.COMPLETED ? "Ver Entrevista" : "Entrevista")
                                     : (evaluation.status === EvaluationStatus.COMPLETED ? "Ver Informe" : "Evaluar")}
                             </Button>
                         ))}
                     </div>
                 )
-            }
-        ];
+        };
+
+        // Construir array de columnas dinámicamente
+        const studentColumns = hasAcademicEvaluations
+            ? [...baseStudentColumns, averageScoreColumn, actionsStudentColumn]
+            : [...baseStudentColumns, actionsStudentColumn];
 
         return (
             <Card className="p-6">
@@ -539,7 +698,7 @@ const ProfessorDashboard: React.FC = () => {
                         <p className="text-gris-piedra mt-2">Cargando estudiantes...</p>
                     </div>
                 ) : (
-                    <Table 
+                    <Table
                         data={myStudents}
                         columns={studentColumns}
                         emptyMessage="No hay estudiantes asignados"
@@ -558,19 +717,21 @@ const ProfessorDashboard: React.FC = () => {
         const statsByType = evaluations.reduce((acc: any, evaluation) => {
             const type = evaluation.evaluationType;
             if (!acc[type]) {
-                acc[type] = { total: 0, completed: 0, pending: 0, averageScore: 0, scores: [] };
+                acc[type] = { total: 0, completed: 0, pending: 0, averageScore: 0, percentages: [] };
             }
             acc[type].total++;
             if (evaluation.status === EvaluationStatus.COMPLETED) {
                 acc[type].completed++;
                 if (evaluation.score) {
-                    acc[type].scores.push(evaluation.score);
+                    const maxScore = evaluation.maxScore || 100;
+                    const percentage = (evaluation.score / maxScore) * 100;
+                    acc[type].percentages.push(percentage);
                 }
             } else {
                 acc[type].pending++;
             }
-            acc[type].averageScore = acc[type].scores.length > 0 
-                ? Math.round(acc[type].scores.reduce((sum: number, score: number) => sum + score, 0) / acc[type].scores.length)
+            acc[type].averageScore = acc[type].percentages.length > 0
+                ? Math.round(acc[type].percentages.reduce((sum: number, percentage: number) => sum + percentage, 0) / acc[type].percentages.length)
                 : 0;
             return acc;
         }, {});
@@ -579,17 +740,19 @@ const ProfessorDashboard: React.FC = () => {
         const statsByGrade = evaluations.reduce((acc: any, evaluation) => {
             const grade = evaluation.studentGrade;
             if (!acc[grade]) {
-                acc[grade] = { total: 0, completed: 0, averageScore: 0, scores: [] };
+                acc[grade] = { total: 0, completed: 0, averageScore: 0, percentages: [] };
             }
             acc[grade].total++;
             if (evaluation.status === EvaluationStatus.COMPLETED) {
                 acc[grade].completed++;
                 if (evaluation.score) {
-                    acc[grade].scores.push(evaluation.score);
+                    const maxScore = evaluation.maxScore || 100;
+                    const percentage = (evaluation.score / maxScore) * 100;
+                    acc[grade].percentages.push(percentage);
                 }
             }
-            acc[grade].averageScore = acc[grade].scores.length > 0 
-                ? Math.round(acc[grade].scores.reduce((sum: number, score: number) => sum + score, 0) / acc[grade].scores.length)
+            acc[grade].averageScore = acc[grade].percentages.length > 0
+                ? Math.round(acc[grade].percentages.reduce((sum: number, percentage: number) => sum + percentage, 0) / acc[grade].percentages.length)
                 : 0;
             return acc;
         }, {});
@@ -658,7 +821,7 @@ const ProfessorDashboard: React.FC = () => {
                             <div className="text-sm text-gris-piedra">Pendientes</div>
                         </div>
                         <div className="bg-purple-50 p-4 rounded-lg text-center">
-                            <div className="text-2xl font-bold text-azul-monte-tabor">{evaluationStats.averageScore} pts</div>
+                            <div className="text-2xl font-bold text-azul-monte-tabor">{evaluationStats.averageScore}%</div>
                             <div className="text-sm text-gris-piedra">Promedio General</div>
                         </div>
                     </div>
@@ -690,7 +853,7 @@ const ProfessorDashboard: React.FC = () => {
                                     <div>
                                         <span className="text-gris-piedra">Promedio:</span>
                                         <span className="ml-2 font-medium text-azul-monte-tabor">
-                                            {stats.averageScore > 0 ? `${stats.averageScore} pts` : 'N/A'}
+                                            {stats.averageScore > 0 ? `${stats.averageScore}%` : 'N/A'}
                                         </span>
                                     </div>
                                 </div>
@@ -718,7 +881,7 @@ const ProfessorDashboard: React.FC = () => {
                                     <div className="flex justify-between">
                                         <span className="text-gris-piedra">Promedio:</span>
                                         <span className="font-medium text-azul-monte-tabor">
-                                            {stats.averageScore > 0 ? `${stats.averageScore} pts` : 'N/A'}
+                                            {stats.averageScore > 0 ? `${stats.averageScore}%` : 'N/A'}
                                         </span>
                                     </div>
                                 </div>
@@ -744,7 +907,7 @@ const ProfessorDashboard: React.FC = () => {
                                     </div>
                                     <div className="text-right">
                                         <p className="font-medium text-azul-monte-tabor">
-                                            {evaluation.score ? `${evaluation.score} pts` : 'Sin puntaje'}
+                                            {evaluation.score ? `${Math.round((evaluation.score / (evaluation.maxScore || 100)) * 100)}%` : 'Sin puntaje'}
                                         </p>
                                         <p className="text-xs text-gris-piedra">
                                             {evaluation.completedDate ? new Date(evaluation.completedDate).toLocaleDateString('es-CL') : '-'}
@@ -840,6 +1003,19 @@ const ProfessorDashboard: React.FC = () => {
             case 'estudiantes':
                 console.log('👥 Renderizando estudiantes');
                 return renderEstudiantes();
+            case 'horarios':
+                console.log('🕒 Renderizando gestión de horarios');
+                return currentProfessor ? (
+                    <AvailabilityScheduleManager
+                        interviewerId={currentProfessor.id}
+                        interviewerName={`${currentProfessor.firstName} ${currentProfessor.lastName}`}
+                        readonly={false}
+                    />
+                ) : (
+                    <Card className="p-6">
+                        <p className="text-gris-piedra">No se pudo cargar la información del profesor</p>
+                    </Card>
+                );
             case 'reportes':
                 console.log('📊 Renderizando reportes');
                 return renderReportesEstadisticas();

@@ -106,8 +106,13 @@ class ProfessorEvaluationService {
             const completed = evaluations.filter(e => e.status === EvaluationStatus.COMPLETED).length;
             
             const completedEvaluations = evaluations.filter(e => e.status === EvaluationStatus.COMPLETED && e.score);
-            const averageScore = completedEvaluations.length > 0 
-                ? Math.round(completedEvaluations.reduce((sum, e) => sum + (e.score || 0), 0) / completedEvaluations.length)
+            // Calculate average as percentage
+            const averageScore = completedEvaluations.length > 0
+                ? Math.round(completedEvaluations.reduce((sum, e) => {
+                    const maxScore = e.maxScore || 100;
+                    const percentage = ((e.score || 0) / maxScore) * 100;
+                    return sum + percentage;
+                }, 0) / completedEvaluations.length)
                 : 0;
             
             return {

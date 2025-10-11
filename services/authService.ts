@@ -69,30 +69,25 @@ class AuthService {
     
     async register(request: RegisterRequest): Promise<AuthResponse> {
         try {
-            // Encrypt password before sending (keep other fields as is)
+            // Encrypt ALL registration data before sending
             let payload: any;
 
             if (encryptionService.isEncryptionAvailable()) {
-                console.log('[Auth] Attempting to encrypt registration password...');
+                console.log('[Auth] Attempting to encrypt registration data...');
 
-                // Create temporary credentials object for encryption
-                const tempCredentials = {
+                // Encrypt ALL fields together (not just email/password)
+                const encryptedPayload = await encryptionService.encryptCredentials({
                     email: request.email,
-                    password: request.password
-                };
+                    password: request.password,
+                    firstName: request.firstName,
+                    lastName: request.lastName,
+                    rut: request.rut,
+                    phone: request.phone
+                });
 
-                const encryptedCreds = await encryptionService.encryptCredentials(tempCredentials);
-
-                if (encryptedCreds) {
-                    // Combine encrypted password with other registration fields
-                    payload = {
-                        ...encryptedCreds,
-                        firstName: request.firstName,
-                        lastName: request.lastName,
-                        rut: request.rut,
-                        phone: request.phone
-                    };
-                    console.log('[Auth] Registration password encrypted successfully');
+                if (encryptedPayload) {
+                    payload = encryptedPayload;
+                    console.log('[Auth] Registration data encrypted successfully');
                 } else {
                     console.warn('[Auth] Backend encryption not available, using plaintext');
                     payload = request;

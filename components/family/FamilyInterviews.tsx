@@ -282,18 +282,35 @@ const FamilyInterviews: React.FC<FamilyInterviewsProps> = ({ className = '' }) =
 
   if (!interviews.length) {
     return (
-      <Card className={`p-8 text-center ${className}`}>
-        <FiCalendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">
-          No hay entrevistas programadas
+      <Card className={`p-12 text-center ${className}`}>
+        <div className="flex justify-center mb-6">
+          <div className="relative">
+            <FiCalendar className="w-20 h-20 text-gray-300" />
+            <FiClock className="w-8 h-8 text-gray-400 absolute -bottom-1 -right-1 bg-white rounded-full p-1" />
+          </div>
+        </div>
+
+        <h3 className="text-xl font-semibold text-gray-900 mb-3">
+          Todavía no hay entrevistas programadas
         </h3>
-        <p className="text-gray-600 mb-4">
-          Cuando se programen entrevistas para su solicitud, aparecerán aquí.
+
+        <p className="text-gray-600 mb-2 max-w-md mx-auto">
+          Cuando el colegio programe entrevistas para su solicitud de admisión, aparecerán aquí con todos los detalles.
         </p>
+
+        <p className="text-sm text-gray-500 mb-6">
+          Recibirá una notificación por correo electrónico cuando se agende una entrevista.
+        </p>
+
+        <div className="inline-flex items-center space-x-2 text-sm text-blue-600 bg-blue-50 px-4 py-2 rounded-lg">
+          <FiInfo className="w-4 h-4" />
+          <span>Las entrevistas son programadas por el equipo de admisiones</span>
+        </div>
+
         {!user?.applicationId && (
-          <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg max-w-md mx-auto">
             <p className="text-sm text-yellow-800">
-              💡 <strong>Tip:</strong> Si tiene entrevistas programadas pero no las ve, intente cerrar sesión y volver a iniciar sesión.
+              <strong>Nota:</strong> Si tiene entrevistas programadas pero no las ve, intente cerrar sesión y volver a iniciar sesión.
             </p>
           </div>
         )}

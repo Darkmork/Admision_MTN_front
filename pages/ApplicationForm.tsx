@@ -46,6 +46,7 @@ const validationConfig = {
     birthDate: { required: true },
     grade: { required: true },
     schoolApplied: { required: true },
+    admissionPreference: { required: true },
     studentEmail: { email: true },
     studentAddress: { required: true, minLength: 5 },
     currentSchool: { minLength: 2 }, // Será requerido condicionalmente
@@ -720,7 +721,8 @@ const ApplicationForm: React.FC = () => {
                                 address: data.studentAddress,
                                 gradeApplied: data.grade,
                                 currentSchool: data.currentSchool,
-                                additionalNotes: data.additionalNotes
+                                additionalNotes: data.additionalNotes,
+                                admissionPreference: data.admissionPreference
                             },
                             father: {
                                 fullName: data.parent1Name,
@@ -773,6 +775,7 @@ const ApplicationForm: React.FC = () => {
                             schoolApplied: data.schoolApplied,
                             currentSchool: data.currentSchool,
                             additionalNotes: data.additionalNotes,
+                            admissionPreference: data.admissionPreference,
 
                             // Datos del padre
                             parent1Name: data.parent1Name,
@@ -971,15 +974,16 @@ const ApplicationForm: React.FC = () => {
                 if (!data.birthDate) missing.push('Fecha de Nacimiento');
                 if (!data.grade) missing.push('Nivel al que postula');
                 if (!data.schoolApplied) missing.push('Colegio');
+                if (!data.admissionPreference) missing.push('Preferencia de Admisión');
                 if (!data.studentAddress?.trim()) missing.push('Dirección');
-                
+
                 // Validate application year
                 const currentYear = new Date().getFullYear();
                 const applicationYear = parseInt(data.applicationYear);
                 if (!data.applicationYear || applicationYear !== currentYear + 1) {
                     missing.push('Año al que postula');
                 }
-                
+
                 if (requiresCurrentSchool(data.grade || '') && !data.currentSchool?.trim()) missing.push('Colegio de Procedencia');
                 break;
             case 1:
@@ -1455,11 +1459,11 @@ const ApplicationForm: React.FC = () => {
                             error={errors.schoolApplied}
                         />
                         
-                        <Input 
-                            id="applicationYear" 
-                            label="Año al que postula" 
+                        <Input
+                            id="applicationYear"
+                            label="Año al que postula"
                             placeholder={`${new Date().getFullYear() + 1}`}
-                            isRequired 
+                            isRequired
                             value={data.applicationYear || (new Date().getFullYear() + 1).toString()}
                             onChange={(e) => {
                                 const year = parseInt(e.target.value);
@@ -1475,7 +1479,51 @@ const ApplicationForm: React.FC = () => {
                             readOnly
                             helpText={`Las postulaciones son siempre para el año ${new Date().getFullYear() + 1}`}
                         />
-                        
+
+                        {/* Preferencia de Admisión */}
+                        <Select
+                            id="admissionPreference"
+                            label="Preferencia de Admisión"
+                            options={[
+                                { value: '', label: 'Seleccione una opción...' },
+                                { value: 'NINGUNA', label: 'Ninguna (postulación regular)' },
+                                { value: 'HIJO_EX_ALUMNO', label: 'Hijo/a de Ex-Alumno del colegio' },
+                                { value: 'HIJO_FUNCIONARIO', label: 'Hijo/a de Funcionario del colegio' },
+                                { value: 'INCLUSION', label: 'Estudiante con necesidades de inclusión educativa' }
+                            ]}
+                            isRequired
+                            value={data.admissionPreference || ''}
+                            onChange={(e) => updateField('admissionPreference', e.target.value)}
+                            onBlur={() => touchField('admissionPreference')}
+                            error={errors.admissionPreference}
+                            helpText="Indique si el estudiante tiene algún tipo de preferencia o prioridad en el proceso de admisión"
+                        />
+
+                        {/* Información adicional según preferencia seleccionada */}
+                        {data.admissionPreference === 'HIJO_EX_ALUMNO' && (
+                            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                <p className="text-sm text-blue-800">
+                                    <strong>ℹ️ Hijo/a de Ex-Alumno:</strong> Deberá adjuntar documentación que acredite que uno de los padres es ex-alumno del colegio (ej: certificado de alumno regular, concentración de notas, etc.).
+                                </p>
+                            </div>
+                        )}
+
+                        {data.admissionPreference === 'HIJO_FUNCIONARIO' && (
+                            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                                <p className="text-sm text-green-800">
+                                    <strong>ℹ️ Hijo/a de Funcionario:</strong> Deberá adjuntar documentación que acredite que uno de los padres trabaja actualmente en el colegio (ej: certificado de antigüedad, contrato, liquidación de sueldo).
+                                </p>
+                            </div>
+                        )}
+
+                        {data.admissionPreference === 'INCLUSION' && (
+                            <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                                <p className="text-sm text-purple-800">
+                                    <strong>ℹ️ Necesidades de Inclusión:</strong> Deberá adjuntar informes médicos, psicológicos o educacionales que documenten las necesidades específicas del estudiante. El equipo de inclusión del colegio se pondrá en contacto con usted.
+                                </p>
+                            </div>
+                        )}
+
                         {/* Campo de observaciones adicionales */}
                         <div className="mt-4">
                             <label htmlFor="additionalNotes" className="block text-sm font-medium text-gray-700 mb-2">

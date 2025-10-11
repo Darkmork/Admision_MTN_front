@@ -653,14 +653,14 @@ const EnhancedApplicationsDataTable: React.FC<EnhancedApplicationsDataTableProps
 
     // Función para transformar Application del backend a EnhancedApplication
     const transformApplicationToEnhanced = (app: Application): EnhancedApplication => {
-        const studentFullName = `${app.student.firstName} ${app.student.lastName}`;
+        const studentFullName = `${app.student.firstName} ${app.student.paternalLastName || app.student.lastName} ${app.student.maternalLastName || ''}`.trim();
         const studentAge = calculateAge(app.student.birthDate);
-        
+
         return {
             id: app.id,
             // Datos del estudiante
             studentFirstName: app.student.firstName,
-            studentLastName: app.student.lastName,
+            studentLastName: app.student.paternalLastName || app.student.lastName,
             studentFullName,
             studentRut: app.student.rut,
             studentBirthDate: app.student.birthDate,
@@ -750,8 +750,8 @@ const EnhancedApplicationsDataTable: React.FC<EnhancedApplicationsDataTableProps
                     return {
                         id: app.id || index,
                         studentFirstName: app.student?.firstName || 'Desconocido',
-                        studentLastName: app.student?.lastName || '',
-                        studentFullName: `${app.student?.firstName || 'Desconocido'} ${app.student?.lastName || ''}`,
+                        studentLastName: app.student?.paternalLastName || app.student?.lastName || '',
+                        studentFullName: `${app.student?.firstName || 'Desconocido'} ${app.student?.paternalLastName || app.student?.lastName || ''} ${app.student?.maternalLastName || ''}`.trim(),
                         studentRut: app.student?.rut || 'N/A',
                         studentBirthDate: app.student?.birthDate || '',
                         studentAge: 0,
@@ -868,12 +868,13 @@ const EnhancedApplicationsDataTable: React.FC<EnhancedApplicationsDataTableProps
 
     // Convertir EnhancedApplication a formato Postulante
     const convertToPostulante = (app: EnhancedApplication) => {
+        // studentLastName already contains only paternalLastName (not combined)
         return {
             id: app.id,
             nombreCompleto: app.studentFullName,
             nombres: app.studentFirstName,
-            apellidoPaterno: app.studentLastName,
-            apellidoMaterno: '',
+            apellidoPaterno: app.studentLastName,  // This is now paternalLastName only
+            apellidoMaterno: '',  // maternalLastName will be added when available from backend
             rut: app.studentRut,
             fechaNacimiento: app.studentBirthDate,
             edad: app.studentAge,

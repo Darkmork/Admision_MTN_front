@@ -348,13 +348,21 @@ const InterviewManagement: React.FC<InterviewManagementProps> = ({ className = '
   };
 
   const handleScheduleInterviewForStudent = (applicationId: number, interviewType?: string) => {
-    setSelectedInterview({
+    console.log('🎯 handleScheduleInterviewForStudent llamado con:', { applicationId, interviewType, selectedStudentName });
+
+    const interviewData = {
       applicationId: applicationId.toString(),
       studentName: selectedStudentName,
       type: interviewType as any,
-    } as any);
+    } as any;
+
+    console.log('📝 Datos de entrevista preparados:', interviewData);
+
+    setSelectedInterview(interviewData);
     setFormMode(InterviewFormMode.CREATE);
     setShowForm(true);
+
+    console.log('✅ Modal debería abrirse ahora - showForm=true');
   };
 
   // Removed unused getViewModeIcon function
@@ -856,10 +864,8 @@ const StudentDetailView: React.FC<StudentDetailViewProps> = ({
   };
 
   const interviewTypes = [
-    { key: 'INDIVIDUAL', label: 'Entrevista Individual' },
-    { key: 'FAMILY', label: 'Entrevista Familiar' },
-    { key: 'PSYCHOLOGICAL', label: 'Entrevista Psicológica' },
-    { key: 'ACADEMIC', label: 'Entrevista Académica' }
+    { key: 'CYCLE_DIRECTOR', label: 'Entrevista Director de Ciclo', requiresTwoInterviewers: false },
+    { key: 'FAMILY', label: 'Entrevista Familiar', requiresTwoInterviewers: true }
   ];
 
   const getInterviewForType = (type: string) => {
@@ -969,10 +975,13 @@ const StudentDetailView: React.FC<StudentDetailViewProps> = ({
                             <br />
                             {existingInterview.scheduledTime || 'No especificada'}
                           </div>
-                          <div>
-                            <span className="font-medium">👨‍🏫 Entrevistador:</span>
+                          <div className={existingInterview.secondInterviewerName ? "col-span-2" : ""}>
+                            <span className="font-medium">👨‍🏫 {existingInterview.secondInterviewerName ? 'Entrevistadores:' : 'Entrevistador:'}</span>
                             <br />
                             {existingInterview.interviewerName || 'No asignado'}
+                            {existingInterview.secondInterviewerName && (
+                              <> y {existingInterview.secondInterviewerName}</>
+                            )}
                           </div>
                           <div>
                             <span className="font-medium">⏱️ Duración:</span>

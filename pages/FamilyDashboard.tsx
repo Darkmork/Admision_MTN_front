@@ -4,6 +4,7 @@ import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import { ApplicationStatus, Document } from '../types';
+import { DOCUMENT_TYPE_LABELS, DocumentType } from '../types/document';
 import { applicationService } from '../services/applicationService';
 import { applicationWorkflowService } from '../services/applicationWorkflowService';
 import { useUserProfile } from '../hooks/useUserProfile';
@@ -347,14 +348,14 @@ const FamilyDashboard: React.FC = () => {
                     </div>
                   </button>
                   
-                  <button 
-                    onClick={() => setActiveSection('entrevistas')}
+                  <button
+                    onClick={() => setActiveSection('calendario')}
                     className="flex items-center gap-3 p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors text-left"
                   >
                     <UsersIcon className="w-8 h-8 text-verde-esperanza" />
                     <div>
                       <h4 className="font-semibold text-azul-monte-tabor">Mis Entrevistas</h4>
-                      <p className="text-sm text-gris-piedra">Programar y gestionar entrevistas</p>
+                      <p className="text-sm text-gris-piedra">Ver mis entrevistas programadas</p>
                     </div>
                   </button>
                 </div>
@@ -532,7 +533,11 @@ const FamilyDashboard: React.FC = () => {
                       <div className="flex items-center gap-3">
                         <FileTextIcon className="w-5 h-5 text-dorado-nazaret" />
                         <div>
-                          <span className="font-medium block">{doc.document_type || doc.name}</span>
+                          <span className="font-medium block">
+                            {doc.document_type && DOCUMENT_TYPE_LABELS[doc.document_type as DocumentType]
+                              ? DOCUMENT_TYPE_LABELS[doc.document_type as DocumentType]
+                              : doc.name || doc.document_type}
+                          </span>
                           <span className="text-xs text-gris-piedra">
                             Subido: {new Date(doc.created_at || doc.upload_date).toLocaleDateString('es-CL')}
                           </span>

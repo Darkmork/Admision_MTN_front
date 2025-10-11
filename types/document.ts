@@ -69,12 +69,12 @@ export const REQUIRED_DOCUMENTS: DocumentType[] = [
   DocumentType.BIRTH_CERTIFICATE,
   DocumentType.GRADES_2023,
   DocumentType.GRADES_2024,
-  DocumentType.GRADES_2025_SEMESTER_1,
-  DocumentType.PERSONALITY_REPORT_2024,
-  DocumentType.PERSONALITY_REPORT_2025_SEMESTER_1
+  DocumentType.GRADES_2025_SEMESTER_1
 ];
 
 export const OPTIONAL_DOCUMENTS: DocumentType[] = [
+  DocumentType.PERSONALITY_REPORT_2024,
+  DocumentType.PERSONALITY_REPORT_2025_SEMESTER_1,
   DocumentType.STUDENT_PHOTO,
   DocumentType.BAPTISM_CERTIFICATE,
   DocumentType.PREVIOUS_SCHOOL_REPORT,

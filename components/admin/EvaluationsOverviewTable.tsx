@@ -174,10 +174,10 @@ const EvaluationsOverviewTable: React.FC = () => {
                             <Badge variant="gray" size="sm">Pendiente</Badge>
                         )}
 
-                        {/* Puntaje (solo si está completada) */}
+                        {/* Puntaje en porcentaje (solo si está completada) */}
                         {evaluation.status === 'COMPLETED' && evaluation.score !== undefined && (
                             <span className="text-xs font-semibold text-blue-600">
-                                {evaluation.score}/{evaluation.maxScore || 100} pts
+                                {Math.round((evaluation.score / (evaluation.maxScore || 100)) * 100)}%
                             </span>
                         )}
 

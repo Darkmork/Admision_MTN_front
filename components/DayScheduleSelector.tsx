@@ -12,6 +12,8 @@ import {
 interface DayScheduleSelectorProps {
   evaluatorId: number;
   evaluatorName: string;
+  secondEvaluatorId?: number; // Segundo evaluador para entrevistas familiares
+  secondEvaluatorName?: string; // Nombre del segundo evaluador
   selectedDate?: string;
   selectedTime?: string;
   onDateTimeSelect: (date: string, time: string) => void;
@@ -21,6 +23,8 @@ interface DayScheduleSelectorProps {
 const DayScheduleSelector: React.FC<DayScheduleSelectorProps> = ({
   evaluatorId,
   evaluatorName,
+  secondEvaluatorId,
+  secondEvaluatorName,
   selectedDate,
   selectedTime,
   onDateTimeSelect,
@@ -32,34 +36,48 @@ const DayScheduleSelector: React.FC<DayScheduleSelectorProps> = ({
 
   // Cargar horarios cuando se selecciona una fecha
   useEffect(() => {
-    console.log(`📅 DayScheduleSelector useEffect: selectedDate="${selectedDate}", evaluatorId="${evaluatorId}"`);
+    console.log(`📅 DayScheduleSelector useEffect: selectedDate="${selectedDate}", evaluatorId="${evaluatorId}", secondEvaluatorId="${secondEvaluatorId}"`);
     if (selectedDate && evaluatorId) {
       loadDaySlots(selectedDate);
     } else {
       setAvailableSlots([]);
     }
-  }, [selectedDate, evaluatorId]);
+  }, [selectedDate, evaluatorId, secondEvaluatorId]);
 
   const loadDaySlots = async (date: string) => {
     setIsLoadingSlots(true);
     setError(null);
-    
+
     try {
-      console.log(`🔍 Cargando horarios para evaluador ${evaluatorId} (tipo: ${typeof evaluatorId}) en fecha ${date}`);
-      
       // Validar que tenemos un evaluadorId válido
       if (!evaluatorId || evaluatorId <= 0) {
         console.warn(`⚠️ EvaluatorId inválido: ${evaluatorId}`);
         setAvailableSlots([]);
         return;
       }
-      
-      // Obtener horarios disponibles para ese día específico
-      const slots = await interviewService.getAvailableTimeSlots(
-        evaluatorId,
-        date,
-        60 // duración por defecto de 60 minutos
-      );
+
+      let slots: string[];
+
+      // Si hay dos evaluadores, obtener horarios comunes
+      if (secondEvaluatorId && secondEvaluatorId > 0) {
+        console.log(`🔍 Cargando HORARIOS COMUNES para evaluadores ${evaluatorId} y ${secondEvaluatorId} en fecha ${date}`);
+        slots = await interviewService.getCommonTimeSlots(
+          evaluatorId,
+          secondEvaluatorId,
+          date,
+          60 // duración por defecto de 60 minutos
+        );
+        console.log(`✅ Horarios COMUNES obtenidos:`, slots);
+      } else {
+        console.log(`🔍 Cargando horarios para evaluador ${evaluatorId} (tipo: ${typeof evaluatorId}) en fecha ${date}`);
+        // Obtener horarios disponibles para ese día específico (solo un evaluador)
+        slots = await interviewService.getAvailableTimeSlots(
+          evaluatorId,
+          date,
+          60 // duración por defecto de 60 minutos
+        );
+        console.log(`✅ Horarios individuales obtenidos:`, slots);
+      }
       
       console.log(`✅ Horarios obtenidos:`, slots);
       console.log(`🔍 Tipo de slots:`, Array.isArray(slots), typeof slots);
@@ -187,8 +205,17 @@ const DayScheduleSelector: React.FC<DayScheduleSelectorProps> = ({
           {!isLoadingSlots && !error && availableSlots.length === 0 && (
             <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
               <p className="text-sm text-yellow-800">
-                ⚠️ No hay horarios disponibles para <strong>{evaluatorName}</strong> en esta fecha.
-                <br />Por favor seleccione otra fecha.
+                {secondEvaluatorId && secondEvaluatorName ? (
+                  <>
+                    ⚠️ No hay horarios comunes disponibles entre <strong>{evaluatorName}</strong> y <strong>{secondEvaluatorName}</strong> en esta fecha.
+                    <br />Por favor seleccione otra fecha.
+                  </>
+                ) : (
+                  <>
+                    ⚠️ No hay horarios disponibles para <strong>{evaluatorName}</strong> en esta fecha.
+                    <br />Por favor seleccione otra fecha.
+                  </>
+                )}
               </p>
             </div>
           )}
@@ -197,14 +224,24 @@ const DayScheduleSelector: React.FC<DayScheduleSelectorProps> = ({
             <div>
               <div className="mb-3">
                 <p className="text-sm text-green-700">
-                  ✅ {availableSlots.length} horario{availableSlots.length > 1 ? 's' : ''} disponible{availableSlots.length > 1 ? 's' : ''} 
-                  para <strong>{evaluatorName}</strong>
+                  {secondEvaluatorId && secondEvaluatorName ? (
+                    <>
+                      ✅ {availableSlots.length} horario{availableSlots.length > 1 ? 's' : ''} común{availableSlots.length > 1 ? 'es' : ''} disponible{availableSlots.length > 1 ? 's' : ''}
+                      entre <strong>{evaluatorName}</strong> y <strong>{secondEvaluatorName}</strong>
+                    </>
+                  ) : (
+                    <>
+                      ✅ {availableSlots.length} horario{availableSlots.length > 1 ? 's' : ''} disponible{availableSlots.length > 1 ? 's' : ''}
+                      para <strong>{evaluatorName}</strong>
+                    </>
+                  )}
                 </p>
               </div>
               
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
                 {availableSlots.map(time => (
                   <button
+                    type="button"
                     key={time}
                     onClick={() => handleTimeSelect(time)}
                     disabled={disabled}
@@ -237,7 +274,11 @@ const DayScheduleSelector: React.FC<DayScheduleSelectorProps> = ({
                 <br />
                 🕐 {formatSelectedDateTime()?.timeText} hrs
                 <br />
-                👤 Evaluador: {evaluatorName}
+                {secondEvaluatorId && secondEvaluatorName ? (
+                  <>👥 Evaluadores: {evaluatorName} y {secondEvaluatorName}</>
+                ) : (
+                  <>👤 Evaluador: {evaluatorName}</>
+                )}
               </p>
             </div>
           </div>

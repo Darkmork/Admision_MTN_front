@@ -45,11 +45,11 @@ export const EDUCATIONAL_LEVEL_LABELS: Record<EducationalLevel, string> = {
   [EducationalLevel.ALL_LEVELS]: 'Todos los Niveles'
 };
 
-// Labels para la UI - Asignaturas
+// Labels para la UI - Asignaturas (en español)
 export const SUBJECT_LABELS: Record<Subject, string> = {
   [Subject.GENERAL]: 'Educación General (Prebásica)',
-  [Subject.LANGUAGE]: 'Lenguaje y Literatura',
-  [Subject.MATHEMATICS]: 'Matemáticas',
+  [Subject.LANGUAGE]: 'Lenguaje',
+  [Subject.MATHEMATICS]: 'Matemática',
   [Subject.ENGLISH]: 'Inglés',
   [Subject.ALL_SUBJECTS]: 'Todas las Asignaturas'
 };
