@@ -51,7 +51,6 @@ import EvaluationManagement from '../components/admin/EvaluationManagement';
 import EvaluationStatistics from '../components/admin/EvaluationStatistics';
 import EvaluationReports from '../components/admin/EvaluationReports';
 import { GuardianManagement, StaffManagement } from '../components/users';
-import { InterviewManagement } from '../components/interviews';
 import SharedCalendar from '../components/admin/SharedCalendar';
 import { Application, applicationService } from '../services/applicationService';
 // Mock service removido - usando applicationService real
@@ -67,7 +66,6 @@ const sections = [
   { key: 'tablas', label: 'Tablas de Datos' },
   { key: 'postulaciones', label: 'Gestión de Postulaciones' },
   { key: 'evaluaciones', label: 'Gestión de Evaluaciones' },
-  { key: 'entrevistas', label: 'Gestión de Entrevistas' },
   { key: 'calendario', label: 'Calendario Global' },
   { key: 'usuarios', label: 'Gestión de Usuarios' },
 ];
@@ -667,12 +665,6 @@ Esta acción:
           </div>
         );
 
-      case 'entrevistas':
-        return (
-          <div className="space-y-6">
-            <InterviewManagement onBack={() => setActiveSection('dashboard')} />
-          </div>
-        );
       case 'calendario':
         return (
           <div className="space-y-6">
