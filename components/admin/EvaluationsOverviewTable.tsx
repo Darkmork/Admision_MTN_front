@@ -24,6 +24,11 @@ interface StudentEvaluation {
             assigned: boolean;
             status?: string;
             evaluatorName?: string;
+            score?: number;
+            maxScore?: number;
+            evaluationDate?: string;
+            completionDate?: string;
+            createdAt?: string;
         };
     };
 }
@@ -58,7 +63,12 @@ const EvaluationsOverviewTable: React.FC = () => {
                         evaluationsMap[ev.evaluationType] = {
                             assigned: true,
                             status: ev.status,
-                            evaluatorName: ev.evaluator ? `${ev.evaluator.firstName} ${ev.evaluator.lastName}` : undefined
+                            evaluatorName: ev.evaluator ? `${ev.evaluator.firstName} ${ev.evaluator.lastName}` : undefined,
+                            score: ev.score,
+                            maxScore: ev.maxScore || 100,
+                            evaluationDate: ev.evaluationDate,
+                            completionDate: ev.completionDate,
+                            createdAt: ev.createdAt
                         };
                     });
                 }
@@ -81,22 +91,67 @@ const EvaluationsOverviewTable: React.FC = () => {
         }
     };
 
-    const renderEvaluationCell = (evaluation: { assigned: boolean; status?: string; evaluatorName?: string }) => {
+    const renderEvaluationCell = (evaluation: {
+        assigned: boolean;
+        status?: string;
+        evaluatorName?: string;
+        score?: number;
+        maxScore?: number;
+        evaluationDate?: string;
+        completionDate?: string;
+        createdAt?: string;
+    }) => {
         if (evaluation.assigned) {
+            const formatDate = (dateString?: string) => {
+                if (!dateString) return null;
+                const date = new Date(dateString);
+                return date.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            };
+
             return (
                 <div className="flex items-center justify-center">
-                    <div className="flex flex-col items-center gap-1">
+                    <div className="flex flex-col items-center gap-1 min-w-[140px]">
                         <div className="flex items-center justify-center w-8 h-8 bg-green-100 rounded-full">
                             <FiCheck className="w-4 h-4 text-green-600" />
                         </div>
+
+                        {/* Evaluador */}
                         {evaluation.evaluatorName && (
-                            <span className="text-xs text-gray-600 text-center">{evaluation.evaluatorName}</span>
+                            <span className="text-xs text-gray-700 font-medium text-center">
+                                {evaluation.evaluatorName}
+                            </span>
                         )}
+
+                        {/* Estado */}
                         {evaluation.status === 'COMPLETED' && (
                             <Badge variant="green" size="sm">Completada</Badge>
                         )}
                         {evaluation.status === 'IN_PROGRESS' && (
                             <Badge variant="yellow" size="sm">En Progreso</Badge>
+                        )}
+                        {evaluation.status === 'PENDING' && (
+                            <Badge variant="gray" size="sm">Pendiente</Badge>
+                        )}
+
+                        {/* Puntaje (solo si está completada) */}
+                        {evaluation.status === 'COMPLETED' && evaluation.score !== undefined && (
+                            <span className="text-xs font-semibold text-blue-600">
+                                {evaluation.score}/{evaluation.maxScore || 100} pts
+                            </span>
+                        )}
+
+                        {/* Fecha de creación */}
+                        {evaluation.createdAt && (
+                            <span className="text-xs text-gray-500">
+                                Asignada: {formatDate(evaluation.createdAt)}
+                            </span>
+                        )}
+
+                        {/* Fecha de completación */}
+                        {evaluation.completionDate && (
+                            <span className="text-xs text-gray-500">
+                                Completada: {formatDate(evaluation.completionDate)}
+                            </span>
                         )}
                     </div>
                 </div>
