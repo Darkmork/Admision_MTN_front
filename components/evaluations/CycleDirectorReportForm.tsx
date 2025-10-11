@@ -76,12 +76,13 @@ const CycleDirectorReportForm: React.FC = () => {
                 
                 if (directorEvaluation) {
                     setEvaluation(directorEvaluation);
-                    
+
+                    // Cargar información completa del estudiante desde la aplicación
+                    await loadStudentInfo(directorEvaluation.applicationId);
+
                     // Mapear datos de la evaluación al formato del informe
                     setReportData(prev => ({
                         ...prev,
-                        studentName: directorEvaluation.studentName || '',
-                        gradeApplied: directorEvaluation.studentGrade || '',
                         strengths: directorEvaluation.strengths || '',
                         difficulties: directorEvaluation.areasForImprovement || '',
                         interviewAdaptation: '',
@@ -89,10 +90,10 @@ const CycleDirectorReportForm: React.FC = () => {
                         familyBackground: '',
                         academicBackground: directorEvaluation.observations || ''
                     }));
-                    
+
                     // Cargar todas las evaluaciones del mismo estudiante para obtener resultados académicos
                     await loadSubjectEvaluations(directorEvaluation.applicationId);
-                    
+
                     console.log('✅ Evaluación director cargada:', directorEvaluation);
                 } else {
                     console.error('❌ Evaluación no encontrada');
@@ -117,6 +118,71 @@ const CycleDirectorReportForm: React.FC = () => {
 
         loadEvaluationData();
     }, [examId]); // ✅ SOLO examId como dependencia
+
+    const loadStudentInfo = async (applicationId: number) => {
+        try {
+            console.log('🔄 Cargando información completa del estudiante para application:', applicationId);
+
+            // Obtener la aplicación completa que incluye todos los datos del estudiante
+            const response = await fetch(`http://localhost:8080/api/applications/${applicationId}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('professor_token') || localStorage.getItem('auth_token')}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Error al obtener información del estudiante');
+            }
+
+            const data = await response.json();
+            const application = data.data || data;
+
+            console.log('📊 Aplicación completa:', application);
+
+            if (application && application.student) {
+                const student = application.student;
+
+                // Calcular edad si hay fecha de nacimiento
+                let age = '';
+                if (student.birthDate) {
+                    const birthDate = new Date(student.birthDate);
+                    const today = new Date();
+                    let calculatedAge = today.getFullYear() - birthDate.getFullYear();
+                    const monthDiff = today.getMonth() - birthDate.getMonth();
+                    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                        calculatedAge--;
+                    }
+                    age = `${calculatedAge} años`;
+                }
+
+                // Actualizar datos del estudiante en el informe
+                setReportData(prev => ({
+                    ...prev,
+                    studentName: `${student.firstName} ${student.paternalLastName || student.lastName || ''} ${student.maternalLastName || ''}`.trim(),
+                    birthDate: student.birthDate ? student.birthDate.split('T')[0] : '',
+                    age: age,
+                    currentSchool: student.currentSchool || '',
+                    gradeApplied: student.gradeApplied || ''
+                }));
+
+                console.log('✅ Información del estudiante cargada:', {
+                    name: student.firstName,
+                    birthDate: student.birthDate,
+                    age: age,
+                    currentSchool: student.currentSchool,
+                    grade: student.gradeApplied
+                });
+            }
+
+        } catch (error) {
+            console.error('❌ Error cargando información del estudiante:', error);
+            addNotification({
+                type: 'warning',
+                title: 'Atención',
+                message: 'No se pudo cargar la información completa del estudiante. Por favor, completa los campos manualmente.'
+            });
+        }
+    };
 
     const loadSubjectEvaluations = async (applicationId: number) => {
         try {
