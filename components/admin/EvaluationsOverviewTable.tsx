@@ -4,14 +4,13 @@ import Badge from '../ui/Badge';
 import { FiCheck, FiX, FiClock } from 'react-icons/fi';
 import { applicationService } from '../../services/applicationService';
 
-// Tipos de evaluaciones
+// Tipos de evaluaciones reales del sistema
 const EVALUATION_TYPES = [
     { key: 'LANGUAGE_EXAM', label: 'Lenguaje' },
     { key: 'MATHEMATICS_EXAM', label: 'Matemáticas' },
     { key: 'ENGLISH_EXAM', label: 'Inglés' },
-    { key: 'PSYCHOLOGICAL_INTERVIEW', label: 'Psicológica' },
-    { key: 'CYCLE_DIRECTOR_INTERVIEW', label: 'Director' },
-    { key: 'CYCLE_DIRECTOR_REPORT', label: 'Informe' }
+    { key: 'CYCLE_DIRECTOR_INTERVIEW', label: 'Entrevista Director' },
+    { key: 'FAMILY_INTERVIEW', label: 'Entrevista Familiar' }
 ];
 
 interface StudentEvaluation {
@@ -108,23 +107,18 @@ const EvaluationsOverviewTable: React.FC = () => {
 
         // Filtro por categoría de evaluación
         if (selectedCategory) {
-            if (selectedCategory === 'ASIGNATURAS') {
-                // Mostrar solo estudiantes con evaluaciones de asignaturas
+            if (selectedCategory === 'EXAMENES') {
+                // Mostrar solo estudiantes con exámenes académicos
                 filtered = filtered.filter(student =>
                     student.evaluations['LANGUAGE_EXAM']?.assigned ||
                     student.evaluations['MATHEMATICS_EXAM']?.assigned ||
                     student.evaluations['ENGLISH_EXAM']?.assigned
                 );
-            } else if (selectedCategory === 'PSICOLOGIA') {
-                // Mostrar solo estudiantes con evaluación psicológica
-                filtered = filtered.filter(student =>
-                    student.evaluations['PSYCHOLOGICAL_INTERVIEW']?.assigned
-                );
-            } else if (selectedCategory === 'DIRECTOR') {
-                // Mostrar solo estudiantes con evaluaciones de director
+            } else if (selectedCategory === 'ENTREVISTAS') {
+                // Mostrar solo estudiantes con entrevistas (Director de Ciclo o Familiar)
                 filtered = filtered.filter(student =>
                     student.evaluations['CYCLE_DIRECTOR_INTERVIEW']?.assigned ||
-                    student.evaluations['CYCLE_DIRECTOR_REPORT']?.assigned
+                    student.evaluations['FAMILY_INTERVIEW']?.assigned
                 );
             }
         }
@@ -280,9 +274,8 @@ const EvaluationsOverviewTable: React.FC = () => {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                     >
                         <option value="">Todas las evaluaciones</option>
-                        <option value="ASIGNATURAS">Asignaturas (Lenguaje, Matemáticas, Inglés)</option>
-                        <option value="PSICOLOGIA">Psicología</option>
-                        <option value="DIRECTOR">Director de Ciclo</option>
+                        <option value="EXAMENES">Exámenes (Lenguaje, Matemáticas, Inglés)</option>
+                        <option value="ENTREVISTAS">Entrevistas (Director de Ciclo, Familiar)</option>
                     </select>
                 </div>
 
