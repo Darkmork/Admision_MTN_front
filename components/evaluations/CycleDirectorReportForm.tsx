@@ -77,24 +77,36 @@ const CycleDirectorReportForm: React.FC = () => {
                 if (directorEvaluation) {
                     setEvaluation(directorEvaluation);
 
-                    // Cargar información completa del estudiante desde la aplicación
-                    await loadStudentInfo(directorEvaluation.applicationId);
+                    console.log('📋 Director evaluation data:', {
+                        applicationId: directorEvaluation.applicationId,
+                        studentName: directorEvaluation.studentName,
+                        studentGrade: directorEvaluation.studentGrade
+                    });
 
-                    // Mapear datos de la evaluación al formato del informe
-                    setReportData(prev => ({
-                        ...prev,
+                    // Primero mapear datos de la evaluación
+                    const evaluationData = {
                         strengths: directorEvaluation.strengths || '',
                         difficulties: directorEvaluation.areasForImprovement || '',
                         interviewAdaptation: '',
                         outstandingTraits: '',
                         familyBackground: '',
                         academicBackground: directorEvaluation.observations || ''
+                    };
+
+                    // Cargar información completa del estudiante desde la aplicación
+                    const studentInfo = await loadStudentInfo(directorEvaluation.applicationId);
+
+                    // Combinar ambos conjuntos de datos
+                    setReportData(prev => ({
+                        ...prev,
+                        ...evaluationData,
+                        ...studentInfo
                     }));
 
                     // Cargar todas las evaluaciones del mismo estudiante para obtener resultados académicos
                     await loadSubjectEvaluations(directorEvaluation.applicationId);
 
-                    console.log('✅ Evaluación director cargada:', directorEvaluation);
+                    console.log('✅ Evaluación director cargada completamente');
                 } else {
                     console.error('❌ Evaluación no encontrada');
                     addNotification({
@@ -119,7 +131,7 @@ const CycleDirectorReportForm: React.FC = () => {
         loadEvaluationData();
     }, [examId]); // ✅ SOLO examId como dependencia
 
-    const loadStudentInfo = async (applicationId: number) => {
+    const loadStudentInfo = async (applicationId: number): Promise<Partial<CycleDirectorReportData>> => {
         try {
             console.log('🔄 Cargando información completa del estudiante para application:', applicationId);
 
@@ -137,10 +149,19 @@ const CycleDirectorReportForm: React.FC = () => {
             const data = await response.json();
             const application = data.data || data;
 
-            console.log('📊 Aplicación completa:', application);
+            console.log('📊 Aplicación completa recibida:', application);
 
             if (application && application.student) {
                 const student = application.student;
+
+                console.log('👤 Datos del estudiante:', {
+                    firstName: student.firstName,
+                    paternalLastName: student.paternalLastName,
+                    maternalLastName: student.maternalLastName,
+                    birthDate: student.birthDate,
+                    currentSchool: student.currentSchool,
+                    gradeApplied: student.gradeApplied
+                });
 
                 // Calcular edad si hay fecha de nacimiento
                 let age = '';
@@ -155,24 +176,19 @@ const CycleDirectorReportForm: React.FC = () => {
                     age = `${calculatedAge} años`;
                 }
 
-                // Actualizar datos del estudiante en el informe
-                setReportData(prev => ({
-                    ...prev,
+                const studentInfo = {
                     studentName: `${student.firstName} ${student.paternalLastName || student.lastName || ''} ${student.maternalLastName || ''}`.trim(),
                     birthDate: student.birthDate ? student.birthDate.split('T')[0] : '',
                     age: age,
                     currentSchool: student.currentSchool || '',
                     gradeApplied: student.gradeApplied || ''
-                }));
+                };
 
-                console.log('✅ Información del estudiante cargada:', {
-                    name: student.firstName,
-                    birthDate: student.birthDate,
-                    age: age,
-                    currentSchool: student.currentSchool,
-                    grade: student.gradeApplied
-                });
+                console.log('✅ Información del estudiante procesada:', studentInfo);
+                return studentInfo;
             }
+
+            return {};
 
         } catch (error) {
             console.error('❌ Error cargando información del estudiante:', error);
@@ -181,6 +197,7 @@ const CycleDirectorReportForm: React.FC = () => {
                 title: 'Atención',
                 message: 'No se pudo cargar la información completa del estudiante. Por favor, completa los campos manualmente.'
             });
+            return {};
         }
     };
 
