@@ -154,11 +154,25 @@ const AdminDashboard: React.FC = () => {
 
 
   useEffect(() => {
-    loadApplications();
-    loadUsers(); // Cargar usuarios siempre para mostrar estadísticas correctas
-    if (activeSection === 'postulaciones') {
-      loadAdminApplications();
-    }
+    // Cleanup flag to prevent state updates after unmount
+    let isMounted = true;
+
+    const loadData = async () => {
+      if (isMounted) {
+        await loadApplications();
+        await loadUsers(); // Cargar usuarios siempre para mostrar estadísticas correctas
+        if (activeSection === 'postulaciones') {
+          await loadAdminApplications();
+        }
+      }
+    };
+
+    loadData();
+
+    // Cleanup function
+    return () => {
+      isMounted = false;
+    };
   }, [activeSection]);
 
   const loadApplications = async () => {
@@ -415,8 +429,18 @@ Esta acción:
                   setStatusFilter('all');
                   setActiveSection('postulaciones');
                 }}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setStatusFilter('all');
+                    setActiveSection('postulaciones');
+                  }
+                }}
+                aria-label={`Ver todas las postulaciones. Total: ${applications.length}`}
               >
-                <FileTextIcon className="w-8 h-8 text-blue-500 mx-auto mb-2" />
+                <FileTextIcon className="w-8 h-8 text-blue-500 mx-auto mb-2" aria-hidden="true" />
                 <p className="text-2xl font-bold text-blue-600">
                   {applications.length}
                 </p>
@@ -714,8 +738,9 @@ Esta acción:
             <button
               onClick={() => navigate('/coordinador')}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-md hover:shadow-lg"
+              aria-label="Ir al dashboard del coordinador con analytics y búsqueda avanzada"
             >
-              <FiBarChart2 className="w-5 h-5" />
+              <FiBarChart2 className="w-5 h-5" aria-hidden="true" />
               <div className="flex-1">
                 <div className="text-sm font-semibold">Dashboard Coordinador</div>
                 <div className="text-xs opacity-90">Analytics y búsqueda avanzada</div>
@@ -723,7 +748,7 @@ Esta acción:
             </button>
           </div>
 
-          <nav className="px-4 flex-1">
+          <nav className="px-4 flex-1" aria-label="Menú de navegación principal del administrador">
             {sections.map(section => (
               <button
                 key={section.key}
@@ -733,6 +758,8 @@ Esta acción:
                     ? 'bg-azul-monte-tabor text-white'
                     : 'text-gris-piedra hover:bg-gray-100'
                 }`}
+                aria-label={`Navegar a sección ${section.label}`}
+                aria-current={activeSection === section.key ? 'page' : undefined}
               >
                 <span className="text-sm">{section.label}</span>
               </button>
@@ -743,6 +770,7 @@ Esta acción:
               variant="primary"
               className="w-full bg-azul-monte-tabor hover:bg-blue-700 text-white font-medium py-3 transition-all duration-200 shadow-md hover:shadow-lg"
               onClick={() => logout()}
+              ariaLabel="Cerrar sesión y salir del panel de administración"
             >
               Cerrar Sesión
             </Button>
@@ -750,7 +778,7 @@ Esta acción:
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-6" role="main" aria-label="Contenido principal del dashboard">
           {renderSection()}
         </main>
       </div>

@@ -202,9 +202,10 @@ const FamilyDashboard: React.FC = () => {
                     Error al cargar datos:
                   </p>
                   <p className="text-red-600 text-sm">{error}</p>
-                  <button 
-                    onClick={() => window.location.reload()} 
+                  <button
+                    onClick={() => window.location.reload()}
                     className="mt-2 text-red-600 hover:text-red-800 underline text-sm"
+                    aria-label="Reintentar carga de datos"
                   >
                     Reintentar
                   </button>
@@ -358,22 +359,24 @@ const FamilyDashboard: React.FC = () => {
               <Card className="p-6 mt-6">
                 <h3 className="text-lg font-bold text-azul-monte-tabor mb-4">Accesos Rápidos</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <button 
+                  <button
                     onClick={() => setActiveSection('calendario')}
                     className="flex items-center gap-3 p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors text-left"
+                    aria-label="Ir a mi calendario para ver fechas y eventos personalizados"
                   >
-                    <CalendarIcon className="w-8 h-8 text-azul-monte-tabor" />
+                    <CalendarIcon className="w-8 h-8 text-azul-monte-tabor" aria-hidden="true" />
                     <div>
                       <h4 className="font-semibold text-azul-monte-tabor">Mi Calendario</h4>
                       <p className="text-sm text-gris-piedra">Ver mis fechas y eventos personalizados</p>
                     </div>
                   </button>
-                  
+
                   <button
                     onClick={() => setActiveSection('calendario')}
                     className="flex items-center gap-3 p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors text-left"
+                    aria-label="Ir a mis entrevistas programadas"
                   >
-                    <UsersIcon className="w-8 h-8 text-verde-esperanza" />
+                    <UsersIcon className="w-8 h-8 text-verde-esperanza" aria-hidden="true" />
                     <div>
                       <h4 className="font-semibold text-azul-monte-tabor">Mis Entrevistas</h4>
                       <p className="text-sm text-gris-piedra">Ver mis entrevistas programadas</p>
@@ -637,13 +640,15 @@ const FamilyDashboard: React.FC = () => {
   return (
     <div className="bg-gray-50 min-h-screen py-12 flex">
       {/* Sidebar */}
-      <aside className="w-64 bg-azul-monte-tabor p-6 flex-shrink-0 hidden md:flex md:flex-col rounded-xl mr-8">
-        <nav className="space-y-2">
+      <aside className="w-64 bg-azul-monte-tabor p-6 flex-shrink-0 hidden md:flex md:flex-col rounded-xl mr-8" role="complementary" aria-label="Menú de navegación">
+        <nav className="space-y-2" aria-label="Secciones del portal de apoderados">
           {sections.map(section => (
             <button
               key={section.key}
               onClick={() => setActiveSection(section.key)}
               className={`w-full text-left px-4 py-2 rounded-lg font-semibold transition-colors duration-200 ${activeSection === section.key ? 'bg-dorado-nazaret/20 text-dorado-nazaret' : 'text-blanco-pureza hover:bg-blue-800'}`}
+              aria-label={`Navegar a sección ${section.label}`}
+              aria-current={activeSection === section.key ? 'page' : undefined}
             >
               {section.label}
             </button>
@@ -651,7 +656,7 @@ const FamilyDashboard: React.FC = () => {
         </nav>
       </aside>
       {/* Main Content */}
-      <main className="flex-1 max-w-3xl mx-auto">
+      <main className="flex-1 max-w-3xl mx-auto" role="main" aria-label="Contenido principal del portal de apoderados">
         {renderSection()}
       </main>
         </div>
