@@ -615,6 +615,13 @@ const ApplicationForm: React.FC = () => {
                     !data.studentAddressStreet?.trim() || !data.studentAddressNumber?.trim() || !data.studentAddressCommune?.trim()) {
                     return false;
                 }
+                // Validate location fields
+                const pais = data.pais || 'Chile';
+                if (pais === 'Chile') {
+                    if (!data.region?.trim() || !data.comuna?.trim()) {
+                        return false;
+                    }
+                }
                 // Validate application year (must be current year + 1)
                 const currentYear = new Date().getFullYear();
                 const applicationYear = parseInt(data.applicationYear);
@@ -776,6 +783,9 @@ const ApplicationForm: React.FC = () => {
                             currentSchool: data.currentSchool,
                             additionalNotes: data.additionalNotes,
                             admissionPreference: data.admissionPreference,
+                            pais: data.pais || 'Chile',
+                            region: data.region || null,
+                            comuna: data.comuna || null,
 
                             // Datos del padre
                             parent1Name: data.parent1Name,
@@ -976,6 +986,13 @@ const ApplicationForm: React.FC = () => {
                 if (!data.schoolApplied) missing.push('Colegio');
                 if (!data.admissionPreference) missing.push('Preferencia de Admisión');
                 if (!data.studentAddress?.trim()) missing.push('Dirección');
+
+                // Validate location fields
+                const paisValidation = data.pais || 'Chile';
+                if (paisValidation === 'Chile') {
+                    if (!data.region?.trim()) missing.push('Región');
+                    if (!data.comuna?.trim()) missing.push('Comuna');
+                }
 
                 // Validate application year
                 const currentYear = new Date().getFullYear();
@@ -1411,6 +1428,92 @@ const ApplicationForm: React.FC = () => {
                                 onBlur={() => touchField('studentAddressApartment')}
                             />
                         </div>
+
+                        {/* Ubicación Geográfica */}
+                        <div className="space-y-4">
+                            <h4 className="font-medium text-azul-monte-tabor">Ubicación Geográfica</h4>
+                            <Select
+                                id="pais"
+                                label="País"
+                                options={[
+                                    { value: 'Chile', label: 'Chile' },
+                                    { value: 'Argentina', label: 'Argentina' },
+                                    { value: 'Peru', label: 'Perú' },
+                                    { value: 'Bolivia', label: 'Bolivia' },
+                                    { value: 'Colombia', label: 'Colombia' },
+                                    { value: 'Otro', label: 'Otro' }
+                                ]}
+                                isRequired
+                                value={data.pais || 'Chile'}
+                                onChange={(e) => {
+                                    updateField('pais', e.target.value);
+                                    // Clear region and comuna if not Chile
+                                    if (e.target.value !== 'Chile') {
+                                        updateField('region', '');
+                                        updateField('comuna', '');
+                                    }
+                                }}
+                                onBlur={() => touchField('pais')}
+                                error={errors.pais}
+                            />
+
+                            {/* Conditional fields for Chile */}
+                            {(data.pais === 'Chile' || !data.pais) && (
+                                <>
+                                    <Select
+                                        id="region"
+                                        label="Región"
+                                        options={[
+                                            { value: '', label: 'Seleccione una región...' },
+                                            { value: 'Región de Arica y Parinacota', label: 'Región de Arica y Parinacota' },
+                                            { value: 'Región de Tarapacá', label: 'Región de Tarapacá' },
+                                            { value: 'Región de Antofagasta', label: 'Región de Antofagasta' },
+                                            { value: 'Región de Atacama', label: 'Región de Atacama' },
+                                            { value: 'Región de Coquimbo', label: 'Región de Coquimbo' },
+                                            { value: 'Región de Valparaíso', label: 'Región de Valparaíso' },
+                                            { value: 'Región Metropolitana de Santiago', label: 'Región Metropolitana de Santiago' },
+                                            { value: 'Región del Libertador General Bernardo O\'Higgins', label: 'Región del Libertador General Bernardo O\'Higgins' },
+                                            { value: 'Región del Maule', label: 'Región del Maule' },
+                                            { value: 'Región de Ñuble', label: 'Región de Ñuble' },
+                                            { value: 'Región del Biobío', label: 'Región del Biobío' },
+                                            { value: 'Región de La Araucanía', label: 'Región de La Araucanía' },
+                                            { value: 'Región de Los Ríos', label: 'Región de Los Ríos' },
+                                            { value: 'Región de Los Lagos', label: 'Región de Los Lagos' },
+                                            { value: 'Región de Aysén del General Carlos Ibáñez del Campo', label: 'Región de Aysén del General Carlos Ibáñez del Campo' },
+                                            { value: 'Región de Magallanes y de la Antártica Chilena', label: 'Región de Magallanes y de la Antártica Chilena' }
+                                        ]}
+                                        isRequired
+                                        value={data.region || ''}
+                                        onChange={(e) => updateField('region', e.target.value)}
+                                        onBlur={() => touchField('region')}
+                                        error={errors.region}
+                                        helpText="Seleccione la región donde reside el estudiante"
+                                    />
+
+                                    <Input
+                                        id="comuna"
+                                        label="Comuna"
+                                        placeholder="Ej: Providencia, Las Condes, Maipú"
+                                        isRequired
+                                        value={data.comuna || ''}
+                                        onChange={(e) => updateField('comuna', e.target.value)}
+                                        onBlur={() => touchField('comuna')}
+                                        error={errors.comuna}
+                                        helpText="Ingrese la comuna donde reside el estudiante"
+                                    />
+                                </>
+                            )}
+
+                            {/* Information message for non-Chilean countries */}
+                            {data.pais && data.pais !== 'Chile' && (
+                                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                    <p className="text-sm text-blue-800">
+                                        <strong>Nota:</strong> Para estudiantes residentes fuera de Chile, los campos región y comuna no son obligatorios.
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+
                         <Select
                             id="grade"
                             label="Nivel al que postula"
@@ -1480,24 +1583,61 @@ const ApplicationForm: React.FC = () => {
                             helpText={`Las postulaciones son siempre para el año ${new Date().getFullYear() + 1}`}
                         />
 
-                        {/* Preferencia de Admisión */}
-                        <Select
-                            id="admissionPreference"
-                            label="Preferencia de Admisión"
-                            options={[
-                                { value: '', label: 'Seleccione una opción...' },
-                                { value: 'NINGUNA', label: 'Ninguna (postulación regular)' },
-                                { value: 'HIJO_EX_ALUMNO', label: 'Hijo/a de Ex-Alumno del colegio' },
-                                { value: 'HIJO_FUNCIONARIO', label: 'Hijo/a de Funcionario del colegio' },
-                                { value: 'INCLUSION', label: 'Estudiante con necesidades de inclusión educativa' }
-                            ]}
-                            isRequired
-                            value={data.admissionPreference || ''}
-                            onChange={(e) => updateField('admissionPreference', e.target.value)}
-                            onBlur={() => touchField('admissionPreference')}
-                            error={errors.admissionPreference}
-                            helpText="Indique si el estudiante tiene algún tipo de preferencia o prioridad en el proceso de admisión"
-                        />
+                        {/* Tipo de Relación Familiar / Preferencia de Admisión */}
+                        <div className="space-y-3">
+                            <label className="block text-sm font-medium text-gray-700">
+                                Tipo de Relación Familiar <span className="text-red-500">*</span>
+                            </label>
+                            <p className="text-sm text-gray-600 mb-3">
+                                Indique si el estudiante tiene algún tipo de relación familiar con la institución
+                            </p>
+                            <div className="space-y-2">
+                                <label className="flex items-center p-3 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="admissionPreference"
+                                        value="NINGUNA"
+                                        checked={data.admissionPreference === 'NINGUNA' || !data.admissionPreference}
+                                        onChange={(e) => updateField('admissionPreference', e.target.value)}
+                                        className="h-4 w-4 text-azul-monte-tabor focus:ring-azul-monte-tabor border-gray-300"
+                                    />
+                                    <span className="ml-3 text-sm text-gray-900">
+                                        <strong>Ninguna</strong> - Postulación regular sin relación familiar previa
+                                    </span>
+                                </label>
+
+                                <label className="flex items-center p-3 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="admissionPreference"
+                                        value="HIJO_FUNCIONARIO"
+                                        checked={data.admissionPreference === 'HIJO_FUNCIONARIO'}
+                                        onChange={(e) => updateField('admissionPreference', e.target.value)}
+                                        className="h-4 w-4 text-azul-monte-tabor focus:ring-azul-monte-tabor border-gray-300"
+                                    />
+                                    <span className="ml-3 text-sm text-gray-900">
+                                        <strong>Hijo de Funcionario</strong> - Uno de los padres trabaja actualmente en el colegio
+                                    </span>
+                                </label>
+
+                                <label className="flex items-center p-3 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="admissionPreference"
+                                        value="HIJO_EX_ALUMNO"
+                                        checked={data.admissionPreference === 'HIJO_EX_ALUMNO'}
+                                        onChange={(e) => updateField('admissionPreference', e.target.value)}
+                                        className="h-4 w-4 text-azul-monte-tabor focus:ring-azul-monte-tabor border-gray-300"
+                                    />
+                                    <span className="ml-3 text-sm text-gray-900">
+                                        <strong>Hijo de Ex-Alumno</strong> - Uno de los padres es ex-alumno del colegio
+                                    </span>
+                                </label>
+                            </div>
+                            {errors.admissionPreference && (
+                                <p className="text-sm text-red-600 mt-1">{errors.admissionPreference}</p>
+                            )}
+                        </div>
 
                         {/* Información adicional según preferencia seleccionada */}
                         {data.admissionPreference === 'HIJO_EX_ALUMNO' && (
@@ -1512,14 +1652,6 @@ const ApplicationForm: React.FC = () => {
                             <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
                                 <p className="text-sm text-green-800">
                                     <strong>ℹ️ Hijo/a de Funcionario:</strong> Deberá adjuntar documentación que acredite que uno de los padres trabaja actualmente en el colegio (ej: certificado de antigüedad, contrato, liquidación de sueldo).
-                                </p>
-                            </div>
-                        )}
-
-                        {data.admissionPreference === 'INCLUSION' && (
-                            <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
-                                <p className="text-sm text-purple-800">
-                                    <strong>ℹ️ Necesidades de Inclusión:</strong> Deberá adjuntar informes médicos, psicológicos o educacionales que documenten las necesidades específicas del estudiante. El equipo de inclusión del colegio se pondrá en contacto con usted.
                                 </p>
                             </div>
                         )}
