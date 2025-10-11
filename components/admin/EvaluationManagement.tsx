@@ -450,11 +450,20 @@ const CustomAssignmentModal: React.FC<CustomAssignmentModalProps> = ({
   useEffect(() => {
     // Initialize assignments when modal opens
     if (isOpen) {
-      const initialAssignments = requiredEvaluations.map(type => ({
-        evaluationType: type,
-        evaluatorId: 0,
-        evaluatorName: ''
-      }));
+      const initialAssignments = requiredEvaluations.map(type => {
+        // Buscar si ya existe una evaluación asignada para este tipo
+        const existingEvaluation = application.evaluations?.find(
+          (ev: any) => ev.evaluationType === type
+        );
+
+        return {
+          evaluationType: type,
+          evaluatorId: existingEvaluation?.evaluatorId || 0,
+          evaluatorName: existingEvaluation?.evaluator
+            ? `${existingEvaluation.evaluator.firstName} ${existingEvaluation.evaluator.lastName}`
+            : ''
+        };
+      });
       setAssignments(initialAssignments);
       setSubmitMessage(null); // Limpiar mensajes previos
       setIsSubmitting(false);
@@ -533,23 +542,44 @@ const CustomAssignmentModal: React.FC<CustomAssignmentModalProps> = ({
             const availableEvaluators = getEvaluatorsByType(evaluationType);
             const assignment = assignments.find(a => a.evaluationType === evaluationType);
 
+            // Verificar si ya existe una evaluación asignada para este tipo
+            const existingEvaluation = application.evaluations?.find(
+              (ev: any) => ev.evaluationType === evaluationType
+            );
+            const isAlreadyAssigned = !!existingEvaluation;
+            const assignedEvaluatorId = existingEvaluation?.evaluatorId;
+
             return (
               <div key={evaluationType} className="border rounded-lg p-4">
                 <div className="flex items-center justify-between mb-3">
                   <h5 className="font-medium text-azul-monte-tabor">
                     {EVALUATION_TYPE_LABELS[evaluationType]}
                   </h5>
-                  <Badge variant="info" size="sm">
-                    {availableEvaluators.length} evaluadores disponibles
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    {isAlreadyAssigned && (
+                      <Badge variant="success" size="sm">
+                        Ya asignado
+                      </Badge>
+                    )}
+                    <Badge variant="info" size="sm">
+                      {availableEvaluators.length} evaluadores disponibles
+                    </Badge>
+                  </div>
                 </div>
 
                 <select
                   value={assignment?.evaluatorId || 0}
                   onChange={(e) => updateAssignment(evaluationType, parseInt(e.target.value))}
-                  className="w-full p-2 border border-gray-300 rounded-lg"
+                  disabled={isAlreadyAssigned}
+                  className={`w-full p-2 border rounded-lg ${
+                    isAlreadyAssigned
+                      ? 'border-gray-300 bg-gray-100 text-gray-600 cursor-not-allowed'
+                      : 'border-gray-300'
+                  }`}
                 >
-                  <option value={0}>Seleccionar evaluador...</option>
+                  <option value={0}>
+                    {isAlreadyAssigned ? 'Evaluador ya asignado' : 'Seleccionar evaluador...'}
+                  </option>
                   {availableEvaluators.map(evaluator => (
                     <option key={evaluator.id} value={evaluator.id}>
                       {evaluator.firstName} {evaluator.lastName} - {SystemRoleLabels[evaluator.role]}
@@ -557,7 +587,14 @@ const CustomAssignmentModal: React.FC<CustomAssignmentModalProps> = ({
                   ))}
                 </select>
 
-                {availableEvaluators.length === 0 && (
+                {isAlreadyAssigned && (
+                  <p className="text-blue-600 text-sm mt-2 flex items-center gap-1">
+                    <CheckCircle className="w-4 h-4" />
+                    Este evaluador ya fue asignado a esta evaluación y no puede ser modificado
+                  </p>
+                )}
+
+                {availableEvaluators.length === 0 && !isAlreadyAssigned && (
                   <p className="text-red-500 text-sm mt-2">
                     No hay evaluadores disponibles para este tipo de evaluación
                   </p>

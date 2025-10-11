@@ -279,30 +279,78 @@ const PostulantesDataTable: React.FC<PostulantesDataTableProps> = ({
         },
         {
             key: 'proceso',
-            title: 'Estado del Proceso',
+            title: 'Avance del Proceso',
             dataIndex: 'documentosCompletos',
             sortable: true,
             filterable: false,
-            width: 140,
+            width: 160,
             align: 'center',
             render: (_, record) => {
                 if (!record) return <div>-</div>;
+
+                // Calcular progreso: cuántas etapas están completadas
+                const etapasCompletadas = [
+                    record.documentosCompletos,
+                    !record.evaluacionPendiente,
+                    record.entrevistaProgramada
+                ].filter(Boolean).length;
+
+                const totalEtapas = 3;
+                const porcentaje = Math.round((etapasCompletadas / totalEtapas) * 100);
+
                 return (
-                    <div className="flex flex-col items-center gap-1">
-                        <Badge variant={record.documentosCompletos ? 'green' : 'red'} size="xs">
-                            {record.documentosCompletos ? '📄 Docs OK' : '📄 Faltan'}
-                        </Badge>
-                        <Badge 
-                            variant={record.evaluacionPendiente ? 'yellow' : 'green'} 
-                            size="xs"
-                        >
-                            {record.evaluacionPendiente ? '⏳ Eval. Pend.' : '✅ Eval. OK'}
-                        </Badge>
-                        {record.entrevistaProgramada && (
-                            <Badge variant="purple" size="xs">
-                                🗣️ Entrevista
-                            </Badge>
-                        )}
+                    <div className="flex flex-col items-center gap-2">
+                        {/* Indicador de progreso visual */}
+                        <div className="w-full px-2">
+                            <div className="flex items-center gap-2">
+                                <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                    <div
+                                        className={`h-full transition-all duration-300 ${
+                                            porcentaje === 100 ? 'bg-green-500' :
+                                            porcentaje >= 66 ? 'bg-blue-500' :
+                                            porcentaje >= 33 ? 'bg-yellow-500' : 'bg-red-500'
+                                        }`}
+                                        style={{ width: `${porcentaje}%` }}
+                                    />
+                                </div>
+                                <span className="text-xs font-medium text-gray-600 min-w-[35px]">
+                                    {porcentaje}%
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Detalles de cada etapa */}
+                        <div className="flex flex-col gap-0.5 w-full">
+                            {/* Documentos */}
+                            <div className="flex items-center justify-between text-xs px-2">
+                                <span className="text-gray-600">Documentos:</span>
+                                {record.documentosCompletos ? (
+                                    <FiCheckCircle className="w-4 h-4 text-green-500" title="Documentos completos" />
+                                ) : (
+                                    <FiAlertCircle className="w-4 h-4 text-red-500" title="Faltan documentos" />
+                                )}
+                            </div>
+
+                            {/* Evaluación */}
+                            <div className="flex items-center justify-between text-xs px-2">
+                                <span className="text-gray-600">Evaluación:</span>
+                                {!record.evaluacionPendiente ? (
+                                    <FiCheckCircle className="w-4 h-4 text-green-500" title="Evaluación completada" />
+                                ) : (
+                                    <FiClock className="w-4 h-4 text-yellow-500" title="Evaluación pendiente" />
+                                )}
+                            </div>
+
+                            {/* Entrevista */}
+                            <div className="flex items-center justify-between text-xs px-2">
+                                <span className="text-gray-600">Entrevista:</span>
+                                {record.entrevistaProgramada ? (
+                                    <FiCheckCircle className="w-4 h-4 text-green-500" title="Entrevista programada" />
+                                ) : (
+                                    <FiInfo className="w-4 h-4 text-gray-400" title="Sin entrevista aún" />
+                                )}
+                            </div>
+                        </div>
                     </div>
                 );
             }
@@ -349,18 +397,18 @@ const PostulantesDataTable: React.FC<PostulantesDataTableProps> = ({
     const transformApplicationToPostulante = (app: Application): Postulante => {
         const birthDate = new Date(app.student.birthDate);
         const today = new Date();
-        const age = today.getFullYear() - birthDate.getFullYear() - 
-                   (today.getMonth() < birthDate.getMonth() || 
+        const age = today.getFullYear() - birthDate.getFullYear() -
+                   (today.getMonth() < birthDate.getMonth() ||
                     (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate()) ? 1 : 0);
-        
-        const nombreCompleto = `${app.student.firstName} ${app.student.lastName}${app.student.maternalLastName ? ' ' + app.student.maternalLastName : ''}`;
-        
+
+        const nombreCompleto = `${app.student.firstName} ${app.student.paternalLastName || app.student.lastName} ${app.student.maternalLastName || ''}`.trim();
+
         return {
             id: app.id,
             // Datos básicos del estudiante
             nombreCompleto,
             nombres: app.student.firstName,
-            apellidoPaterno: app.student.lastName,
+            apellidoPaterno: app.student.paternalLastName || app.student.lastName,
             apellidoMaterno: app.student.maternalLastName || '',
             rut: app.student.rut,
             fechaNacimiento: app.student.birthDate,

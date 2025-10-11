@@ -29,6 +29,7 @@ const AdmissionReportForm = lazy(() => import('./components/evaluations/Admissio
 const CycleDirectorReportForm = lazy(() => import('./components/evaluations/CycleDirectorReportForm'));
 const CycleDirectorInterviewForm = lazy(() => import('./components/evaluations/CycleDirectorInterviewForm'));
 const EvaluationForm = lazy(() => import('./pages/EvaluationForm'));
+const FamilyInterviewPage = lazy(() => import('./pages/FamilyInterviewPage'));
 const StudentProfile = lazy(() => import('./pages/StudentProfile'));
 const CalendarNotifications = lazy(() => import('./pages/CalendarNotifications'));
 const InterviewModule = lazy(() => import('./pages/InterviewModule'));
@@ -101,6 +102,11 @@ function App() {
                             <Route path="/profesor/entrevista-director/:examId" element={
                                 <ProtectedProfessorRoute>
                                     <CycleDirectorInterviewForm />
+                                </ProtectedProfessorRoute>
+                            } />
+                            <Route path="/profesor/entrevista-familiar/:evaluationId" element={
+                                <ProtectedProfessorRoute>
+                                    <FamilyInterviewPage />
                                 </ProtectedProfessorRoute>
                             } />
                             <Route path="/profesor/estudiante/:studentId" element={

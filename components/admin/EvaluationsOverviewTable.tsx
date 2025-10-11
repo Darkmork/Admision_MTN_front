@@ -4,14 +4,13 @@ import Badge from '../ui/Badge';
 import { FiCheck, FiX, FiClock } from 'react-icons/fi';
 import { applicationService } from '../../services/applicationService';
 
-// Tipos de evaluaciones
+// Tipos de evaluaciones reales del sistema
 const EVALUATION_TYPES = [
     { key: 'LANGUAGE_EXAM', label: 'Lenguaje' },
     { key: 'MATHEMATICS_EXAM', label: 'Matemáticas' },
     { key: 'ENGLISH_EXAM', label: 'Inglés' },
-    { key: 'PSYCHOLOGICAL_INTERVIEW', label: 'Psicológica' },
-    { key: 'CYCLE_DIRECTOR_INTERVIEW', label: 'Director' },
-    { key: 'CYCLE_DIRECTOR_REPORT', label: 'Informe' }
+    { key: 'CYCLE_DIRECTOR_INTERVIEW', label: 'Entrevista Director' },
+    { key: 'FAMILY_INTERVIEW', label: 'Entrevista Familiar' }
 ];
 
 interface StudentEvaluation {
@@ -24,14 +23,24 @@ interface StudentEvaluation {
             assigned: boolean;
             status?: string;
             evaluatorName?: string;
+            score?: number;
+            maxScore?: number;
+            evaluationDate?: string;
+            completionDate?: string;
+            createdAt?: string;
         };
     };
 }
 
 const EvaluationsOverviewTable: React.FC = () => {
     const [students, setStudents] = useState<StudentEvaluation[]>([]);
+    const [filteredStudents, setFilteredStudents] = useState<StudentEvaluation[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    // Filtros
+    const [selectedGrade, setSelectedGrade] = useState<string>('');
+    const [selectedCategory, setSelectedCategory] = useState<string>('');
 
     useEffect(() => {
         loadData();
@@ -58,7 +67,12 @@ const EvaluationsOverviewTable: React.FC = () => {
                         evaluationsMap[ev.evaluationType] = {
                             assigned: true,
                             status: ev.status,
-                            evaluatorName: ev.evaluator ? `${ev.evaluator.firstName} ${ev.evaluator.lastName}` : undefined
+                            evaluatorName: ev.evaluator ? `${ev.evaluator.firstName} ${ev.evaluator.lastName}` : undefined,
+                            score: ev.score,
+                            maxScore: ev.maxScore || 100,
+                            evaluationDate: ev.evaluationDate,
+                            completionDate: ev.completionDate,
+                            createdAt: ev.createdAt
                         };
                     });
                 }
@@ -73,6 +87,7 @@ const EvaluationsOverviewTable: React.FC = () => {
             });
 
             setStudents(studentsData);
+            setFilteredStudents(studentsData);
         } catch (err: any) {
             console.error('Error loading evaluations overview:', err);
             setError(err.message || 'Error al cargar datos');
@@ -81,22 +96,97 @@ const EvaluationsOverviewTable: React.FC = () => {
         }
     };
 
-    const renderEvaluationCell = (evaluation: { assigned: boolean; status?: string; evaluatorName?: string }) => {
+    // Aplicar filtros
+    useEffect(() => {
+        let filtered = [...students];
+
+        // Filtro por curso
+        if (selectedGrade) {
+            filtered = filtered.filter(student => student.gradeApplied === selectedGrade);
+        }
+
+        // Filtro por categoría de evaluación
+        if (selectedCategory) {
+            if (selectedCategory === 'EXAMENES') {
+                // Mostrar solo estudiantes con exámenes académicos
+                filtered = filtered.filter(student =>
+                    student.evaluations['LANGUAGE_EXAM']?.assigned ||
+                    student.evaluations['MATHEMATICS_EXAM']?.assigned ||
+                    student.evaluations['ENGLISH_EXAM']?.assigned
+                );
+            } else if (selectedCategory === 'ENTREVISTAS') {
+                // Mostrar solo estudiantes con entrevistas (Director de Ciclo o Familiar)
+                filtered = filtered.filter(student =>
+                    student.evaluations['CYCLE_DIRECTOR_INTERVIEW']?.assigned ||
+                    student.evaluations['FAMILY_INTERVIEW']?.assigned
+                );
+            }
+        }
+
+        setFilteredStudents(filtered);
+    }, [students, selectedGrade, selectedCategory]);
+
+    const renderEvaluationCell = (evaluation: {
+        assigned: boolean;
+        status?: string;
+        evaluatorName?: string;
+        score?: number;
+        maxScore?: number;
+        evaluationDate?: string;
+        completionDate?: string;
+        createdAt?: string;
+    }) => {
         if (evaluation.assigned) {
+            const formatDate = (dateString?: string) => {
+                if (!dateString) return null;
+                const date = new Date(dateString);
+                return date.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            };
+
             return (
                 <div className="flex items-center justify-center">
-                    <div className="flex flex-col items-center gap-1">
+                    <div className="flex flex-col items-center gap-1 min-w-[140px]">
                         <div className="flex items-center justify-center w-8 h-8 bg-green-100 rounded-full">
                             <FiCheck className="w-4 h-4 text-green-600" />
                         </div>
+
+                        {/* Evaluador */}
                         {evaluation.evaluatorName && (
-                            <span className="text-xs text-gray-600 text-center">{evaluation.evaluatorName}</span>
+                            <span className="text-xs text-gray-700 font-medium text-center">
+                                {evaluation.evaluatorName}
+                            </span>
                         )}
+
+                        {/* Estado */}
                         {evaluation.status === 'COMPLETED' && (
                             <Badge variant="green" size="sm">Completada</Badge>
                         )}
                         {evaluation.status === 'IN_PROGRESS' && (
                             <Badge variant="yellow" size="sm">En Progreso</Badge>
+                        )}
+                        {evaluation.status === 'PENDING' && (
+                            <Badge variant="gray" size="sm">Pendiente</Badge>
+                        )}
+
+                        {/* Puntaje en porcentaje (solo si está completada) */}
+                        {evaluation.status === 'COMPLETED' && evaluation.score !== undefined && (
+                            <span className="text-xs font-semibold text-blue-600">
+                                {Math.round((evaluation.score / (evaluation.maxScore || 100)) * 100)}%
+                            </span>
+                        )}
+
+                        {/* Fecha de creación */}
+                        {evaluation.createdAt && (
+                            <span className="text-xs text-gray-500">
+                                Asignada: {formatDate(evaluation.createdAt)}
+                            </span>
+                        )}
+
+                        {/* Fecha de completación */}
+                        {evaluation.completionDate && (
+                            <span className="text-xs text-gray-500">
+                                Completada: {formatDate(evaluation.completionDate)}
+                            </span>
                         )}
                     </div>
                 </div>
@@ -139,6 +229,9 @@ const EvaluationsOverviewTable: React.FC = () => {
         );
     }
 
+    // Obtener cursos únicos
+    const uniqueGrades = Array.from(new Set(students.map(s => s.gradeApplied))).sort();
+
     return (
         <Card className="p-6">
             <div className="mb-6">
@@ -151,6 +244,52 @@ const EvaluationsOverviewTable: React.FC = () => {
                         <FiX className="w-4 h-4 text-red-600" /> No asignada
                     </span>
                 </p>
+            </div>
+
+            {/* Filtros */}
+            <div className="mb-6 flex gap-4 items-end">
+                <div className="flex-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Filtrar por Curso
+                    </label>
+                    <select
+                        value={selectedGrade}
+                        onChange={(e) => setSelectedGrade(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    >
+                        <option value="">Todos los cursos</option>
+                        {uniqueGrades.map(grade => (
+                            <option key={grade} value={grade}>{grade}</option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="flex-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Filtrar por Tipo de Evaluación
+                    </label>
+                    <select
+                        value={selectedCategory}
+                        onChange={(e) => setSelectedCategory(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    >
+                        <option value="">Todas las evaluaciones</option>
+                        <option value="EXAMENES">Exámenes (Lenguaje, Matemáticas, Inglés)</option>
+                        <option value="ENTREVISTAS">Entrevistas (Director de Ciclo, Familiar)</option>
+                    </select>
+                </div>
+
+                {(selectedGrade || selectedCategory) && (
+                    <button
+                        onClick={() => {
+                            setSelectedGrade('');
+                            setSelectedCategory('');
+                        }}
+                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+                    >
+                        Limpiar Filtros
+                    </button>
+                )}
             </div>
 
             <div className="overflow-x-auto">
@@ -171,7 +310,7 @@ const EvaluationsOverviewTable: React.FC = () => {
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {students.map(student => (
+                        {filteredStudents.map(student => (
                             <tr key={student.id} className="hover:bg-gray-50">
                                 <td className="px-4 py-4 whitespace-nowrap sticky left-0 bg-white z-10">
                                     <div>
@@ -192,6 +331,12 @@ const EvaluationsOverviewTable: React.FC = () => {
                     </tbody>
                 </table>
 
+                {filteredStudents.length === 0 && students.length > 0 && (
+                    <div className="text-center py-12">
+                        <p className="text-gray-500">No hay postulantes que coincidan con los filtros seleccionados</p>
+                    </div>
+                )}
+
                 {students.length === 0 && (
                     <div className="text-center py-12">
                         <p className="text-gray-500">No hay postulantes registrados</p>
@@ -200,7 +345,11 @@ const EvaluationsOverviewTable: React.FC = () => {
             </div>
 
             <div className="mt-4 text-sm text-gray-600">
-                Total de postulantes: {students.length}
+                {filteredStudents.length === students.length ? (
+                    <>Total de postulantes: {students.length}</>
+                ) : (
+                    <>Mostrando {filteredStudents.length} de {students.length} postulantes</>
+                )}
             </div>
         </Card>
     );

@@ -76,24 +76,37 @@ const CycleDirectorReportForm: React.FC = () => {
                 
                 if (directorEvaluation) {
                     setEvaluation(directorEvaluation);
-                    
-                    // Mapear datos de la evaluación al formato del informe
-                    setReportData(prev => ({
-                        ...prev,
-                        studentName: directorEvaluation.studentName || '',
-                        gradeApplied: directorEvaluation.studentGrade || '',
+
+                    console.log('📋 Director evaluation data:', {
+                        applicationId: directorEvaluation.applicationId,
+                        studentName: directorEvaluation.studentName,
+                        studentGrade: directorEvaluation.studentGrade
+                    });
+
+                    // Primero mapear datos de la evaluación
+                    const evaluationData = {
                         strengths: directorEvaluation.strengths || '',
                         difficulties: directorEvaluation.areasForImprovement || '',
                         interviewAdaptation: '',
                         outstandingTraits: '',
                         familyBackground: '',
                         academicBackground: directorEvaluation.observations || ''
+                    };
+
+                    // Cargar información completa del estudiante desde la aplicación
+                    const studentInfo = await loadStudentInfo(directorEvaluation.applicationId);
+
+                    // Combinar ambos conjuntos de datos
+                    setReportData(prev => ({
+                        ...prev,
+                        ...evaluationData,
+                        ...studentInfo
                     }));
-                    
+
                     // Cargar todas las evaluaciones del mismo estudiante para obtener resultados académicos
                     await loadSubjectEvaluations(directorEvaluation.applicationId);
-                    
-                    console.log('✅ Evaluación director cargada:', directorEvaluation);
+
+                    console.log('✅ Evaluación director cargada completamente');
                 } else {
                     console.error('❌ Evaluación no encontrada');
                     addNotification({
@@ -117,6 +130,76 @@ const CycleDirectorReportForm: React.FC = () => {
 
         loadEvaluationData();
     }, [examId]); // ✅ SOLO examId como dependencia
+
+    const loadStudentInfo = async (applicationId: number): Promise<Partial<CycleDirectorReportData>> => {
+        try {
+            console.log('🔄 Cargando información completa del estudiante para application:', applicationId);
+
+            // Obtener la aplicación completa que incluye todos los datos del estudiante
+            const response = await fetch(`http://localhost:8080/api/applications/${applicationId}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('professor_token') || localStorage.getItem('auth_token')}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Error al obtener información del estudiante');
+            }
+
+            const data = await response.json();
+            const application = data.data || data;
+
+            console.log('📊 Aplicación completa recibida:', application);
+
+            if (application && application.student) {
+                const student = application.student;
+
+                console.log('👤 Datos del estudiante:', {
+                    firstName: student.firstName,
+                    paternalLastName: student.paternalLastName,
+                    maternalLastName: student.maternalLastName,
+                    birthDate: student.birthDate,
+                    currentSchool: student.currentSchool,
+                    gradeApplied: student.gradeApplied
+                });
+
+                // Calcular edad si hay fecha de nacimiento
+                let age = '';
+                if (student.birthDate) {
+                    const birthDate = new Date(student.birthDate);
+                    const today = new Date();
+                    let calculatedAge = today.getFullYear() - birthDate.getFullYear();
+                    const monthDiff = today.getMonth() - birthDate.getMonth();
+                    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                        calculatedAge--;
+                    }
+                    age = `${calculatedAge} años`;
+                }
+
+                const studentInfo = {
+                    studentName: `${student.firstName} ${student.paternalLastName || student.lastName || ''} ${student.maternalLastName || ''}`.trim(),
+                    birthDate: student.birthDate ? student.birthDate.split('T')[0] : '',
+                    age: age,
+                    currentSchool: student.currentSchool || '',
+                    gradeApplied: student.gradeApplied || ''
+                };
+
+                console.log('✅ Información del estudiante procesada:', studentInfo);
+                return studentInfo;
+            }
+
+            return {};
+
+        } catch (error) {
+            console.error('❌ Error cargando información del estudiante:', error);
+            addNotification({
+                type: 'warning',
+                title: 'Atención',
+                message: 'No se pudo cargar la información completa del estudiante. Por favor, completa los campos manualmente.'
+            });
+            return {};
+        }
+    };
 
     const loadSubjectEvaluations = async (applicationId: number) => {
         try {
@@ -503,8 +586,7 @@ const CycleDirectorReportForm: React.FC = () => {
                                 <thead>
                                     <tr className="bg-gray-100">
                                         <th className="border border-gray-400 px-4 py-2 text-left font-bold">ASIGNATURA</th>
-                                        <th className="border border-gray-400 px-4 py-2 text-left font-bold">PUNTAJE</th>
-                                        <th className="border border-gray-400 px-4 py-2 text-left font-bold">%</th>
+                                        <th className="border border-gray-400 px-4 py-2 text-center font-bold">PORCENTAJE</th>
                                         <th className="border border-gray-400 px-4 py-2 text-left font-bold">COMENTARIOS</th>
                                         <th className="border border-gray-400 px-4 py-2 text-left font-bold">ÁREAS A TRABAJAR/ RECOMENDACIONES</th>
                                     </tr>
@@ -515,10 +597,7 @@ const CycleDirectorReportForm: React.FC = () => {
                                             <td className="border border-gray-400 px-4 py-2 font-medium">
                                                 {result.subject}
                                             </td>
-                                            <td className="border border-gray-400 px-4 py-2 text-center">
-                                                {result.score > 0 ? result.score : '-'}
-                                            </td>
-                                            <td className="border border-gray-400 px-4 py-2 text-center">
+                                            <td className="border border-gray-400 px-4 py-2 text-center font-semibold text-blue-600">
                                                 {result.percentage > 0 ? `${result.percentage}%` : '-'}
                                             </td>
                                             <td className="border border-gray-400 px-4 py-2">

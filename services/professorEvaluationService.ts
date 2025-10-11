@@ -106,8 +106,13 @@ class ProfessorEvaluationService {
             const completed = evaluations.filter(e => e.status === EvaluationStatus.COMPLETED).length;
             
             const completedEvaluations = evaluations.filter(e => e.status === EvaluationStatus.COMPLETED && e.score);
-            const averageScore = completedEvaluations.length > 0 
-                ? Math.round(completedEvaluations.reduce((sum, e) => sum + (e.score || 0), 0) / completedEvaluations.length)
+            // Calculate average as percentage
+            const averageScore = completedEvaluations.length > 0
+                ? Math.round(completedEvaluations.reduce((sum, e) => {
+                    const maxScore = e.maxScore || 100;
+                    const percentage = ((e.score || 0) / maxScore) * 100;
+                    return sum + percentage;
+                }, 0) / completedEvaluations.length)
                 : 0;
             
             return {
@@ -181,12 +186,12 @@ class ProfessorEvaluationService {
     }
     
     private mapToProfessorEvaluation(apiEvaluation: any): ProfessorEvaluation {
-        
+
         const mappedEvaluation = {
             id: apiEvaluation.id || apiEvaluation.evaluationId,
-            evaluationType: apiEvaluation.evaluationType || apiEvaluation.type,
+            evaluationType: apiEvaluation.evaluationType || apiEvaluation.type || apiEvaluation.evaluation_type,
             status: apiEvaluation.status || EvaluationStatus.PENDING,
-            applicationId: apiEvaluation.applicationId || apiEvaluation.application?.id,
+            applicationId: apiEvaluation.applicationId || apiEvaluation.application_id || apiEvaluation.application?.id,
             studentId: this.getStudentId(apiEvaluation),
             studentName: this.getStudentName(apiEvaluation),
             studentGrade: this.getStudentGrade(apiEvaluation),
@@ -195,7 +200,7 @@ class ProfessorEvaluationService {
             scheduledDate: apiEvaluation.scheduledDate || apiEvaluation.scheduledAt || apiEvaluation.evaluation_date || apiEvaluation.evaluationDate,
             completedDate: apiEvaluation.completedDate || apiEvaluation.completedAt || apiEvaluation.completion_date || apiEvaluation.completionDate,
             score: apiEvaluation.score,
-            maxScore: apiEvaluation.maxScore,
+            maxScore: apiEvaluation.maxScore || apiEvaluation.max_score,
             grade: apiEvaluation.grade,
             observations: apiEvaluation.observations,
             strengths: apiEvaluation.strengths,
@@ -273,6 +278,7 @@ class ProfessorEvaluationService {
         if (apiEvaluation.student_birthdate) return apiEvaluation.student_birthdate;
         if (apiEvaluation.studentBirthDate) return apiEvaluation.studentBirthDate;
         if (apiEvaluation.student_birth_date) return apiEvaluation.student_birth_date;
+        if (apiEvaluation.studentBirthdate) return apiEvaluation.studentBirthdate;
 
         // Luego intentar de application.student
         if (apiEvaluation.application?.student?.birthDate) return apiEvaluation.application.student.birthDate;

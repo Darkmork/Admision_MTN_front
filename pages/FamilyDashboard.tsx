@@ -4,6 +4,7 @@ import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import { ApplicationStatus, Document } from '../types';
+import { DOCUMENT_TYPE_LABELS, DocumentType } from '../types/document';
 import { applicationService } from '../services/applicationService';
 import { applicationWorkflowService } from '../services/applicationWorkflowService';
 import { useUserProfile } from '../hooks/useUserProfile';
@@ -108,16 +109,20 @@ const FamilyDashboard: React.FC = () => {
   
   // Load real applications on component mount
   useEffect(() => {
+    let isMounted = true;
+
     const loadApplications = async () => {
       if (!isAuthenticated || !user) {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
         return;
       }
-      
+
       try {
-        setIsLoading(true);
+        if (isMounted) setIsLoading(true);
         const dashboardData = await applicationService.getDashboardData();
-        
+
+        if (!isMounted) return; // Evitar actualización si el componente se desmontó
+
         // Validar que applications sea un array
         if (dashboardData && Array.isArray(dashboardData.applications)) {
           setRealApplications(dashboardData.applications);
@@ -129,34 +134,51 @@ const FamilyDashboard: React.FC = () => {
         }
       } catch (error: any) {
         console.error('Error loading dashboard data:', error);
-        setError('Error al cargar los datos del dashboard');
-        setRealApplications([]);
+        if (isMounted) {
+          setError('Error al cargar los datos del dashboard');
+          setRealApplications([]);
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
       }
     };
-    
+
     loadApplications();
+
+    // Cleanup function
+    return () => {
+      isMounted = false;
+    };
   }, [isAuthenticated, user]);
 
   // Load documents when application is available
   useEffect(() => {
+    let isMounted = true;
+
     const loadDocuments = async () => {
       if (!hasRealApplication || !realApplications[0]?.id) return;
 
       try {
-        setLoadingDocuments(true);
+        if (isMounted) setLoadingDocuments(true);
         const response = await applicationService.getApplicationDocuments(realApplications[0].id);
-        setDocuments(response.documents || []);
+
+        if (isMounted) {
+          setDocuments(response.documents || []);
+        }
       } catch (error) {
         console.error('Error loading documents:', error);
-        setDocuments([]);
+        if (isMounted) setDocuments([]);
       } finally {
-        setLoadingDocuments(false);
+        if (isMounted) setLoadingDocuments(false);
       }
     };
 
     loadDocuments();
+
+    // Cleanup function
+    return () => {
+      isMounted = false;
+    };
   }, [realApplications]);
 
   // Use real applications if available, otherwise fallback to context or mock data
@@ -347,14 +369,14 @@ const FamilyDashboard: React.FC = () => {
                     </div>
                   </button>
                   
-                  <button 
-                    onClick={() => setActiveSection('entrevistas')}
+                  <button
+                    onClick={() => setActiveSection('calendario')}
                     className="flex items-center gap-3 p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors text-left"
                   >
                     <UsersIcon className="w-8 h-8 text-verde-esperanza" />
                     <div>
                       <h4 className="font-semibold text-azul-monte-tabor">Mis Entrevistas</h4>
-                      <p className="text-sm text-gris-piedra">Programar y gestionar entrevistas</p>
+                      <p className="text-sm text-gris-piedra">Ver mis entrevistas programadas</p>
                     </div>
                   </button>
                 </div>
@@ -532,7 +554,11 @@ const FamilyDashboard: React.FC = () => {
                       <div className="flex items-center gap-3">
                         <FileTextIcon className="w-5 h-5 text-dorado-nazaret" />
                         <div>
-                          <span className="font-medium block">{doc.document_type || doc.name}</span>
+                          <span className="font-medium block">
+                            {doc.document_type && DOCUMENT_TYPE_LABELS[doc.document_type as DocumentType]
+                              ? DOCUMENT_TYPE_LABELS[doc.document_type as DocumentType]
+                              : doc.name || doc.document_type}
+                          </span>
                           <span className="text-xs text-gris-piedra">
                             Subido: {new Date(doc.created_at || doc.upload_date).toLocaleDateString('es-CL')}
                           </span>

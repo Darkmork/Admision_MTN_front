@@ -673,10 +673,11 @@ Esta acción:
             <InterviewManagement onBack={() => setActiveSection('dashboard')} />
           </div>
         );
+
       case 'calendario':
         return (
           <div className="space-y-6">
-            <SharedCalendar 
+            <SharedCalendar
               onCreateInterview={(date, time) => {
                 // Cambiar a la sección de entrevistas y abrir formulario de creación
                 setActiveSection('entrevistas');

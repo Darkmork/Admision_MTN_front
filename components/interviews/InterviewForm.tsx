@@ -48,7 +48,6 @@ import {
 } from '../../types/interview';
 import { applicationService } from '../../services/applicationService';
 import interviewService from '../../services/interviewService';
-import InterviewerAvailability from './InterviewerAvailability';
 
 // Interface para entrevistadores del backend
 interface BackendInterviewer {
@@ -78,6 +77,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
   const [formData, setFormData] = useState({
     applicationId: '',
     interviewerId: '',
+    secondInterviewerId: '', // Segundo entrevistador para entrevistas familiares
     type: InterviewType.FAMILY,
     mode: InterviewMode.IN_PERSON,
     scheduledDate: '',
@@ -137,10 +137,14 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
   }, []);
 
   useEffect(() => {
+    console.log('🔄 InterviewForm useEffect - interview:', interview, 'mode:', mode);
+
     if (interview && (mode === InterviewFormMode.EDIT || mode === InterviewFormMode.VIEW || mode === InterviewFormMode.COMPLETE)) {
+      console.log('📝 Modo EDIT/VIEW/COMPLETE - Cargando datos de entrevista existente');
       setFormData({
         applicationId: interview.applicationId,
         interviewerId: interview.interviewerId,
+        secondInterviewerId: interview.secondInterviewerId?.toString() || '',
         type: interview.type,
         mode: interview.mode,
         scheduledDate: interview.scheduledDate,
@@ -158,12 +162,25 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
         followUpNotes: interview.followUpNotes || ''
       });
     } else if (interview && mode === InterviewFormMode.CREATE) {
+      console.log('🆕 Modo CREATE - Pre-llenando datos desde vista de estudiante');
+      console.log('   interview.type recibido:', interview.type);
+      console.log('   interview.applicationId:', interview.applicationId);
+
       // Pre-llenar con datos del contexto (desde la página del estudiante)
+      // Validar que el tipo sea válido antes de asignarlo
+      const validType = Object.values(InterviewType).includes(interview.type as InterviewType)
+        ? interview.type as InterviewType
+        : InterviewType.FAMILY;
+
+      console.log('   tipo validado:', validType);
+
       setFormData(prev => ({
         ...prev,
         applicationId: interview.applicationId || prev.applicationId,
-        type: interview.type || prev.type
+        type: validType
       }));
+
+      console.log('✅ FormData actualizado con datos pre-llenados');
     }
   }, [interview, mode]);
 
@@ -219,13 +236,28 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
 
     try {
       setIsLoadingSlots(true);
-      const slots = await interviewService.getAvailableTimeSlots(
-        parseInt(formData.interviewerId as string),
-        formData.scheduledDate,
-        formData.duration
-      );
+      let slots: string[];
+
+      // Si es entrevista FAMILY y hay dos entrevistadores, obtener horarios comunes
+      if (formData.type === InterviewType.FAMILY && formData.secondInterviewerId) {
+        console.log('🔍 Obteniendo horarios comunes para entrevista FAMILY');
+        slots = await interviewService.getCommonTimeSlots(
+          parseInt(formData.interviewerId as string),
+          parseInt(formData.secondInterviewerId as string),
+          formData.scheduledDate,
+          formData.duration
+        );
+      } else {
+        // Para otros tipos o si solo hay un entrevistador, obtener horarios individuales
+        slots = await interviewService.getAvailableTimeSlots(
+          parseInt(formData.interviewerId as string),
+          formData.scheduledDate,
+          formData.duration
+        );
+      }
+
       setAvailableTimeSlots(slots);
-      
+
       // Si la hora actual ya no está disponible, limpiarla
       if (formData.scheduledTime && !slots.includes(formData.scheduledTime)) {
         setFormData(prev => ({ ...prev, scheduledTime: '' }));
@@ -243,7 +275,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
     if (mode === InterviewFormMode.CREATE || mode === InterviewFormMode.EDIT) {
       loadAvailableTimeSlots();
     }
-  }, [formData.interviewerId, formData.scheduledDate, formData.duration, mode]);
+  }, [formData.interviewerId, formData.secondInterviewerId, formData.scheduledDate, formData.duration, formData.type, mode]);
 
   // Función para manejar selección de horario desde el calendario
   const handleTimeSlotSelect = (date: string, time: string) => {
@@ -310,6 +342,15 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
       } else if (value === InterviewMode.IN_PERSON) {
         setFormData(prev => ({ ...prev, virtualMeetingLink: '' }));
       }
+    } else if (field === 'type') {
+      // Limpiar segundo entrevistador si el tipo cambia y no es FAMILY
+      if (value !== InterviewType.FAMILY) {
+        setFormData(prev => ({ ...prev, secondInterviewerId: '' }));
+        // Limpiar error del segundo entrevistador también
+        if (errors.secondInterviewerId) {
+          setErrors(prev => ({ ...prev, secondInterviewerId: '' }));
+        }
+      }
     }
   };
 
@@ -341,6 +382,18 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
 
       if (!formData.interviewerId) {
         newErrors.interviewerId = 'Debe seleccionar un entrevistador';
+      }
+
+      // Validar segundo entrevistador para entrevistas familiares
+      if (formData.type === InterviewType.FAMILY && !formData.secondInterviewerId) {
+        newErrors.secondInterviewerId = 'Debe seleccionar un segundo entrevistador para entrevistas familiares';
+      }
+
+      // Validar que los dos entrevistadores no sean el mismo
+      if (formData.type === InterviewType.FAMILY && formData.interviewerId && formData.secondInterviewerId) {
+        if (formData.interviewerId === formData.secondInterviewerId) {
+          newErrors.secondInterviewerId = 'Debe seleccionar un entrevistador diferente al primero';
+        }
       }
 
       if (formData.duration < INTERVIEW_VALIDATION.DURATION.MIN || formData.duration > INTERVIEW_VALIDATION.DURATION.MAX) {
@@ -422,6 +475,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
       const createData: CreateInterviewRequest = {
         applicationId: parseInt(formData.applicationId as string) || 0,
         interviewerId: parseInt(formData.interviewerId as string) || 0,
+        secondInterviewerId: formData.secondInterviewerId ? parseInt(formData.secondInterviewerId as string) : undefined,
         type: formData.type,
         mode: formData.mode,
         scheduledDate: formData.scheduledDate,
@@ -438,6 +492,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
     } else if (mode === InterviewFormMode.EDIT) {
       const updateData: UpdateInterviewRequest = {
         interviewerId: formData.interviewerId,
+        secondInterviewerId: formData.secondInterviewerId ? parseInt(formData.secondInterviewerId as string) : undefined,
         type: formData.type,
         mode: formData.mode,
         scheduledDate: formData.scheduledDate,
@@ -640,12 +695,10 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
               {(mode === InterviewFormMode.CREATE && interview?.type) ? (
                 <div className="w-full px-3 py-2 border border-blue-300 rounded-md bg-blue-50 text-blue-900 font-medium">
                   <span className="text-lg mr-2">
-                    {formData.type === 'FAMILY' ? '👨‍👩‍👧‍👦' : 
-                     formData.type === 'INDIVIDUAL' ? '👤' :
-                     formData.type === 'PSYCHOLOGICAL' ? '🧠' : 
-                     formData.type === 'ACADEMIC' ? '📚' : '➕'}
+                    {formData.type === 'FAMILY' ? '👨‍👩‍👧‍👦' :
+                     formData.type === 'CYCLE_DIRECTOR' ? '🎓' : '➕'}
                   </span>
-                  {INTERVIEW_TYPE_LABELS[formData.type]}
+                  {INTERVIEW_TYPE_LABELS[formData.type] || 'Tipo no especificado'}
                 </div>
               ) : (
                 <select
@@ -697,7 +750,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
             {/* Entrevistador */}
             <div>
               <label htmlFor="interviewer" className="block text-sm font-medium text-gray-700 mb-2">
-                Entrevistador *
+                {formData.type === InterviewType.FAMILY ? 'Primer Entrevistador *' : 'Entrevistador *'}
               </label>
               <select
                 id="interviewer"
@@ -715,8 +768,8 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
                   <option disabled>Error al cargar entrevistadores</option>
                 ) : (
                   interviewers.map(interviewer => (
-                    <option 
-                      key={interviewer.id} 
+                    <option
+                      key={interviewer.id}
                       value={interviewer.id}
                       disabled={interviewer.scheduleCount === 0}
                     >
@@ -729,6 +782,50 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
                 <p className="mt-1 text-sm text-red-600">{errors.interviewerId}</p>
               )}
             </div>
+
+            {/* Segundo Entrevistador - Solo para entrevistas familiares */}
+            {formData.type === InterviewType.FAMILY && (
+              <div>
+                <label htmlFor="secondInterviewer" className="block text-sm font-medium text-gray-700 mb-2">
+                  <FiUser className="inline w-4 h-4 mr-1" />
+                  Segundo Entrevistador *
+                </label>
+                <select
+                  id="secondInterviewer"
+                  value={formData.secondInterviewerId}
+                  onChange={(e) => handleInputChange('secondInterviewerId', e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-azul-monte-tabor focus:border-transparent ${
+                    errors.secondInterviewerId ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                  }`}
+                  disabled={isViewMode || isCompleteMode}
+                >
+                  <option value="">Seleccionar segundo entrevistador</option>
+                  {loadingInterviewers ? (
+                    <option disabled>Cargando entrevistadores...</option>
+                  ) : interviewersError ? (
+                    <option disabled>Error al cargar entrevistadores</option>
+                  ) : (
+                    interviewers
+                      .filter(interviewer => interviewer.id.toString() !== formData.interviewerId)
+                      .map(interviewer => (
+                        <option
+                          key={interviewer.id}
+                          value={interviewer.id}
+                          disabled={interviewer.scheduleCount === 0}
+                        >
+                          {interviewer.name} - {interviewer.role} {interviewer.scheduleCount === 0 ? '(Sin horarios)' : `(${interviewer.scheduleCount} horarios)`}
+                        </option>
+                      ))
+                  )}
+                </select>
+                {errors.secondInterviewerId && (
+                  <p className="mt-1 text-sm text-red-600">{errors.secondInterviewerId}</p>
+                )}
+                <p className="mt-1 text-xs text-gray-500">
+                  Las entrevistas familiares requieren dos entrevistadores
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Programación */}
@@ -742,13 +839,46 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
                   <FiCalendar className="inline w-4 h-4 mr-1" />
                   Seleccionar Fecha y Hora *
                 </label>
-                {formData.interviewerId ? (
+                {/* Mostrar mensaje si es FAMILY y falta el segundo entrevistador */}
+                {formData.type === InterviewType.FAMILY && formData.interviewerId && !formData.secondInterviewerId ? (
+                  <div className="p-4 bg-yellow-50 border border-yellow-300 rounded-md">
+                    <p className="text-sm text-yellow-800 text-center font-medium">
+                      ⚠️ Para entrevistas familiares, primero debe seleccionar AMBOS entrevistadores
+                    </p>
+                    <p className="text-xs text-yellow-700 text-center mt-1">
+                      Los horarios disponibles serán solo aquellos donde ambos entrevistadores están libres
+                    </p>
+                  </div>
+                ) : formData.interviewerId && (formData.type !== InterviewType.FAMILY || formData.secondInterviewerId) ? (
                   <div>
+                    {/* Mostrar información de ambos entrevistadores para FAMILY */}
+                    {formData.type === InterviewType.FAMILY && formData.secondInterviewerId && (
+                      <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                        <p className="text-sm font-medium text-blue-900 mb-1">
+                          📅 Horarios comunes para:
+                        </p>
+                        <div className="text-sm text-blue-700 space-y-1">
+                          <p>• {interviewers.find(e => e.id === parseInt(formData.interviewerId as string))?.name || 'Entrevistador 1'}</p>
+                          <p>• {interviewers.find(e => e.id === parseInt(formData.secondInterviewerId as string))?.name || 'Entrevistador 2'}</p>
+                        </div>
+                      </div>
+                    )}
+
                     <DayScheduleSelector
                       evaluatorId={parseInt(formData.interviewerId as string)}
                       evaluatorName={
-                        interviewers.find(e => e.id === parseInt(formData.interviewerId as string))?.name || 
+                        interviewers.find(e => e.id === parseInt(formData.interviewerId as string))?.name ||
                         'Evaluador'
+                      }
+                      secondEvaluatorId={
+                        formData.type === InterviewType.FAMILY && formData.secondInterviewerId
+                          ? parseInt(formData.secondInterviewerId as string)
+                          : undefined
+                      }
+                      secondEvaluatorName={
+                        formData.type === InterviewType.FAMILY && formData.secondInterviewerId
+                          ? interviewers.find(e => e.id === parseInt(formData.secondInterviewerId as string))?.name
+                          : undefined
                       }
                       selectedDate={formData.scheduledDate}
                       selectedTime={formData.scheduledTime}
@@ -774,7 +904,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
                 ) : (
                   <div className="p-4 bg-gray-50 border border-gray-200 rounded-md">
                     <p className="text-sm text-gray-600 text-center">
-                      👆 Primero seleccione un entrevistador para ver sus horarios disponibles
+                      👆 Primero seleccione {formData.type === InterviewType.FAMILY ? 'ambos entrevistadores' : 'un entrevistador'} para ver los horarios disponibles
                     </p>
                   </div>
                 )}
@@ -840,18 +970,6 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
             </div>
           </div>
         </div>
-
-        {/* Calendario de disponibilidad semanal */}
-        {(mode === InterviewFormMode.CREATE || mode === InterviewFormMode.EDIT) && 
-         formData.interviewerId && 
-         parseInt(formData.interviewerId as string) > 0 && (
-          <InterviewerAvailability
-            interviewerId={parseInt(formData.interviewerId as string)}
-            selectedDate={formData.scheduledDate}
-            onTimeSlotSelect={handleTimeSlotSelect}
-            className="mt-6"
-          />
-        )}
 
         {/* Ubicación/Enlace */}
         <div>

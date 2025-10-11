@@ -16,7 +16,8 @@ import {
   FiCheckCircle,
   FiAlertCircle,
   FiRefreshCw,
-  FiInfo
+  FiInfo,
+  FiTrash2
 } from 'react-icons/fi';
 import {
   Interview,
@@ -58,21 +59,21 @@ interface StudentDetail {
   };
 }
 
-// Tipos de entrevistas requeridas para el sistema de 4 entrevistas
+// Tipos de entrevistas requeridas para el sistema de 3 entrevistas
 const REQUIRED_INTERVIEW_TYPES = [
   {
     type: 'FAMILY',
     title: '👨‍👩‍👧‍👦 Entrevista Familiar',
-    description: 'Entrevista con los padres y familia del estudiante',
+    description: 'Entrevista con los padres y familia del estudiante (requiere 2 entrevistadores)',
     icon: '👨‍👩‍👧‍👦',
     required: true,
     order: 1
   },
   {
     type: 'INDIVIDUAL',
-    title: '👤 Entrevista Individual',
-    description: 'Entrevista personal con el estudiante',
-    icon: '👤',
+    title: '🎓 Entrevista Director de Ciclo',
+    description: 'Entrevista con el Director de Ciclo',
+    icon: '🎓',
     required: true,
     order: 2
   },
@@ -85,20 +86,12 @@ const REQUIRED_INTERVIEW_TYPES = [
     order: 3
   },
   {
-    type: 'ACADEMIC',
-    title: '📚 Entrevista Académica',
-    description: 'Evaluación académica y pedagógica',
-    icon: '📚',
-    required: true,
-    order: 4
-  },
-  {
-    type: 'OTHER',
-    title: '➕ Entrevista Adicional',
-    description: 'Entrevista especial si se requiere',
-    icon: '➕',
+    type: 'BEHAVIORAL',
+    title: '⚖️ Entrevista Conductual',
+    description: 'Evaluación conductual del estudiante',
+    icon: '⚖️',
     required: false,
-    order: 5
+    order: 4
   }
 ];
 
@@ -118,8 +111,27 @@ const InterviewCard: React.FC<InterviewCardProps> = ({
   applicationId,
   isLoading = false
 }) => {
-  // Buscar entrevista de este tipo
-  const existingInterview = interviews.find(interview => interview.type === interviewType.type);
+  // Debug: log interviews and type
+  console.log(`🎯 InterviewCard for type ${interviewType.type}:`, {
+    totalInterviews: interviews.length,
+    interviews: interviews.map(i => ({ id: i.id, type: i.type, status: i.status }))
+  });
+
+  // Buscar entrevista de este tipo (solo las activas, no canceladas)
+  const existingInterview = interviews.find(interview =>
+    interview.type === interviewType.type &&
+    interview.status !== InterviewStatus.CANCELLED &&
+    interview.status !== 'NO_SHOW'
+  );
+
+  console.log(`🎯 Found existing interview for ${interviewType.type}:`, existingInterview ? {
+    id: existingInterview.id,
+    status: existingInterview.status,
+    interviewerName: existingInterview.interviewerName,
+    secondInterviewerName: existingInterview.secondInterviewerName,
+    scheduledDate: existingInterview.scheduledDate,
+    scheduledTime: existingInterview.scheduledTime
+  } : 'NO MATCH');
   
   const getCardStatus = () => {
     if (!existingInterview) {
@@ -134,23 +146,23 @@ const InterviewCard: React.FC<InterviewCardProps> = ({
     switch (existingInterview.status) {
       case InterviewStatus.SCHEDULED:
         return {
-          color: 'border-blue-200 bg-blue-50',
+          color: 'border-green-300 bg-green-100',
           status: 'Programada',
-          statusColor: 'text-blue-700 bg-blue-100',
+          statusColor: 'text-green-800 bg-green-200',
           action: 'Ver Detalles'
         };
       case InterviewStatus.CONFIRMED:
         return {
-          color: 'border-purple-200 bg-purple-50',
+          color: 'border-emerald-300 bg-emerald-100',
           status: 'Confirmada',
-          statusColor: 'text-purple-700 bg-purple-100',
+          statusColor: 'text-emerald-800 bg-emerald-200',
           action: 'Ver Detalles'
         };
       case InterviewStatus.COMPLETED:
         return {
-          color: 'border-green-200 bg-green-50',
+          color: 'border-teal-300 bg-teal-100',
           status: 'Completada',
-          statusColor: 'text-green-700 bg-green-100',
+          statusColor: 'text-teal-800 bg-teal-200',
           action: 'Ver Resultado'
         };
       case InterviewStatus.CANCELLED:
@@ -211,6 +223,9 @@ const InterviewCard: React.FC<InterviewCardProps> = ({
               </p>
               <p className="text-xs text-gray-500">
                 👤 {existingInterview.interviewerName}
+                {existingInterview.secondInterviewerName && (
+                  <> & {existingInterview.secondInterviewerName}</>
+                )}
               </p>
               {existingInterview.status === InterviewStatus.COMPLETED && existingInterview.score && (
                 <p className="text-xs font-medium text-green-600">
@@ -263,6 +278,7 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [deletingInterviewId, setDeletingInterviewId] = useState<number | null>(null);
 
   useEffect(() => {
     loadStudentDetail();
@@ -292,9 +308,24 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({
       }
 
       console.log('📋 Found application:', application);
-      console.log('📋 Found interviews:', interviewsResponse.interviews);
+      console.log('📋 RAW interviews response:', interviewsResponse);
+      console.log('📋 Found interviews array:', interviewsResponse.interviews);
+      console.log('📋 Interviews count:', interviewsResponse.interviews?.length || 0);
 
       const interviews = interviewsResponse.interviews || [];
+
+      // Debug cada entrevista
+      interviews.forEach(interview => {
+        console.log(`🔍 Interview ${interview.id}:`, {
+          id: interview.id,
+          type: interview.type,
+          status: interview.status,
+          interviewerName: interview.interviewerName,
+          secondInterviewerName: interview.secondInterviewerName,
+          scheduledDate: interview.scheduledDate,
+          scheduledTime: interview.scheduledTime
+        });
+      });
 
       // Calcular progreso de entrevistas basado en los 4 tipos requeridos
       const requiredTypes = REQUIRED_INTERVIEW_TYPES.filter(t => t.required);
@@ -354,7 +385,7 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({
 
     if (missing === total) {
       return {
-        message: 'Faltan las 4 entrevistas requeridas',
+        message: `Faltan las ${total} entrevistas requeridas`,
         color: 'red',
         icon: FiAlertCircle,
         progress: 0
@@ -387,6 +418,30 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({
 
   const handleRefresh = () => {
     loadStudentDetail(true);
+  };
+
+  const handleDeleteInterview = async (interviewId: number) => {
+    if (!confirm('¿Está seguro que desea eliminar esta entrevista? Esta acción no se puede deshacer.')) {
+      return;
+    }
+
+    try {
+      setDeletingInterviewId(interviewId);
+      console.log(`🗑️ Eliminando entrevista ${interviewId}...`);
+
+      await interviewService.deleteInterview(interviewId);
+
+      console.log(`✅ Entrevista ${interviewId} eliminada correctamente`);
+
+      // Recargar los detalles del estudiante para actualizar la lista
+      await loadStudentDetail(true);
+
+    } catch (error: any) {
+      console.error('❌ Error eliminando entrevista:', error);
+      alert('Error al eliminar la entrevista. Por favor intente nuevamente.');
+    } finally {
+      setDeletingInterviewId(null);
+    }
   };
 
   if (isLoading) {
@@ -489,7 +544,7 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-semibold text-gray-900 flex items-center">
             <FiCalendar className="w-5 h-5 mr-2" />
-            Sistema de 4 Entrevistas Requeridas
+            Sistema de Entrevistas Requeridas
           </h2>
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <FiInfo className="w-4 h-4" />
@@ -542,6 +597,17 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({
           </div>
         </div>
 
+        {/* Debug: Mostrar total de entrevistas cargadas */}
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm">
+          <span className="font-medium">Debug: </span>
+          {studentDetail.interviews.length} entrevistas cargadas
+          {studentDetail.interviews.length > 0 && (
+            <span className="ml-2">
+              (IDs: {studentDetail.interviews.map(i => `${i.id}:${i.type}:${i.status}`).join(', ')})
+            </span>
+          )}
+        </div>
+
         {/* Fichas de entrevistas */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           {REQUIRED_INTERVIEW_TYPES.map((interviewType) => (
@@ -583,10 +649,16 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({
                         </span>
                         {INTERVIEW_TYPE_LABELS[interview.type]}
                       </h3>
-                      <p className="text-sm text-gray-600 mt-1">
+                      <div className="text-sm text-gray-600 mt-1">
                         <FiUser className="inline w-4 h-4 mr-1" />
                         {interview.interviewerName}
-                      </p>
+                        {interview.secondInterviewerName && (
+                          <>
+                            {' '}&{' '}
+                            {interview.secondInterviewerName}
+                          </>
+                        )}
+                      </div>
                     </div>
                     
                     <Badge 
@@ -648,7 +720,7 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({
                       <FiEye className="w-4 h-4 mr-1" />
                       Ver
                     </Button>
-                    {interview.status !== InterviewStatus.COMPLETED && (
+                    {interview.status !== InterviewStatus.COMPLETED && interview.status !== InterviewStatus.CANCELLED && (
                       <Button
                         size="sm"
                         variant="primary"
@@ -656,6 +728,27 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({
                       >
                         <FiEdit className="w-4 h-4 mr-1" />
                         Editar
+                      </Button>
+                    )}
+                    {interview.status === InterviewStatus.CANCELLED && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleDeleteInterview(interview.id)}
+                        disabled={deletingInterviewId === interview.id}
+                        className="border-red-300 text-red-600 hover:bg-red-50"
+                      >
+                        {deletingInterviewId === interview.id ? (
+                          <>
+                            <FiRefreshCw className="w-4 h-4 mr-1 animate-spin" />
+                            Eliminando...
+                          </>
+                        ) : (
+                          <>
+                            <FiTrash2 className="w-4 h-4 mr-1" />
+                            Eliminar
+                          </>
+                        )}
                       </Button>
                     )}
                   </div>

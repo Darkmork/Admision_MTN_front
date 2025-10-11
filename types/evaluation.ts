@@ -39,51 +39,28 @@ export interface BaseEvaluation {
 
 // Evaluación Académica (Lenguaje, Matemáticas, Inglés)
 export interface AcademicEvaluation extends BaseEvaluation {
-  evaluationType: 
-    | EvaluationType.LANGUAGE_EXAM 
-    | EvaluationType.MATHEMATICS_EXAM 
+  evaluationType:
+    | EvaluationType.LANGUAGE_EXAM
+    | EvaluationType.MATHEMATICS_EXAM
     | EvaluationType.ENGLISH_EXAM;
-  
+
   // Campos específicos para evaluaciones académicas
   score?: number; // 0-100
   grade?: string; // A, B, C, D, F
 }
 
-// Entrevista Psicológica
-export interface PsychologicalEvaluation extends BaseEvaluation {
-  evaluationType: EvaluationType.PSYCHOLOGICAL_INTERVIEW;
-  
-  // Campos específicos para evaluación psicológica
-  socialSkillsAssessment?: string;
-  emotionalMaturity?: string;
-  motivationAssessment?: string;
-  familySupportAssessment?: string;
-}
-
-// Evaluación Director de Ciclo
-export interface CycleDirectorEvaluation extends BaseEvaluation {
-  evaluationType: 
-    | EvaluationType.CYCLE_DIRECTOR_REPORT 
-    | EvaluationType.CYCLE_DIRECTOR_INTERVIEW;
-  
-  // Campos específicos para director de ciclo
-  academicReadiness?: string;
-  behavioralAssessment?: string;
-  integrationPotential?: string;
-  finalRecommendation?: boolean;
-}
-
 // Tipo unión para todas las evaluaciones
-export type Evaluation = AcademicEvaluation | PsychologicalEvaluation | CycleDirectorEvaluation;
+export type Evaluation = AcademicEvaluation;
 
 // Enums que corresponden exactamente con el backend
 export enum EvaluationType {
   LANGUAGE_EXAM = 'LANGUAGE_EXAM',
   MATHEMATICS_EXAM = 'MATHEMATICS_EXAM',
   ENGLISH_EXAM = 'ENGLISH_EXAM',
-  CYCLE_DIRECTOR_REPORT = 'CYCLE_DIRECTOR_REPORT',
+  PSYCHOLOGICAL_INTERVIEW = 'PSYCHOLOGICAL_INTERVIEW',
   CYCLE_DIRECTOR_INTERVIEW = 'CYCLE_DIRECTOR_INTERVIEW',
-  PSYCHOLOGICAL_INTERVIEW = 'PSYCHOLOGICAL_INTERVIEW'
+  CYCLE_DIRECTOR_REPORT = 'CYCLE_DIRECTOR_REPORT',
+  FAMILY_INTERVIEW = 'FAMILY_INTERVIEW'
 }
 
 export enum EvaluationStatus {
@@ -94,14 +71,15 @@ export enum EvaluationStatus {
   APPROVED = 'APPROVED'
 }
 
-// Labels para mostrar en la UI
+// Labels para mostrar en la UI (en español)
 export const EVALUATION_TYPE_LABELS: Record<EvaluationType, string> = {
   [EvaluationType.LANGUAGE_EXAM]: 'Examen de Lenguaje',
-  [EvaluationType.MATHEMATICS_EXAM]: 'Examen de Matemáticas',
+  [EvaluationType.MATHEMATICS_EXAM]: 'Examen de Matemática',
   [EvaluationType.ENGLISH_EXAM]: 'Examen de Inglés',
+  [EvaluationType.PSYCHOLOGICAL_INTERVIEW]: 'Entrevista Psicológica',
+  [EvaluationType.CYCLE_DIRECTOR_INTERVIEW]: 'Entrevista Director de Ciclo',
   [EvaluationType.CYCLE_DIRECTOR_REPORT]: 'Informe Director de Ciclo',
-  [EvaluationType.CYCLE_DIRECTOR_INTERVIEW]: 'Entrevista Director/a de Ciclo',
-  [EvaluationType.PSYCHOLOGICAL_INTERVIEW]: 'Entrevista Psicológica'
+  [EvaluationType.FAMILY_INTERVIEW]: 'Entrevista Familiar'
 };
 
 export const EVALUATION_STATUS_LABELS: Record<EvaluationStatus, string> = {
@@ -116,20 +94,14 @@ export const EVALUATION_STATUS_LABELS: Record<EvaluationStatus, string> = {
 export const EVALUATION_TYPE_TO_ROLE: Record<EvaluationType, string> = {
   [EvaluationType.LANGUAGE_EXAM]: 'TEACHER_LANGUAGE',
   [EvaluationType.MATHEMATICS_EXAM]: 'TEACHER_MATHEMATICS',
-  [EvaluationType.ENGLISH_EXAM]: 'TEACHER_ENGLISH',
-  [EvaluationType.CYCLE_DIRECTOR_REPORT]: 'CYCLE_DIRECTOR',
-  [EvaluationType.CYCLE_DIRECTOR_INTERVIEW]: 'CYCLE_DIRECTOR',
-  [EvaluationType.PSYCHOLOGICAL_INTERVIEW]: 'PSYCHOLOGIST'
+  [EvaluationType.ENGLISH_EXAM]: 'TEACHER_ENGLISH'
 };
 
 // Campos requeridos por tipo de evaluación
 export const REQUIRED_FIELDS_BY_TYPE: Record<EvaluationType, string[]> = {
   [EvaluationType.LANGUAGE_EXAM]: ['score', 'grade', 'observations', 'strengths', 'areasForImprovement'],
   [EvaluationType.MATHEMATICS_EXAM]: ['score', 'grade', 'observations', 'strengths', 'areasForImprovement'],
-  [EvaluationType.ENGLISH_EXAM]: ['score', 'grade', 'observations', 'strengths', 'areasForImprovement'],
-  [EvaluationType.CYCLE_DIRECTOR_REPORT]: ['academicReadiness', 'behavioralAssessment', 'integrationPotential', 'finalRecommendation'],
-  [EvaluationType.CYCLE_DIRECTOR_INTERVIEW]: ['academicReadiness', 'behavioralAssessment', 'integrationPotential', 'finalRecommendation'],
-  [EvaluationType.PSYCHOLOGICAL_INTERVIEW]: ['socialSkillsAssessment', 'emotionalMaturity', 'motivationAssessment', 'familySupportAssessment']
+  [EvaluationType.ENGLISH_EXAM]: ['score', 'grade', 'observations', 'strengths', 'areasForImprovement']
 };
 
 // Función para determinar el tipo específico de evaluación
@@ -138,17 +110,6 @@ export function isAcademicEvaluation(evaluation: Evaluation): evaluation is Acad
     EvaluationType.LANGUAGE_EXAM,
     EvaluationType.MATHEMATICS_EXAM,
     EvaluationType.ENGLISH_EXAM
-  ].includes(evaluation.evaluationType);
-}
-
-export function isPsychologicalEvaluation(evaluation: Evaluation): evaluation is PsychologicalEvaluation {
-  return evaluation.evaluationType === EvaluationType.PSYCHOLOGICAL_INTERVIEW;
-}
-
-export function isCycleDirectorEvaluation(evaluation: Evaluation): evaluation is CycleDirectorEvaluation {
-  return [
-    EvaluationType.CYCLE_DIRECTOR_REPORT,
-    EvaluationType.CYCLE_DIRECTOR_INTERVIEW
   ].includes(evaluation.evaluationType);
 }
 
@@ -168,14 +129,6 @@ export interface UpdateEvaluationRequest {
   strengths?: string;
   areasForImprovement?: string;
   recommendations?: string;
-  socialSkillsAssessment?: string;
-  emotionalMaturity?: string;
-  motivationAssessment?: string;
-  familySupportAssessment?: string;
-  academicReadiness?: string;
-  behavioralAssessment?: string;
-  integrationPotential?: string;
-  finalRecommendation?: boolean;
   evaluationDate?: string;
   completionDate?: string;
 }
@@ -319,29 +272,10 @@ export const ScheduleUtils = {
     ].includes(evaluationType);
   },
 
-  // Verificar si es una entrevista
-  isInterview: (evaluationType: EvaluationType): boolean => {
-    return [
-      EvaluationType.CYCLE_DIRECTOR_INTERVIEW,
-      EvaluationType.PSYCHOLOGICAL_INTERVIEW
-    ].includes(evaluationType);
-  },
-
   // Obtener color del badge por tipo
   getEvaluationTypeColor: (evaluationType: EvaluationType): 'primary' | 'success' | 'warning' | 'error' | 'info' => {
-    switch (evaluationType) {
-      case EvaluationType.LANGUAGE_EXAM:
-      case EvaluationType.MATHEMATICS_EXAM:
-      case EvaluationType.ENGLISH_EXAM:
-        return 'primary';
-      case EvaluationType.PSYCHOLOGICAL_INTERVIEW:
-        return 'info';
-      case EvaluationType.CYCLE_DIRECTOR_INTERVIEW:
-      case EvaluationType.CYCLE_DIRECTOR_REPORT:
-        return 'warning';
-      default:
-        return 'info';
-    }
+    // Todas las evaluaciones académicas usan primary
+    return 'primary';
   },
 
   // Obtener color del badge por estado

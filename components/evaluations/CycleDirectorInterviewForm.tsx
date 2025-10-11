@@ -151,11 +151,15 @@ const CycleDirectorInterviewForm: React.FC = () => {
                     let savedInterviewData = null;
                     if (foundEvaluation.strengths) {
                         try {
+                            // Intentar parsear como JSON
                             savedInterviewData = JSON.parse(foundEvaluation.strengths);
-                            console.log('✅ Datos de entrevista recuperados desde strengths:', savedInterviewData);
+                            console.log('✅ Datos de entrevista recuperados desde strengths (JSON):', savedInterviewData);
                         } catch (e) {
-                            console.warn('⚠️ No se pudo parsear strengths como JSON:', e);
-                            setLoadError('json_parse_error');
+                            // Si no es JSON válido, puede ser texto plano de una versión anterior
+                            // En este caso, simplemente no usamos datos guardados y permitimos editar
+                            console.log('ℹ️ Campo strengths contiene texto plano (no JSON). Se permitirá editar la entrevista.');
+                            savedInterviewData = null;
+                            // NO establecer error - esto es normal para entrevistas antiguas
                         }
                     }
 
@@ -755,7 +759,9 @@ Entrevistador: ${currentProfessor?.firstName} ${currentProfessor?.lastName}`,
                     {/* Información adicional para el pie */}
                     <div className="mt-8 pt-4 border-t border-gray-300 text-xs text-gray-600">
                         <p>Fecha de entrevista: {new Date().toLocaleDateString('es-CL')}</p>
-                        <p>Director de Ciclo: {currentProfessor?.firstName} {currentProfessor?.lastName}</p>
+                        <p>
+                            {currentProfessor?.role === 'PSYCHOLOGIST' ? 'Psicólogo' : 'Director de Ciclo'}: {currentProfessor?.firstName} {currentProfessor?.lastName}
+                        </p>
                         <p>Colegio Monte Tabor y Nazaret - Sistema de Admisión 2025</p>
                     </div>
                 </Card>

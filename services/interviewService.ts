@@ -111,6 +111,8 @@ class InterviewService {
       gradeApplied: backendData.gradeApplied || backendData.grade || 'Sin especificar',
       interviewerId: parseInt(backendData.interviewerId) || 0,
       interviewerName: backendData.interviewerName || 'Sin asignar',
+      secondInterviewerId: backendData.secondInterviewerId ? parseInt(backendData.secondInterviewerId) : undefined,
+      secondInterviewerName: backendData.secondInterviewerName || undefined,
       status: backendData.status || InterviewStatus.SCHEDULED,
       type: backendData.type || InterviewType.INDIVIDUAL,
       mode: backendData.mode || InterviewMode.IN_PERSON,
@@ -469,11 +471,29 @@ class InterviewService {
 
       console.log(`📋 Direct response for application ${applicationId}:`, response.data);
 
+      // CASE 1: Backend returns wrapped format { success: true, data: [...] }
       if (response.data && response.data.success && Array.isArray(response.data.data)) {
-        console.log(`✅ Found ${response.data.data.length} interviews for application ${applicationId}`);
+        console.log(`✅ Found ${response.data.data.length} interviews for application ${applicationId} (wrapped format)`);
 
-        // Map each interview from backend to frontend format
         const mappedInterviews = response.data.data.map((item: any) => {
+          console.log(`🔄 Mapping interview ${item.id}:`, item);
+          const mapped = this.mapBackendResponse(item);
+          console.log(`✅ Mapped interview:`, mapped);
+          return mapped;
+        });
+
+        console.log(`📋 Final mapped interviews for application ${applicationId}:`, mappedInterviews);
+
+        return {
+          interviews: mappedInterviews
+        };
+      }
+
+      // CASE 2: Backend returns direct array [{...}, {...}]
+      if (Array.isArray(response.data)) {
+        console.log(`✅ Found ${response.data.length} interviews for application ${applicationId} (direct array)`);
+
+        const mappedInterviews = response.data.map((item: any) => {
           console.log(`🔄 Mapping interview ${item.id}:`, item);
           const mapped = this.mapBackendResponse(item);
           console.log(`✅ Mapped interview:`, mapped);
@@ -843,6 +863,38 @@ class InterviewService {
       '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
       '14:00', '14:30', '15:00', '15:30', '16:00', '16:30'
     ];
+  }
+
+  // Obtener horarios comunes entre dos entrevistadores (para entrevistas familiares)
+  async getCommonTimeSlots(
+    interviewer1Id: number,
+    interviewer2Id: number,
+    date: string,
+    duration: number = 60
+  ): Promise<string[]> {
+    try {
+      console.log(`🔍 Obteniendo horarios comunes para entrevistadores ${interviewer1Id} y ${interviewer2Id} el ${date}`);
+
+      // Obtener los horarios disponibles de ambos entrevistadores
+      const [slots1, slots2] = await Promise.all([
+        this.getAvailableTimeSlots(interviewer1Id, date, duration),
+        this.getAvailableTimeSlots(interviewer2Id, date, duration)
+      ]);
+
+      console.log(`📋 Horarios entrevistador 1:`, slots1);
+      console.log(`📋 Horarios entrevistador 2:`, slots2);
+
+      // Encontrar la intersección (horarios comunes)
+      const commonSlots = slots1.filter(slot => slots2.includes(slot));
+
+      console.log(`✅ Horarios comunes encontrados:`, commonSlots);
+
+      return commonSlots;
+    } catch (error) {
+      console.error('Error obteniendo horarios comunes:', error);
+      // Fallback: horarios por defecto
+      return this.getDefaultTimeSlots();
+    }
   }
 
   /**

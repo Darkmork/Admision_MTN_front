@@ -391,6 +391,101 @@ class ScheduleService {
       return `${minutes}m`;
     }
   }
+
+  // ========================================================================
+  // GESTIÓN DE HORARIOS DE DISPONIBILIDAD DE ENTREVISTADORES
+  // ========================================================================
+
+  /**
+   * Obtener horarios de disponibilidad de un entrevistador
+   */
+  async getInterviewerAvailabilitySchedules(interviewerId: number): Promise<any[]> {
+    try {
+      const response = await api.get(`/api/interviewer-schedules/interviewer/${interviewerId}`);
+      console.log(`✅ Horarios de disponibilidad obtenidos para entrevistador ${interviewerId}:`, response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error obteniendo horarios de disponibilidad:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtener horarios de disponibilidad por año
+   */
+  async getInterviewerAvailabilityByYear(interviewerId: number, year: number): Promise<any[]> {
+    try {
+      const response = await api.get(`/api/interviewer-schedules/interviewer/${interviewerId}/year/${year}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error obteniendo horarios por año:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Crear nuevo horario de disponibilidad
+   */
+  async createAvailabilitySchedule(schedule: {
+    interviewerId: number;
+    dayOfWeek: string;
+    startTime: string;
+    endTime: string;
+    year: number;
+    scheduleType: string;
+    isActive: boolean;
+    notes?: string;
+  }): Promise<any> {
+    try {
+      const response = await api.post('/api/interviewer-schedules', schedule);
+      console.log('✅ Horario de disponibilidad creado:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error creando horario de disponibilidad:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Actualizar horario de disponibilidad
+   */
+  async updateAvailabilitySchedule(scheduleId: number, updates: {
+    dayOfWeek?: string;
+    startTime?: string;
+    endTime?: string;
+    scheduleType?: string;
+    isActive?: boolean;
+    notes?: string;
+  }): Promise<any> {
+    try {
+      const response = await api.put(`/api/interviewer-schedules/${scheduleId}`, updates);
+      console.log(`✅ Horario ${scheduleId} actualizado:`, response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error actualizando horario:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Eliminar horario de disponibilidad
+   */
+  async deleteAvailabilitySchedule(scheduleId: number): Promise<void> {
+    try {
+      await api.delete(`/api/interviewer-schedules/${scheduleId}`);
+      console.log(`✅ Horario ${scheduleId} eliminado`);
+    } catch (error) {
+      console.error('Error eliminando horario:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Activar/Desactivar horario
+   */
+  async toggleAvailability(scheduleId: number, isActive: boolean): Promise<any> {
+    return this.updateAvailabilitySchedule(scheduleId, { isActive });
+  }
 }
 
 export const scheduleService = new ScheduleService();
