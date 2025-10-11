@@ -9,6 +9,7 @@ import EvaluationsDataTable from './EvaluationsDataTable';
 import EvaluationsOverviewTable from './EvaluationsOverviewTable';
 import EmailNotificationsTable from './EmailNotificationsTable';
 import NotificationConfigPanel from './NotificationConfigPanel';
+import EmailTemplateManager from './EmailTemplateManager';
 import ReportsView from './ReportsView';
 import AnalyticsView from './AnalyticsView';
 import Modal from '../ui/Modal';
@@ -17,7 +18,7 @@ import { UserFormMode } from '../../types/user';
 import { userService } from '../../services/userService';
 import { useNotifications } from '../../context/AppContext';
 
-type TableView = 'users' | 'postulantes' | 'evaluations' | 'emails' | 'notifications-config' | 'reports' | 'analytics';
+type TableView = 'users' | 'postulantes' | 'evaluations' | 'emails' | 'email-templates' | 'notifications-config' | 'reports' | 'analytics';
 
 interface AdminDataTablesProps {
     className?: string;
@@ -113,6 +114,13 @@ const AdminDataTables: React.FC<AdminDataTablesProps> = ({ className = '' }) => 
             color: 'cyan'
         },
         {
+            key: 'email-templates' as TableView,
+            title: 'Templates Email',
+            description: 'Editar plantillas de correos automáticos del sistema',
+            icon: FiMail,
+            color: 'teal'
+        },
+        {
             key: 'notifications-config' as TableView,
             title: 'Config. Notificaciones',
             description: 'Configurar qué eventos generan notificaciones y a quién',
@@ -177,6 +185,9 @@ const AdminDataTables: React.FC<AdminDataTablesProps> = ({ className = '' }) => 
             
             case 'emails':
                 return <EmailNotificationsTable />;
+
+            case 'email-templates':
+                return <EmailTemplateManager />;
 
             case 'notifications-config':
                 return <NotificationConfigPanel />;
