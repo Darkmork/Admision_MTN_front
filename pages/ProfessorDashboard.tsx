@@ -40,15 +40,11 @@ const ProfessorDashboard: React.FC = () => {
     const [activeSection, setActiveSection] = useState('evaluaciones'); // Cambiado de 'dashboard' a 'evaluaciones'
     const navigate = useNavigate();
     
-    console.log('🚀 ProfessorDashboard renderizándose...');
-    console.log('📋 activeSection inicial:', activeSection);
     
     // Obtener profesor actual del localStorage
     const [currentProfessor, setCurrentProfessor] = useState(() => {
         const storedProfessor = localStorage.getItem('currentProfessor');
-        console.log('🔍 localStorage.getItem("currentProfessor"):', storedProfessor);
         const parsed = storedProfessor ? JSON.parse(storedProfessor) : null;
-        console.log('🔍 currentProfessor parseado:', parsed);
         return parsed;
     });
 
@@ -97,9 +93,7 @@ const ProfessorDashboard: React.FC = () => {
     useEffect(() => {
         const updateProfessorData = async () => {
             try {
-                console.log('🔄 Llamando a getCurrentProfessor()...');
                 const professorData = await professorAuthService.getCurrentProfessor();
-                console.log('📦 Datos recibidos del backend:', professorData);
 
                 if (professorData) {
                     // Actualizar localStorage con los datos frescos del backend
@@ -114,8 +108,6 @@ const ProfessorDashboard: React.FC = () => {
                     };
                     localStorage.setItem('currentProfessor', JSON.stringify(updatedProfessor));
                     setCurrentProfessor(updatedProfessor);
-                    console.log('✅ Datos del profesor actualizados desde backend:', updatedProfessor);
-                    console.log('✅ Subject guardado:', updatedProfessor.subject);
                 } else {
                     console.warn('⚠️ getCurrentProfessor() retornó null');
                 }
@@ -128,33 +120,24 @@ const ProfessorDashboard: React.FC = () => {
     }, []); // Solo al montar el componente
 
     useEffect(() => {
-        console.log('🔄 useEffect ejecutándose...');
-        console.log('👤 currentProfessor:', currentProfessor);
 
         const loadEvaluations = async () => {
             if (!currentProfessor) {
-                console.log('❌ No hay currentProfessor, saltando loadEvaluations');
                 return;
             }
 
             try {
                 setIsLoading(true);
-                console.log('🔄 Cargando evaluaciones del profesor...');
-                console.log('🆔 ID del profesor:', currentProfessor.id);
 
                 const [evaluationsData, statsData] = await Promise.all([
                     professorEvaluationService.getMyEvaluations(),
                     professorEvaluationService.getMyEvaluationStats()
                 ]);
 
-                console.log('✅ Evaluaciones obtenidas del servicio:', evaluationsData);
-                console.log('📊 Stats obtenidos del servicio:', statsData);
 
                 setEvaluations(evaluationsData);
                 setEvaluationStats(statsData);
 
-                console.log('✅ Estado actualizado - evaluations:', evaluationsData.length);
-                console.log('✅ Estado actualizado - evaluationStats:', statsData);
 
             } catch (error: any) {
                 console.error('❌ Error cargando evaluaciones:', error);
@@ -175,7 +158,6 @@ const ProfessorDashboard: React.FC = () => {
                 }
             } finally {
                 setIsLoading(false);
-                console.log('✅ Loading completado');
             }
         };
 
@@ -514,7 +496,6 @@ const ProfessorDashboard: React.FC = () => {
                     </div>
                 )}
 
-                {(() => { console.log('🔄 Renderizando evaluaciones - isLoading:', isLoading, 'evaluations:', evaluations); return null; })()}
                 {isLoading ? (
                     <div className="text-center py-8">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-azul-monte-tabor mx-auto"></div>
@@ -988,23 +969,15 @@ const ProfessorDashboard: React.FC = () => {
 
 
     const renderSection = () => {
-        console.log('🔄 renderSection ejecutándose...');
-        console.log('📋 activeSection:', activeSection);
-        console.log('📋 activeSection type:', typeof activeSection);
-        console.log('📋 activeSection === "evaluaciones":', activeSection === 'evaluaciones');
         
         switch (activeSection) {
             case 'dashboard':
-                console.log('🏠 Renderizando dashboard');
                 return renderDashboard();
             case 'evaluaciones':
-                console.log('📋 Renderizando evaluaciones');
                 return renderEvaluaciones();
             case 'estudiantes':
-                console.log('👥 Renderizando estudiantes');
                 return renderEstudiantes();
             case 'horarios':
-                console.log('🕒 Renderizando gestión de horarios');
                 return currentProfessor ? (
                     <AvailabilityScheduleManager
                         interviewerId={currentProfessor.id}
@@ -1017,10 +990,8 @@ const ProfessorDashboard: React.FC = () => {
                     </Card>
                 );
             case 'reportes':
-                console.log('📊 Renderizando reportes');
                 return renderReportesEstadisticas();
             case 'configuracion':
-                console.log('⚙️ Renderizando configuración');
                 return (
                     <Card className="p-6">
                         <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">Configuración</h2>
@@ -1042,7 +1013,6 @@ const ProfessorDashboard: React.FC = () => {
                     </Card>
                 );
             case 'admin':
-                console.log('👑 Renderizando admin');
                 return (
                     <Card className="p-6">
                         <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">Panel de Administrador</h2>
@@ -1084,8 +1054,6 @@ const ProfessorDashboard: React.FC = () => {
                     </Card>
                 );
             default:
-                console.log('⚠️ Caso default - activeSection no reconocido:', activeSection);
-                console.log('🔄 Redirigiendo a evaluaciones por defecto');
                 return renderEvaluaciones();
         }
     };
