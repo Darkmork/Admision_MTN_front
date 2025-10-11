@@ -35,8 +35,13 @@ interface StudentEvaluation {
 
 const EvaluationsOverviewTable: React.FC = () => {
     const [students, setStudents] = useState<StudentEvaluation[]>([]);
+    const [filteredStudents, setFilteredStudents] = useState<StudentEvaluation[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    // Filtros
+    const [selectedGrade, setSelectedGrade] = useState<string>('');
+    const [selectedCategory, setSelectedCategory] = useState<string>('');
 
     useEffect(() => {
         loadData();
@@ -83,6 +88,7 @@ const EvaluationsOverviewTable: React.FC = () => {
             });
 
             setStudents(studentsData);
+            setFilteredStudents(studentsData);
         } catch (err: any) {
             console.error('Error loading evaluations overview:', err);
             setError(err.message || 'Error al cargar datos');
@@ -90,6 +96,41 @@ const EvaluationsOverviewTable: React.FC = () => {
             setLoading(false);
         }
     };
+
+    // Aplicar filtros
+    useEffect(() => {
+        let filtered = [...students];
+
+        // Filtro por curso
+        if (selectedGrade) {
+            filtered = filtered.filter(student => student.gradeApplied === selectedGrade);
+        }
+
+        // Filtro por categoría de evaluación
+        if (selectedCategory) {
+            if (selectedCategory === 'ASIGNATURAS') {
+                // Mostrar solo estudiantes con evaluaciones de asignaturas
+                filtered = filtered.filter(student =>
+                    student.evaluations['LANGUAGE_EXAM']?.assigned ||
+                    student.evaluations['MATHEMATICS_EXAM']?.assigned ||
+                    student.evaluations['ENGLISH_EXAM']?.assigned
+                );
+            } else if (selectedCategory === 'PSICOLOGIA') {
+                // Mostrar solo estudiantes con evaluación psicológica
+                filtered = filtered.filter(student =>
+                    student.evaluations['PSYCHOLOGICAL_INTERVIEW']?.assigned
+                );
+            } else if (selectedCategory === 'DIRECTOR') {
+                // Mostrar solo estudiantes con evaluaciones de director
+                filtered = filtered.filter(student =>
+                    student.evaluations['CYCLE_DIRECTOR_INTERVIEW']?.assigned ||
+                    student.evaluations['CYCLE_DIRECTOR_REPORT']?.assigned
+                );
+            }
+        }
+
+        setFilteredStudents(filtered);
+    }, [students, selectedGrade, selectedCategory]);
 
     const renderEvaluationCell = (evaluation: {
         assigned: boolean;
@@ -194,6 +235,9 @@ const EvaluationsOverviewTable: React.FC = () => {
         );
     }
 
+    // Obtener cursos únicos
+    const uniqueGrades = Array.from(new Set(students.map(s => s.gradeApplied))).sort();
+
     return (
         <Card className="p-6">
             <div className="mb-6">
@@ -206,6 +250,53 @@ const EvaluationsOverviewTable: React.FC = () => {
                         <FiX className="w-4 h-4 text-red-600" /> No asignada
                     </span>
                 </p>
+            </div>
+
+            {/* Filtros */}
+            <div className="mb-6 flex gap-4 items-end">
+                <div className="flex-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Filtrar por Curso
+                    </label>
+                    <select
+                        value={selectedGrade}
+                        onChange={(e) => setSelectedGrade(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    >
+                        <option value="">Todos los cursos</option>
+                        {uniqueGrades.map(grade => (
+                            <option key={grade} value={grade}>{grade}</option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="flex-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Filtrar por Tipo de Evaluación
+                    </label>
+                    <select
+                        value={selectedCategory}
+                        onChange={(e) => setSelectedCategory(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    >
+                        <option value="">Todas las evaluaciones</option>
+                        <option value="ASIGNATURAS">Asignaturas (Lenguaje, Matemáticas, Inglés)</option>
+                        <option value="PSICOLOGIA">Psicología</option>
+                        <option value="DIRECTOR">Director de Ciclo</option>
+                    </select>
+                </div>
+
+                {(selectedGrade || selectedCategory) && (
+                    <button
+                        onClick={() => {
+                            setSelectedGrade('');
+                            setSelectedCategory('');
+                        }}
+                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+                    >
+                        Limpiar Filtros
+                    </button>
+                )}
             </div>
 
             <div className="overflow-x-auto">
@@ -226,7 +317,7 @@ const EvaluationsOverviewTable: React.FC = () => {
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {students.map(student => (
+                        {filteredStudents.map(student => (
                             <tr key={student.id} className="hover:bg-gray-50">
                                 <td className="px-4 py-4 whitespace-nowrap sticky left-0 bg-white z-10">
                                     <div>
@@ -247,6 +338,12 @@ const EvaluationsOverviewTable: React.FC = () => {
                     </tbody>
                 </table>
 
+                {filteredStudents.length === 0 && students.length > 0 && (
+                    <div className="text-center py-12">
+                        <p className="text-gray-500">No hay postulantes que coincidan con los filtros seleccionados</p>
+                    </div>
+                )}
+
                 {students.length === 0 && (
                     <div className="text-center py-12">
                         <p className="text-gray-500">No hay postulantes registrados</p>
@@ -255,7 +352,11 @@ const EvaluationsOverviewTable: React.FC = () => {
             </div>
 
             <div className="mt-4 text-sm text-gray-600">
-                Total de postulantes: {students.length}
+                {filteredStudents.length === students.length ? (
+                    <>Total de postulantes: {students.length}</>
+                ) : (
+                    <>Mostrando {filteredStudents.length} de {students.length} postulantes</>
+                )}
             </div>
         </Card>
     );
