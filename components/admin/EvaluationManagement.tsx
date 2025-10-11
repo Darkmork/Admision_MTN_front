@@ -453,7 +453,7 @@ const CustomAssignmentModal: React.FC<CustomAssignmentModalProps> = ({
       const initialAssignments = requiredEvaluations.map(type => {
         // Buscar si ya existe una evaluación asignada para este tipo
         const existingEvaluation = application.evaluations?.find(
-          (eval: any) => eval.evaluationType === type
+          (ev: any) => ev.evaluationType === type
         );
 
         return {
@@ -544,7 +544,7 @@ const CustomAssignmentModal: React.FC<CustomAssignmentModalProps> = ({
 
             // Verificar si ya existe una evaluación asignada para este tipo
             const existingEvaluation = application.evaluations?.find(
-              (eval: any) => eval.evaluationType === evaluationType
+              (ev: any) => ev.evaluationType === evaluationType
             );
             const isAlreadyAssigned = !!existingEvaluation;
             const assignedEvaluatorId = existingEvaluation?.evaluatorId;
