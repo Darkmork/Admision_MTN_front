@@ -16,6 +16,7 @@ import Modal from '../ui/Modal';
 import UserForm from '../users/UserForm';
 import { UserFormMode } from '../../types/user';
 import { userService } from '../../services/userService';
+import { applicationService } from '../../services/applicationService';
 import { useNotifications } from '../../context/AppContext';
 
 type TableView = 'users' | 'postulantes' | 'evaluations' | 'emails' | 'email-templates' | 'notifications-config' | 'reports' | 'analytics';
@@ -77,6 +78,58 @@ const AdminDataTables: React.FC<AdminDataTablesProps> = ({ className = '' }) => 
                 type: 'error',
                 title: 'Error al actualizar usuario',
                 message: error.message || 'No se pudo actualizar el usuario'
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    // Manejar edición de postulante
+    const handleEditPostulante = async (postulante: any) => {
+        // Por ahora mostramos un mensaje, la edición completa requeriría un formulario modal
+        addNotification({
+            type: 'info',
+            title: 'Función en desarrollo',
+            message: `La edición completa de ${postulante.nombreCompleto} estará disponible próximamente. Puedes editar el estado desde el botón de actualizar estado.`
+        });
+    };
+
+    // Manejar programación de entrevista
+    const handleScheduleInterview = async (postulante: any) => {
+        // Por ahora mostramos un mensaje, la programación requeriría acceso a interviewService
+        addNotification({
+            type: 'info',
+            title: 'Programar entrevista',
+            message: `Para programar una entrevista para ${postulante.nombreCompleto}, por favor usa el módulo de Entrevistas en el dashboard principal.`
+        });
+    };
+
+    // Manejar actualización de estado del postulante
+    const handleUpdatePostulanteStatus = async (postulante: any, newStatus: string) => {
+        try {
+            setIsSubmitting(true);
+
+            // Llamar al servicio para actualizar el estado
+            await applicationService.updateApplicationStatus(
+                postulante.id,
+                newStatus,
+                `Estado actualizado por administrador desde panel de postulantes`
+            );
+
+            addNotification({
+                type: 'success',
+                title: 'Estado actualizado',
+                message: `El estado de ${postulante.nombreCompleto} ha sido actualizado exitosamente a ${newStatus}`
+            });
+
+            // Refrescar la tabla
+            setRefreshKey(prev => prev + 1);
+
+        } catch (error: any) {
+            addNotification({
+                type: 'error',
+                title: 'Error al actualizar estado',
+                message: error.message || 'No se pudo actualizar el estado del postulante'
             });
         } finally {
             setIsSubmitting(false);
@@ -161,22 +214,13 @@ const AdminDataTables: React.FC<AdminDataTablesProps> = ({ className = '' }) => 
             case 'postulantes':
                 return (
                     <PostulantesDataTable
+                        key={refreshKey}
                         onViewPostulante={(postulante) => {
-                            console.log('Ver postulante:', postulante);
-                            // TODO: Implementar modal de vista detallada del postulante
+                            // La vista detallada ya está implementada en PostulantesDataTable con StudentDetailModal
                         }}
-                        onEditPostulante={(postulante) => {
-                            console.log('Editar postulante:', postulante);
-                            // TODO: Implementar modal de edición del postulante
-                        }}
-                        onScheduleInterview={(postulante) => {
-                            console.log('Programar entrevista para:', postulante.nombreCompleto);
-                            // TODO: Implementar modal de programación de entrevista
-                        }}
-                        onUpdateStatus={(postulante, newStatus) => {
-                            console.log('Actualizar estado:', postulante.nombreCompleto, 'nuevo estado:', newStatus);
-                            // TODO: Implementar actualización de estado
-                        }}
+                        onEditPostulante={handleEditPostulante}
+                        onScheduleInterview={handleScheduleInterview}
+                        onUpdateStatus={handleUpdatePostulanteStatus}
                     />
                 );
 
