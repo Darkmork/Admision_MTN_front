@@ -68,7 +68,9 @@ const ProfessorDashboard: React.FC = () => {
 
     // Determinar tab inicial basado en las evaluaciones disponibles
     useEffect(() => {
-        if (evaluations.length > 0) {
+        let isMounted = true;
+
+        if (evaluations.length > 0 && isMounted) {
             const hasPsychologicalEvaluations = evaluations.some(e =>
                 ['PSYCHOLOGICAL_INTERVIEW', 'CYCLE_DIRECTOR_INTERVIEW', 'CYCLE_DIRECTOR_REPORT'].includes(e.evaluationType)
             );
@@ -86,16 +88,24 @@ const ProfessorDashboard: React.FC = () => {
                 setActiveEvaluationTab('academicas');
             }
         }
+
+        // Cleanup function
+        return () => {
+            isMounted = false;
+        };
     }, [evaluations]); // Solo cuando cambien las evaluaciones
 
     // Cargar evaluaciones del profesor - SOLO UNA VEZ al montar
     // Cargar datos actualizados del profesor desde el backend
     useEffect(() => {
+        let isMounted = true;
+        let abortController = new AbortController();
+
         const updateProfessorData = async () => {
             try {
                 const professorData = await professorAuthService.getCurrentProfessor();
 
-                if (professorData) {
+                if (professorData && isMounted) {
                     // Actualizar localStorage con los datos frescos del backend
                     const updatedProfessor = {
                         ...currentProfessor,
@@ -108,18 +118,28 @@ const ProfessorDashboard: React.FC = () => {
                     };
                     localStorage.setItem('currentProfessor', JSON.stringify(updatedProfessor));
                     setCurrentProfessor(updatedProfessor);
-                } else {
+                } else if (!professorData) {
                     console.warn('⚠️ getCurrentProfessor() retornó null');
                 }
             } catch (error) {
-                console.error('❌ Error actualizando datos del profesor:', error);
+                if (!abortController.signal.aborted) {
+                    console.error('❌ Error actualizando datos del profesor:', error);
+                }
             }
         };
 
         updateProfessorData();
+
+        // Cleanup function
+        return () => {
+            isMounted = false;
+            abortController.abort();
+        };
     }, []); // Solo al montar el componente
 
     useEffect(() => {
+        let isMounted = true;
+        let abortController = new AbortController();
 
         const loadEvaluations = async () => {
             if (!currentProfessor) {
@@ -127,41 +147,49 @@ const ProfessorDashboard: React.FC = () => {
             }
 
             try {
-                setIsLoading(true);
+                if (isMounted) setIsLoading(true);
 
                 const [evaluationsData, statsData] = await Promise.all([
                     professorEvaluationService.getMyEvaluations(),
                     professorEvaluationService.getMyEvaluationStats()
                 ]);
 
-
-                setEvaluations(evaluationsData);
-                setEvaluationStats(statsData);
-
+                if (isMounted) {
+                    setEvaluations(evaluationsData);
+                    setEvaluationStats(statsData);
+                }
 
             } catch (error: any) {
-                console.error('❌ Error cargando evaluaciones:', error);
+                if (!abortController.signal.aborted) {
+                    console.error('❌ Error cargando evaluaciones:', error);
 
-                // Si no hay evaluaciones asignadas, mostrar estado vacío
-                if (error.message.includes('No se encontraron evaluaciones')) {
-                    setEvaluations([]);
-                    setEvaluationStats({
-                        total: 0,
-                        pending: 0,
-                        inProgress: 0,
-                        completed: 0,
-                        averageScore: 0
-                    });
-                } else {
-                    // Para otros errores, mostrar notificación
-                    console.error('Error específico:', error.message);
+                    // Si no hay evaluaciones asignadas, mostrar estado vacío
+                    if (error.message.includes('No se encontraron evaluaciones') && isMounted) {
+                        setEvaluations([]);
+                        setEvaluationStats({
+                            total: 0,
+                            pending: 0,
+                            inProgress: 0,
+                            completed: 0,
+                            averageScore: 0
+                        });
+                    } else {
+                        // Para otros errores, mostrar notificación
+                        console.error('Error específico:', error.message);
+                    }
                 }
             } finally {
-                setIsLoading(false);
+                if (isMounted) setIsLoading(false);
             }
         };
 
         loadEvaluations();
+
+        // Cleanup function
+        return () => {
+            isMounted = false;
+            abortController.abort();
+        };
     }, []); // ✅ DEPENDENCIAS VACÍAS - SOLO SE EJECUTA AL MONTAR
 
 
@@ -1068,7 +1096,7 @@ const ProfessorDashboard: React.FC = () => {
                         <p className="text-blue-200 text-sm">Sistema de Evaluaciones</p>
                     </div>
                     
-                    <nav className="space-y-2">
+                    <nav className="space-y-2" aria-label="Menú de navegación del profesor">
                         {sections.map((section) => {
                             const IconComponent = section.icon;
                             return (
@@ -1076,12 +1104,14 @@ const ProfessorDashboard: React.FC = () => {
                                     key={section.key}
                                     onClick={() => setActiveSection(section.key)}
                                     className={`w-full text-left px-4 py-3 rounded-lg font-semibold transition-colors duration-200 flex items-center gap-3 ${
-                                        activeSection === section.key 
-                                            ? 'bg-dorado-nazaret text-azul-monte-tabor' 
+                                        activeSection === section.key
+                                            ? 'bg-dorado-nazaret text-azul-monte-tabor'
                                             : 'text-blanco-pureza hover:bg-blue-800'
                                     }`}
+                                    aria-label={`Navegar a sección ${section.label}`}
+                                    aria-current={activeSection === section.key ? 'page' : undefined}
                                 >
-                                    <IconComponent className="w-5 h-5" />
+                                    <IconComponent className="w-5 h-5" aria-hidden="true" />
                                     {section.label}
                                 </button>
                             );
@@ -1090,15 +1120,21 @@ const ProfessorDashboard: React.FC = () => {
 
                     <div className="mt-8 pt-8 border-t border-blue-700 space-y-2">
                         <Link to="/">
-                            <Button variant="outline" size="sm" className="w-full text-blanco-pureza border-blanco-pureza hover:bg-blanco-pureza hover:text-azul-monte-tabor">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full text-blanco-pureza border-blanco-pureza hover:bg-blanco-pureza hover:text-azul-monte-tabor"
+                                ariaLabel="Volver al portal principal del sistema"
+                            >
                                 Volver al Portal Principal
                             </Button>
                         </Link>
-                        <Button 
-                            variant="outline" 
-                            size="sm" 
+                        <Button
+                            variant="outline"
+                            size="sm"
                             className="w-full text-blanco-pureza border-blanco-pureza hover:bg-red-500 hover:text-blanco-pureza"
                             onClick={handleLogout}
+                            ariaLabel="Cerrar sesión y salir del portal de profesores"
                         >
                             Cerrar Sesión
                         </Button>
@@ -1106,7 +1142,7 @@ const ProfessorDashboard: React.FC = () => {
                 </aside>
 
                 {/* Main Content */}
-                <main className="flex-1 p-8">
+                <main className="flex-1 p-8" role="main" aria-label="Contenido principal del dashboard del profesor">
                     {renderSection()}
                 </main>
             </div>
