@@ -109,16 +109,20 @@ const FamilyDashboard: React.FC = () => {
   
   // Load real applications on component mount
   useEffect(() => {
+    let isMounted = true;
+
     const loadApplications = async () => {
       if (!isAuthenticated || !user) {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
         return;
       }
-      
+
       try {
-        setIsLoading(true);
+        if (isMounted) setIsLoading(true);
         const dashboardData = await applicationService.getDashboardData();
-        
+
+        if (!isMounted) return; // Evitar actualización si el componente se desmontó
+
         // Validar que applications sea un array
         if (dashboardData && Array.isArray(dashboardData.applications)) {
           setRealApplications(dashboardData.applications);
@@ -130,34 +134,51 @@ const FamilyDashboard: React.FC = () => {
         }
       } catch (error: any) {
         console.error('Error loading dashboard data:', error);
-        setError('Error al cargar los datos del dashboard');
-        setRealApplications([]);
+        if (isMounted) {
+          setError('Error al cargar los datos del dashboard');
+          setRealApplications([]);
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
       }
     };
-    
+
     loadApplications();
+
+    // Cleanup function
+    return () => {
+      isMounted = false;
+    };
   }, [isAuthenticated, user]);
 
   // Load documents when application is available
   useEffect(() => {
+    let isMounted = true;
+
     const loadDocuments = async () => {
       if (!hasRealApplication || !realApplications[0]?.id) return;
 
       try {
-        setLoadingDocuments(true);
+        if (isMounted) setLoadingDocuments(true);
         const response = await applicationService.getApplicationDocuments(realApplications[0].id);
-        setDocuments(response.documents || []);
+
+        if (isMounted) {
+          setDocuments(response.documents || []);
+        }
       } catch (error) {
         console.error('Error loading documents:', error);
-        setDocuments([]);
+        if (isMounted) setDocuments([]);
       } finally {
-        setLoadingDocuments(false);
+        if (isMounted) setLoadingDocuments(false);
       }
     };
 
     loadDocuments();
+
+    // Cleanup function
+    return () => {
+      isMounted = false;
+    };
   }, [realApplications]);
 
   // Use real applications if available, otherwise fallback to context or mock data
