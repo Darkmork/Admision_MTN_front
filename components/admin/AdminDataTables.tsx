@@ -8,8 +8,6 @@ import PostulantesDataTable from './PostulantesDataTable';
 import EvaluationsDataTable from './EvaluationsDataTable';
 import EvaluationsOverviewTable from './EvaluationsOverviewTable';
 import EmailNotificationsTable from './EmailNotificationsTable';
-import InterviewsDataTable from './InterviewsDataTable';
-import InterviewsOverviewTable from './InterviewsOverviewTable';
 import NotificationConfigPanel from './NotificationConfigPanel';
 import ReportsView from './ReportsView';
 import AnalyticsView from './AnalyticsView';
@@ -19,7 +17,7 @@ import { UserFormMode } from '../../types/user';
 import { userService } from '../../services/userService';
 import { useNotifications } from '../../context/AppContext';
 
-type TableView = 'users' | 'postulantes' | 'evaluations' | 'emails' | 'notifications-config' | 'interviews' | 'reports' | 'analytics';
+type TableView = 'users' | 'postulantes' | 'evaluations' | 'emails' | 'notifications-config' | 'reports' | 'analytics';
 
 interface AdminDataTablesProps {
     className?: string;
@@ -122,13 +120,6 @@ const AdminDataTables: React.FC<AdminDataTablesProps> = ({ className = '' }) => 
             color: 'indigo'
         },
         {
-            key: 'interviews' as TableView,
-            title: 'Entrevistas',
-            description: 'Programación de entrevistas',
-            icon: FiCalendar,
-            color: 'orange'
-        },
-        {
             key: 'reports' as TableView,
             title: 'Reportes',
             description: 'Informes y estadísticas',
@@ -190,9 +181,6 @@ const AdminDataTables: React.FC<AdminDataTablesProps> = ({ className = '' }) => 
             case 'notifications-config':
                 return <NotificationConfigPanel />;
 
-            case 'interviews':
-                return <InterviewsOverviewTable />;
-            
             case 'reports':
                 return <ReportsView />;
 
