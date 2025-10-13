@@ -454,7 +454,11 @@ const ApplicationForm: React.FC = () => {
                     studentEmail: appData.student?.email || '',
                     currentSchool: appData.student?.currentSchool || '',
                     additionalNotes: appData.student?.additionalNotes || '',
+                    admissionPreference: appData.student?.admissionPreference || appData.admissionPreference || '',
                     applicationYear: appData.applicationYear || new Date().getFullYear() + 1,
+                    pais: appData.pais || 'Chile',
+                    region: appData.region || '',
+                    comuna: appData.comuna || '',
 
                     // Father data (parent1)
                     parent1Name: appData.father?.fullName || '',
@@ -1004,18 +1008,18 @@ const ApplicationForm: React.FC = () => {
                 if (requiresCurrentSchool(data.grade || '') && !data.currentSchool?.trim()) missing.push('Colegio de Procedencia');
                 break;
             case 1:
-                if (!data.parent1Name?.trim()) missing.push('Nombre del Padre');
-                if (!data.parent1Email?.trim()) missing.push('Email del Padre');
-                if (!data.parent1Phone?.trim()) missing.push('Teléfono del Padre');
-                if (!data.parent1Rut?.trim()) missing.push('RUT del Padre');
-                if (!data.parent1Address?.trim()) missing.push('Dirección del Padre');
-                if (!data.parent1Profession?.trim()) missing.push('Profesión del Padre');
-                if (!data.parent2Name?.trim()) missing.push('Nombre de la Madre');
-                if (!data.parent2Email?.trim()) missing.push('Email de la Madre');
-                if (!data.parent2Phone?.trim()) missing.push('Teléfono de la Madre');
-                if (!data.parent2Rut?.trim()) missing.push('RUT de la Madre');
-                if (!data.parent2Address?.trim()) missing.push('Dirección de la Madre');
-                if (!data.parent2Profession?.trim()) missing.push('Profesión de la Madre');
+                if (!data.parent1Name?.trim()) missing.push('Nombre del Tutor 1');
+                if (!data.parent1Email?.trim()) missing.push('Email del Tutor 1');
+                if (!data.parent1Phone?.trim()) missing.push('Teléfono del Tutor 1');
+                if (!data.parent1Rut?.trim()) missing.push('RUT del Tutor 1');
+                if (!data.parent1Address?.trim()) missing.push('Dirección del Tutor 1');
+                if (!data.parent1Profession?.trim()) missing.push('Profesión del Tutor 1');
+                if (!data.parent2Name?.trim()) missing.push('Nombre del Tutor 2');
+                if (!data.parent2Email?.trim()) missing.push('Email del Tutor 2');
+                if (!data.parent2Phone?.trim()) missing.push('Teléfono del Tutor 2');
+                if (!data.parent2Rut?.trim()) missing.push('RUT del Tutor 2');
+                if (!data.parent2Address?.trim()) missing.push('Dirección del Tutor 2');
+                if (!data.parent2Profession?.trim()) missing.push('Profesión del Tutor 2');
                 break;
             case 2:
                 if (!data.supporterRelation) missing.push('Parentesco del Sostenedor');
@@ -1407,6 +1411,8 @@ const ApplicationForm: React.FC = () => {
                                     value={data.studentAddressCommune || ''}
                                     onChange={(e) => {
                                         updateField('studentAddressCommune', e.target.value);
+                                        // Also update the comuna field for geographic location (synchronize)
+                                        updateField('comuna', e.target.value);
                                         // Update combined address
                                         const combined = `${data.studentAddressStreet || ''} ${data.studentAddressNumber || ''}, ${e.target.value || ''}, ${data.studentAddressApartment || ''}`.trim();
                                         updateField('studentAddress', combined);
@@ -1447,10 +1453,9 @@ const ApplicationForm: React.FC = () => {
                                 value={data.pais || 'Chile'}
                                 onChange={(e) => {
                                     updateField('pais', e.target.value);
-                                    // Clear region and comuna if not Chile
+                                    // Clear region if not Chile (comuna is handled via address field)
                                     if (e.target.value !== 'Chile') {
                                         updateField('region', '');
-                                        updateField('comuna', '');
                                     }
                                 }}
                                 onBlur={() => touchField('pais')}
@@ -1489,18 +1494,6 @@ const ApplicationForm: React.FC = () => {
                                         error={errors.region}
                                         helpText="Seleccione la región donde reside el estudiante"
                                     />
-
-                                    <Input
-                                        id="comuna"
-                                        label="Comuna"
-                                        placeholder="Ej: Providencia, Las Condes, Maipú"
-                                        isRequired
-                                        value={data.comuna || ''}
-                                        onChange={(e) => updateField('comuna', e.target.value)}
-                                        onBlur={() => touchField('comuna')}
-                                        error={errors.comuna}
-                                        helpText="Ingrese la comuna donde reside el estudiante"
-                                    />
                                 </>
                             )}
 
@@ -1508,7 +1501,7 @@ const ApplicationForm: React.FC = () => {
                             {data.pais && data.pais !== 'Chile' && (
                                 <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
                                     <p className="text-sm text-blue-800">
-                                        <strong>Nota:</strong> Para estudiantes residentes fuera de Chile, los campos región y comuna no son obligatorios.
+                                        <strong>Nota:</strong> Para estudiantes residentes fuera de Chile, el campo región no es obligatorio.
                                     </p>
                                 </div>
                             )}
@@ -1597,7 +1590,7 @@ const ApplicationForm: React.FC = () => {
                                         type="radio"
                                         name="admissionPreference"
                                         value="NINGUNA"
-                                        checked={data.admissionPreference === 'NINGUNA' || !data.admissionPreference}
+                                        checked={data.admissionPreference === 'NINGUNA'}
                                         onChange={(e) => updateField('admissionPreference', e.target.value)}
                                         className="h-4 w-4 text-azul-monte-tabor focus:ring-azul-monte-tabor border-gray-300"
                                     />
@@ -1679,7 +1672,7 @@ const ApplicationForm: React.FC = () => {
                 return (
                     <div className="space-y-6">
                         <div>
-                            <h3 className="text-xl font-bold text-azul-monte-tabor mb-4">Información del Padre</h3>
+                            <h3 className="text-xl font-bold text-azul-monte-tabor mb-4">Información del Tutor 1</h3>
                             {isLoadingProfile && (
                                 <div className="mb-4 p-3 bg-blue-50 rounded-lg">
                                     <p className="text-sm text-azul-monte-tabor">
@@ -1764,7 +1757,7 @@ const ApplicationForm: React.FC = () => {
                             </div>
                         </div>
                          <div>
-                            <h3 className="text-xl font-bold text-azul-monte-tabor mb-4">Información de la Madre</h3>
+                            <h3 className="text-xl font-bold text-azul-monte-tabor mb-4">Información del Tutor 2</h3>
                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <Input 
                                     id="parent2-name" 
@@ -2014,8 +2007,8 @@ const ApplicationForm: React.FC = () => {
                     { key: 'GRADES_2023', label: 'Certificado de Estudios 2023 (si aplica)', required: true },
                     { key: 'GRADES_2024', label: 'Certificado de Estudios 2024', required: true },
                     { key: 'GRADES_2025_SEMESTER_1', label: 'Certificado de Estudios primer semestre 2025', required: true },
-                    { key: 'PERSONALITY_REPORT_2024', label: 'Informe de Personalidad 2024', required: true },
-                    { key: 'PERSONALITY_REPORT_2025_SEMESTER_1', label: 'Informe de Personalidad primer semestre 2025', required: true },
+                    { key: 'PERSONALITY_REPORT_2024', label: 'Informe de Personalidad 2024', required: false },
+                    { key: 'PERSONALITY_REPORT_2025_SEMESTER_1', label: 'Informe de Personalidad primer semestre 2025', required: false },
                     { key: 'STUDENT_PHOTO', label: 'Fotografía del Postulante', required: false },
                     { key: 'BAPTISM_CERTIFICATE', label: 'Certificado de Bautismo', required: false },
                     { key: 'PREVIOUS_SCHOOL_REPORT', label: 'Informe de Jardín/Colegio Anterior', required: false },
@@ -2190,12 +2183,9 @@ const ApplicationForm: React.FC = () => {
     };
 
     // Si no está autenticado, mostrar formulario de autenticación
-    console.log('🎯 ApplicationForm - Render Decision:', { showAuthForm, isAuthenticated, willShowAuthForm: showAuthForm || !isAuthenticated });
     if (showAuthForm || !isAuthenticated) {
-        console.log('📝 ApplicationForm - Rendering auth form');
         return renderAuthForm();
     }
-    console.log('📋 ApplicationForm - Rendering application form (user is authenticated)');
 
     return (
         <div className="bg-gray-50 py-16">

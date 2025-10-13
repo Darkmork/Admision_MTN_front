@@ -131,7 +131,15 @@ const FamilyInterviews: React.FC<FamilyInterviewsProps> = ({ className = '' }) =
                 {INTERVIEW_TYPE_LABELS[interview.type]}
               </h3>
               <p className="text-sm text-gray-600">
-                Entrevistador: {interview.interviewerName}
+                {interview.type === InterviewType.FAMILY && interview.secondInterviewerName ? (
+                  <>
+                    Entrevistadores: {interview.interviewerName} y {interview.secondInterviewerName}
+                  </>
+                ) : (
+                  <>
+                    Entrevistador: {interview.interviewerName}
+                  </>
+                )}
               </p>
             </div>
           </div>

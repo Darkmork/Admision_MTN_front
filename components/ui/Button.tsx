@@ -48,6 +48,7 @@ const Button: React.FC<ButtonProps> = ({
 
     return (
         <button
+            type="button"
             className={`${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className || ''}`}
             disabled={isDisabled}
             aria-label={ariaLabel || (typeof children === 'string' ? children : undefined)}

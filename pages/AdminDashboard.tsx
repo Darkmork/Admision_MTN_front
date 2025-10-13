@@ -61,6 +61,9 @@ import SimpleToast from '../components/ui/SimpleToast';
 import AdminDataTables from '../components/admin/AdminDataTables';
 import StudentDetailModal from '../components/admin/StudentDetailModal';
 import ApplicationDecisionModal from '../components/admin/ApplicationDecisionModal';
+import InterviewForm from '../components/interviews/InterviewForm';
+import { InterviewFormMode, InterviewType } from '../types/interview';
+import interviewService from '../services/interviewService';
 
 const sections = [
   { key: 'dashboard', label: 'Dashboard General' },
@@ -151,6 +154,18 @@ const AdminDashboard: React.FC = () => {
     show: false,
     application: null
   });
+
+  // Estado para modal de programación de entrevista
+  const [scheduleInterviewModal, setScheduleInterviewModal] = useState<{
+    show: boolean;
+    postulante: any | null;
+    interviewType?: InterviewType;
+  }>({
+    show: false,
+    postulante: null,
+    interviewType: undefined
+  });
+  const [isSchedulingInterview, setIsSchedulingInterview] = useState(false);
 
 
   useEffect(() => {
@@ -748,7 +763,7 @@ Esta acción:
             </button>
           </div>
 
-          <nav className="px-4 flex-1" aria-label="Menú de navegación principal del administrador">
+          <nav className="px-4" aria-label="Menú de navegación principal del administrador">
             {sections.map(section => (
               <button
                 key={section.key}
@@ -765,7 +780,9 @@ Esta acción:
               </button>
             ))}
           </nav>
-          <div className="p-4 border-t border-gray-200 mt-auto">
+
+          {/* Botón de Cerrar Sesión */}
+          <div className="px-4 mt-4">
             <Button
               variant="primary"
               className="w-full bg-azul-monte-tabor hover:bg-blue-700 text-white font-medium py-3 transition-all duration-200 shadow-md hover:shadow-lg"
@@ -775,6 +792,9 @@ Esta acción:
               Cerrar Sesión
             </Button>
           </div>
+
+          {/* Spacer para empujar contenido hacia abajo si es necesario */}
+          <div className="flex-1"></div>
         </aside>
 
         {/* Main Content */}
@@ -832,9 +852,14 @@ Esta acción:
           handleCloseDetailModal();
           // TODO: Implementar edición si se necesita
         }}
-        onScheduleInterview={(postulante) => {
+        onScheduleInterview={(postulante, interviewType) => {
+          console.log('📅 onScheduleInterview called with:', { postulante, interviewType });
           handleCloseDetailModal();
-          // TODO: Implementar programación de entrevista si se necesita
+          setScheduleInterviewModal({
+            show: true,
+            postulante,
+            interviewType
+          });
         }}
         onUpdateStatus={(postulante, status) => {
           handleCloseDetailModal();
@@ -855,6 +880,73 @@ Esta acción:
           });
         }}
       />
+
+      {/* Modal de programación de entrevista */}
+      <Modal
+        isOpen={scheduleInterviewModal.show}
+        onClose={() => {
+          if (!isSchedulingInterview) {
+            setScheduleInterviewModal({ show: false, postulante: null, interviewType: undefined });
+          }
+        }}
+        title="Programar Entrevista"
+        size="xl"
+      >
+        <div className="p-6">
+          {scheduleInterviewModal.postulante && (
+            <InterviewForm
+              interview={{
+                applicationId: scheduleInterviewModal.postulante.id,
+                type: scheduleInterviewModal.interviewType || InterviewType.FAMILY,
+                studentName: scheduleInterviewModal.postulante.nombreCompleto,
+                parentNames: `${scheduleInterviewModal.postulante.nombrePadre || 'N/A'} / ${scheduleInterviewModal.postulante.nombreMadre || 'N/A'}`,
+                gradeApplied: scheduleInterviewModal.postulante.cursoPostulado,
+                status: 'SCHEDULED' as any,
+                interviewerId: 0,
+                interviewerName: '',
+                mode: 'IN_PERSON' as any,
+                scheduledDate: '',
+                scheduledTime: '',
+                duration: 30,
+                followUpRequired: false,
+                createdAt: new Date().toISOString(),
+                id: 0
+              }}
+              mode={InterviewFormMode.CREATE}
+              onSubmit={async (data) => {
+                try {
+                  setIsSchedulingInterview(true);
+                  console.log('📤 Submitting interview data:', data);
+
+                  await interviewService.createInterview(data as any);
+
+                  setApplicationToast({
+                    message: `Entrevista programada exitosamente para ${scheduleInterviewModal.postulante?.nombreCompleto}`,
+                    type: 'success'
+                  });
+
+                  setScheduleInterviewModal({ show: false, postulante: null, interviewType: undefined });
+                  await loadAdminApplications(); // Reload to show updated interview status
+                } catch (error: any) {
+                  console.error('❌ Error scheduling interview:', error);
+                  setApplicationToast({
+                    message: error.message || 'Error al programar la entrevista',
+                    type: 'error'
+                  });
+                } finally {
+                  setIsSchedulingInterview(false);
+                }
+              }}
+              onCancel={() => {
+                if (!isSchedulingInterview) {
+                  setScheduleInterviewModal({ show: false, postulante: null, interviewType: undefined });
+                }
+              }}
+              isSubmitting={isSchedulingInterview}
+            />
+          )}
+        </div>
+      </Modal>
     </div>
   );
 };

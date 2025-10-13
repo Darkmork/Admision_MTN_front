@@ -67,6 +67,21 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ onBack }) => {
     message: ''
   });
 
+  // Modal de error 409 - Usuario con datos asociados
+  const [conflictDialog, setConflictDialog] = useState<{
+    show: boolean;
+    user: User | null;
+    details: {
+      evaluations: number;
+      interviews: number;
+      schedules: number;
+    } | null;
+  }>({
+    show: false,
+    user: null,
+    details: null
+  });
+
   // Cargar usuarios
   const loadUsers = useCallback(async (filters: UserFiltersType = state.filters, skipOptimalSize: boolean = false) => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
@@ -253,20 +268,58 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ onBack }) => {
 
       await loadUsers();
       await loadStats();
-      
+
     } catch (error: any) {
-      // Mostrar mensaje específico para usuarios con evaluaciones
+      // Capturar error 409 (Conflict) específicamente
+      // El error puede venir de dos formas:
+      // 1. error.response?.status (Axios directo)
+      // 2. error.status (HttpError del cliente http.ts)
+      const errorStatus = error.response?.status || error.status;
+
+      if (errorStatus === 409 && action === 'delete') {
+        // Cerrar el modal de confirmación
+        setConfirmDialog({ show: false, user: null, action: null, message: '' });
+
+        // Obtener detalles de los datos asociados
+        try {
+          const response = await fetch(`http://localhost:8080/api/users/${user.id}/associated-data`, {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+            }
+          });
+          const details = await response.json();
+
+          // Mostrar modal con detalles
+          setConflictDialog({
+            show: true,
+            user,
+            details: details.data || { evaluations: 0, interviews: 0, schedules: 0 }
+          });
+        } catch (fetchError) {
+          // Si falla la consulta de detalles, mostrar modal sin números específicos
+          setConflictDialog({
+            show: true,
+            user,
+            details: null
+          });
+        }
+        return;
+      }
+
+      // Mostrar mensaje específico para usuarios con evaluaciones (fallback)
       let errorMessage = error.message || 'Error al ejecutar la acción';
-      
+
       if (error.message && error.message.includes('evaluación(es) asociada(s)')) {
         errorMessage = error.message;
       } else if (error.message && error.message.includes('foreign key constraint')) {
         errorMessage = `No se puede eliminar este usuario porque tiene datos asociados en el sistema. Para mantener la integridad de la información, te recomendamos desactivar el usuario en lugar de eliminarlo.`;
       }
-      
+
       showToast(errorMessage, 'error');
     } finally {
-      setConfirmDialog({ show: false, user: null, action: null, message: '' });
+      if (!conflictDialog.show) {
+        setConfirmDialog({ show: false, user: null, action: null, message: '' });
+      }
     }
   };
 
@@ -384,7 +437,7 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ onBack }) => {
             <ExclamationTriangleIcon className="w-6 h-6 text-orange-500 mt-1" />
             <p className="text-gray-700 whitespace-pre-line">{confirmDialog.message}</p>
           </div>
-          
+
           <div className="flex justify-end space-x-3">
             <Button
               variant="outline"
@@ -398,6 +451,115 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ onBack }) => {
               className={confirmDialog.action === 'delete' ? 'bg-red-600 hover:bg-red-700' : ''}
             >
               {confirmDialog.action === 'delete' ? 'Eliminar Permanentemente' : 'Confirmar'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal de error 409 - Usuario con datos asociados */}
+      <Modal
+        isOpen={conflictDialog.show}
+        onClose={() => setConflictDialog({ show: false, user: null, details: null })}
+        title="No se puede eliminar el usuario"
+        size="lg"
+      >
+        <div className="space-y-6">
+          {/* Encabezado con icono de advertencia */}
+          <div className="flex items-start space-x-4 p-4 bg-red-50 rounded-lg border border-red-200">
+            <ExclamationTriangleIcon className="w-8 h-8 text-red-600 mt-1 flex-shrink-0" />
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-red-800 mb-2">
+                Usuario con datos asociados
+              </h3>
+              <p className="text-red-700">
+                El usuario <span className="font-semibold">{conflictDialog.user?.fullName}</span> no puede ser eliminado
+                porque tiene información vinculada en el sistema que debe preservarse.
+              </p>
+            </div>
+          </div>
+
+          {/* Detalles de datos asociados */}
+          {conflictDialog.details && (
+            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+              <h4 className="text-sm font-semibold text-gray-700 mb-3">Datos asociados encontrados:</h4>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center p-3 bg-white rounded-lg border border-gray-200">
+                  <div className="text-2xl font-bold text-blue-600">{conflictDialog.details.evaluations}</div>
+                  <div className="text-xs text-gray-600 mt-1">Evaluaciones</div>
+                </div>
+                <div className="text-center p-3 bg-white rounded-lg border border-gray-200">
+                  <div className="text-2xl font-bold text-purple-600">{conflictDialog.details.interviews}</div>
+                  <div className="text-xs text-gray-600 mt-1">Entrevistas</div>
+                </div>
+                <div className="text-center p-3 bg-white rounded-lg border border-gray-200">
+                  <div className="text-2xl font-bold text-green-600">{conflictDialog.details.schedules}</div>
+                  <div className="text-xs text-gray-600 mt-1">Horarios</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Razones por las que no se puede eliminar */}
+          <div className="space-y-3">
+            <h4 className="text-sm font-semibold text-gray-700">¿Por qué no se puede eliminar?</h4>
+            <div className="space-y-2">
+              <div className="flex items-start space-x-2">
+                <InformationCircleIcon className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">Trazabilidad:</span> Las evaluaciones deben mantener el registro histórico del evaluador que las realizó.
+                </p>
+              </div>
+              <div className="flex items-start space-x-2">
+                <InformationCircleIcon className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">Auditoría:</span> El sistema educativo requiere preservar el historial completo de actividades.
+                </p>
+              </div>
+              <div className="flex items-start space-x-2">
+                <InformationCircleIcon className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">Integridad:</span> Eliminar este usuario rompería las relaciones de datos en el sistema.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Solución recomendada */}
+          <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+            <h4 className="text-sm font-semibold text-blue-800 mb-2 flex items-center">
+              <InformationCircleIcon className="w-5 h-5 mr-2" />
+              Solución Recomendada
+            </h4>
+            <p className="text-sm text-blue-700 mb-3">
+              En lugar de eliminar el usuario, puedes <span className="font-semibold">desactivarlo</span>. Esto:
+            </p>
+            <ul className="list-disc list-inside text-sm text-blue-700 space-y-1 ml-4">
+              <li>Impedirá que el usuario acceda al sistema</li>
+              <li>Mantendrá toda la información histórica intacta</li>
+              <li>Preservará las evaluaciones y registros asociados</li>
+              <li>Permitirá reactivar el usuario si es necesario en el futuro</li>
+            </ul>
+          </div>
+
+          {/* Botones de acción */}
+          <div className="flex justify-end space-x-3 pt-4 border-t">
+            <Button
+              variant="outline"
+              onClick={() => setConflictDialog({ show: false, user: null, details: null })}
+            >
+              Cerrar
+            </Button>
+            <Button
+              variant="primary"
+              className="bg-orange-600 hover:bg-orange-700"
+              onClick={() => {
+                if (conflictDialog.user) {
+                  setConflictDialog({ show: false, user: null, details: null });
+                  confirmAction(conflictDialog.user, 'toggle'); // Abrir modal de desactivación
+                }
+              }}
+            >
+              Desactivar Usuario
             </Button>
           </div>
         </div>

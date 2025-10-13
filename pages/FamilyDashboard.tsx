@@ -45,10 +45,12 @@ import applicationWorkflowService, { type ApplicationDraft } from '../services/a
 import documentGatewayService from '../services/documentGatewayService';
 import FamilyInterviews from '../components/family/FamilyInterviews';
 import FamilyCalendar from '../components/family/FamilyCalendar';
+import ComplementaryApplicationForm from './ComplementaryApplicationForm';
 
 const sections = [
   { key: 'resumen', label: 'Resumen de Postulación' },
   { key: 'datos', label: 'Datos del Postulante y Apoderados' },
+  { key: 'formulario-complementario', label: 'Formulario Complementario' },
   { key: 'documentos', label: 'Documentos' },
   { key: 'calendario', label: 'Calendario de Entrevistas' },
   { key: 'ayuda', label: 'Ayuda y Soporte' },
@@ -358,7 +360,19 @@ const FamilyDashboard: React.FC = () => {
               {/* Accesos Rápidos */}
               <Card className="p-6 mt-6">
                 <h3 className="text-lg font-bold text-azul-monte-tabor mb-4">Accesos Rápidos</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <button
+                    onClick={() => setActiveSection('formulario-complementario')}
+                    className="flex items-center gap-3 p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors text-left"
+                    aria-label="Ir al formulario complementario"
+                  >
+                    <FiFileText className="w-8 h-8 text-purple-600" aria-hidden="true" />
+                    <div>
+                      <h4 className="font-semibold text-azul-monte-tabor">Formulario Complementario</h4>
+                      <p className="text-sm text-gris-piedra">Completar información adicional</p>
+                    </div>
+                  </button>
+
                   <button
                     onClick={() => setActiveSection('calendario')}
                     className="flex items-center gap-3 p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors text-left"
@@ -530,6 +544,28 @@ const FamilyDashboard: React.FC = () => {
               </div>
             )}
           </Card>
+        );
+      case 'formulario-complementario':
+        return (
+          <div>
+            {hasRealApplication ? (
+              <ComplementaryApplicationForm />
+            ) : (
+              <Card className="p-6">
+                <div className="text-center py-8">
+                  <FileTextIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gris-piedra mb-4">
+                    Debe completar su postulación primero antes de llenar el formulario complementario
+                  </p>
+                  <Link to="/postulacion">
+                    <Button variant="primary">
+                      Crear Nueva Postulación
+                    </Button>
+                  </Link>
+                </div>
+              </Card>
+            )}
+          </div>
         );
       case 'documentos':
         return (
