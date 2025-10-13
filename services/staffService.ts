@@ -57,7 +57,13 @@ class StaffService {
    * Delete staff member
    */
   async deleteStaffUser(id: number): Promise<void> {
-    await api.delete(`/api/users/${id}`);
+    try {
+      await api.delete(`/api/users/${id}`);
+    } catch (error: any) {
+      // Preservar el código de estado del error para que el componente pueda detectar 409
+      // El httpClient lanza HttpError con la propiedad 'status'
+      throw error;
+    }
   }
 
   /**

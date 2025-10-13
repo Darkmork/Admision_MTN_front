@@ -100,6 +100,7 @@ interface InterviewCardProps {
   interviewType: typeof REQUIRED_INTERVIEW_TYPES[0];
   interviews: Interview[];
   onSchedule: () => void;
+  onView: (interview: Interview) => void;
   applicationId: number;
   isLoading?: boolean;
 }
@@ -108,6 +109,7 @@ const InterviewCard: React.FC<InterviewCardProps> = ({
   interviewType,
   interviews,
   onSchedule,
+  onView,
   applicationId,
   isLoading = false
 }) => {
@@ -239,7 +241,7 @@ const InterviewCard: React.FC<InterviewCardProps> = ({
         <Button
           size="sm"
           variant={existingInterview ? "outline" : "primary"}
-          onClick={onSchedule}
+          onClick={() => existingInterview ? onView(existingInterview) : onSchedule()}
           className="w-full text-xs"
           disabled={isLoading}
         >
@@ -616,6 +618,7 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({
               interviewType={interviewType}
               interviews={studentDetail.interviews}
               onSchedule={() => onScheduleInterview(studentDetail.applicationId, interviewType.type)}
+              onView={onViewInterview}
               applicationId={studentDetail.applicationId}
               isLoading={isRefreshing}
             />

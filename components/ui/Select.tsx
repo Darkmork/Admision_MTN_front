@@ -12,17 +12,19 @@ interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
     error?: string;
     isRequired?: boolean;
     placeholder?: string;
+    helpText?: string;
 }
 
-const Select: React.FC<SelectProps> = ({ 
-    label, 
-    id, 
-    options, 
-    error, 
-    isRequired, 
+const Select: React.FC<SelectProps> = ({
+    label,
+    id,
+    options,
+    error,
+    isRequired,
     placeholder = "Seleccione una opción",
+    helpText,
     className,
-    ...props 
+    ...props
 }) => {
     return (
         <div className="w-full">
@@ -45,6 +47,9 @@ const Select: React.FC<SelectProps> = ({
                     </option>
                 ))}
             </select>
+            {helpText && !error && (
+                <p className="mt-1 text-xs text-gris-piedra">{helpText}</p>
+            )}
             {error && <p className="mt-1 text-xs text-rojo-sagrado">{error}</p>}
         </div>
     );

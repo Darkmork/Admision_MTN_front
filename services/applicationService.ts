@@ -630,6 +630,84 @@ class ApplicationService {
             throw new Error('Error de conexión al actualizar estado de aprobación');
         }
     }
+
+    // Get complementary form data for an application
+    async getComplementaryForm(applicationId: number): Promise<any> {
+        try {
+            console.log(`📋 Obteniendo formulario complementario para aplicación ${applicationId}`);
+
+            const response = await api.get(`/api/applications/${applicationId}/complementary-form`);
+
+            console.log('✅ Formulario complementario obtenido:', response.data);
+            const backendData = response.data.data || response.data;
+
+            // Transform snake_case backend fields to camelCase frontend fields
+            if (backendData) {
+                const transformedData = {
+                    otherSchools: backendData.other_schools,
+                    fatherEducation: backendData.father_education,
+                    fatherCurrentActivity: backendData.father_current_activity,
+                    motherEducation: backendData.mother_education,
+                    motherCurrentActivity: backendData.mother_current_activity,
+                    applicationReasons: backendData.application_reasons,
+                    schoolChangeReason: backendData.school_change_reason,
+                    familyValues: backendData.family_values,
+                    faithExperiences: backendData.faith_experiences,
+                    communityServiceExperiences: backendData.community_service_experiences,
+                    childrenDescriptions: backendData.children_descriptions || [],
+                    isSubmitted: backendData.is_submitted,
+                    submittedAt: backendData.submitted_at,
+                    // Also include camelCase versions if backend provides them (for compatibility)
+                    ...backendData
+                };
+                console.log('✅ Datos transformados a camelCase:', transformedData);
+                return transformedData;
+            }
+
+            return backendData;
+
+        } catch (error: any) {
+            console.error('❌ Error obteniendo formulario complementario:', error);
+
+            if (error.response?.status === 404) {
+                // Formulario no existe todavía, eso es válido
+                return null;
+            }
+
+            throw new Error('Error al obtener el formulario complementario');
+        }
+    }
+
+    // Save complementary form data for an application
+    async saveComplementaryForm(applicationId: number, formData: any): Promise<any> {
+        try {
+            console.log(`📝 Guardando formulario complementario para aplicación ${applicationId}`);
+
+            const response = await api.post(`/api/applications/${applicationId}/complementary-form`, formData);
+
+            console.log('✅ Formulario complementario guardado:', response.data);
+            return response.data;
+
+        } catch (error: any) {
+            console.error('❌ Error guardando formulario complementario:', error);
+
+            if (error.response) {
+                const { status, data } = error.response;
+                switch (status) {
+                    case 400:
+                        throw new Error(data.error || 'Datos del formulario inválidos');
+                    case 403:
+                        throw new Error('No tienes permisos para guardar este formulario');
+                    case 404:
+                        throw new Error('Postulación no encontrada');
+                    default:
+                        throw new Error(data.error || 'Error al guardar el formulario complementario');
+                }
+            }
+
+            throw new Error('Error de conexión al guardar el formulario complementario');
+        }
+    }
 }
 
 export const applicationService = new ApplicationService();
