@@ -279,7 +279,7 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
               opacity: saving ? 0.6 : 1
             }}
           >
-            {saving ? '💾 Guardando...' : '💾 Guardar Cambios'}
+            {saving ? '💾 Guardando Horarios...' : '💾 Guardar Horarios'}
           </Button>
         )}
       </div>

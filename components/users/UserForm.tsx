@@ -683,7 +683,7 @@ const UserForm: React.FC<UserFormProps> = ({
                 ) : (
                   <>
                     <CheckCircleIcon className="w-5 h-5 mr-2" />
-                    {isCreateMode ? 'Crear Usuario' : 'Guardar Cambios'}
+                    {isCreateMode ? 'Crear Usuario' : 'Guardar Datos del Usuario'}
                   </>
                 )}
               </Button>
