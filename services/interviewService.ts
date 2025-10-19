@@ -707,6 +707,20 @@ class InterviewService {
     duration: number = 60
   ): Promise<string[]> {
     try {
+      // ✅ Validar formato de fecha antes de enviar al backend
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRegex.test(date)) {
+        console.error(`❌ getAvailableTimeSlots: Formato de fecha inválido "${date}". Se esperaba YYYY-MM-DD`);
+        return this.getDefaultTimeSlots();
+      }
+
+      // Verificar que el año sea razonable
+      const year = parseInt(date.split('-')[0]);
+      if (year < 2020 || year > 2100) {
+        console.error(`❌ getAvailableTimeSlots: Año inválido ${year}. Debe estar entre 2020 y 2100`);
+        return this.getDefaultTimeSlots();
+      }
+
       // Validar y usar duración por defecto si es inválida
       const validDuration = (duration && !isNaN(duration) && duration > 0) ? duration : 60;
 
@@ -733,13 +747,12 @@ class InterviewService {
         const slots = response.data.data.availableSlots;
         console.log('🔍 Slots extraídos de response.data.data.availableSlots:', slots);
 
-        // Si los slots son objetos con estructura { time, available, duration }
+        // Si los slots son objetos con estructura { time, display } o { time, available, duration }
         if (Array.isArray(slots) && slots.length > 0 && typeof slots[0] === 'object' && 'time' in slots[0]) {
           console.log('✅ Procesando slots con formato completo del backend');
-          const availableSlots = slots
-            .filter(slot => slot.available === true)
-            .map(slot => slot.time);
-          console.log('✅ Slots disponibles filtrados:', availableSlots);
+          // El backend ya filtra los slots disponibles, solo necesitamos extraer el campo display
+          const availableSlots = slots.map(slot => slot.display || slot.time);
+          console.log('✅ Slots disponibles extraídos:', availableSlots);
           return availableSlots;
         }
 
@@ -770,10 +783,9 @@ class InterviewService {
         // Si es un array de objetos slot directos (formato backend con horarios)
         if (response.data.length > 0 && response.data[0] && typeof response.data[0] === 'object' && 'time' in response.data[0]) {
           console.log('✅ Procesando slots con formato completo del backend (array directo)');
-          const availableSlots = response.data
-            .filter(slot => slot.available === true)
-            .map(slot => slot.time);
-          console.log('✅ Slots disponibles filtrados:', availableSlots);
+          // El backend ya filtra los disponibles, solo extraemos display o time
+          const availableSlots = response.data.map(slot => slot.display || slot.time);
+          console.log('✅ Slots disponibles extraídos:', availableSlots);
           return availableSlots;
         }
       }
@@ -874,6 +886,20 @@ class InterviewService {
   ): Promise<string[]> {
     try {
       console.log(`🔍 Obteniendo horarios comunes para entrevistadores ${interviewer1Id} y ${interviewer2Id} el ${date}`);
+
+      // ✅ Validar formato de fecha antes de procesar
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRegex.test(date)) {
+        console.error(`❌ getCommonTimeSlots: Formato de fecha inválido "${date}". Se esperaba YYYY-MM-DD`);
+        return this.getDefaultTimeSlots();
+      }
+
+      // Verificar que el año sea razonable
+      const year = parseInt(date.split('-')[0]);
+      if (year < 2020 || year > 2100) {
+        console.error(`❌ getCommonTimeSlots: Año inválido ${year}. Debe estar entre 2020 y 2100`);
+        return this.getDefaultTimeSlots();
+      }
 
       // Obtener los horarios disponibles de ambos entrevistadores
       const [slots1, slots2] = await Promise.all([

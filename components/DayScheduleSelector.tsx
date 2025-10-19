@@ -126,6 +126,23 @@ const DayScheduleSelector: React.FC<DayScheduleSelectorProps> = ({
 
   const handleDateChange = (date: string) => {
     console.log(`📅 DayScheduleSelector: Cambio de fecha de "${selectedDate}" a "${date}"`);
+
+    // ✅ Validar formato de fecha (YYYY-MM-DD con año de 4 dígitos)
+    if (date) {
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRegex.test(date)) {
+        console.error(`❌ Formato de fecha inválido: "${date}". Se esperaba YYYY-MM-DD`);
+        return; // No procesar fechas malformadas
+      }
+
+      // Verificar que el año sea razonable (entre 2020 y 2100)
+      const year = parseInt(date.split('-')[0]);
+      if (year < 2020 || year > 2100) {
+        console.error(`❌ Año inválido: ${year}. Debe estar entre 2020 y 2100`);
+        return;
+      }
+    }
+
     onDateTimeSelect(date, ''); // Limpiar hora cuando cambia la fecha
   };
 

@@ -210,6 +210,7 @@ const ApoderadoLogin: React.FC = () => {
 
                             <EmailVerification
                                 email={registerData.email}
+                                rut={registerData.rut}
                                 onEmailChange={(email) => updateRegisterField('email', email)}
                                 onVerificationComplete={setIsEmailVerified}
                                 placeholder="apoderado@ejemplo.com"

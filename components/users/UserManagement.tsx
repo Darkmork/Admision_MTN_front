@@ -7,6 +7,7 @@ import UserForm from './UserForm';
 import UserTable from './UserTable';
 import UserFilters from './UserFilters';
 import UserStats from './UserStats';
+import AdminResetPasswordModal from '../../src/components/admin/AdminResetPasswordModal';
 import {
   User,
   CreateUserRequest,
@@ -55,10 +56,12 @@ const UserManagement: React.FC<UserManagementProps> = ({ onBack }) => {
   const [formMode, setFormMode] = useState<UserFormMode>(UserFormMode.CREATE);
   const [showStats, setShowStats] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
+  const [userToResetPassword, setUserToResetPassword] = useState<User | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{
     show: boolean;
     user: User | null;
-    action: 'delete' | 'toggle' | 'reset' | null;
+    action: 'delete' | 'toggle' | null;
     message: string;
   }>({
     show: false,
@@ -201,19 +204,23 @@ const UserManagement: React.FC<UserManagementProps> = ({ onBack }) => {
 
   // Confirmar acción
   const confirmAction = (user: User, action: 'delete' | 'toggle' | 'reset') => {
+    // Handle password reset separately with dedicated modal
+    if (action === 'reset') {
+      setUserToResetPassword(user);
+      setShowResetPasswordModal(true);
+      return;
+    }
+
     let message = '';
-    
+
     switch (action) {
       case 'delete':
         message = `⚠️ ¿Estás seguro de que deseas ELIMINAR PERMANENTEMENTE al usuario ${user.fullName}?\n\nEsta acción:\n• Eliminará completamente la cuenta del usuario\n• El usuario no podrá acceder al sistema\n• NO se puede deshacer esta acción\n• Se perderán todos los datos asociados\n\n⚠️ IMPORTANTE: Si este usuario tiene evaluaciones asociadas, no se podrá eliminar y deberás desactivarlo en su lugar.`;
         break;
       case 'toggle':
-        message = user.active 
+        message = user.active
           ? `¿Estás seguro de que deseas desactivar al usuario ${user.fullName}?\n\nEl usuario no podrá acceder al sistema, pero se mantendrán todas sus evaluaciones y datos asociados.`
           : `¿Estás seguro de que deseas activar al usuario ${user.fullName}?`;
-        break;
-      case 'reset':
-        message = `¿Estás seguro de que deseas restablecer la contraseña del usuario ${user.fullName}? Se enviará un email con la nueva contraseña.`;
         break;
     }
 
@@ -245,29 +252,32 @@ const UserManagement: React.FC<UserManagementProps> = ({ onBack }) => {
             showToast('Usuario activado exitosamente', 'success');
           }
           break;
-        case 'reset':
-          await userService.resetUserPassword(user.id);
-          showToast('Contraseña restablecida exitosamente', 'success');
-          break;
       }
 
       await loadUsers();
       await loadStats();
-      
+
     } catch (error: any) {
       // Mostrar mensaje específico para usuarios con evaluaciones
       let errorMessage = error.message || 'Error al ejecutar la acción';
-      
+
       if (error.message && error.message.includes('evaluación(es) asociada(s)')) {
         errorMessage = error.message;
       } else if (error.message && error.message.includes('foreign key constraint')) {
         errorMessage = `No se puede eliminar este usuario porque tiene datos asociados en el sistema. Para mantener la integridad de la información, te recomendamos desactivar el usuario en lugar de eliminarlo.`;
       }
-      
+
       showToast(errorMessage, 'error');
     } finally {
       setConfirmDialog({ show: false, user: null, action: null, message: '' });
     }
+  };
+
+  // Manejar éxito del reset de contraseña
+  const handleResetPasswordSuccess = async () => {
+    showToast('Contraseña restablecida exitosamente', 'success');
+    await loadUsers();
+    await loadStats();
   };
 
   return (
@@ -402,6 +412,17 @@ const UserManagement: React.FC<UserManagementProps> = ({ onBack }) => {
           </div>
         </div>
       </Modal>
+
+      {/* Admin Reset Password Modal */}
+      <AdminResetPasswordModal
+        isOpen={showResetPasswordModal}
+        user={userToResetPassword}
+        onClose={() => {
+          setShowResetPasswordModal(false);
+          setUserToResetPassword(null);
+        }}
+        onSuccess={handleResetPasswordSuccess}
+      />
 
       {/* Toast */}
       {toast && (

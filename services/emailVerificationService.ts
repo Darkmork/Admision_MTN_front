@@ -24,15 +24,37 @@ class EmailVerificationService {
       const response = await api.post('/api/email/send-verification', request);
       
       console.log('✅ Código enviado exitosamente');
-      return response.data;
+      console.log('📦 Response structure:', response.data);
+      
+      // Backend devuelve: { success: true, data: {...}, timestamp }
+      // Extraer el contenido de data si existe, sino usar response.data directamente
+      const responseData = response.data?.data || response.data;
+      
+      return {
+        success: responseData.success !== false,
+        message: responseData.message || 'Código enviado exitosamente',
+        ...responseData
+      };
 
     } catch (error: any) {
       console.error('❌ Error enviando código de verificación:', error);
-      
-      const errorMessage = error.response?.data?.message || 
-                          error.message || 
-                          'Error al enviar el código de verificación';
-      
+      console.error('📦 Error response data:', error.response?.data);
+
+      // Extraer mensaje de error desde diferentes estructuras posibles
+      let errorMessage = 'Error al enviar el código de verificación';
+
+      if (error.response?.data) {
+        // Backend puede devolver: { success: false, error: { code: 'EMAIL_008', message: '...' } }
+        // O también: { success: false, data: { message: '...' } }
+        errorMessage = error.response.data.error?.message ||
+                      error.response.data.data?.message ||
+                      error.response.data.message ||
+                      error.message ||
+                      errorMessage;
+      } else {
+        errorMessage = error.message || errorMessage;
+      }
+
       return {
         success: false,
         message: errorMessage
@@ -50,12 +72,24 @@ class EmailVerificationService {
       const response = await api.post('/api/email/verify-code', request);
       
       console.log('✅ Código verificado exitosamente');
-      return response.data;
+      console.log('📦 Response structure:', response.data);
+      
+      // Backend devuelve: { success: true, data: { isValid, verified, email }, timestamp }
+      // Extraer el contenido de data si existe
+      const responseData = response.data?.data || response.data;
+      
+      return {
+        success: responseData.success !== false,
+        message: responseData.message || 'Código verificado exitosamente',
+        isValid: responseData.isValid || responseData.verified || false
+      };
 
     } catch (error: any) {
       console.error('❌ Error verificando código:', error);
+      console.error('📦 Error response:', error.response?.data);
       
-      const errorMessage = error.response?.data?.message || 
+      const errorData = error.response?.data?.error || error.response?.data;
+      const errorMessage = errorData?.message || 
                           error.message || 
                           'Error al verificar el código';
 

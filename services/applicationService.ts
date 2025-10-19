@@ -392,8 +392,8 @@ class ApplicationService {
             console.log('🔄 Admin: Cambiando estado de postulación:', { id, newStatus, changeNote });
 
             const response = await api.patch(`/api/applications/${id}/status`, {
-                newStatus,
-                changeNote
+                status: newStatus,  // Backend expects 'status', not 'newStatus'
+                notes: changeNote   // Backend expects 'notes', not 'changeNote'
             });
 
             console.log('✅ Admin: Estado actualizado exitosamente:', response.data);

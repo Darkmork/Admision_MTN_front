@@ -1,5 +1,6 @@
 import api from './api';
-import encryptionService from './encryptionService';
+// RSA encryption removed - credentials sent over HTTPS only
+// import encryptionService from './encryptionService';
 
 export interface ProfessorLoginRequest {
     email: string;
@@ -35,33 +36,13 @@ class ProfessorAuthService {
         try {
             console.log('🔐 Intentando login de profesor:', request.email);
 
-            // Encrypt credentials before sending
-            let payload: any;
-
-            if (encryptionService.isEncryptionAvailable()) {
-                console.log('[Professor Auth] Attempting credential encryption...');
-                const encryptedPayload = await encryptionService.encryptCredentials({
-                    email: request.email,
-                    password: request.password
-                });
-
-                if (encryptedPayload) {
-                    console.log('[Professor Auth] Credentials encrypted successfully');
-                    payload = encryptedPayload;
-                } else {
-                    console.warn('[Professor Auth] Backend encryption not available, using plaintext');
-                    payload = request;
-                }
-            } else {
-                console.warn('[Professor Auth] Web Crypto API not available, using plaintext');
-                payload = request;
-            }
-
-            const response = await api.post('/api/auth/login', payload);
+            // Send credentials directly over HTTPS (no RSA encryption)
+            console.log('[Professor Auth] Sending credentials over HTTPS');
+            const response = await api.post('/api/auth/login', request);
             const data = response.data;
-            
+
             console.log('✅ Login exitoso para profesor:', data);
-            
+
             // Guardar token en localStorage
             if (data.token) {
                 localStorage.setItem('professor_token', data.token);
@@ -73,7 +54,7 @@ class ProfessorAuthService {
                     subject: data.subject
                 }));
             }
-            
+
             return data;
             
         } catch (error: any) {

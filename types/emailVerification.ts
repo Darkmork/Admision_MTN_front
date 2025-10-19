@@ -22,6 +22,9 @@ export interface EmailVerification {
 export interface EmailVerificationRequest {
   email: string;
   type: VerificationType;
+  rut?: string;          // Opcional - para validar antes de enviar código
+  firstName?: string;    // Opcional - para personalizar email
+  lastName?: string;     // Opcional - para personalizar email
 }
 
 export interface VerifyCodeRequest {

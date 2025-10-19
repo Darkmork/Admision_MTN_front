@@ -21,7 +21,13 @@ export const useEmailVerification = () => {
     });
 
     // Enviar código de verificación
-    const sendVerificationCode = useCallback(async (email: string, type: 'registration' | 'password_reset' | 'account_confirmation' = 'registration', rut?: string) => {
+    const sendVerificationCode = useCallback(async (
+        email: string,
+        type: 'registration' | 'password_reset' | 'account_confirmation' = 'registration',
+        rut?: string,
+        firstName?: string,
+        lastName?: string
+    ) => {
         setState(prev => ({ ...prev, isLoading: true, verificationError: null }));
 
         try {
@@ -33,38 +39,6 @@ export const useEmailVerification = () => {
             // Validar que no sea email institucional para registro de apoderados
             if (type === 'registration' && emailVerificationService.isInstitutionalEmail(email)) {
                 throw new Error('No puede usar un email institucional para registro de apoderado');
-            }
-
-            // Verificar si el email ya existe (optional check - skip if backend is down)
-            try {
-                const emailExists = await emailVerificationService.checkEmailExists(email);
-                if (emailExists && emailExists.exists && type === 'registration') {
-                    throw new Error('Ya existe una cuenta con este correo electrónico. Por favor, inicie sesión o use otro correo.');
-                }
-            } catch (emailCheckError: any) {
-                // Si es un error de validación, lanzarlo
-                if (emailCheckError.message?.includes('cuenta') || emailCheckError.message?.includes('correo')) {
-                    throw emailCheckError;
-                }
-                console.warn('Could not check email existence, continuing...', emailCheckError);
-                // Continue even if check fails - maybe backend is down
-            }
-
-            // Verificar si el RUT ya existe (si se proporcionó)
-            if (rut && type === 'registration') {
-                try {
-                    const rutExists = await emailVerificationService.checkRutExists(rut);
-                    if (rutExists && rutExists.exists) {
-                        throw new Error('Ya existe una cuenta con este RUT. Por favor, inicie sesión o verifique el RUT ingresado.');
-                    }
-                } catch (rutCheckError: any) {
-                    // Si es un error de validación, lanzarlo
-                    if (rutCheckError.message?.includes('cuenta') || rutCheckError.message?.includes('RUT')) {
-                        throw rutCheckError;
-                    }
-                    console.warn('Could not check RUT existence, continuing...', rutCheckError);
-                    // Continue even if check fails - maybe backend is down
-                }
             }
 
             // Convertir tipo a enum apropiado
@@ -81,11 +55,23 @@ export const useEmailVerification = () => {
                     verificationType = 'REGISTRATION';
             }
 
-            // Enviar código usando el API real
-            const response = await emailVerificationService.sendVerificationCode({ 
-                email, 
-                type: verificationType as any
+            console.log('🔄 useEmailVerification: Enviando código con datos:', { email, rut, firstName, lastName });
+
+            // Enviar código usando el API real - EL BACKEND VALIDARÁ EMAIL Y RUT
+            const response = await emailVerificationService.sendVerificationCode({
+                email,
+                type: verificationType as any,
+                rut: rut,
+                firstName: firstName,
+                lastName: lastName
             });
+
+            console.log('✅ useEmailVerification: Respuesta recibida:', response);
+
+            // Si la respuesta indica fallo, lanzar error
+            if (!response.success) {
+                throw new Error(response.message || 'Error al enviar código de verificación');
+            }
 
             setState(prev => ({
                 ...prev,
@@ -100,10 +86,14 @@ export const useEmailVerification = () => {
 
             return response;
         } catch (error: any) {
+            console.error('❌ useEmailVerification: Error capturado:', error);
+            const errorMessage = error.message || 'Error al enviar código de verificación';
+            console.log('🔴 useEmailVerification: Estableciendo verificationError:', errorMessage);
+
             setState(prev => ({
                 ...prev,
                 isLoading: false,
-                verificationError: error.message || 'Error al enviar código de verificación'
+                verificationError: errorMessage
             }));
             throw error;
         }

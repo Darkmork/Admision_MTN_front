@@ -1,5 +1,6 @@
 import api from './api';
-import encryptionService from './encryptionService';
+// RSA encryption removed - credentials sent over HTTPS only
+// import encryptionService from './encryptionService';
 
 export interface LoginRequest {
     email: string;
@@ -29,29 +30,9 @@ class AuthService {
 
     async login(request: LoginRequest): Promise<AuthResponse> {
         try {
-            // Encrypt credentials before sending
-            let payload: any;
-
-            if (encryptionService.isEncryptionAvailable()) {
-                console.log('[Auth] Attempting credential encryption...');
-                const encryptedPayload = await encryptionService.encryptCredentials({
-                    email: request.email,
-                    password: request.password
-                });
-
-                if (encryptedPayload) {
-                    console.log('[Auth] Credentials encrypted successfully');
-                    payload = encryptedPayload;
-                } else {
-                    console.warn('[Auth] Backend encryption not available, using plaintext');
-                    payload = request;
-                }
-            } else {
-                console.warn('[Auth] Web Crypto API not available, using plaintext');
-                payload = request;
-            }
-
-            const response = await api.post('/api/auth/login', payload);
+            // Send credentials directly over HTTPS (no RSA encryption)
+            console.log('[Auth] Sending credentials over HTTPS');
+            const response = await api.post('/api/auth/login', request);
             return response.data;
             
         } catch (error: any) {
@@ -69,35 +50,9 @@ class AuthService {
     
     async register(request: RegisterRequest): Promise<AuthResponse> {
         try {
-            // Encrypt ALL registration data before sending
-            let payload: any;
-
-            if (encryptionService.isEncryptionAvailable()) {
-                console.log('[Auth] Attempting to encrypt registration data...');
-
-                // Encrypt ALL fields together (not just email/password)
-                const encryptedPayload = await encryptionService.encryptCredentials({
-                    email: request.email,
-                    password: request.password,
-                    firstName: request.firstName,
-                    lastName: request.lastName,
-                    rut: request.rut,
-                    phone: request.phone
-                });
-
-                if (encryptedPayload) {
-                    payload = encryptedPayload;
-                    console.log('[Auth] Registration data encrypted successfully');
-                } else {
-                    console.warn('[Auth] Backend encryption not available, using plaintext');
-                    payload = request;
-                }
-            } else {
-                console.warn('[Auth] Web Crypto API not available, using plaintext');
-                payload = request;
-            }
-
-            const response = await api.post('/api/auth/register', payload);
+            // Send registration data directly over HTTPS (no RSA encryption)
+            console.log('[Auth] Sending registration data over HTTPS');
+            const response = await api.post('/api/auth/register', request);
             return response.data;
             
         } catch (error: any) {

@@ -26,6 +26,7 @@ import { professorAuthService } from '../services/professorAuthService';
 import { EvaluationStatus, EvaluationType } from '../types/evaluation';
 import { FiRefreshCw, FiBarChart2 } from 'react-icons/fi';
 import AvailabilityScheduleManager from '../components/AvailabilityScheduleManager';
+import ChangePasswordButton from '../src/components/common/ChangePasswordButton';
 
 const baseSections = [
     { key: 'dashboard', label: 'Dashboard General', icon: DashboardIcon },
@@ -1035,7 +1036,7 @@ const ProfessorDashboard: React.FC = () => {
                                 )}
                             </div>
                             <div className="pt-4 border-t">
-                                <Button variant="outline">Cambiar Contraseña</Button>
+                                <ChangePasswordButton variant="outline" />
                             </div>
                         </div>
                     </Card>

@@ -37,9 +37,10 @@ import CreateUserForm from '../components/admin/CreateUserForm';
 import { CreateUserRequest, UserRole, User } from '../types/user';
 import { useApplications, useNotifications, useAppContext } from '../context/AppContext';
 import { userService } from '../services/userService';
-import { 
+import {
   evaluationService
 } from '../services/evaluationService';
+import ChangePasswordButton from '../src/components/common/ChangePasswordButton';
 import {
   Evaluation, 
   EvaluationType, 
@@ -465,13 +466,13 @@ Esta acción:
               <Card
                 className="p-4 text-center cursor-pointer hover:shadow-lg transition-shadow"
                 onClick={() => {
-                  setStatusFilter('PENDIENTE');
+                  setStatusFilter('PENDING');
                   setActiveSection('postulaciones');
                 }}
               >
                 <ClockIcon className="w-8 h-8 text-yellow-500 mx-auto mb-2" />
                 <p className="text-2xl font-bold text-yellow-600">
-                  {applications.filter(app => app.status === 'PENDIENTE').length}
+                  {applications.filter(app => app.status === 'PENDING').length}
                 </p>
                 <p className="text-sm text-gris-piedra">Pendientes</p>
               </Card>
@@ -479,13 +480,13 @@ Esta acción:
               <Card
                 className="p-4 text-center cursor-pointer hover:shadow-lg transition-shadow"
                 onClick={() => {
-                  setStatusFilter('EN_REVISION');
+                  setStatusFilter('UNDER_REVIEW');
                   setActiveSection('postulaciones');
                 }}
               >
                 <FiBookOpen className="w-8 h-8 text-blue-400 mx-auto mb-2" />
                 <p className="text-2xl font-bold text-blue-500">
-                  {applications.filter(app => app.status === 'EN_REVISION').length}
+                  {applications.filter(app => app.status === 'UNDER_REVIEW').length}
                 </p>
                 <p className="text-sm text-gris-piedra">En Revisión</p>
               </Card>
@@ -493,13 +494,13 @@ Esta acción:
               <Card
                 className="p-4 text-center cursor-pointer hover:shadow-lg transition-shadow"
                 onClick={() => {
-                  setStatusFilter('EXAMEN_PROGRAMADO');
+                  setStatusFilter('EXAM_SCHEDULED');
                   setActiveSection('postulaciones');
                 }}
               >
                 <FiCalendar className="w-8 h-8 text-orange-500 mx-auto mb-2" />
                 <p className="text-2xl font-bold text-orange-600">
-                  {applications.filter(app => app.status === 'EXAMEN_PROGRAMADO' || app.status === 'ENTREVISTA_PROGRAMADA').length}
+                  {applications.filter(app => app.status === 'EXAM_SCHEDULED' || app.status === 'INTERVIEW_SCHEDULED').length}
                 </p>
                 <p className="text-sm text-gris-piedra">Examen Programado</p>
               </Card>
@@ -507,13 +508,13 @@ Esta acción:
               <Card
                 className="p-4 text-center cursor-pointer hover:shadow-lg transition-shadow"
                 onClick={() => {
-                  setStatusFilter('APROBADA');
+                  setStatusFilter('APPROVED');
                   setActiveSection('postulaciones');
                 }}
               >
                 <CheckCircleIcon className="w-8 h-8 text-green-500 mx-auto mb-2" />
                 <p className="text-2xl font-bold text-green-600">
-                  {applications.filter(app => app.status === 'APROBADA').length}
+                  {applications.filter(app => app.status === 'APPROVED').length}
                 </p>
                 <p className="text-sm text-gris-piedra">Aprobadas</p>
               </Card>
@@ -571,10 +572,13 @@ Esta acción:
         const getStatusLabel = (status: string) => {
           const labels: Record<string, string> = {
             'all': 'Todas las Postulaciones',
-            'PENDIENTE': 'Pendientes',
-            'EN_REVISION': 'En Revisión',
-            'EXAMEN_PROGRAMADO': 'Examen Programado',
-            'APROBADA': 'Aprobadas'
+            'PENDING': 'Pendientes',
+            'UNDER_REVIEW': 'En Revisión',
+            'EXAM_SCHEDULED': 'Examen Programado',
+            'INTERVIEW_SCHEDULED': 'Entrevista Programada',
+            'APPROVED': 'Aprobadas',
+            'REJECTED': 'Rechazadas',
+            'WAITLIST': 'Lista de Espera'
           };
           return labels[status] || status;
         };
@@ -641,7 +645,7 @@ Esta acción:
               <Card className="p-4 text-center">
                 <ClockIcon className="w-6 h-6 text-yellow-500 mx-auto mb-2" />
                 <p className="text-2xl font-bold text-yellow-600">
-                  {applicationsToFilter.filter(app => app.status === 'SUBMITTED').length}
+                  {applicationsToFilter.filter(app => app.status === 'PENDING').length}
                 </p>
                 <p className="text-sm text-gray-600">Nuevas</p>
               </Card>
@@ -657,7 +661,7 @@ Esta acción:
               <Card className="p-4 text-center">
                 <UsersIcon className="w-6 h-6 text-purple-500 mx-auto mb-2" />
                 <p className="text-2xl font-bold text-purple-600">
-                  {applicationsToFilter.filter(app => app.status === 'EN_REVISION').length}
+                  {applicationsToFilter.filter(app => app.status === 'UNDER_REVIEW').length}
                 </p>
                 <p className="text-sm text-gray-600">En Revisión</p>
               </Card>
@@ -780,6 +784,14 @@ Esta acción:
               </button>
             ))}
           </nav>
+
+          {/* Botón de Cambiar Contraseña */}
+          <div className="px-4 mt-4">
+            <ChangePasswordButton
+              className="w-full"
+              variant="outline"
+            />
+          </div>
 
           {/* Botón de Cerrar Sesión */}
           <div className="px-4 mt-4">
