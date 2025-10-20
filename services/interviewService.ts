@@ -114,7 +114,7 @@ class InterviewService {
       secondInterviewerId: backendData.secondInterviewerId ? parseInt(backendData.secondInterviewerId) : undefined,
       secondInterviewerName: backendData.secondInterviewerName || undefined,
       status: backendData.status || InterviewStatus.SCHEDULED,
-      type: backendData.type || InterviewType.INDIVIDUAL,
+      type: backendData.interviewType || InterviewType.INDIVIDUAL,
       mode: backendData.mode || InterviewMode.IN_PERSON,
       scheduledDate: scheduledDate,
       scheduledTime: scheduledTime,
