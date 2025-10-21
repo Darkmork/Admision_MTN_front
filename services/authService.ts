@@ -1,6 +1,5 @@
 import api from './api';
-// RSA encryption removed - credentials sent over HTTPS only
-// import encryptionService from './encryptionService';
+import { encryptCredentials, getCachedPublicKey, isEncryptionSupported } from '../utils/crypto';
 
 export interface LoginRequest {
     email: string;
@@ -30,11 +29,36 @@ class AuthService {
 
     async login(request: LoginRequest): Promise<AuthResponse> {
         try {
-            // Send credentials directly over HTTPS (no RSA encryption)
-            console.log('[Auth] Sending credentials over HTTPS');
-            const response = await api.post('/api/auth/login', request);
-            return response.data;
-            
+            // Check if browser supports encryption
+            if (!isEncryptionSupported()) {
+                console.warn('[Auth] Web Crypto API not supported, falling back to HTTPS only');
+                const response = await api.post('/api/auth/login', request);
+                return response.data;
+            }
+
+            try {
+                // Fetch public key via API Gateway (not directly from user service)
+                const API_GATEWAY_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+                const publicKeyInfo = await getCachedPublicKey(API_GATEWAY_URL);
+
+                console.log('[Auth] Encrypting credentials with RSA + AES...');
+
+                // Encrypt credentials
+                const encryptedPayload = await encryptCredentials(request, publicKeyInfo);
+
+                console.log('[Auth] Sending encrypted credentials to backend');
+
+                // Send encrypted payload
+                const response = await api.post('/api/auth/login', encryptedPayload);
+                return response.data;
+
+            } catch (encryptError) {
+                // If encryption fails, fall back to HTTPS only
+                console.warn('[Auth] Encryption failed, falling back to HTTPS only:', encryptError);
+                const response = await api.post('/api/auth/login', request);
+                return response.data;
+            }
+
         } catch (error: any) {
             if (error.response?.status === 401) {
                 throw new Error('Credenciales inválidas');
@@ -43,18 +67,43 @@ class AuthService {
             } else if (error.response?.status === 500) {
                 throw new Error('Error del servidor');
             }
-            
+
             throw new Error('Error al iniciar sesión');
         }
     }
     
     async register(request: RegisterRequest): Promise<AuthResponse> {
         try {
-            // Send registration data directly over HTTPS (no RSA encryption)
-            console.log('[Auth] Sending registration data over HTTPS');
-            const response = await api.post('/api/auth/register', request);
-            return response.data;
-            
+            // Check if browser supports encryption
+            if (!isEncryptionSupported()) {
+                console.warn('[Auth] Web Crypto API not supported, falling back to HTTPS only');
+                const response = await api.post('/api/auth/register', request);
+                return response.data;
+            }
+
+            try {
+                // Fetch public key via API Gateway (not directly from user service)
+                const API_GATEWAY_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+                const publicKeyInfo = await getCachedPublicKey(API_GATEWAY_URL);
+
+                console.log('[Auth] Encrypting registration data with RSA + AES...');
+
+                // Encrypt registration data
+                const encryptedPayload = await encryptCredentials(request, publicKeyInfo);
+
+                console.log('[Auth] Sending encrypted registration data to backend');
+
+                // Send encrypted payload
+                const response = await api.post('/api/auth/register', encryptedPayload);
+                return response.data;
+
+            } catch (encryptError) {
+                // If encryption fails, fall back to HTTPS only
+                console.warn('[Auth] Encryption failed, falling back to HTTPS only:', encryptError);
+                const response = await api.post('/api/auth/register', request);
+                return response.data;
+            }
+
         } catch (error: any) {
             if (error.response?.status === 400) {
                 const message = error.response?.data?.message || 'Datos de registro inválidos';
@@ -64,7 +113,7 @@ class AuthService {
             } else if (error.response?.status === 500) {
                 throw new Error('Error del servidor al crear la cuenta');
             }
-            
+
             throw new Error('Error al crear la cuenta');
         }
     }

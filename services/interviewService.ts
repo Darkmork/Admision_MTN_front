@@ -69,7 +69,7 @@ class InterviewService {
       interviewerId: response.interviewerId,
       interviewerName: response.interviewerName,
       status: response.status,
-      type: response.type,
+      type: response.interviewType || response.type || InterviewType.INDIVIDUAL,
       mode: response.mode,
       scheduledDate: response.scheduledDate,
       scheduledTime: response.scheduledTime,

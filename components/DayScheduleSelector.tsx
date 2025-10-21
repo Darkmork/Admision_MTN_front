@@ -127,20 +127,27 @@ const DayScheduleSelector: React.FC<DayScheduleSelectorProps> = ({
   const handleDateChange = (date: string) => {
     console.log(`📅 DayScheduleSelector: Cambio de fecha de "${selectedDate}" a "${date}"`);
 
-    // ✅ Validar formato de fecha (YYYY-MM-DD con año de 4 dígitos)
-    if (date) {
-      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-      if (!dateRegex.test(date)) {
-        console.error(`❌ Formato de fecha inválido: "${date}". Se esperaba YYYY-MM-DD`);
-        return; // No procesar fechas malformadas
-      }
+    // Si la fecha está vacía, permitir limpiar
+    if (!date) {
+      onDateTimeSelect('', '');
+      return;
+    }
 
-      // Verificar que el año sea razonable (entre 2020 y 2100)
-      const year = parseInt(date.split('-')[0]);
-      if (year < 2020 || year > 2100) {
-        console.error(`❌ Año inválido: ${year}. Debe estar entre 2020 y 2100`);
-        return;
-      }
+    // ✅ Validar formato de fecha (YYYY-MM-DD con año de 4 dígitos)
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(date)) {
+      console.warn(`⚠️ Formato de fecha incompleto o inválido: "${date}". Se esperaba YYYY-MM-DD`);
+      // NO retornar aquí - permitir que el usuario continúe escribiendo
+      // El input type="date" del navegador manejará la validación
+      onDateTimeSelect(date, ''); // Actualizar con el valor parcial
+      return;
+    }
+
+    // Verificar que el año sea razonable (entre 2020 y 2100)
+    const year = parseInt(date.split('-')[0]);
+    if (year < 2020 || year > 2100) {
+      console.warn(`⚠️ Año fuera de rango: ${year}. Se recomienda entre 2020 y 2100`);
+      // Permitir que el navegador maneje esto con min/max del input
     }
 
     onDateTimeSelect(date, ''); // Limpiar hora cuando cambia la fecha

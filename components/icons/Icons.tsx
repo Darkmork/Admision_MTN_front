@@ -1,24 +1,8 @@
 import React from 'react';
-import { 
-    FiEye as FiEyeIcon, 
-    FiMail as FiMailIcon, 
-    FiCheck as FiCheckIcon, 
-    FiX as FiXIcon, 
-    FiClock as FiClockIcon, 
-    FiRefreshCw as FiRefreshCwIcon 
-} from 'react-icons/fi';
-
-// Re-export icons for use in components
-export const FiEye = FiEyeIcon;
-export const FiMail = FiMailIcon;
-export const FiCheck = FiCheckIcon;
-export const FiX = FiXIcon;
-export const FiClock = FiClockIcon;
-export const FiRefreshCw = FiRefreshCwIcon;
 
 export const LogoIcon = ({ className = "w-12 h-12" }: { className?: string }) => (
     <img 
-        src="/images/logoMTN.png" 
+        src="/images/Logo_Comunicaciones.jpg" 
         alt="Monte Tabor & Nazaret Logo"
         className={`${className} object-contain`}
         onError={(e) => {
@@ -196,52 +180,43 @@ export const UserIcon = ({ className = "w-6 h-6" }: { className?: string }) => (
 );
 
 export const MathIcon = ({ className = "w-6 h-6" }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-        {/* Símbolo de raíz cuadrada */}
-        <path d="M3 21h18"/>
-        <path d="M3 3h18"/>
-        <path d="M9 21V3"/>
-        <path d="M15 21V3"/>
-        {/* Símbolo π */}
-        <circle cx="12" cy="12" r="3" fill="none"/>
-        <path d="M12 9v6"/>
-        <path d="M9 12h6"/>
-        {/* Símbolo de suma */}
-        <line x1="7" y1="7" x2="17" y2="17"/>
-        <line x1="17" y1="7" x2="7" y2="17"/>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        {/* Cuaderno */}
+        <path d="M4 2h16c1.1 0 2 .9 2 2v16c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2z" fill="currentColor" fillOpacity="0.1"/>
+        <path d="M4 2h16c1.1 0 2 .9 2 2v16c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2z"/>
+        {/* Símbolo π más estilizado */}
+        <text x="12" y="15" textAnchor="middle" fontSize="14" fontFamily="serif" fill="currentColor" fontWeight="normal" transform="scale(1,1.3)" transformOrigin="12 15">π</text>
     </svg>
 );
 
 export const LanguageIcon = ({ className = "w-6 h-6" }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-        {/* Libro abierto más elegante */}
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        {/* Libro abierto */}
+        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" fill="currentColor" fillOpacity="0.1"/>
+        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" fill="currentColor" fillOpacity="0.1"/>
         <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
         <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
-        {/* Líneas de texto */}
-        <line x1="4" y1="8" x2="8" y2="8"/>
-        <line x1="4" y1="11" x2="8" y2="11"/>
-        <line x1="4" y1="14" x2="8" y2="14"/>
-        <line x1="18" y1="8" x2="22" y2="8"/>
-        <line x1="18" y1="11" x2="22" y2="11"/>
-        <line x1="18" y1="14" x2="22" y2="14"/>
-        {/* Símbolo de comunicación */}
-        <circle cx="12" cy="18" r="2"/>
-        <path d="M12 16v-2"/>
-        <path d="M10 18h4"/>
+        {/* Letras destacadas */}
+        <text x="6" y="12" textAnchor="middle" fontSize="6" fontFamily="serif" fill="currentColor" fontWeight="bold">A</text>
+        <text x="17" y="12" textAnchor="middle" fontSize="6" fontFamily="serif" fill="currentColor" fontWeight="bold">B</text>
     </svg>
 );
 
 export const EnglishIcon = ({ className = "w-6 h-6" }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-        {/* Globo terráqueo */}
-        <circle cx="12" cy="12" r="10"/>
-        <line x1="2" y1="12" x2="22" y2="12"/>
-        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-        {/* Letras "EN" en el centro */}
-        <text x="12" y="14" textAnchor="middle" fontSize="6" fontFamily="Arial, sans-serif" fill="currentColor" fontWeight="bold">EN</text>
-        {/* Símbolo de idioma */}
-        <path d="M8 6l8 0"/>
-        <path d="M8 18l8 0"/>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        {/* Cuaderno */}
+        <path d="M4 2h16c1.1 0 2 .9 2 2v16c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2z" fill="currentColor" fillOpacity="0.1"/>
+        <path d="M4 2h16c1.1 0 2 .9 2 2v16c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2z"/>
+        {/* Bandera del Reino Unido más grande */}
+        <rect x="6" y="7" width="12" height="8" fill="none" stroke="currentColor" strokeWidth="1"/>
+        {/* Fondo azul de la bandera */}
+        <rect x="6" y="7" width="12" height="8" fill="currentColor" fillOpacity="0.2"/>
+        {/* Cruz de San Jorge (roja) */}
+        <line x1="6" y1="11" x2="18" y2="11" stroke="currentColor" strokeWidth="1"/>
+        <line x1="12" y1="7" x2="12" y2="15" stroke="currentColor" strokeWidth="1"/>
+        {/* Cruz de San Andrés (blanca/diagonal) */}
+        <line x1="6" y1="7" x2="18" y2="15" stroke="currentColor" strokeWidth="0.6" strokeOpacity="0.8"/>
+        <line x1="18" y1="7" x2="6" y2="15" stroke="currentColor" strokeWidth="0.6" strokeOpacity="0.8"/>
     </svg>
 );
 
@@ -485,13 +460,5 @@ export const AcademicCapIcon = ({ className = "w-6 h-6" }: { className?: string 
 export const PhoneIcon = ({ className = "w-6 h-6" }: { className?: string }) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
         <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
-    </svg>
-);
-
-export const ArchiveIcon = ({ className = "w-6 h-6" }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-        <polyline points="21,8 21,21 3,21 3,8"/>
-        <rect x="1" y="3" width="22" height="5"/>
-        <line x1="10" y1="12" x2="14" y2="12"/>
     </svg>
 );

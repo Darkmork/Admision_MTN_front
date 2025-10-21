@@ -523,6 +523,14 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
             // Todos aprobados = TODOS los documentos están aprobados (ninguno rechazado, ninguno sin revisar)
             const allApproved = approvedDocs.length === totalDocuments && rejectedDocs.length === 0;
 
+            console.log('📧 Enviando notificación de revisión de documentos:', {
+                applicationId: postulante.id,
+                totalDocuments,
+                approvedCount: approvedDocs.length,
+                rejectedCount: rejectedDocs.length,
+                allApproved
+            });
+
             // Llamada real al servicio de email
             const response = await institutionalEmailService.sendDocumentReviewEmail(
                 postulante.id,
@@ -532,6 +540,8 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                     allApproved
                 }
             );
+
+            console.log('📧 Respuesta del servicio de email:', response);
 
             if (response.success) {
                 addNotification({
@@ -549,17 +559,51 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                 // Refresh application data to get updated approval status from database
                 await loadFullApplication();
             } else {
+                console.error('❌ Error en respuesta del servicio:', response);
                 addNotification({
                     type: 'error',
-                    title: 'Error al enviar',
-                    message: response.message || 'No se pudo enviar la notificación'
+                    title: 'Error al enviar notificación',
+                    message: response.message || 'No se pudo enviar la notificación. Verifica que el email del apoderado sea válido.'
                 });
             }
         } catch (error: any) {
+            console.error('❌ Error enviando notificación de documentos:', error);
+            console.error('❌ Error details:', {
+                message: error.message,
+                response: error.response?.data,
+                status: error.response?.status
+            });
+
+            // Provide more detailed error messages based on the error type
+            let errorMessage = 'No se pudo enviar la notificación';
+
+            if (error.response) {
+                // The request was made and the server responded with a status code
+                // that falls out of the range of 2xx
+                const status = error.response.status;
+                const data = error.response.data;
+
+                if (status === 404) {
+                    errorMessage = 'No se encontró la postulación o el email del apoderado';
+                } else if (status === 400) {
+                    errorMessage = data?.message || 'Datos inválidos para enviar la notificación';
+                } else if (status === 500) {
+                    errorMessage = 'Error del servidor al enviar el email. Intenta nuevamente en unos momentos.';
+                } else {
+                    errorMessage = data?.message || error.message || errorMessage;
+                }
+            } else if (error.request) {
+                // The request was made but no response was received
+                errorMessage = 'No se pudo conectar con el servidor. Verifica tu conexión a internet.';
+            } else {
+                // Something happened in setting up the request that triggered an Error
+                errorMessage = error.message || errorMessage;
+            }
+
             addNotification({
                 type: 'error',
-                title: 'Error',
-                message: error.message || 'No se pudo enviar la notificación'
+                title: 'Error al enviar notificación',
+                message: errorMessage
             });
         } finally {
             setSendingNotification(false);
@@ -652,6 +696,33 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
 
     const renderInfoTab = () => {
         console.log('📝 renderInfoTab called');
+        console.log('📊 fullApplication:', fullApplication);
+        console.log('📊 postulante:', postulante);
+
+        // Use fullApplication data when available, fallback to postulante
+        const studentData = fullApplication?.student || {};
+        const birthDate = studentData.birthDate || postulante.fechaNacimiento;
+        const email = studentData.email || postulante.email;
+        const address = studentData.address || postulante.direccion;
+        const currentSchool = studentData.currentSchool || postulante.colegioActual;
+        const submissionDate = fullApplication?.submissionDate || postulante.fechaPostulacion;
+
+        // Helper function to format dates safely
+        const formatDate = (dateString: string | undefined) => {
+            if (!dateString) return 'No especificado';
+            try {
+                const date = new Date(dateString);
+                if (isNaN(date.getTime())) return 'No especificado';
+                return date.toLocaleDateString('es-ES', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+            } catch (error) {
+                return 'No especificado';
+            }
+        };
+
         return (
         <div className="space-y-6">
             {/* Header con foto y datos básicos */}
@@ -682,16 +753,16 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                         <div className="flex justify-between">
                             <span className="text-gray-600">Fecha de Nacimiento:</span>
                             <span className="font-medium">
-                                {new Date(postulante.fechaNacimiento).toLocaleDateString('es-ES')}
+                                {formatDate(birthDate)}
                             </span>
                         </div>
                         <div className="flex justify-between">
                             <span className="text-gray-600">Email:</span>
-                            <span className="font-medium">{postulante.email || 'No especificado'}</span>
+                            <span className="font-medium">{email || 'No especificado'}</span>
                         </div>
                         <div className="flex justify-between items-start">
                             <span className="text-gray-600">Dirección:</span>
-                            <span className="font-medium text-right flex-1 ml-2">{postulante.direccion}</span>
+                            <span className="font-medium text-right flex-1 ml-2">{address || 'No especificada'}</span>
                         </div>
                     </div>
                 </div>
@@ -714,7 +785,7 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                         </div>
                         <div className="flex justify-between">
                             <span className="text-gray-600">Colegio Actual:</span>
-                            <span className="font-medium">{postulante.colegioActual || 'No especificado'}</span>
+                            <span className="font-medium">{currentSchool || 'No especificado'}</span>
                         </div>
                     </div>
                 </div>
@@ -740,14 +811,14 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                         <div className="flex justify-between">
                             <span className="text-gray-600">Fecha Postulación:</span>
                             <span className="font-medium">
-                                {new Date(postulante.fechaPostulacion).toLocaleDateString('es-ES')}
+                                {formatDate(submissionDate)}
                             </span>
                         </div>
                         {postulante.fechaEntrevista && (
                             <div className="flex justify-between">
                                 <span className="text-gray-600">Fecha Entrevista:</span>
                                 <span className="font-medium text-purple-600">
-                                    {new Date(postulante.fechaEntrevista).toLocaleDateString('es-ES')}
+                                    {formatDate(postulante.fechaEntrevista)}
                                 </span>
                             </div>
                         )}
@@ -785,31 +856,45 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
         );
     };
 
-    const renderFamiliaTab = () => (
+    const renderFamiliaTab = () => {
+        // Use fullApplication data when available, fallback to postulante
+        const guardianData = fullApplication?.guardian || {};
+        const fatherData = fullApplication?.father || {};
+        const motherData = fullApplication?.mother || {};
+
+        return (
         <div className="space-y-6">
-            {/* Contacto Principal */}
+            {/* Contacto Principal (Guardian) */}
             <div>
                 <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
                     <FiUsers className="w-5 h-5" />
-                    Contacto Principal
+                    Contacto Principal / Apoderado
                 </h3>
                 <div className="bg-green-50 p-4 rounded-lg">
                     <div className="flex items-start gap-3">
                         <FiUser className="w-5 h-5 text-green-600 mt-0.5" />
                         <div className="flex-1">
-                            <h4 className="font-semibold text-gray-900">{postulante.nombreContactoPrincipal}</h4>
+                            <h4 className="font-semibold text-gray-900">
+                                {guardianData.fullName || postulante.nombreContactoPrincipal || 'No especificado'}
+                            </h4>
                             <p className="text-sm text-gray-600 mb-2">
-                                Relación: {postulante.relacionContacto}
+                                Relación: {guardianData.relationship || postulante.relacionContacto || 'No especificada'}
                             </p>
                             <div className="space-y-1">
                                 <div className="flex items-center gap-2 text-sm">
                                     <FiPhone className="w-4 h-4 text-gray-400" />
-                                    <span>{postulante.telefonoContacto || 'No especificado'}</span>
+                                    <span>{guardianData.phone || postulante.telefonoContacto || 'No especificado'}</span>
                                 </div>
                                 <div className="flex items-center gap-2 text-sm">
                                     <FiMail className="w-4 h-4 text-gray-400" />
-                                    <span>{postulante.emailContacto || 'No especificado'}</span>
+                                    <span>{guardianData.email || postulante.emailContacto || 'No especificado'}</span>
                                 </div>
+                                {guardianData.rut && (
+                                    <div className="flex items-center gap-2 text-sm">
+                                        <FiInfo className="w-4 h-4 text-gray-400" />
+                                        <span>RUT: {guardianData.rut}</span>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -826,21 +911,27 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                     </h3>
                     <div className="bg-blue-50 p-4 rounded-lg">
                         <h4 className="font-semibold text-gray-900 mb-2">
-                            {postulante.nombrePadre || 'No especificado'}
+                            {fatherData.fullName || postulante.nombrePadre || 'No especificado'}
                         </h4>
                         <div className="space-y-2 text-sm">
                             <div className="flex items-center gap-2">
                                 <FiBriefcase className="w-4 h-4 text-gray-400" />
-                                <span>Profesión: {postulante.profesionPadre || 'No especificada'}</span>
+                                <span>Profesión: {fatherData.profession || postulante.profesionPadre || 'No especificada'}</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <FiPhone className="w-4 h-4 text-gray-400" />
-                                <span>Teléfono: {postulante.telefonoPadre || 'No especificado'}</span>
+                                <span>Teléfono: {fatherData.phone || postulante.telefonoPadre || 'No especificado'}</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <FiMail className="w-4 h-4 text-gray-400" />
-                                <span>Email: {postulante.emailPadre || 'No especificado'}</span>
+                                <span>Email: {fatherData.email || postulante.emailPadre || 'No especificado'}</span>
                             </div>
+                            {fatherData.rut && (
+                                <div className="flex items-center gap-2">
+                                    <FiInfo className="w-4 h-4 text-gray-400" />
+                                    <span>RUT: {fatherData.rut}</span>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -853,27 +944,34 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                     </h3>
                     <div className="bg-pink-50 p-4 rounded-lg">
                         <h4 className="font-semibold text-gray-900 mb-2">
-                            {postulante.nombreMadre || 'No especificado'}
+                            {motherData.fullName || postulante.nombreMadre || 'No especificado'}
                         </h4>
                         <div className="space-y-2 text-sm">
                             <div className="flex items-center gap-2">
                                 <FiBriefcase className="w-4 h-4 text-gray-400" />
-                                <span>Profesión: {postulante.profesionMadre || 'No especificada'}</span>
+                                <span>Profesión: {motherData.profession || postulante.profesionMadre || 'No especificada'}</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <FiPhone className="w-4 h-4 text-gray-400" />
-                                <span>Teléfono: {postulante.telefonoMadre || 'No especificado'}</span>
+                                <span>Teléfono: {motherData.phone || postulante.telefonoMadre || 'No especificado'}</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <FiMail className="w-4 h-4 text-gray-400" />
-                                <span>Email: {postulante.emailMadre || 'No especificado'}</span>
+                                <span>Email: {motherData.email || postulante.emailMadre || 'No especificado'}</span>
                             </div>
+                            {motherData.rut && (
+                                <div className="flex items-center gap-2">
+                                    <FiInfo className="w-4 h-4 text-gray-400" />
+                                    <span>RUT: {motherData.rut}</span>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    );
+        );
+    };
 
     const renderAcademicoTab = () => (
         <div className="space-y-6">
@@ -1483,10 +1581,11 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
 
     const renderEvaluationsTab = () => {
         const requiredTypes = REQUIRED_EVALUATION_TYPES.filter(t => t.required);
-        const completedEvaluations = evaluations.filter(e => e.status === 'COMPLETED').length;
-        const inProgressEvaluations = evaluations.filter(e => e.status === 'IN_PROGRESS').length;
+        const safeEvaluations = Array.isArray(evaluations) ? evaluations : [];
+        const completedEvaluations = safeEvaluations.filter(e => e.status === 'COMPLETED').length;
+        const inProgressEvaluations = safeEvaluations.filter(e => e.status === 'IN_PROGRESS').length;
         const missingEvaluations = requiredTypes.filter(type =>
-            !evaluations.some(evaluation => evaluation.evaluationType === type.type)
+            !safeEvaluations.some(evaluation => evaluation.evaluationType === type.type)
         ).length;
 
         const progress = Math.round(((completedEvaluations + inProgressEvaluations) / requiredTypes.length) * 100);
@@ -1544,7 +1643,7 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                 {/* Estado de cada tipo de evaluación */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {REQUIRED_EVALUATION_TYPES.map(type => {
-                        const evaluation = evaluations.find(e => e.evaluationType === type.type);
+                        const evaluation = safeEvaluations.find(e => e.evaluationType === type.type);
                         const hasEvaluation = !!evaluation;
                         const isCompleted = evaluation?.status === 'COMPLETED';
                         const isInProgress = evaluation?.status === 'IN_PROGRESS';
