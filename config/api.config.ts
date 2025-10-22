@@ -44,15 +44,24 @@ export function getApiBaseUrl(): string {
     const hostnameStr = String(hostname);
 
     // Debug logging (side effect prevents tree-shaking)
+    console.log('[API Config] ========================================');
+    console.log('[API Config] Full location:', location.href);
     console.log('[API Config] Hostname detected:', hostnameStr);
+    console.log('[API Config] Protocol:', location.protocol);
+    console.log('[API Config] Port:', location.port);
+    console.log('[API Config] ========================================');
 
     // Railway backend URL (production) - Gateway Service
     const RAILWAY_URL = 'https://gateway-service-production-a753.up.railway.app';
 
     // DEFENSIVE: Use indexOf instead of includes for compatibility
     // Vercel deployment detection
-    if (hostnameStr.indexOf('vercel.app') !== -1) {
-      console.log('[API Config] Vercel deployment detected → Railway backend');
+    const isVercel = hostnameStr.indexOf('vercel.app') !== -1;
+    console.log('[API Config] Is Vercel?', isVercel, '(checking for "vercel.app" in', hostnameStr, ')');
+
+    if (isVercel) {
+      console.log('[API Config] ✅ Vercel deployment detected → Railway backend');
+      console.log('[API Config] Returning:', RAILWAY_URL);
       return RAILWAY_URL;
     }
 
@@ -63,7 +72,8 @@ export function getApiBaseUrl(): string {
     }
 
     // Default to localhost for development
-    console.log('[API Config] Development environment → localhost');
+    console.log('[API Config] ⚠️  No match found, defaulting to localhost');
+    console.log('[API Config] Hostname was:', hostnameStr);
     return 'http://localhost:8080';
   } catch (error) {
     // Fallback for any unexpected errors
