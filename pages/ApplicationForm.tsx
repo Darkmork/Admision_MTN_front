@@ -613,39 +613,65 @@ const ApplicationForm: React.FC = () => {
         // Validation by step
         switch (currentStep) {
             case 0:
+                console.log('🔍 Validating Step 0 with data:', data);
+
                 // Validate postulant data
                 if (!data.firstName?.trim() || !data.paternalLastName?.trim() || !data.maternalLastName?.trim() ||
                     !data.rut?.trim() || !data.birthDate || !data.grade || !data.schoolApplied ||
                     !data.studentAddressStreet?.trim() || !data.studentAddressNumber?.trim() || !data.studentAddressCommune?.trim() ||
                     !data.admissionPreference) {
+                    console.log('❌ Basic fields validation failed');
+                    console.log('firstName:', data.firstName);
+                    console.log('paternalLastName:', data.paternalLastName);
+                    console.log('maternalLastName:', data.maternalLastName);
+                    console.log('rut:', data.rut);
+                    console.log('birthDate:', data.birthDate);
+                    console.log('grade:', data.grade);
+                    console.log('schoolApplied:', data.schoolApplied);
+                    console.log('studentAddressStreet:', data.studentAddressStreet);
+                    console.log('studentAddressNumber:', data.studentAddressNumber);
+                    console.log('studentAddressCommune:', data.studentAddressCommune);
+                    console.log('admissionPreference:', data.admissionPreference);
                     return false;
                 }
+
                 // Validate location fields
                 const pais = data.pais || 'Chile';
                 if (pais === 'Chile') {
                     if (!data.region?.trim() || !data.comuna?.trim()) {
+                        console.log('❌ Location validation failed - region:', data.region, 'comuna:', data.comuna);
                         return false;
                     }
                 }
+
                 // Validate application year (must be current year + 1)
                 const currentYear = new Date().getFullYear();
                 const applicationYear = parseInt(data.applicationYear);
                 if (!data.applicationYear || applicationYear !== currentYear + 1) {
+                    console.log('❌ Application year validation failed - expected:', currentYear + 1, 'got:', applicationYear);
                     return false;
                 }
+
                 // Validate birth date coherence with grade
                 const birthDateValidation = validateBirthDateForGrade(data.birthDate, data.grade);
                 if (!birthDateValidation.valid) {
+                    console.log('❌ Birth date validation failed:', birthDateValidation.message);
                     return false;
                 }
+
                 // Check for school if required
                 if (requiresCurrentSchool(data.grade || '') && !data.currentSchool?.trim()) {
+                    console.log('❌ Current school validation failed - currentSchool:', data.currentSchool);
                     return false;
                 }
+
                 // Validate optional email if provided
                 if (data.studentEmail && !isValidEmail(data.studentEmail)) {
+                    console.log('❌ Email validation failed:', data.studentEmail);
                     return false;
                 }
+
+                console.log('✅ Step 0 validation passed!');
                 return true;
                 
             case 1:
