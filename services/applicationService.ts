@@ -539,12 +539,15 @@ class ApplicationService {
 
             console.log('✅ Postulación enviada exitosamente:', response.data);
 
+            // Backend devuelve {success: true, data: {id, status, ...}}
+            const applicationData = response.data.data || response.data;
+
             return {
                 success: true,
                 message: response.data.message || 'Postulación enviada exitosamente',
-                id: response.data.id,
-                studentName: response.data.studentName,
-                grade: response.data.grade
+                id: applicationData.id,
+                studentName: applicationData.studentName,
+                grade: applicationData.grade
             };
 
         } catch (error: any) {
