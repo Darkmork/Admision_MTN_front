@@ -2257,19 +2257,26 @@ const ApplicationForm: React.FC = () => {
 
                 {/* Missing Fields Warning */}
                 {currentStep < 4 && getMissingFields.length > 0 && (
-                    <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="mt-6 p-6 bg-red-100 border-4 border-red-500 rounded-lg shadow-lg">
                         <div className="flex items-start">
                             <div className="flex-shrink-0">
-                                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                                <svg className="h-8 w-8 text-red-600" viewBox="0 0 20 20" fill="currentColor">
                                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                                 </svg>
                             </div>
-                            <div className="ml-3">
-                                <h3 className="text-sm font-medium text-red-800">Campos obligatorios faltantes:</h3>
-                                <div className="mt-2">
-                                    <ul className="list-disc list-inside text-sm text-red-700">
+                            <div className="ml-4 flex-1">
+                                <h3 className="text-lg font-bold text-red-900 mb-3">
+                                    ⚠️ FALTAN {getMissingFields.length} CAMPO(S) OBLIGATORIO(S)
+                                </h3>
+                                <p className="text-sm text-red-800 mb-3">
+                                    Por favor complete los siguientes campos para continuar:
+                                </p>
+                                <div className="bg-white p-4 rounded-lg border-2 border-red-300">
+                                    <ul className="list-disc list-inside text-base text-red-900 space-y-2">
                                         {getMissingFields.map((field, index) => (
-                                            <li key={index}>{field}</li>
+                                            <li key={index} className="font-semibold">
+                                                ❌ {field}
+                                            </li>
                                         ))}
                                     </ul>
                                 </div>
