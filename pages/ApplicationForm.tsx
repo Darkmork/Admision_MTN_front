@@ -616,7 +616,8 @@ const ApplicationForm: React.FC = () => {
                 // Validate postulant data
                 if (!data.firstName?.trim() || !data.paternalLastName?.trim() || !data.maternalLastName?.trim() ||
                     !data.rut?.trim() || !data.birthDate || !data.grade || !data.schoolApplied ||
-                    !data.studentAddressStreet?.trim() || !data.studentAddressNumber?.trim() || !data.studentAddressCommune?.trim()) {
+                    !data.studentAddressStreet?.trim() || !data.studentAddressNumber?.trim() || !data.studentAddressCommune?.trim() ||
+                    !data.admissionPreference) {
                     return false;
                 }
                 // Validate location fields
