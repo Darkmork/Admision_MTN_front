@@ -46,8 +46,8 @@ export function getApiBaseUrl(): string {
     // Debug logging (side effect prevents tree-shaking)
     console.log('[API Config] Hostname detected:', hostnameStr);
 
-    // Railway backend URL (production)
-    const RAILWAY_URL = 'https://admisionmtnbackendv2-production.up.railway.app';
+    // Railway backend URL (production) - Gateway Service
+    const RAILWAY_URL = 'https://gateway-service-production-a753.up.railway.app';
 
     // DEFENSIVE: Use indexOf instead of includes for compatibility
     // Vercel deployment detection
