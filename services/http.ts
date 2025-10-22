@@ -6,6 +6,7 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 import { oidcService } from './oidcService';
 import { getApiBaseUrl } from '../config/api.config';
+import { csrfService } from './csrfService';
 
 // Tipos
 interface RetryConfig {
@@ -99,6 +100,25 @@ class HttpClient {
           'X-Request-Time': new Date().toISOString(),
           'X-Timezone': Intl.DateTimeFormat().resolvedOptions().timeZone,
         };
+
+        // Add CSRF token for POST, PUT, DELETE, PATCH requests
+        const method = (config.method || 'get').toUpperCase();
+        const needsCsrf = ['POST', 'PUT', 'DELETE', 'PATCH'].includes(method);
+        const url = config.url || '';
+
+        if (needsCsrf && !url.includes('/csrf-token')) {
+          try {
+            const csrfHeaders = await csrfService.getCsrfHeaders();
+            config.headers = {
+              ...config.headers,
+              'X-CSRF-Token': csrfHeaders['X-CSRF-Token'],
+            };
+            console.log(`🛡️ http.ts - Added CSRF token to ${method} request`);
+          } catch (error) {
+            console.error('❌ http.ts - Failed to get CSRF token:', error);
+            // Continue without CSRF - backend will reject if required
+          }
+        }
 
         // Iniciar métricas
         this.metrics.set(correlationId, {
