@@ -146,11 +146,16 @@ const ApplicationForm: React.FC = () => {
     // Helper function to update fields
     const updateField = useCallback((name: string, value: any) => {
         // Apply uppercase transformation for specific fields
-        const processedValue = uppercaseFields.includes(name) && typeof value === 'string' 
-            ? toUpperCase(value) 
+        const processedValue = uppercaseFields.includes(name) && typeof value === 'string'
+            ? toUpperCase(value)
             : value;
-        
-        setData(prev => ({ ...prev, [name]: processedValue }));
+
+        console.log(`📝 updateField called - ${name}:`, value, '→', processedValue);
+        setData(prev => {
+            const newData = { ...prev, [name]: processedValue };
+            console.log('📦 New data state:', newData);
+            return newData;
+        });
     }, []);
     
     // Helper function to touch fields (placeholder)
