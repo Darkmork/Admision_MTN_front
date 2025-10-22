@@ -1,14 +1,20 @@
-# Run and deploy your AI Studio app
+# Sistema de Admisión MTN - Frontend
 
-This contains everything you need to run your app locally.
+Frontend del Sistema de Admisión para Colegio Monte Tabor y Nazaret.
 
 ## Run Locally
 
-**Prerequisites:**  Node.js
-
+**Prerequisites:** Node.js 18+
 
 1. Install dependencies:
    `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+2. Configure environment variables in `.env.local`
 3. Run the app:
    `npm run dev`
+
+## Deployment
+
+- **Production**: Vercel (auto-deploy from `pre_produccion` branch)
+- **Backend**: Microservices architecture on Railway
+
+Last updated: 2025-10-21
