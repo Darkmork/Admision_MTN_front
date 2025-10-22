@@ -627,7 +627,7 @@ class ApplicationService {
             console.log(`📎 Subiendo documento ${documentType} para aplicación ${applicationId}`);
 
             const formData = new FormData();
-            formData.append('file', file);
+            formData.append('files', file); // Backend expects 'files' (plural) not 'file'
             formData.append('documentType', documentType);
             formData.append('applicationId', applicationId.toString());
 
