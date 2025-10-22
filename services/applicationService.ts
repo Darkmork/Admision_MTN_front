@@ -286,20 +286,23 @@ class ApplicationService {
     async getMyApplications(): Promise<Application[]> {
         try {
             console.log('📋 Obteniendo mis postulaciones');
-            
+
             const response = await api.get('/api/applications/my-applications');
             console.log('📋 Respuesta del servidor:', response);
             console.log('📋 response.data:', response.data);
-            console.log('📋 Tipo de response.data:', typeof response.data);
-            console.log('📋 Es array?', Array.isArray(response.data));
-            
-            if (!Array.isArray(response.data)) {
-                console.error('❌ Error: response.data no es un array:', response.data);
+
+            // Backend devuelve {success: true, data: [...], count: X}
+            const applications = response.data.data || response.data;
+            console.log('📋 Applications extraídas:', applications);
+            console.log('📋 Es array?', Array.isArray(applications));
+
+            if (!Array.isArray(applications)) {
+                console.error('❌ Error: applications no es un array:', applications);
                 return [];
             }
-            
-            return response.data;
-            
+
+            return applications;
+
         } catch (error: any) {
             console.error('❌ Error obteniendo postulaciones:', error);
             throw new Error('Error al obtener las postulaciones');
@@ -342,7 +345,8 @@ class ApplicationService {
                 // Si falla la autenticación, intentar obtener datos públicos (solo para desarrollo)
                 try {
                     const publicResponse = await api.get('/api/applications/public/all');
-                    applications = publicResponse.data || [];
+                    // Backend devuelve {success: true, data: [...], pagination: {...}}
+                    applications = publicResponse.data.data || publicResponse.data || [];
                     console.log('📋 Datos públicos obtenidos:', applications);
                 } catch (publicError) {
                     console.log('⚠️ No se pudieron obtener datos públicos, intentando datos mock...');
