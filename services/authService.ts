@@ -1,5 +1,6 @@
 import api from './api';
 import { encryptCredentials, getCachedPublicKey, isEncryptionSupported } from '../utils/crypto';
+import { getApiBaseUrl } from '../config/api.config';
 
 export interface LoginRequest {
     email: string;
@@ -38,7 +39,8 @@ class AuthService {
 
             try {
                 // Fetch public key via API Gateway (not directly from user service)
-                const API_GATEWAY_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+                const API_GATEWAY_URL = getApiBaseUrl();
+                console.log('[Auth] Using API Gateway URL:', API_GATEWAY_URL);
                 const publicKeyInfo = await getCachedPublicKey(API_GATEWAY_URL);
 
                 console.log('[Auth] Encrypting credentials with RSA + AES...');
@@ -83,7 +85,8 @@ class AuthService {
 
             try {
                 // Fetch public key via API Gateway (not directly from user service)
-                const API_GATEWAY_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+                const API_GATEWAY_URL = getApiBaseUrl();
+                console.log('[Auth] Using API Gateway URL:', API_GATEWAY_URL);
                 const publicKeyInfo = await getCachedPublicKey(API_GATEWAY_URL);
 
                 console.log('[Auth] Encrypting registration data with RSA + AES...');
