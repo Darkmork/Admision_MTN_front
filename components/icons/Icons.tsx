@@ -1,8 +1,8 @@
 import React from 'react';
 
 export const LogoIcon = ({ className = "w-12 h-12" }: { className?: string }) => (
-    <img 
-        src="/images/Logo_Comunicaciones.jpg" 
+    <img
+        src="/images/logoMTN.png"
         alt="Monte Tabor & Nazaret Logo"
         className={`${className} object-contain`}
         onError={(e) => {
