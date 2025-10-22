@@ -476,18 +476,56 @@ class ApplicationService {
             }
 
             // Transform data to match backend schema
-            // Backend expects: studentFirstName, studentPaternalLastName, studentRUT, etc.
+            // Backend expects all data: student, parents, guardian, supporter
             const transformedData = {
+                // Student data
                 studentFirstName: data.firstName,
                 studentPaternalLastName: data.paternalLastName,
                 studentMaternalLastName: data.maternalLastName,
                 studentRUT: data.rut,
                 studentDateOfBirth: data.birthDate,
-                studentGender: 'OTHER', // Default value (backend requires it but frontend doesn't collect it)
                 gradeAppliedFor: this.transformGradeToBackend(data.grade),
-                guardianRUT: data.guardianRut,
-                guardianEmail: data.guardianEmail,
-                applicationYear: parseInt(data.applicationYear || new Date().getFullYear() + 1)
+                studentEmail: data.studentEmail || '',
+                studentAddress: data.studentAddress || '',
+                studentCurrentSchool: data.currentSchool || '',
+                studentAdmissionPreference: data.admissionPreference || 'NINGUNA',
+                studentPais: 'Chile',
+                studentRegion: '',
+                studentComuna: '',
+                studentAdditionalNotes: data.additionalNotes || '',
+
+                // Father data (parent1)
+                parent1Name: data.parent1Name || '',
+                parent1Rut: data.parent1Rut || '',
+                parent1Email: data.parent1Email || '',
+                parent1Phone: data.parent1Phone || '',
+                parent1Address: data.parent1Address || '',
+                parent1Profession: data.parent1Profession || '',
+
+                // Mother data (parent2)
+                parent2Name: data.parent2Name || '',
+                parent2Rut: data.parent2Rut || '',
+                parent2Email: data.parent2Email || '',
+                parent2Phone: data.parent2Phone || '',
+                parent2Address: data.parent2Address || '',
+                parent2Profession: data.parent2Profession || '',
+
+                // Guardian data
+                guardianName: data.guardianName || '',
+                guardianRut: data.guardianRut || '',
+                guardianEmail: data.guardianEmail || '',
+                guardianPhone: data.guardianPhone || '',
+                guardianRelation: data.guardianRelation || 'OTRO',
+
+                // Supporter data
+                supporterName: data.supporterName || '',
+                supporterRut: data.supporterRut || '',
+                supporterEmail: data.supporterEmail || '',
+                supporterPhone: data.supporterPhone || '',
+                supporterRelation: data.supporterRelation || 'OTRO',
+
+                // Additional notes
+                additionalNotes: data.additionalNotes || ''
             };
 
             console.log('🔄 Datos transformados para el backend:', transformedData);
