@@ -124,7 +124,31 @@ export interface Application {
 }
 
 class ApplicationService {
-    
+
+    // Helper function to transform frontend grade format to backend format
+    private transformGradeToBackend(grade: string): string {
+        // Frontend uses: "8basico", "1medio", etc.
+        // Backend expects: "8_BASICO", "1_MEDIO", "PRE_KINDER", "KINDER"
+        const gradeMap: Record<string, string> = {
+            'PREKINDER': 'PRE_KINDER',
+            'KINDER': 'KINDER',
+            '1basico': '1_BASICO',
+            '2basico': '2_BASICO',
+            '3basico': '3_BASICO',
+            '4basico': '4_BASICO',
+            '5basico': '5_BASICO',
+            '6basico': '6_BASICO',
+            '7basico': '7_BASICO',
+            '8basico': '8_BASICO',
+            '1medio': '1_MEDIO',
+            '2medio': '2_MEDIO',
+            '3medio': '3_MEDIO',
+            '4medio': '4_MEDIO'
+        };
+
+        return gradeMap[grade] || grade.toUpperCase().replace('BASICO', '_BASICO').replace('MEDIO', '_MEDIO');
+    }
+
     // Método mejorado para administradores: obtener todas las postulaciones desde microservicio
     async getAllApplications(): Promise<Application[]> {
         try {
@@ -451,8 +475,25 @@ class ApplicationService {
                 throw new Error('Faltan datos básicos del estudiante');
             }
 
+            // Transform data to match backend schema
+            // Backend expects: studentFirstName, studentPaternalLastName, studentRUT, etc.
+            const transformedData = {
+                studentFirstName: data.firstName,
+                studentPaternalLastName: data.paternalLastName,
+                studentMaternalLastName: data.maternalLastName,
+                studentRUT: data.rut,
+                studentDateOfBirth: data.birthDate,
+                studentGender: 'OTHER', // Default value (backend requires it but frontend doesn't collect it)
+                gradeAppliedFor: this.transformGradeToBackend(data.grade),
+                guardianRUT: data.guardianRut,
+                guardianEmail: data.guardianEmail,
+                applicationYear: parseInt(data.applicationYear || new Date().getFullYear() + 1)
+            };
+
+            console.log('🔄 Datos transformados para el backend:', transformedData);
+
             // Enviar al backend
-            const response = await api.post('/api/applications', data);
+            const response = await api.post('/api/applications', transformedData);
 
             console.log('✅ Postulación enviada exitosamente:', response.data);
 
