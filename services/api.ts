@@ -81,16 +81,23 @@ api.interceptors.request.use(
         const method = (config.method || 'get').toUpperCase();
         const needsCsrf = ['POST', 'PUT', 'DELETE', 'PATCH'].includes(method);
 
+        console.log(`🔒 CSRF Check - Method: ${method}, NeedsCsrf: ${needsCsrf}, URL: ${url}`);
+
         // Skip CSRF token for CSRF token endpoint itself
         if (needsCsrf && !url.includes('/csrf-token')) {
+            console.log(`🔒 Attempting to get CSRF token for ${method} request...`);
             try {
                 const csrfHeaders = await csrfService.getCsrfHeaders();
+                console.log(`🔒 CSRF headers received:`, csrfHeaders);
                 config.headers['X-CSRF-Token'] = csrfHeaders['X-CSRF-Token'];
                 console.log(`🛡️ Added CSRF token to ${method} request`);
             } catch (error) {
                 console.error('❌ Failed to get CSRF token:', error);
+                console.error('❌ Error details:', error);
                 // Continue without CSRF token - backend will reject the request
             }
+        } else {
+            console.log(`🔒 Skipping CSRF token - needsCsrf: ${needsCsrf}, isCSRFEndpoint: ${url.includes('/csrf-token')}`);
         }
 
         return config;
