@@ -262,11 +262,12 @@ class EmailVerificationService {
     if (!this.validateEmailForSending(email).isValid) {
       return false;
     }
-    
+
     // Dominios no permitidos para apoderados (institucionales)
-    const institutionalDomains = ['@mtn.cl'];
+    // NOTA: @mtn.cl permitido temporalmente para pruebas
+    const institutionalDomains: string[] = [];
     const emailLower = email.toLowerCase();
-    
+
     return !institutionalDomains.some(domain => emailLower.includes(domain));
   }
 

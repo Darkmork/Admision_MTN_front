@@ -37,9 +37,10 @@ export const useEmailVerification = () => {
             }
 
             // Validar que no sea email institucional para registro de apoderados
-            if (type === 'registration' && emailVerificationService.isInstitutionalEmail(email)) {
-                throw new Error('No puede usar un email institucional para registro de apoderado');
-            }
+            // NOTA: Validación deshabilitada temporalmente para pruebas con @mtn.cl
+            // if (type === 'registration' && emailVerificationService.isInstitutionalEmail(email)) {
+            //     throw new Error('No puede usar un email institucional para registro de apoderado');
+            // }
 
             // Convertir tipo a enum apropiado
             let verificationType;

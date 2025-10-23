@@ -58,15 +58,16 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({
     // Validaciones del email
     const getEmailError = (): string => {
         if (!emailTouched || !email) return '';
-        
+
         if (!validateEmailFormat(email)) {
             return 'Formato de email inválido';
         }
-        
-        if (!validateParentEmail(email)) {
-            return 'No puede usar un email institucional (@mtn.cl) para registro de apoderado';
-        }
-        
+
+        // NOTA: Validación de email institucional deshabilitada temporalmente para pruebas
+        // if (!validateParentEmail(email)) {
+        //     return 'No puede usar un email institucional (@mtn.cl) para registro de apoderado';
+        // }
+
         return '';
     };
 
@@ -250,7 +251,8 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({
                 <div className="text-xs text-gray-500">
                     <p>• Se enviará un código de verificación de 6 dígitos</p>
                     <p>• El código expira en 15 minutos</p>
-                    <p>• No use emails institucionales (@mtn.cl)</p>
+                    {/* NOTA: Restricción de emails institucionales deshabilitada temporalmente para pruebas */}
+                    {/* <p>• No use emails institucionales (@mtn.cl)</p> */}
                 </div>
             )}
         </div>
