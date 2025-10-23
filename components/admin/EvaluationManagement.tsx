@@ -80,7 +80,15 @@ const EvaluationManagement: React.FC<EvaluationManagementProps> = ({
 
       // Cargar usuarios reales desde el endpoint público
       const usersResponse = await userService.getSchoolStaffUsersPublic();
-      const allStaff = usersResponse.content || [];
+
+      // Defensive check: ensure usersResponse exists and has content
+      if (!usersResponse) {
+        console.error('❌ No se recibió respuesta del servicio de usuarios');
+        addNotification('error', 'Error al cargar evaluadores: No se pudo conectar con el servidor');
+        return;
+      }
+
+      const allStaff = usersResponse.content || usersResponse.data || [];
 
       console.log('📊 Total staff encontrado:', allStaff.length);
       console.log('👥 Usuarios encontrados:', allStaff.map(u => `${u.firstName} ${u.lastName} - ${u.role} - ${u.subject}`));
