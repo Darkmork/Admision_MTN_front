@@ -645,54 +645,61 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
         }
     };
 
-    const renderSpecialCategories = () => (
-        <div className="space-y-2">
-            {postulante.esHijoFuncionario && (
-                <div className="flex items-center gap-2 p-2 bg-blue-50 rounded">
-                    <FiBriefcase className="w-4 h-4 text-blue-600" />
-                    <div>
-                        <Badge variant="blue" size="sm">Hijo de Funcionario</Badge>
-                        <div className="text-sm text-gray-600 mt-1">
-                            {postulante.nombrePadreFuncionario || 'Funcionario no especificado'}
-                        </div>
-                    </div>
-                </div>
-            )}
-            {postulante.esHijoExalumno && (
-                <div className="flex items-center gap-2 p-2 bg-green-50 rounded">
-                    <FiAward className="w-4 h-4 text-green-600" />
-                    <div>
-                        <Badge variant="green" size="sm">Hijo de Exalumno</Badge>
-                        <div className="text-sm text-gray-600 mt-1">
-                            Egreso: {postulante.anioEgresoExalumno || 'Año no especificado'}
-                        </div>
-                    </div>
-                </div>
-            )}
-            {postulante.esAlumnoInclusion && (
-                <div className="flex items-center gap-2 p-2 bg-purple-50 rounded">
-                    <FiHeart className="w-4 h-4 text-purple-600" />
-                    <div>
-                        <Badge variant="purple" size="sm">Alumno de Inclusión</Badge>
-                        <div className="text-sm text-gray-600 mt-1">
-                            {postulante.tipoInclusion || 'Tipo no especificado'}
-                        </div>
-                        {postulante.notasInclusion && (
-                            <div className="text-xs text-gray-500 mt-1">
-                                {postulante.notasInclusion}
+    const renderSpecialCategories = () => {
+        const studentData = fullApplication?.student || {};
+        const isEmployeeChild = studentData.isEmployeeChild || postulante.esHijoFuncionario;
+        const isAlumniChild = studentData.isAlumniChild || postulante.esHijoExalumno;
+        const isInclusionStudent = studentData.isInclusionStudent || postulante.esAlumnoInclusion;
+
+        return (
+            <div className="space-y-2">
+                {isEmployeeChild && (
+                    <div className="flex items-center gap-2 p-2 bg-blue-50 rounded">
+                        <FiBriefcase className="w-4 h-4 text-blue-600" />
+                        <div>
+                            <Badge variant="blue" size="sm">Hijo de Funcionario</Badge>
+                            <div className="text-sm text-gray-600 mt-1">
+                                {studentData.employeeParentName || postulante.nombrePadreFuncionario || 'Funcionario no especificado'}
                             </div>
-                        )}
+                        </div>
                     </div>
-                </div>
-            )}
-            {!postulante.esHijoFuncionario && !postulante.esHijoExalumno && !postulante.esAlumnoInclusion && (
-                <div className="flex items-center gap-2 p-2 bg-gray-50 rounded">
-                    <FiStar className="w-4 h-4 text-gray-600" />
-                    <Badge variant="gray" size="sm">Postulante Regular</Badge>
-                </div>
-            )}
-        </div>
-    );
+                )}
+                {isAlumniChild && (
+                    <div className="flex items-center gap-2 p-2 bg-green-50 rounded">
+                        <FiAward className="w-4 h-4 text-green-600" />
+                        <div>
+                            <Badge variant="green" size="sm">Hijo de Exalumno</Badge>
+                            <div className="text-sm text-gray-600 mt-1">
+                                Egreso: {studentData.alumniParentYear || postulante.anioEgresoExalumno || 'Año no especificado'}
+                            </div>
+                        </div>
+                    </div>
+                )}
+                {isInclusionStudent && (
+                    <div className="flex items-center gap-2 p-2 bg-purple-50 rounded">
+                        <FiHeart className="w-4 h-4 text-purple-600" />
+                        <div>
+                            <Badge variant="purple" size="sm">Alumno de Inclusión</Badge>
+                            <div className="text-sm text-gray-600 mt-1">
+                                {studentData.inclusionType || postulante.tipoInclusion || 'Tipo no especificado'}
+                            </div>
+                            {(studentData.inclusionNotes || postulante.notasInclusion) && (
+                                <div className="text-xs text-gray-500 mt-1">
+                                    {studentData.inclusionNotes || postulante.notasInclusion}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+                {!isEmployeeChild && !isAlumniChild && !isInclusionStudent && (
+                    <div className="flex items-center gap-2 p-2 bg-gray-50 rounded">
+                        <FiStar className="w-4 h-4 text-gray-600" />
+                        <Badge variant="gray" size="sm">Postulante Regular</Badge>
+                    </div>
+                )}
+            </div>
+        );
+    };
 
     const renderInfoTab = () => {
         console.log('📝 renderInfoTab called');
@@ -875,7 +882,9 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                         <FiUser className="w-5 h-5 text-green-600 mt-0.5" />
                         <div className="flex-1">
                             <h4 className="font-semibold text-gray-900">
-                                {guardianData.fullName || postulante.nombreContactoPrincipal || 'No especificado'}
+                                {guardianData.firstName && guardianData.lastName
+                                    ? `${guardianData.firstName} ${guardianData.lastName}`
+                                    : postulante.nombreContactoPrincipal || 'No especificado'}
                             </h4>
                             <p className="text-sm text-gray-600 mb-2">
                                 Relación: {guardianData.relationship || postulante.relacionContacto || 'No especificada'}
@@ -911,12 +920,14 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                     </h3>
                     <div className="bg-blue-50 p-4 rounded-lg">
                         <h4 className="font-semibold text-gray-900 mb-2">
-                            {fatherData.fullName || postulante.nombrePadre || 'No especificado'}
+                            {fatherData.firstName && fatherData.lastName
+                                ? `${fatherData.firstName} ${fatherData.lastName}`
+                                : postulante.nombrePadre || 'No especificado'}
                         </h4>
                         <div className="space-y-2 text-sm">
                             <div className="flex items-center gap-2">
                                 <FiBriefcase className="w-4 h-4 text-gray-400" />
-                                <span>Profesión: {fatherData.profession || postulante.profesionPadre || 'No especificada'}</span>
+                                <span>Profesión: {fatherData.occupation || postulante.profesionPadre || 'No especificada'}</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <FiPhone className="w-4 h-4 text-gray-400" />
@@ -944,12 +955,14 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                     </h3>
                     <div className="bg-pink-50 p-4 rounded-lg">
                         <h4 className="font-semibold text-gray-900 mb-2">
-                            {motherData.fullName || postulante.nombreMadre || 'No especificado'}
+                            {motherData.firstName && motherData.lastName
+                                ? `${motherData.firstName} ${motherData.lastName}`
+                                : postulante.nombreMadre || 'No especificado'}
                         </h4>
                         <div className="space-y-2 text-sm">
                             <div className="flex items-center gap-2">
                                 <FiBriefcase className="w-4 h-4 text-gray-400" />
-                                <span>Profesión: {motherData.profession || postulante.profesionMadre || 'No especificada'}</span>
+                                <span>Profesión: {motherData.occupation || postulante.profesionMadre || 'No especificada'}</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <FiPhone className="w-4 h-4 text-gray-400" />
@@ -968,6 +981,49 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                         </div>
                     </div>
                 </div>
+
+                {/* Sostenedor */}
+                {fullApplication?.supporter && (fullApplication.supporter.firstName || fullApplication.supporter.lastName) && (
+                    <div>
+                        <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
+                            <FiShield className="w-5 h-5" />
+                            Información del Sostenedor
+                        </h3>
+                        <div className="bg-orange-50 p-4 rounded-lg">
+                            <h4 className="font-semibold text-gray-900 mb-2">
+                                {fullApplication.supporter.firstName && fullApplication.supporter.lastName
+                                    ? `${fullApplication.supporter.firstName} ${fullApplication.supporter.lastName}`
+                                    : 'No especificado'}
+                            </h4>
+                            <div className="space-y-2 text-sm">
+                                {fullApplication.supporter.relationship && (
+                                    <div className="flex items-center gap-2">
+                                        <FiUsers className="w-4 h-4 text-gray-400" />
+                                        <span>Relación: {fullApplication.supporter.relationship}</span>
+                                    </div>
+                                )}
+                                {fullApplication.supporter.phone && (
+                                    <div className="flex items-center gap-2">
+                                        <FiPhone className="w-4 h-4 text-gray-400" />
+                                        <span>Teléfono: {fullApplication.supporter.phone}</span>
+                                    </div>
+                                )}
+                                {fullApplication.supporter.email && (
+                                    <div className="flex items-center gap-2">
+                                        <FiMail className="w-4 h-4 text-gray-400" />
+                                        <span>Email: {fullApplication.supporter.email}</span>
+                                    </div>
+                                )}
+                                {fullApplication.supporter.rut && (
+                                    <div className="flex items-center gap-2">
+                                        <FiInfo className="w-4 h-4 text-gray-400" />
+                                        <span>RUT: {fullApplication.supporter.rut}</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
         );
@@ -1009,21 +1065,21 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
             </div>
 
             {/* Observaciones */}
-            {(postulante.observaciones || postulante.necesidadesEspeciales) && (
+            {(postulante.observaciones || postulante.necesidadesEspeciales || fullApplication?.student?.specialNeeds) && (
                 <div>
                     <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
                         <FiMessageSquare className="w-5 h-5" />
                         Observaciones y Necesidades
                     </h3>
                     <div className="space-y-4">
-                        {postulante.necesidadesEspeciales && (
+                        {(fullApplication?.student?.specialNeeds || postulante.necesidadesEspeciales) && (
                             <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
                                 <div className="flex items-center gap-2 mb-2">
                                     <FiAlertCircle className="w-5 h-5 text-yellow-600" />
                                     <span className="font-medium text-yellow-800">Necesidades Especiales</span>
                                 </div>
                                 <p className="text-sm text-yellow-700">
-                                    Este estudiante tiene necesidades especiales que requieren atención.
+                                    {fullApplication?.student?.specialNeedsDescription || 'Este estudiante tiene necesidades especiales que requieren atención.'}
                                 </p>
                             </div>
                         )}
