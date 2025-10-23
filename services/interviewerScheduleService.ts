@@ -1,6 +1,7 @@
 import axios from 'axios';
+import { getApiBaseUrl } from '../config/api.config';
 
-const API_BASE_URL = 'http://localhost:8080/api';
+const API_BASE_URL = `${getApiBaseUrl()}/api`;
 
 // Types for the interviewer schedule system
 export interface InterviewerSchedule {

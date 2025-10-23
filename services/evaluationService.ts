@@ -402,7 +402,8 @@ class EvaluationService {
             // Fallback to public endpoint for development
             try {
                 console.log('🔄 Intentando endpoint público...');
-                const response = await fetch(`http://localhost:8080/api/evaluations/public/evaluators/${role}`, {
+                const apiBaseUrl = (await import('../config/api.config')).getApiBaseUrl();
+                const response = await fetch(`${apiBaseUrl}/api/evaluations/public/evaluators/${role}`, {
                     headers: { 'Content-Type': 'application/json' }
                 });
                 if (response.ok) {
@@ -501,7 +502,8 @@ class EvaluationService {
             return response.data;
         } catch (error) {
             // Fallback to public endpoint for development
-            const response = await fetch('http://localhost:8080/api/evaluations/public/assign/bulk', {
+            const apiBaseUrl = (await import('../config/api.config')).getApiBaseUrl();
+            const response = await fetch(`${apiBaseUrl}/api/evaluations/public/assign/bulk`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ applicationIds })
@@ -531,7 +533,8 @@ class EvaluationService {
             return response.data;
         } catch (error) {
             // Fallback to public endpoint for development
-            const response = await fetch('http://localhost:8080/api/evaluations/public/statistics', {
+            const apiBaseUrl = (await import('../config/api.config')).getApiBaseUrl();
+            const response = await fetch(`${apiBaseUrl}/api/evaluations/public/statistics`, {
                 headers: { 'Content-Type': 'application/json' }
             });
             if (response.ok) {

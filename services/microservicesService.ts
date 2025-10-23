@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getApiBaseUrl } from '../config/api.config';
 
 /**
  * Servicio para conectar el frontend con la arquitectura de microservicios REAL
@@ -6,7 +7,7 @@ import axios from 'axios';
  */
 
 // URLs base para arquitectura 100% microservicios - REAL API GATEWAY
-const MICROSERVICES_GATEWAY_URL = 'http://localhost:8080'; // Express API Gateway (Puerto 8080)
+const MICROSERVICES_GATEWAY_URL = getApiBaseUrl(); // Runtime detection: Vercel → Railway, local → localhost:8080
 const GATEWAY_HEALTH_URL = `${MICROSERVICES_GATEWAY_URL}/health`;
 const GATEWAY_STATUS_URL = `${MICROSERVICES_GATEWAY_URL}/gateway/status`;
 const USER_SERVICE_URL = `${MICROSERVICES_GATEWAY_URL}/api/users`; // A través del API Gateway
