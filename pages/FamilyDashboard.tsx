@@ -594,18 +594,18 @@ const FamilyDashboard: React.FC = () => {
                         <FileTextIcon className="w-5 h-5 text-dorado-nazaret" />
                         <div>
                           <span className="font-medium block">
-                            {doc.document_type && DOCUMENT_TYPE_LABELS[doc.document_type as DocumentType]
-                              ? DOCUMENT_TYPE_LABELS[doc.document_type as DocumentType]
-                              : doc.name || doc.document_type}
+                            {(doc.documentType || doc.document_type) && DOCUMENT_TYPE_LABELS[(doc.documentType || doc.document_type) as DocumentType]
+                              ? DOCUMENT_TYPE_LABELS[(doc.documentType || doc.document_type) as DocumentType]
+                              : doc.originalName || doc.name || doc.documentType || doc.document_type}
                           </span>
                           <span className="text-xs text-gris-piedra">
-                            Subido: {new Date(doc.created_at || doc.upload_date).toLocaleDateString('es-CL')}
+                            Subido: {new Date(doc.uploadDate || doc.created_at || doc.upload_date).toLocaleDateString('es-CL')}
                           </span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => handleViewDocument(doc.id, doc.original_name)}
+                          onClick={() => handleViewDocument(doc.id, doc.originalName || doc.original_name)}
                           className="flex items-center gap-2 px-3 py-1.5 text-sm bg-azul-monte-tabor text-white rounded-lg hover:bg-opacity-90 transition-colors"
                           title="Ver documento"
                         >
