@@ -165,7 +165,7 @@ const FamilyDashboard: React.FC = () => {
         const response = await applicationService.getApplicationDocuments(realApplications[0].id);
 
         if (isMounted) {
-          setDocuments(response.documents || []);
+          setDocuments(response.data || []);
         }
       } catch (error) {
         console.error('Error loading documents:', error);
