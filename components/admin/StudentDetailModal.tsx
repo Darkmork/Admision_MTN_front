@@ -708,11 +708,21 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
 
         // Use fullApplication data when available, fallback to postulante
         const studentData = fullApplication?.student || {};
+        console.log('🔍 studentData:', studentData);
+        console.log('🔍 birthDate from studentData:', studentData.birthDate);
+        console.log('🔍 birthDate from postulante:', postulante.fechaNacimiento);
+
         const birthDate = studentData.birthDate || postulante.fechaNacimiento;
         const email = studentData.email || postulante.email;
         const address = studentData.address || postulante.direccion;
         const currentSchool = studentData.currentSchool || postulante.colegioActual;
         const submissionDate = fullApplication?.submissionDate || postulante.fechaPostulacion;
+
+        console.log('✅ Final values:');
+        console.log('  birthDate:', birthDate);
+        console.log('  email:', email);
+        console.log('  address:', address);
+        console.log('  currentSchool:', currentSchool);
 
         // Helper function to format dates safely
         const formatDate = (dateString: string | undefined) => {
