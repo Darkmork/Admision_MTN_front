@@ -836,10 +836,15 @@ class EvaluationService {
 
             // Paso 1: Crear la evaluación
             const createResponse = await api.post('/api/evaluations', {
-                applicationId,
+                applicationId: Number(applicationId), // Asegurar que sea número
                 evaluationType,
+                score: 0, // Score inicial (requerido por el backend)
+                maxScore: 100, // Score máximo (requerido por el backend)
                 status: 'PENDING',
-                evaluationDate: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+                strengths: '',
+                areasForImprovement: '',
+                observations: '',
+                recommendations: ''
             });
 
             const createdEvaluation = createResponse.data.data;
