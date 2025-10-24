@@ -591,6 +591,11 @@ class ApplicationService {
         try {
             console.log('✏️ Actualizando postulación:', applicationId, applicationData);
 
+            // Convertir gradeApplied al formato esperado por el backend
+            if (applicationData.student?.gradeApplied) {
+                applicationData.student.gradeApplied = this.convertGradeFormat(applicationData.student.gradeApplied);
+            }
+
             const response = await api.put(`/api/applications/${applicationId}`, applicationData);
 
             console.log('✅ Postulación actualizada exitosamente:', response.data);
