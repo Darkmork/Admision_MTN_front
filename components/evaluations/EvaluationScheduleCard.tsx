@@ -134,7 +134,7 @@ const EvaluationScheduleCard: React.FC<EvaluationScheduleCardProps> = ({
           <div className="bg-gray-50 rounded-lg p-3">
             <h4 className="font-medium text-gray-900 mb-1">Estudiante</h4>
             <p className="text-sm text-gray-700">
-              {schedule.application.student.firstName} {schedule.application.student.lastName}
+              {schedule.application.student.firstName} {schedule.application.student.paternalLastName || schedule.application.student.lastName || ''} {schedule.application.student.maternalLastName || ''}
             </p>
             <p className="text-xs text-gray-500">
               Postula a: {schedule.application.student.gradeApplied}

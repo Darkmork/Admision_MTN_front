@@ -73,9 +73,9 @@ const CycleDirectorForm: React.FC<CycleDirectorFormProps> = ({
         <h3 className="text-lg font-bold text-azul-monte-tabor mb-2">
           {isInterviewType ? '👥 Entrevista Director/a de Ciclo' : '📊 Informe Director de Ciclo'}
         </h3>
-        {evaluation.application && (
+        {evaluation.application && evaluation.application.student && (
           <div className="text-sm text-gris-piedra">
-            <p><strong>Estudiante:</strong> {evaluation.application.student.firstName} {evaluation.application.student.lastName}</p>
+            <p><strong>Estudiante:</strong> {evaluation.application.student.firstName} {evaluation.application.student.paternalLastName || evaluation.application.student.lastName || ''} {evaluation.application.student.maternalLastName || ''}</p>
             <p><strong>RUT:</strong> {evaluation.application.student.rut}</p>
             <p><strong>Curso al que postula:</strong> {evaluation.application.student.gradeApplied}</p>
           </div>
