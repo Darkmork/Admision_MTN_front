@@ -834,9 +834,10 @@ class EvaluationService {
         try {
             console.log(`🔧 Creating evaluation for application ${applicationId}, type ${evaluationType}`);
 
-            // Paso 1: Crear la evaluación
+            // Paso 1: Crear la evaluación con el evaluatorId
             const createResponse = await api.post('/api/evaluations', {
                 applicationId: Number(applicationId), // Asegurar que sea número
+                evaluatorId: Number(evaluatorId), // ID del evaluador asignado
                 evaluationType,
                 score: 0, // Score inicial (requerido por el backend)
                 maxScore: 100, // Score máximo (requerido por el backend)
