@@ -427,13 +427,17 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
     };
 
     const getDocumentViewUrl = (doc: any) => {
-        // Construir URL para visualizar el documento con token de autenticación
-        const token = localStorage.getItem('auth_token') || localStorage.getItem('admin_token');
-        const baseUrl = 'http://localhost:8080';
-
+        // Documents are now stored in Vercel Blob
+        // filePath contains the direct Vercel Blob URL
         if (doc.filePath) {
-            // Si tenemos filePath, usar endpoint de view
-            return `${baseUrl}/api/applications/documents/view/${doc.id}?token=${token}`;
+            // If filePath is already a full URL (starts with http), use it directly
+            if (doc.filePath.startsWith('http')) {
+                return doc.filePath;
+            }
+
+            // Otherwise, construct gateway URL to fetch from backend
+            const gatewayUrl = import.meta.env.VITE_API_URL || 'https://gateway-service-production-a753.up.railway.app';
+            return `${gatewayUrl}/api/documents/view/${doc.id}`;
         }
 
         return null;
@@ -1464,13 +1468,33 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
-                                                        onClick={() => {
-                                                            const url = getDocumentViewUrl(doc);
-                                                            if (url) {
-                                                                const link = document.createElement('a');
-                                                                link.href = url.replace('/view/', '/download/');
-                                                                link.download = doc.fileName || 'documento.pdf';
-                                                                link.click();
+                                                        onClick={async () => {
+                                                            try {
+                                                                // Use Vercel Blob URL directly for download
+                                                                const url = doc.filePath;
+                                                                if (url && url.startsWith('http')) {
+                                                                    // For Vercel Blob, add download=1 parameter
+                                                                    const downloadUrl = `${url}${url.includes('?') ? '&' : '?'}download=1`;
+                                                                    const link = document.createElement('a');
+                                                                    link.href = downloadUrl;
+                                                                    link.download = doc.fileName || doc.originalName || 'documento.pdf';
+                                                                    link.target = '_blank';
+                                                                    document.body.appendChild(link);
+                                                                    link.click();
+                                                                    document.body.removeChild(link);
+                                                                } else {
+                                                                    // Fallback: use gateway endpoint
+                                                                    const gatewayUrl = import.meta.env.VITE_API_URL || 'https://gateway-service-production-a753.up.railway.app';
+                                                                    const downloadUrl = `${gatewayUrl}/api/documents/${doc.id}/download`;
+                                                                    window.open(downloadUrl, '_blank');
+                                                                }
+                                                            } catch (error) {
+                                                                console.error('Error downloading document:', error);
+                                                                addNotification({
+                                                                    type: 'error',
+                                                                    title: 'Error',
+                                                                    message: 'No se pudo descargar el documento'
+                                                                });
                                                             }
                                                         }}
                                                         title="Descargar documento"
