@@ -1739,7 +1739,7 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                                 {evaluation && (
                                     <div className="space-y-1 text-xs text-gray-600">
                                         {evaluation.score !== null && evaluation.score !== undefined && (
-                                            <p className="font-medium text-blue-600">Puntaje: {evaluation.score}{type.type.includes('EXAM') ? '/100' : ''}</p>
+                                            <p className="font-medium text-blue-600">Puntaje: {evaluation.score}/{evaluation.maxScore || 100}</p>
                                         )}
                                         {evaluation.evaluator && (
                                             <p className="font-medium">{evaluation.evaluator.firstName} {evaluation.evaluator.lastName}</p>

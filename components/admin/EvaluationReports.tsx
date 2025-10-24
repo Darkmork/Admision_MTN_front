@@ -300,8 +300,8 @@ const EvaluationReports: React.FC<EvaluationReportsProps> = ({
       Tipo de Evaluación: ${EVALUATION_TYPE_LABELS[evaluation.evaluationType]}
       Estado: ${EVALUATION_STATUS_LABELS[evaluation.status]}
       Evaluador: ${evaluation.evaluator?.firstName} ${evaluation.evaluator?.lastName}
-      
-      ${evaluation.score ? `Puntaje: ${evaluation.score}/100` : ''}
+
+      ${evaluation.score ? `Puntaje: ${evaluation.score}/${evaluation.maxScore || 100}` : ''}
       ${evaluation.grade ? `Calificación: ${evaluation.grade}` : ''}
       
       Observaciones:
@@ -611,7 +611,7 @@ const EvaluationReports: React.FC<EvaluationReportsProps> = ({
               <div className="bg-gray-50 p-4 rounded-lg">
                 <h4 className="font-semibold mb-2">Calificación</h4>
                 <div className="flex justify-between items-center">
-                  <span>Puntaje: {selectedEvaluation.score}/100</span>
+                  <span>Puntaje: {selectedEvaluation.score}/{selectedEvaluation.maxScore || 100}</span>
                   {selectedEvaluation.grade && <span>Nota: {selectedEvaluation.grade}</span>}
                 </div>
               </div>
