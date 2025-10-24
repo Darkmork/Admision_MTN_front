@@ -257,12 +257,37 @@ export class DataAdapter {
     numberOfElements: number;
     empty: boolean;
   } {
+    // DEFENSIVE: Handle undefined or null response
+    if (!response) {
+      console.error('❌ DataAdapter: response is undefined or null');
+      return {
+        content: [],
+        totalElements: 0,
+        totalPages: 0,
+        number: 0,
+        size: 0,
+        first: true,
+        last: true,
+        numberOfElements: 0,
+        empty: true
+      };
+    }
+
     let users: SimpleMicroserviceUser[] = [];
-    
+
+    // DEFENSIVE: Handle multiple possible response structures
     if (response.data?.success && Array.isArray(response.data.data)) {
       users = response.data.data;
+    } else if (response.data?.success && Array.isArray(response.data.content)) {
+      // Backend may return 'content' field instead of 'data'
+      users = response.data.content;
     } else if (Array.isArray(response.data)) {
       users = response.data;
+    } else if (Array.isArray(response.content)) {
+      // Direct content array
+      users = response.content;
+    } else {
+      console.error('❌ DataAdapter: Unexpected response structure', response);
     }
 
     const adaptedUsers = this.adaptUsers(users);
