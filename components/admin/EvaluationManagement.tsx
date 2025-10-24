@@ -518,9 +518,16 @@ const CustomAssignmentModal: React.FC<CustomAssignmentModalProps> = ({
   };
 
   const handleSubmit = async () => {
-    const validAssignments = assignments.filter(a => a.evaluatorId > 0);
+    // Filtrar solo las asignaciones que tienen evaluador seleccionado Y no están ya asignadas
+    const validAssignments = assignments.filter(a => {
+      const isAlreadyAssigned = existingEvaluations.some(
+        (ev: any) => ev.evaluationType === a.evaluationType
+      );
+      return a.evaluatorId > 0 && !isAlreadyAssigned;
+    });
+
     if (validAssignments.length === 0) {
-      setSubmitMessage({ type: 'error', text: 'Debe asignar al menos un evaluador' });
+      setSubmitMessage({ type: 'error', text: 'Debe asignar al menos un evaluador nuevo. Las evaluaciones ya asignadas no se pueden modificar.' });
       return;
     }
 
