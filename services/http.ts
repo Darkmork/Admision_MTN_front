@@ -299,26 +299,66 @@ class HttpClient {
   // Métodos públicos
   async get<T = any>(url: string, config?: AxiosRequestConfig): Promise<T> {
     const response = await this.client.get<T>(url, config);
+
+    // DEFENSIVE: Validate response exists before accessing data
+    if (!response || !response.data) {
+      console.error('❌ http.ts - GET response or response.data is undefined');
+      console.error('❌ http.ts - URL:', url);
+      throw new Error('No se recibió respuesta válida del servidor');
+    }
+
     return response.data;
   }
 
   async post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
     const response = await this.client.post<T>(url, data, config);
+
+    // DEFENSIVE: Validate response exists before accessing data
+    if (!response || !response.data) {
+      console.error('❌ http.ts - POST response or response.data is undefined');
+      console.error('❌ http.ts - URL:', url);
+      throw new Error('No se recibió respuesta válida del servidor');
+    }
+
     return response.data;
   }
 
   async put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
     const response = await this.client.put<T>(url, data, config);
+
+    // DEFENSIVE: Validate response exists before accessing data
+    if (!response || !response.data) {
+      console.error('❌ http.ts - PUT response or response.data is undefined');
+      console.error('❌ http.ts - URL:', url);
+      throw new Error('No se recibió respuesta válida del servidor');
+    }
+
     return response.data;
   }
 
   async patch<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
     const response = await this.client.patch<T>(url, data, config);
+
+    // DEFENSIVE: Validate response exists before accessing data
+    if (!response || !response.data) {
+      console.error('❌ http.ts - PATCH response or response.data is undefined');
+      console.error('❌ http.ts - URL:', url);
+      throw new Error('No se recibió respuesta válida del servidor');
+    }
+
     return response.data;
   }
 
   async delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<T> {
     const response = await this.client.delete<T>(url, config);
+
+    // DEFENSIVE: Validate response exists before accessing data
+    if (!response || !response.data) {
+      console.error('❌ http.ts - DELETE response or response.data is undefined');
+      console.error('❌ http.ts - URL:', url);
+      throw new Error('No se recibió respuesta válida del servidor');
+    }
+
     return response.data;
   }
 
