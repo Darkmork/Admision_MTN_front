@@ -397,8 +397,11 @@ class EvaluationService {
 
             const response = await api.get(`/api/evaluations/application/${applicationId}`);
 
-            console.log(`✅ ${response.data.length} evaluaciones obtenidas`);
-            return response.data;
+            // Backend returns { success: true, data: [...] }
+            const evaluations = response.data.data || response.data;
+            console.log(`✅ ${evaluations.length} evaluaciones obtenidas`);
+            console.log('Evaluaciones:', evaluations);
+            return evaluations;
         } catch (error: any) {
             console.error('❌ Error obteniendo evaluaciones por application:', error);
             throw new Error(
