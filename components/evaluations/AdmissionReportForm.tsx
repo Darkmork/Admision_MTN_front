@@ -73,53 +73,41 @@ const AdmissionReportForm: React.FC = () => {
                 setIsLoading(true);
                 console.log('🔄 Cargando evaluación para informe:', examId);
 
-                // Cargar desde el backend real
-                const response = await fetch(`http://localhost:8080/api/evaluations/${examId}`, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('professor_token') || localStorage.getItem('auth_token')}`
-                    }
-                });
-
-                if (!response.ok) throw new Error('Error al cargar evaluación');
-
-                const responseData = await response.json();
-                console.log('✅ Respuesta completa desde backend:', responseData);
-
-                // El backend retorna { success: true, data: {...} }
-                const evaluationData = responseData.data || responseData;
-                console.log('✅ Evaluación extraída:', evaluationData);
+                // Cargar usando el servicio (que maneja la URL correctamente)
+                const evaluationData = await professorEvaluationService.getEvaluationById(parseInt(examId));
+                console.log('✅ Evaluación cargada:', evaluationData);
 
                 if (evaluationData) {
                     setEvaluation(evaluationData);
-                    
+
                     // Obtener puntaje máximo por defecto para el tipo de evaluación
-                    const defaultMaxScore = getMaxScore(evaluationData.evaluation_type);
+                    const defaultMaxScore = getMaxScore(evaluationData.evaluationType);
 
                     // Calcular edad
-                    const birthDate = evaluationData.student_birthdate;
+                    const birthDate = evaluationData.studentBirthDate;
                     const age = birthDate ? calculateAge(birthDate) : '';
 
                     // Mapear datos del backend al formato del informe
                     setReportData(prev => ({
                         ...prev,
                         // Datos del estudiante desde el backend
-                        studentName: evaluationData.student_name || '',
-                        gradeApplied: evaluationData.student_grade || '',
+                        studentName: evaluationData.studentName || '',
+                        gradeApplied: evaluationData.studentGrade || '',
                         birthDate: birthDate || '',
                         age: age,
-                        currentSchool: evaluationData.current_school || '',
+                        currentSchool: evaluationData.currentSchool || '',
 
                         // Datos del evaluador
-                        evaluatorName: evaluationData.evaluator_name || (currentProfessor ? `${currentProfessor.firstName} ${currentProfessor.lastName}` : ''),
+                        evaluatorName: evaluationData.evaluatorName || (currentProfessor ? `${currentProfessor.firstName} ${currentProfessor.lastName}` : ''),
 
                         // Datos académicos - usar subject del profesor si está disponible
-                        subject: evaluationData.evaluator_subject ?
-                            getSubjectName(evaluationData.evaluator_subject) :
-                            getSubjectName(evaluationData.evaluation_type),
+                        subject: evaluationData.evaluatorSubject ?
+                            getSubjectName(evaluationData.evaluatorSubject) :
+                            getSubjectName(evaluationData.evaluationType),
                         score: evaluationData.score || 0,
-                        maxScore: evaluationData.max_score || defaultMaxScore,
-                        percentage: evaluationData.score && (evaluationData.max_score || defaultMaxScore) ?
-                            Math.round((evaluationData.score / (evaluationData.max_score || defaultMaxScore)) * 100) : 0,
+                        maxScore: evaluationData.maxScore || defaultMaxScore,
+                        percentage: evaluationData.score && (evaluationData.maxScore || defaultMaxScore) ?
+                            Math.round((evaluationData.score / (evaluationData.maxScore || defaultMaxScore)) * 100) : 0,
 
                         // Campos específicos de evaluación
                         strengths: evaluationData.strengths || '',
@@ -127,7 +115,7 @@ const AdmissionReportForm: React.FC = () => {
                         examAdaptation: '',
                         observations: evaluationData.observations || '',
                         comments: evaluationData.recommendations || '',
-                        areasToWork: evaluationData.areas_for_improvement || ''
+                        areasToWork: evaluationData.areasForImprovement || ''
                     }));
 
                     console.log('✅ Informe cargado con datos:', evaluationData);

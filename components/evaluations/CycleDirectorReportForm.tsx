@@ -6,6 +6,7 @@ import Input from '../ui/Input';
 import { ArrowLeftIcon, SaveIcon, PrinterIcon } from '../icons/Icons';
 import { useNotifications } from '../../context/AppContext';
 import { professorEvaluationService, ProfessorEvaluation } from '../../services/professorEvaluationService';
+import api from '../../services/api';
 
 interface CycleDirectorReportData {
     studentName: string;
@@ -136,17 +137,8 @@ const CycleDirectorReportForm: React.FC = () => {
             console.log('🔄 Cargando información completa del estudiante para application:', applicationId);
 
             // Obtener la aplicación completa que incluye todos los datos del estudiante
-            const response = await fetch(`http://localhost:8080/api/applications/${applicationId}`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('professor_token') || localStorage.getItem('auth_token')}`
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error('Error al obtener información del estudiante');
-            }
-
-            const data = await response.json();
+            const response = await api.get(`/api/applications/${applicationId}`);
+            const data = response.data;
             const application = data.data || data;
 
             console.log('📊 Aplicación completa recibida:', application);
@@ -206,17 +198,8 @@ const CycleDirectorReportForm: React.FC = () => {
             console.log('🔄 Cargando evaluaciones académicas para application:', applicationId);
 
             // Obtener todas las evaluaciones de esta aplicación desde el backend
-            const response = await fetch(`http://localhost:8080/api/evaluations?applicationId=${applicationId}`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('professor_token') || localStorage.getItem('auth_token')}`
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error('Error al obtener evaluaciones');
-            }
-
-            const data = await response.json();
+            const response = await api.get(`/api/evaluations?applicationId=${applicationId}`);
+            const data = response.data;
             const allEvaluations = data.data || data;
 
             console.log('📊 Todas las evaluaciones de la aplicación:', allEvaluations);
