@@ -73,10 +73,22 @@ const UserManagement: React.FC<UserManagementProps> = ({ onBack }) => {
   // Cargar usuarios
   const loadUsers = useCallback(async (filters: UserFiltersType = state.filters, skipOptimalSize: boolean = false) => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
-    
+
     try {
       const response = await userService.getSchoolStaffUsers(filters);
-      
+
+      // DEFENSIVE CHECK: Verify response exists before accessing properties
+      if (!response) {
+        console.error('❌ No se recibió respuesta del servicio de usuarios');
+        setState(prev => ({
+          ...prev,
+          error: 'No se pudo conectar con el servidor',
+          isLoading: false
+        }));
+        showToast('Error al cargar los usuarios: No se pudo conectar con el servidor', 'error');
+        return;
+      }
+
       // Si es la primera carga y no estamos evitando el ajuste automático,
       // ajustar el tamaño de página según el total de usuarios
       let updatedFilters = filters;
@@ -84,34 +96,46 @@ const UserManagement: React.FC<UserManagementProps> = ({ onBack }) => {
         const optimalSize = getOptimalPageSize(response.totalElements);
         if (filters.size !== optimalSize) {
           updatedFilters = { ...filters, size: optimalSize, page: 0 };
-          
+
           // Recargar con el nuevo tamaño óptimo
           const reloadResponse = await userService.getSchoolStaffUsers(updatedFilters);
-          
+
+          // DEFENSIVE CHECK: Verify reload response exists
+          if (!reloadResponse) {
+            console.error('❌ No se recibió respuesta en la recarga de usuarios');
+            setState(prev => ({
+              ...prev,
+              error: 'No se pudo conectar con el servidor',
+              isLoading: false
+            }));
+            showToast('Error al cargar los usuarios: No se pudo conectar con el servidor', 'error');
+            return;
+          }
+
           setState(prev => ({
             ...prev,
-            users: reloadResponse.content,
+            users: reloadResponse.content || [],
             filters: updatedFilters,
             pagination: {
-              page: reloadResponse.number,
-              size: reloadResponse.size,
-              total: reloadResponse.totalElements,
-              totalPages: reloadResponse.totalPages
+              page: reloadResponse.number || 0,
+              size: reloadResponse.size || filters.size,
+              total: reloadResponse.totalElements || 0,
+              totalPages: reloadResponse.totalPages || 0
             },
             isLoading: false
           }));
           return;
         }
       }
-      
+
       setState(prev => ({
         ...prev,
-        users: response.content,
+        users: response.content || [],
         pagination: {
-          page: response.number,
-          size: response.size,
-          total: response.totalElements,
-          totalPages: response.totalPages
+          page: response.number || 0,
+          size: response.size || filters.size,
+          total: response.totalElements || 0,
+          totalPages: response.totalPages || 0
         },
         isLoading: false
       }));
@@ -121,7 +145,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ onBack }) => {
         error: error.message,
         isLoading: false
       }));
-      
+
       showToast('Error al cargar los usuarios', 'error');
     }
   }, [state.filters]);
