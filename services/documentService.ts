@@ -76,11 +76,11 @@ class DocumentService {
             });
 
             const formData = new FormData();
-            formData.append('file', request.file);
+            formData.append('files', request.file); // Backend expects 'files' (array)
+            formData.append('applicationId', String(applicationId));
             formData.append('documentType', request.documentType);
-            formData.append('isRequired', String(request.isRequired || false));
 
-            const response = await api.post(`/api/documents/upload/${applicationId}`, formData, {
+            const response = await api.post(`/api/documents`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
