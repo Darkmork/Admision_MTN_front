@@ -105,6 +105,57 @@ class DocumentService {
         }
     }
 
+    async replaceDocument(documentId: number, newFile: File): Promise<UploadResponse> {
+        try {
+            // Validaciones del lado del cliente
+            if (!newFile) {
+                throw new Error('Debe seleccionar un archivo');
+            }
+
+            if (newFile.size > MAX_FILE_SIZE) {
+                throw new Error('El archivo no puede exceder 10MB');
+            }
+
+            if (!ALLOWED_FILE_TYPES.includes(newFile.type)) {
+                throw new Error('Solo se permiten archivos PDF, JPG y PNG');
+            }
+
+            console.log('🔄 Reemplazando documento:', {
+                documentId,
+                fileName: newFile.name,
+                fileSize: newFile.size
+            });
+
+            const formData = new FormData();
+            formData.append('file', newFile);
+
+            const response = await api.put(`/api/documents/${documentId}`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+
+            console.log('✅ Documento reemplazado exitosamente');
+            return response.data;
+
+        } catch (error: any) {
+            console.error('❌ Error reemplazando documento:', error);
+
+            if (error.response?.status === 400) {
+                const message = error.response?.data?.message || 'Archivo inválido';
+                throw new Error(message);
+            } else if (error.response?.status === 404) {
+                throw new Error('Documento no encontrado');
+            } else if (error.response?.status === 413) {
+                throw new Error('El archivo es demasiado grande');
+            } else if (error.response?.status === 500) {
+                throw new Error('Error del servidor al reemplazar el archivo');
+            }
+
+            throw new Error(error.message || 'Error al reemplazar el documento');
+        }
+    }
+
     async getDocumentsByApplication(applicationId: number): Promise<DocumentResponse[]> {
         try {
             console.log('📋 Obteniendo documentos para aplicación:', applicationId);
