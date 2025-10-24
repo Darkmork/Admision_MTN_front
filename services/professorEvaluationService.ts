@@ -236,14 +236,34 @@ class ProfessorEvaluationService {
             return apiEvaluation.studentName;
         }
 
-        // Luego intentar obtener del estudiante directo
-        if (apiEvaluation.student) {
-            return `${apiEvaluation.student.firstName || ''} ${apiEvaluation.student.lastName || ''}`.trim();
+        // Intentar obtener del estudiante anidado en application (PRIORIDAD)
+        if (apiEvaluation.application?.student) {
+            const student = apiEvaluation.application.student;
+            const firstName = student.firstName || '';
+            const paternalLastName = student.paternalLastName || '';
+            const maternalLastName = student.maternalLastName || '';
+            const fullName = `${firstName} ${paternalLastName} ${maternalLastName}`.trim();
+            if (fullName) return fullName;
+
+            // Fallback a lastName si existe
+            if (student.lastName) {
+                return `${firstName} ${student.lastName}`.trim();
+            }
         }
 
-        // Finalmente intentar obtener del estudiante anidado en application
-        if (apiEvaluation.application?.student) {
-            return `${apiEvaluation.application.student.firstName || ''} ${apiEvaluation.application.student.lastName || ''}`.trim();
+        // Luego intentar obtener del estudiante directo
+        if (apiEvaluation.student) {
+            const student = apiEvaluation.student;
+            const firstName = student.firstName || '';
+            const paternalLastName = student.paternalLastName || '';
+            const maternalLastName = student.maternalLastName || '';
+            const fullName = `${firstName} ${paternalLastName} ${maternalLastName}`.trim();
+            if (fullName) return fullName;
+
+            // Fallback a lastName si existe
+            if (student.lastName) {
+                return `${firstName} ${student.lastName}`.trim();
+            }
         }
 
         return 'Estudiante no especificado';
