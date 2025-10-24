@@ -1407,17 +1407,24 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                                                 }`}
                                             >
                                                 <div className="flex items-center gap-3 flex-1">
-                                                    <label className={`flex items-center ${isLocked ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={isLocked || documentApprovalStatus[originalIndex] || false}
-                                                            onChange={() => toggleDocumentApproval(originalIndex)}
-                                                            disabled={isLocked}
-                                                            className={`w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500 ${
-                                                                isLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
-                                                            }`}
-                                                        />
-                                                    </label>
+                                                    {/* Status Button (replaces checkbox) */}
+                                                    <button
+                                                        onClick={() => !isLocked && toggleDocumentApproval(originalIndex)}
+                                                        disabled={isLocked}
+                                                        className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                                                            isLocked
+                                                                ? 'bg-green-600 text-white cursor-not-allowed shadow-md'
+                                                                : isApproved
+                                                                ? 'bg-green-500 text-white hover:bg-green-600 cursor-pointer shadow-sm'
+                                                                : isRejected
+                                                                ? 'bg-red-500 text-white hover:bg-red-600 cursor-pointer shadow-sm'
+                                                                : 'bg-gray-400 text-white hover:bg-gray-500 cursor-pointer shadow-sm'
+                                                        }`}
+                                                        title={isLocked ? 'Documento bloqueado' : 'Click para cambiar estado'}
+                                                    >
+                                                        {isLocked ? '🔒 Aprobado' : isApproved ? '✓ Aprobado' : isRejected ? '✗ Rechazado' : '⏱ Pendiente'}
+                                                    </button>
+
                                                     <FiFileText className={`w-4 h-4 ${
                                                         isLocked ? 'text-green-700' :
                                                         isApproved ? 'text-green-600' :
@@ -1430,33 +1437,10 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                                                         </span>
                                                         <div className="text-xs text-gray-500">
                                                             {doc.name || 'Tipo no especificado'}
-                                                            {isLocked && (
-                                                                <span className="ml-2 text-green-700 font-semibold">
-                                                                    🔒 BLOQUEADO
-                                                                </span>
-                                                            )}
                                                         </div>
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center gap-2">
-                                                    {isLocked && (
-                                                        <Badge variant="success" size="xs">
-                                                            <FiCheckCircle className="w-3 h-3 mr-1 inline" />
-                                                            Aprobado Permanente
-                                                        </Badge>
-                                                    )}
-                                                    {!isLocked && isApproved && (
-                                                        <Badge variant="success" size="xs">
-                                                            <FiCheckCircle className="w-3 h-3 mr-1 inline" />
-                                                            Aprobado
-                                                        </Badge>
-                                                    )}
-                                                    {!isLocked && isRejected && (
-                                                        <Badge variant="error" size="xs">
-                                                            <FiX className="w-3 h-3 mr-1 inline" />
-                                                            Rechazado
-                                                        </Badge>
-                                                    )}
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"

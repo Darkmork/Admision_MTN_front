@@ -466,8 +466,8 @@ class InterviewService {
     try {
       console.log('🔄 Getting interviews for application:', applicationId);
 
-      // Use query parameter for more efficient filtering
-      const response = await api.get<any>(`${this.baseUrl}?applicationId=${applicationId}`);
+      // Use path parameter (backend expects /api/interviews/application/:applicationId)
+      const response = await api.get<any>(`${this.baseUrl}/application/${applicationId}`);
 
       console.log(`📋 Direct response for application ${applicationId}:`, response.data);
 
