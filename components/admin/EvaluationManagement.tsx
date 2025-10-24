@@ -446,6 +446,8 @@ const CustomAssignmentModal: React.FC<CustomAssignmentModalProps> = ({
   const [assignments, setAssignments] = useState<EvaluatorAssignment[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [existingEvaluations, setExistingEvaluations] = useState<Evaluation[]>([]);
+  const [isLoadingEvaluations, setIsLoadingEvaluations] = useState(false);
 
   const requiredEvaluations = [
     EvaluationType.LANGUAGE_EXAM,
@@ -456,11 +458,22 @@ const CustomAssignmentModal: React.FC<CustomAssignmentModalProps> = ({
   ];
 
   useEffect(() => {
-    // Initialize assignments when modal opens
+    // Load evaluations for this application when modal opens
     if (isOpen) {
+      loadExistingEvaluations();
+    }
+  }, [isOpen, application.id]);
+
+  const loadExistingEvaluations = async () => {
+    try {
+      setIsLoadingEvaluations(true);
+      // Cargar evaluaciones existentes para esta application desde evaluation-service
+      const evals = await evaluationService.getEvaluationsByApplicationId(application.id);
+      setExistingEvaluations(evals);
+
+      // Inicializar assignments con las evaluaciones existentes
       const initialAssignments = requiredEvaluations.map(type => {
-        // Buscar si ya existe una evaluación asignada para este tipo
-        const existingEvaluation = application.evaluations?.find(
+        const existingEvaluation = evals.find(
           (ev: any) => ev.evaluationType === type
         );
 
@@ -473,10 +486,22 @@ const CustomAssignmentModal: React.FC<CustomAssignmentModalProps> = ({
         };
       });
       setAssignments(initialAssignments);
-      setSubmitMessage(null); // Limpiar mensajes previos
+      setSubmitMessage(null);
       setIsSubmitting(false);
+    } catch (error) {
+      console.error('Error loading evaluations:', error);
+      // Si hay error, inicializar sin evaluaciones existentes
+      const initialAssignments = requiredEvaluations.map(type => ({
+        evaluationType: type,
+        evaluatorId: 0,
+        evaluatorName: ''
+      }));
+      setAssignments(initialAssignments);
+      setExistingEvaluations([]);
+    } finally {
+      setIsLoadingEvaluations(false);
     }
-  }, [isOpen]);
+  };
 
   const updateAssignment = (evaluationType: EvaluationType, evaluatorId: number) => {
     const evaluator = evaluators.find(e => e.id === evaluatorId);
@@ -546,12 +571,19 @@ const CustomAssignmentModal: React.FC<CustomAssignmentModalProps> = ({
             Asignar Evaluadores
           </h4>
 
+          {isLoadingEvaluations ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-azul-monte-tabor mx-auto mb-4"></div>
+              <p className="text-gray-600">Cargando evaluaciones existentes...</p>
+            </div>
+          ) : (
+            <>
           {requiredEvaluations.map(evaluationType => {
             const availableEvaluators = getEvaluatorsByType(evaluationType);
             const assignment = assignments.find(a => a.evaluationType === evaluationType);
 
             // Verificar si ya existe una evaluación asignada para este tipo
-            const existingEvaluation = application.evaluations?.find(
+            const existingEvaluation = existingEvaluations.find(
               (ev: any) => ev.evaluationType === evaluationType
             );
             const isAlreadyAssigned = !!existingEvaluation;
@@ -610,6 +642,8 @@ const CustomAssignmentModal: React.FC<CustomAssignmentModalProps> = ({
               </div>
             );
           })}
+            </>
+          )}
         </div>
 
         {/* Mensaje de feedback */}
