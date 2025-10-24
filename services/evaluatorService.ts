@@ -98,39 +98,51 @@ export const evaluatorService = {
     }
   },
 
-  // Asignar evaluaciones automáticamente a una aplicación
-  async assignEvaluationsToApplication(applicationId: number): Promise<Evaluation[]> {
-    try {
-      const response = await api.post(`/api/evaluations/assign/${applicationId}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error assigning evaluations to application:', error);
-      throw error;
-    }
-  },
-
-  // Asignar evaluaciones automáticamente (endpoint público)
-  async assignEvaluationsToApplicationPublic(applicationId: number): Promise<any> {
-    try {
-      const response = await api.post(`/api/evaluations/public/assign/${applicationId}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error assigning evaluations (public):', error);
-      throw error;
-    }
-  },
-
-  // Asignar evaluación específica a evaluador específico
+  /**
+   * ✅ CORREGIDO: Crear y asignar evaluación en dos pasos
+   * Paso 1: Crear evaluación con POST /api/evaluations
+   * Paso 2: Asignar evaluación con POST /api/evaluations/:id/assign
+   *
+   * NOTA: El endpoint anterior /api/evaluations/assign/:applicationId/:evaluationType/:evaluatorId
+   * NO EXISTE en el backend. Este método implementa el flujo correcto.
+   */
   async assignSpecificEvaluation(
-    applicationId: number, 
-    evaluationType: string, 
+    applicationId: number,
+    evaluationType: string,
     evaluatorId: number
   ): Promise<Evaluation> {
     try {
-      const response = await api.post(`/api/evaluations/assign/${applicationId}/${evaluationType}/${evaluatorId}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error assigning specific evaluation:', error);
+      console.log(`🔧 Creating evaluation for application ${applicationId}, type ${evaluationType}`);
+
+      // Paso 1: Crear la evaluación
+      const createResponse = await api.post('/api/evaluations', {
+        applicationId,
+        evaluationType,
+        status: 'PENDING',
+        evaluationDate: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+      });
+
+      const createdEvaluation = createResponse.data.data;
+      const evaluationId = createdEvaluation.id;
+
+      console.log(`✅ Evaluation created with ID: ${evaluationId}`);
+      console.log(`👨‍🏫 Assigning to evaluator ${evaluatorId}...`);
+
+      // Paso 2: Asignar al evaluador
+      const assignResponse = await api.post(`/api/evaluations/${evaluationId}/assign`, {
+        evaluatorId,
+        evaluationDate: new Date().toISOString().split('T')[0],
+      });
+
+      console.log('✅ Evaluation assigned successfully');
+      return assignResponse.data.data;
+    } catch (error: any) {
+      console.error('❌ Error assigning specific evaluation:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
       throw error;
     }
   },
@@ -146,55 +158,42 @@ export const evaluatorService = {
     }
   },
 
-  // Obtener evaluaciones detalladas de una aplicación
-  async getDetailedEvaluationsByApplication(applicationId: number): Promise<Evaluation[]> {
+  /**
+   * ✅ CORREGIDO: Obtener evaluaciones por evaluador
+   * Endpoint: GET /api/evaluations/evaluator/:evaluatorId
+   */
+  async getEvaluationsByEvaluator(evaluatorId: number): Promise<Evaluation[]> {
     try {
-      const response = await api.get(`/api/evaluations/application/${applicationId}/detailed`);
-      return response.data;
+      const response = await api.get(`/api/evaluations/evaluator/${evaluatorId}`);
+      return response.data.data;
     } catch (error) {
-      console.error('Error getting detailed evaluations by application:', error);
+      console.error('Error getting evaluations by evaluator:', error);
       throw error;
     }
   },
 
-  // Obtener progreso de evaluaciones de una aplicación
-  async getEvaluationProgress(applicationId: number): Promise<EvaluationProgress> {
+  /**
+   * ✅ CORREGIDO: Obtener evaluaciones pendientes por evaluador
+   * Endpoint: GET /api/evaluations/evaluator/:id/pending
+   */
+  async getPendingEvaluationsByEvaluator(evaluatorId: number): Promise<Evaluation[]> {
     try {
-      const response = await api.get(`/api/evaluations/application/${applicationId}/progress`);
-      return response.data;
+      const response = await api.get(`/api/evaluations/evaluator/${evaluatorId}/pending`);
+      return response.data.data;
     } catch (error) {
-      console.error('Error getting evaluation progress:', error);
+      console.error('Error getting pending evaluations by evaluator:', error);
       throw error;
     }
   },
 
-  // Obtener evaluaciones del evaluador actual
-  async getMyEvaluations(): Promise<Evaluation[]> {
-    try {
-      const response = await api.get('/api/evaluations/my-evaluations');
-      return response.data;
-    } catch (error) {
-      console.error('Error getting my evaluations:', error);
-      throw error;
-    }
-  },
-
-  // Obtener evaluaciones pendientes del evaluador actual
-  async getMyPendingEvaluations(): Promise<Evaluation[]> {
-    try {
-      const response = await api.get('/api/evaluations/my-pending');
-      return response.data;
-    } catch (error) {
-      console.error('Error getting my pending evaluations:', error);
-      throw error;
-    }
-  },
-
-  // Actualizar evaluación
+  /**
+   * ✅ CORREGIDO: Actualizar evaluación
+   * Endpoint: PUT /api/evaluations/:id
+   */
   async updateEvaluation(evaluationId: number, evaluationData: Partial<Evaluation>): Promise<Evaluation> {
     try {
       const response = await api.put(`/api/evaluations/${evaluationId}`, evaluationData);
-      return response.data;
+      return response.data.data;
     } catch (error) {
       console.error('Error updating evaluation:', error);
       throw error;
@@ -216,67 +215,115 @@ export const evaluatorService = {
   async getEvaluationById(evaluationId: number): Promise<Evaluation> {
     try {
       const response = await api.get(`/api/evaluations/${evaluationId}`);
-      return response.data;
+      return response.data.data;
     } catch (error) {
       console.error('Error getting evaluation by ID:', error);
       throw error;
     }
   },
 
-  // Asignación masiva de evaluaciones
-  async assignBulkEvaluations(request: BulkAssignmentRequest): Promise<BulkAssignmentResult> {
+  /**
+   * ✅ CORREGIDO: Asignar evaluación existente a evaluador
+   * Endpoint: POST /api/evaluations/:id/assign
+   * NOTA: Este reemplaza el antiguo reassignEvaluation
+   */
+  async assignEvaluation(
+    evaluationId: number,
+    evaluatorId: number,
+    evaluationDate?: string
+  ): Promise<Evaluation> {
     try {
-      const response = await api.post('/api/evaluations/assign/bulk', request);
-      return response.data;
+      const response = await api.post(`/api/evaluations/${evaluationId}/assign`, {
+        evaluatorId,
+        evaluationDate: evaluationDate || new Date().toISOString().split('T')[0],
+      });
+      return response.data.data;
     } catch (error) {
-      console.error('Error assigning bulk evaluations:', error);
+      console.error('Error assigning evaluation:', error);
       throw error;
     }
   },
 
-  // Asignación masiva (endpoint público)
-  async assignBulkEvaluationsPublic(request: BulkAssignmentRequest): Promise<BulkAssignmentResult> {
-    try {
-      const response = await api.post('/api/evaluations/public/assign/bulk', request);
-      return response.data;
-    } catch (error) {
-      console.error('Error assigning bulk evaluations (public):', error);
-      throw error;
-    }
-  },
-
-  // Reasignar evaluación a otro evaluador
-  async reassignEvaluation(evaluationId: number, newEvaluatorId: number): Promise<Evaluation> {
-    try {
-      const response = await api.put(`/api/evaluations/${evaluationId}/reassign/${newEvaluatorId}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error reassigning evaluation:', error);
-      throw error;
-    }
-  },
-
-  // Obtener estadísticas de evaluaciones
+  /**
+   * ✅ CORREGIDO: Obtener estadísticas
+   * Endpoint: GET /api/evaluations/statistics
+   */
   async getEvaluationStatistics(): Promise<EvaluationStatistics> {
     try {
       const response = await api.get('/api/evaluations/statistics');
-      return response.data;
+      return response.data.data;
     } catch (error) {
       console.error('Error getting evaluation statistics:', error);
       throw error;
     }
   },
 
-  // Obtener estadísticas (endpoint público)
-  async getEvaluationStatisticsPublic(): Promise<EvaluationStatistics> {
+  /**
+   * ✅ NUEVO: Obtener todas las evaluaciones
+   * Endpoint: GET /api/evaluations
+   */
+  async getAllEvaluations(): Promise<Evaluation[]> {
     try {
-      const response = await api.get('/api/evaluations/public/statistics');
-      return response.data;
+      const response = await api.get('/api/evaluations');
+      return response.data.data;
     } catch (error) {
-      console.error('Error getting evaluation statistics (public):', error);
+      console.error('Error getting all evaluations:', error);
       throw error;
     }
-  }
+  },
+
+  /**
+   * ✅ NUEVO: Completar evaluación
+   * Endpoint: POST /api/evaluations/:id/complete
+   */
+  async completeEvaluation(
+    evaluationId: number,
+    data: {
+      score?: number;
+      recommendations?: string;
+      observations?: string;
+    }
+  ): Promise<Evaluation> {
+    try {
+      const response = await api.post(`/api/evaluations/${evaluationId}/complete`, data);
+      return response.data.data;
+    } catch (error) {
+      console.error('Error completing evaluation:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * ✅ NUEVO: Cancelar evaluación
+   * Endpoint: POST /api/evaluations/:id/cancel
+   */
+  async cancelEvaluation(evaluationId: number, reason?: string): Promise<Evaluation> {
+    try {
+      const response = await api.post(`/api/evaluations/${evaluationId}/cancel`, {
+        reason
+      });
+      return response.data.data;
+    } catch (error) {
+      console.error('Error canceling evaluation:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * ✅ NUEVO: Reprogramar evaluación
+   * Endpoint: POST /api/evaluations/:id/reschedule
+   */
+  async rescheduleEvaluation(evaluationId: number, evaluationDate: string): Promise<Evaluation> {
+    try {
+      const response = await api.post(`/api/evaluations/${evaluationId}/reschedule`, {
+        evaluationDate
+      });
+      return response.data.data;
+    } catch (error) {
+      console.error('Error rescheduling evaluation:', error);
+      throw error;
+    }
+  },
 };
 
 // Constantes para los tipos y estados
