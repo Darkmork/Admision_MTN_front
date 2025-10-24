@@ -109,16 +109,24 @@ api.interceptors.request.use(
 
 // Interceptor para manejar errores
 api.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        // DEFENSIVE: Validate response exists before returning
+        if (!response) {
+            console.error('❌ api.ts interceptor: response is undefined');
+            return Promise.reject(new Error('No se recibió respuesta del servidor'));
+        }
+        return response;
+    },
     (error) => {
         console.error('API Error:', error);
-        
+
         if (error.response) {
             // El servidor respondió con un código de estado fuera del rango 2xx
-            console.error('Error response:', error.response.data);
+            // DEFENSIVE: Validate error.response.data exists before accessing
+            console.error('Error response:', error.response?.data || 'No response data');
             console.error('Error status:', error.response.status);
             console.error('Error headers:', error.response.headers);
-            console.error('Request data:', error.config.data);
+            console.error('Request data:', error.config?.data || 'No request data');
             
             // Si es 401, limpiar la sesión correspondiente y redirigir
             if (error.response.status === 401) {
@@ -156,7 +164,8 @@ api.interceptors.response.use(
 
             // Si es 403, puede ser un CSRF token inválido
             if (error.response.status === 403) {
-                const errorMessage = error.response.data?.error || '';
+                // DEFENSIVE: Use optional chaining for error.response.data
+                const errorMessage = error.response?.data?.error || '';
                 if (errorMessage.toLowerCase().includes('csrf') || errorMessage.toLowerCase().includes('invalid token')) {
                     console.warn('🛡️ CSRF token invalid or missing - clearing token');
                     csrfService.clearToken();

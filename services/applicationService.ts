@@ -316,8 +316,8 @@ class ApplicationService {
             const response = await api.get(`/api/applications/${id}`);
             console.log('📄 Respuesta completa del backend:', response.data);
 
-            // El backend devuelve los datos directamente, no en response.data.data
-            return response.data;
+            // Desempaquetar el wrapper {success, data, timestamp} si existe
+            return response.data.data || response.data;
 
         } catch (error: any) {
             console.error('❌ Error obteniendo postulación:', error);

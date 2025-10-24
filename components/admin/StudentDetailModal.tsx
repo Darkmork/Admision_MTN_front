@@ -892,9 +892,7 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                         <FiUser className="w-5 h-5 text-green-600 mt-0.5" />
                         <div className="flex-1">
                             <h4 className="font-semibold text-gray-900">
-                                {guardianData.firstName && guardianData.lastName
-                                    ? `${guardianData.firstName} ${guardianData.lastName}`
-                                    : postulante.nombreContactoPrincipal || 'No especificado'}
+                                {guardianData.fullName || postulante.nombreContactoPrincipal || 'No especificado'}
                             </h4>
                             <p className="text-sm text-gray-600 mb-2">
                                 Relación: {guardianData.relationship || postulante.relacionContacto || 'No especificada'}
@@ -930,14 +928,12 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                     </h3>
                     <div className="bg-blue-50 p-4 rounded-lg">
                         <h4 className="font-semibold text-gray-900 mb-2">
-                            {fatherData.firstName && fatherData.lastName
-                                ? `${fatherData.firstName} ${fatherData.lastName}`
-                                : postulante.nombrePadre || 'No especificado'}
+                            {fatherData.fullName || postulante.nombrePadre || 'No especificado'}
                         </h4>
                         <div className="space-y-2 text-sm">
                             <div className="flex items-center gap-2">
                                 <FiBriefcase className="w-4 h-4 text-gray-400" />
-                                <span>Profesión: {fatherData.occupation || postulante.profesionPadre || 'No especificada'}</span>
+                                <span>Profesión: {fatherData.profession || postulante.profesionPadre || 'No especificada'}</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <FiPhone className="w-4 h-4 text-gray-400" />
@@ -965,14 +961,12 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                     </h3>
                     <div className="bg-pink-50 p-4 rounded-lg">
                         <h4 className="font-semibold text-gray-900 mb-2">
-                            {motherData.firstName && motherData.lastName
-                                ? `${motherData.firstName} ${motherData.lastName}`
-                                : postulante.nombreMadre || 'No especificado'}
+                            {motherData.fullName || postulante.nombreMadre || 'No especificado'}
                         </h4>
                         <div className="space-y-2 text-sm">
                             <div className="flex items-center gap-2">
                                 <FiBriefcase className="w-4 h-4 text-gray-400" />
-                                <span>Profesión: {motherData.occupation || postulante.profesionMadre || 'No especificada'}</span>
+                                <span>Profesión: {motherData.profession || postulante.profesionMadre || 'No especificada'}</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <FiPhone className="w-4 h-4 text-gray-400" />
