@@ -405,27 +405,41 @@ const EvaluationForm: React.FC = () => {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-medium text-gris-piedra">Nombre Completo</label>
-              <p className="text-lg font-semibold">{evaluation.student_name}</p>
+              <label className="text-sm font-medium text-gris-piedra">Nombre:</label>
+              <p className="text-lg font-semibold">{evaluation.studentName || 'No disponible'}</p>
             </div>
             <div>
-              <label className="text-sm font-medium text-gris-piedra">Curso Postulado</label>
-              <p className="text-lg font-semibold">{evaluation.student_grade}</p>
+              <label className="text-sm font-medium text-gris-piedra">Fecha de Nacimiento:</label>
+              <p className="text-lg">
+                {evaluation.studentBirthDate
+                  ? new Date(evaluation.studentBirthDate).toLocaleDateString('es-CL')
+                  : 'No disponible'}
+              </p>
             </div>
-            {evaluation.current_school && (
-              <div>
-                <label className="text-sm font-medium text-gris-piedra">Colegio Actual</label>
-                <p className="text-lg">{evaluation.current_school}</p>
-              </div>
-            )}
-            {evaluation.student_birthdate && (
-              <div>
-                <label className="text-sm font-medium text-gris-piedra">Fecha de Nacimiento</label>
-                <p className="text-lg">
-                  {new Date(evaluation.student_birthdate).toLocaleDateString('es-CL')}
-                </p>
-              </div>
-            )}
+            <div>
+              <label className="text-sm font-medium text-gris-piedra">Edad:</label>
+              <p className="text-lg">
+                {evaluation.studentBirthDate
+                  ? `${Math.floor((new Date().getTime() - new Date(evaluation.studentBirthDate).getTime()) / (365.25 * 24 * 60 * 60 * 1000))} años`
+                  : 'No disponible'}
+              </p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gris-piedra">Colegio Actual:</label>
+              <p className="text-lg">{evaluation.currentSchool || 'No disponible'}</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gris-piedra">Curso al que postula:</label>
+              <p className="text-lg font-semibold">{evaluation.studentGrade || 'No disponible'}</p>
+            </div>
+            <div className="md:col-span-2 border-t pt-4 mt-2">
+              <label className="text-sm font-medium text-gris-piedra">Profesor evaluador:</label>
+              <p className="text-lg font-semibold">{evaluation.evaluatorName || 'No disponible'}</p>
+            </div>
+            <div className="md:col-span-2">
+              <label className="text-sm font-medium text-gris-piedra">Asignatura:</label>
+              <p className="text-lg">{evaluation.evaluatorSubject || 'No disponible'}</p>
+            </div>
           </div>
         </Card>
 

@@ -22,6 +22,8 @@ export interface ProfessorEvaluation {
     recommendations?: string;
     requiresFollowUp?: boolean;
     followUpNotes?: string;
+    evaluatorName?: string;
+    evaluatorSubject?: string;
     application?: {
         student?: {
             birthDate?: string;
@@ -208,6 +210,8 @@ class ProfessorEvaluationService {
             recommendations: apiEvaluation.recommendations,
             requiresFollowUp: apiEvaluation.requiresFollowUp,
             followUpNotes: apiEvaluation.followUpNotes,
+            evaluatorName: this.getEvaluatorName(apiEvaluation),
+            evaluatorSubject: this.getEvaluatorSubject(apiEvaluation),
             application: apiEvaluation.application
         };
         
@@ -312,19 +316,34 @@ class ProfessorEvaluationService {
     }
     
     private getCurrentSchool(apiEvaluation: any): string | undefined {
-        // Primero intentar del campo directo (snake_case y camelCase)
-        if (apiEvaluation.current_school) return apiEvaluation.current_school;
-        if (apiEvaluation.currentSchool) return apiEvaluation.currentSchool;
-
-        // Luego intentar de application.student
+        // Primero intentar de application.student (PRIORIDAD - lo que retorna el backend ahora)
         if (apiEvaluation.application?.student?.currentSchool) return apiEvaluation.application.student.currentSchool;
         if (apiEvaluation.application?.student?.current_school) return apiEvaluation.application.student.current_school;
+
+        // Luego intentar del campo directo (snake_case y camelCase)
+        if (apiEvaluation.current_school) return apiEvaluation.current_school;
+        if (apiEvaluation.currentSchool) return apiEvaluation.currentSchool;
 
         // Finalmente intentar del estudiante directo
         if (apiEvaluation.student?.currentSchool) return apiEvaluation.student.currentSchool;
         if (apiEvaluation.student?.current_school) return apiEvaluation.student.current_school;
 
         return undefined;
+    }
+
+    private getEvaluatorName(apiEvaluation: any): string | undefined {
+        // Obtener nombre del evaluador
+        if (apiEvaluation.evaluator) {
+            const firstName = apiEvaluation.evaluator.firstName || '';
+            const lastName = apiEvaluation.evaluator.lastName || '';
+            return `${firstName} ${lastName}`.trim() || undefined;
+        }
+        return undefined;
+    }
+
+    private getEvaluatorSubject(apiEvaluation: any): string | undefined {
+        // Obtener asignatura del evaluador
+        return apiEvaluation.evaluator?.subject || undefined;
     }
 }
 
