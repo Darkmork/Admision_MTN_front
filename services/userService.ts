@@ -55,7 +55,13 @@ class UserService {
       console.log('👤 Obteniendo usuario por ID:', id);
 
       const response = await api.get(`/api/users/${id}`);
-      
+
+      // DEFENSIVE: Validate response exists
+      if (!response || !response.data) {
+        console.error('❌ getUserById: response or response.data is undefined');
+        throw new Error('No se recibió respuesta válida del servidor');
+      }
+
       console.log('✅ Usuario obtenido exitosamente');
       return response.data;
 
@@ -73,7 +79,13 @@ class UserService {
       console.log('➕ Creando usuario:', request.email);
 
       const response = await api.post('/api/users', request);
-      
+
+      // DEFENSIVE: Validate response exists
+      if (!response || !response.data) {
+        console.error('❌ createUser: response or response.data is undefined');
+        throw new Error('No se recibió respuesta válida del servidor');
+      }
+
       console.log('✅ Usuario creado exitosamente');
       return response.data;
 
@@ -91,7 +103,13 @@ class UserService {
       console.log('✏️ Actualizando usuario:', id);
 
       const response = await api.put(`/api/users/${id}`, request);
-      
+
+      // DEFENSIVE: Validate response exists
+      if (!response || !response.data) {
+        console.error('❌ updateUser: response or response.data is undefined');
+        throw new Error('No se recibió respuesta válida del servidor');
+      }
+
       console.log('✅ Usuario actualizado exitosamente');
       return response.data;
 
@@ -143,7 +161,13 @@ class UserService {
       console.log('🔓 Activando usuario:', id);
 
       const response = await api.put(`/api/users/${id}/activate`);
-      
+
+      // DEFENSIVE: Validate response exists
+      if (!response || !response.data) {
+        console.error('❌ activateUser: response or response.data is undefined');
+        throw new Error('No se recibió respuesta válida del servidor');
+      }
+
       console.log('✅ Usuario activado exitosamente');
       return response.data;
 
@@ -178,7 +202,14 @@ class UserService {
       console.log('📋 Obteniendo roles disponibles');
 
       const response = await api.get('/api/users/roles');
-      
+
+      // DEFENSIVE: Validate response exists
+      if (!response || !response.data) {
+        console.error('❌ getAllRoles: response or response.data is undefined');
+        // Fallback a los roles definidos en el frontend
+        return Object.values(UserRole);
+      }
+
       console.log('✅ Roles obtenidos exitosamente');
       return response.data;
 
@@ -197,7 +228,13 @@ class UserService {
       console.log('📊 Obteniendo estadísticas de usuarios');
 
       const response = await api.get('/api/users/stats');
-      
+
+      // DEFENSIVE: Validate response exists
+      if (!response || !response.data) {
+        console.error('❌ getUserStats: response or response.data is undefined');
+        throw new Error('No se recibió respuesta válida del servidor');
+      }
+
       console.log('✅ Estadísticas obtenidas exitosamente');
       return response.data;
 
@@ -386,6 +423,12 @@ class UserService {
       console.log('👨‍🏫 Obteniendo usuarios del colegio desde endpoint público');
 
       const response = await api.get('/api/users/public/school-staff');
+
+      // DEFENSIVE: Validate response exists
+      if (!response || !response.data) {
+        console.error('❌ getSchoolStaffUsersPublic: response or response.data is undefined');
+        throw new Error('No se recibió respuesta válida del servidor');
+      }
 
       console.log('✅ Respuesta del endpoint público:', response.data);
       return response.data;
