@@ -819,6 +819,54 @@ class EvaluationService {
         }
     }
 
+    /**
+     * ✅ NUEVO: Crear y asignar evaluación específica (flujo de 2 pasos)
+     * Paso 1: Crear evaluación con POST /api/evaluations
+     * Paso 2: Asignar evaluación con POST /api/evaluations/:id/assign
+     *
+     * Este método es útil para el dashboard de admin cuando se asignan evaluadores a estudiantes.
+     */
+    async assignSpecificEvaluation(
+        applicationId: number,
+        evaluationType: string,
+        evaluatorId: number
+    ): Promise<Evaluation> {
+        try {
+            console.log(`🔧 Creating evaluation for application ${applicationId}, type ${evaluationType}`);
+
+            // Paso 1: Crear la evaluación
+            const createResponse = await api.post('/api/evaluations', {
+                applicationId,
+                evaluationType,
+                status: 'PENDING',
+                evaluationDate: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+            });
+
+            const createdEvaluation = createResponse.data.data;
+            const evaluationId = createdEvaluation.id;
+
+            console.log(`✅ Evaluation created with ID: ${evaluationId}`);
+            console.log(`👨‍🏫 Assigning to evaluator ${evaluatorId}...`);
+
+            // Paso 2: Asignar al evaluador
+            const assignResponse = await api.post(`/api/evaluations/${evaluationId}/assign`, {
+                evaluatorId,
+                evaluationDate: new Date().toISOString().split('T')[0],
+            });
+
+            console.log('✅ Evaluation assigned successfully');
+            return assignResponse.data.data;
+        } catch (error: any) {
+            console.error('❌ Error assigning specific evaluation:', error);
+            console.error('Error details:', {
+                message: error.message,
+                response: error.response?.data,
+                status: error.response?.status,
+            });
+            throw error;
+        }
+    }
+
     // ============= MÉTODOS AUXILIARES =============
 
     getEvaluationTypeLabel(type: EvaluationType): string {
