@@ -593,7 +593,7 @@ class ApplicationService {
 
             // Convertir gradeApplied al formato esperado por el backend
             if (applicationData.student?.gradeApplied) {
-                applicationData.student.gradeApplied = this.convertGradeFormat(applicationData.student.gradeApplied);
+                applicationData.student.gradeApplied = this.transformGradeToBackend(applicationData.student.gradeApplied);
             }
 
             const response = await api.put(`/api/applications/${applicationId}`, applicationData);
