@@ -1403,7 +1403,8 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                                         const isApproved = documentApprovalStatus[originalIndex];
                                         const isRejected = documentApprovalStatus[originalIndex] === false;
                                         // LOCK: Check if document is permanently locked (approved in database)
-                                        const isLocked = doc.approval_status === 'APPROVED';
+                                        // Backend sends approvalStatus in camelCase
+                                        const isLocked = doc.approvalStatus === 'APPROVED';
 
                                         return (
                                             <div
