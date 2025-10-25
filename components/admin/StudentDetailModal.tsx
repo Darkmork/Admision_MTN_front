@@ -371,54 +371,32 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
             return;
         }
 
-        try {
-            // Get current approval status
-            const currentStatus = documentApprovalStatus[docIndex];
+        // Get current approval status
+        const currentStatus = documentApprovalStatus[docIndex];
 
-            // Determine new status:
-            // undefined/null -> true (APPROVED)
-            // true (APPROVED) -> false (REJECTED)
-            // false (REJECTED) -> undefined (PENDING)
-            let newLocalStatus: boolean | undefined;
-            let newBackendStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
+        // Determine new status:
+        // undefined/null -> true (APPROVED)
+        // true (APPROVED) -> false (REJECTED)
+        // false (REJECTED) -> undefined (PENDING)
+        let newLocalStatus: boolean | undefined;
 
-            if (currentStatus === undefined || currentStatus === null) {
-                newLocalStatus = true;
-                newBackendStatus = 'APPROVED';
-            } else if (currentStatus === true) {
-                newLocalStatus = false;
-                newBackendStatus = 'REJECTED';
-            } else {
-                newLocalStatus = undefined;
-                newBackendStatus = 'PENDING';
-            }
-
-            // Update local state immediately for responsive UI
-            setDocumentApprovalStatus(prev => ({
-                ...prev,
-                [docIndex]: newLocalStatus
-            }));
-
-            // Call backend to persist the change
-            await applicationService.updateDocumentApprovalStatus(document.id, newBackendStatus);
-
-            console.log(`✅ Documento ${document.id} actualizado a ${newBackendStatus}`);
-
-        } catch (error: any) {
-            console.error('❌ Error actualizando estado de aprobación:', error);
-
-            // Revert local state on error
-            setDocumentApprovalStatus(prev => ({
-                ...prev,
-                [docIndex]: documentApprovalStatus[docIndex]
-            }));
-
-            addNotification({
-                type: 'error',
-                title: 'Error',
-                message: error.message || 'No se pudo actualizar el estado de aprobación del documento'
-            });
+        if (currentStatus === undefined || currentStatus === null) {
+            newLocalStatus = true;
+        } else if (currentStatus === true) {
+            newLocalStatus = false;
+        } else {
+            newLocalStatus = undefined;
         }
+
+        // Update local state only - NO backend call yet
+        // Changes will be persisted when "Enviar Notificación" button is clicked
+        setDocumentApprovalStatus(prev => ({
+            ...prev,
+            [docIndex]: newLocalStatus
+        }));
+
+        console.log(`📝 Documento ${document.id} marcado localmente como:`,
+            newLocalStatus === true ? 'APPROVED' : newLocalStatus === false ? 'REJECTED' : 'PENDING');
     };
 
     const handleViewDocument = (doc: any) => {
