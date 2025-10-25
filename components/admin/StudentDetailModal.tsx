@@ -489,13 +489,20 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
         const approvedDocs = fullApplication.documents.filter((_, index) => documentApprovalStatus[index] === true);
         const rejectedDocs = fullApplication.documents.filter((_, index) => documentApprovalStatus[index] === false);
 
+        console.log('🔍 DEBUG - documentApprovalStatus:', documentApprovalStatus);
+        console.log('🔍 DEBUG - approvedDocs:', approvedDocs.length, approvedDocs);
+        console.log('🔍 DEBUG - rejectedDocs:', rejectedDocs.length, rejectedDocs);
+
         // LOCK: Check if there are documents that were ALREADY approved in a previous session
         // Backend sends approvalStatus in camelCase
         const alreadyApprovedDocs = (fullApplication?.documents || []).filter(doc =>
             doc.approvalStatus === 'APPROVED'
         );
 
+        console.log('🔍 DEBUG - alreadyApprovedDocs:', alreadyApprovedDocs.length, alreadyApprovedDocs);
+
         if (alreadyApprovedDocs.length > 0) {
+            console.log('❌ BLOCKED: Already approved docs found');
             addNotification({
                 type: 'warning',
                 title: 'Documentos ya aprobados',
@@ -506,6 +513,7 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
 
         // Validar que al menos haya ALGÚN documento revisado (en esta sesión)
         if (approvedDocs.length === 0 && rejectedDocs.length === 0) {
+            console.log('❌ BLOCKED: No documents approved or rejected in current session');
             addNotification({
                 type: 'warning',
                 title: 'Sin revisión',
