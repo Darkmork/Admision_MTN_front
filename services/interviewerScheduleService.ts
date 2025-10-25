@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { getApiBaseUrl } from '../config/api.config';
+import httpClient from './http';
 
 const API_BASE_URL = `${getApiBaseUrl()}/api`;
 
@@ -98,14 +99,12 @@ export class InterviewerScheduleService {
      */
     async createSchedule(schedule: Omit<InterviewerSchedule, 'id'>): Promise<InterviewerSchedule> {
         try {
-            const response = await axios.post(this.baseURL, schedule, {
-                headers: this.getAuthHeaders()
-            });
+            const response = await httpClient.post(this.baseURL, schedule);
             return response.data;
         } catch (error) {
             console.error('Error creating schedule:', error);
-            throw new Error(axios.isAxiosError(error) ? 
-                error.response?.data?.message || 'Error al crear horario' : 
+            throw new Error(axios.isAxiosError(error) ?
+                error.response?.data?.message || 'Error al crear horario' :
                 'Error al crear horario');
         }
     }
@@ -115,14 +114,12 @@ export class InterviewerScheduleService {
      */
     async updateSchedule(scheduleId: number, schedule: Partial<InterviewerSchedule>): Promise<InterviewerSchedule> {
         try {
-            const response = await axios.put(`${this.baseURL}/${scheduleId}`, schedule, {
-                headers: this.getAuthHeaders()
-            });
+            const response = await httpClient.put(`${this.baseURL}/${scheduleId}`, schedule);
             return response.data;
         } catch (error) {
             console.error('Error updating schedule:', error);
-            throw new Error(axios.isAxiosError(error) ? 
-                error.response?.data?.message || 'Error al actualizar horario' : 
+            throw new Error(axios.isAxiosError(error) ?
+                error.response?.data?.message || 'Error al actualizar horario' :
                 'Error al actualizar horario');
         }
     }
@@ -132,13 +129,11 @@ export class InterviewerScheduleService {
      */
     async deactivateSchedule(scheduleId: number): Promise<void> {
         try {
-            await axios.put(`${this.baseURL}/${scheduleId}/deactivate`, {}, {
-                headers: this.getAuthHeaders()
-            });
+            await httpClient.put(`${this.baseURL}/${scheduleId}/deactivate`, {});
         } catch (error) {
             console.error('Error deactivating schedule:', error);
-            throw new Error(axios.isAxiosError(error) ? 
-                error.response?.data?.message || 'Error al desactivar horario' : 
+            throw new Error(axios.isAxiosError(error) ?
+                error.response?.data?.message || 'Error al desactivar horario' :
                 'Error al desactivar horario');
         }
     }
@@ -148,13 +143,11 @@ export class InterviewerScheduleService {
      */
     async deleteSchedule(scheduleId: number): Promise<void> {
         try {
-            await axios.delete(`${this.baseURL}/${scheduleId}`, {
-                headers: this.getAuthHeaders()
-            });
+            await httpClient.delete(`${this.baseURL}/${scheduleId}`);
         } catch (error) {
             console.error('Error deleting schedule:', error);
-            throw new Error(axios.isAxiosError(error) ? 
-                error.response?.data?.message || 'Error al eliminar horario' : 
+            throw new Error(axios.isAxiosError(error) ?
+                error.response?.data?.message || 'Error al eliminar horario' :
                 'Error al eliminar horario');
         }
     }
@@ -328,14 +321,12 @@ export class InterviewerScheduleService {
      */
     async createRecurringSchedules(interviewerId: number, year: number, schedules: RecurringScheduleRequest[]): Promise<InterviewerSchedule[]> {
         try {
-            const response = await axios.post(`${this.baseURL}/interviewer/${interviewerId}/recurring/${year}`, schedules, {
-                headers: this.getAuthHeaders()
-            });
+            const response = await httpClient.post(`${this.baseURL}/interviewer/${interviewerId}/recurring/${year}`, schedules);
             return response.data;
         } catch (error) {
             console.error('Error creating recurring schedules:', error);
-            throw new Error(axios.isAxiosError(error) ? 
-                error.response?.data?.message || 'Error al crear horarios recurrentes' : 
+            throw new Error(axios.isAxiosError(error) ?
+                error.response?.data?.message || 'Error al crear horarios recurrentes' :
                 'Error al crear horarios recurrentes');
         }
     }
@@ -345,15 +336,13 @@ export class InterviewerScheduleService {
      */
     async createException(interviewerId: number, date: string, notes?: string): Promise<InterviewerSchedule> {
         try {
-            const response = await axios.post(`${this.baseURL}/interviewer/${interviewerId}/exception`, {}, {
-                params: { date, notes },
-                headers: this.getAuthHeaders()
-            });
+            const url = `${this.baseURL}/interviewer/${interviewerId}/exception?date=${date}${notes ? `&notes=${encodeURIComponent(notes)}` : ''}`;
+            const response = await httpClient.post(url, {});
             return response.data;
         } catch (error) {
             console.error('Error creating exception:', error);
-            throw new Error(axios.isAxiosError(error) ? 
-                error.response?.data?.message || 'Error al crear excepción' : 
+            throw new Error(axios.isAxiosError(error) ?
+                error.response?.data?.message || 'Error al crear excepción' :
                 'Error al crear excepción');
         }
     }
@@ -363,15 +352,13 @@ export class InterviewerScheduleService {
      */
     async copySchedulesToYear(interviewerId: number, fromYear: number, toYear: number): Promise<InterviewerSchedule[]> {
         try {
-            const response = await axios.post(`${this.baseURL}/interviewer/${interviewerId}/copy-schedules`, {}, {
-                params: { fromYear, toYear },
-                headers: this.getAuthHeaders()
-            });
+            const url = `${this.baseURL}/interviewer/${interviewerId}/copy-schedules?fromYear=${fromYear}&toYear=${toYear}`;
+            const response = await httpClient.post(url, {});
             return response.data;
         } catch (error) {
             console.error('Error copying schedules:', error);
-            throw new Error(axios.isAxiosError(error) ? 
-                error.response?.data?.message || 'Error al copiar horarios' : 
+            throw new Error(axios.isAxiosError(error) ?
+                error.response?.data?.message || 'Error al copiar horarios' :
                 'Error al copiar horarios');
         }
     }
