@@ -490,8 +490,9 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
         const rejectedDocs = fullApplication.documents.filter((_, index) => documentApprovalStatus[index] === false);
 
         // LOCK: Check if there are documents that were ALREADY approved in a previous session
+        // Backend sends approvalStatus in camelCase
         const alreadyApprovedDocs = (fullApplication?.documents || []).filter(doc =>
-            doc.approval_status === 'APPROVED'
+            doc.approvalStatus === 'APPROVED'
         );
 
         if (alreadyApprovedDocs.length > 0) {
