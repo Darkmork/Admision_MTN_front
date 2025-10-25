@@ -196,7 +196,21 @@ const AdminDashboard: React.FC = () => {
       dispatch({ type: 'SET_LOADING', payload: true });
       // Use the applicationService which handles the API calls properly
       const applications = await applicationService.getAllApplications();
-      dispatch({ type: 'SET_APPLICATIONS', payload: applications });
+
+      // Load evaluations for each application
+      const applicationsWithEvaluations = await Promise.all(
+        applications.map(async (app) => {
+          try {
+            const evaluations = await evaluationService.getEvaluationsByApplicationId(app.id);
+            return { ...app, evaluations };
+          } catch (error) {
+            console.error(`Error loading evaluations for application ${app.id}:`, error);
+            return { ...app, evaluations: [] };
+          }
+        })
+      );
+
+      dispatch({ type: 'SET_APPLICATIONS', payload: applicationsWithEvaluations });
     } catch (error) {
       console.error('Error loading applications:', error);
       // applicationService already handles fallbacks, but set empty array if it fails completely
@@ -310,7 +324,21 @@ const AdminDashboard: React.FC = () => {
     try {
       setIsLoadingAdminApplications(true);
       const appsData = await applicationService.getAllApplications();
-      setAdminApplications(appsData || []);
+
+      // Load evaluations for each application
+      const appsWithEvaluations = await Promise.all(
+        (appsData || []).map(async (app) => {
+          try {
+            const evaluations = await evaluationService.getEvaluationsByApplicationId(app.id);
+            return { ...app, evaluations };
+          } catch (error) {
+            console.error(`Error loading evaluations for application ${app.id}:`, error);
+            return { ...app, evaluations: [] };
+          }
+        })
+      );
+
+      setAdminApplications(appsWithEvaluations);
     } catch (error) {
       console.error('Error cargando postulaciones admin:', error);
       showApplicationToast('No se pudieron cargar las postulaciones', 'error');
