@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import httpClient from '../../services/http';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 import Badge from '../ui/Badge';
@@ -108,23 +109,29 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
     const loadInterviewers = async () => {
       setLoadingInterviewers(true);
       setInterviewersError(null);
-      
+
       try {
-        console.log('🔍 Cargando entrevistadores desde API...');
-        const response = await axios.get('http://localhost:8080/api/interviews/public/interviewers');
+        const currentYear = new Date().getFullYear();
+        console.log(`🔍 Cargando entrevistadores con horarios configurados para ${currentYear}...`);
+
+        const response = await httpClient.get(`/api/interviewer-schedules/interviewers-with-schedules/${currentYear}`);
         console.log('✅ Entrevistadores obtenidos:', response.data);
-        
-        // Mapear los datos del backend al formato esperado
+
+        // El backend ya devuelve el formato correcto con firstName, lastName, role, scheduleCount
         const mappedInterviewers: BackendInterviewer[] = response.data.map((item: any) => ({
           id: item.id,
-          name: item.name,
+          name: `${item.firstName} ${item.lastName}`,
           role: item.role,
           subject: item.subject,
           educationalLevel: item.educationalLevel,
-          scheduleCount: item.scheduleCount
+          scheduleCount: item.scheduleCount || 0
         }));
-        
-        setInterviewers(mappedInterviewers);
+
+        // Filtrar solo entrevistadores con horarios configurados
+        const interviewersWithSchedules = mappedInterviewers.filter(i => i.scheduleCount > 0);
+
+        console.log(`✅ Entrevistadores con horarios: ${interviewersWithSchedules.length}/${mappedInterviewers.length}`);
+        setInterviewers(interviewersWithSchedules);
       } catch (error) {
         console.error('❌ Error cargando entrevistadores:', error);
         setInterviewersError('Error al cargar la lista de entrevistadores');
@@ -132,7 +139,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
         setLoadingInterviewers(false);
       }
     };
-    
+
     loadInterviewers();
   }, []);
 
