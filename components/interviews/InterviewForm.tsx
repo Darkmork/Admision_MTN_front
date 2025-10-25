@@ -302,23 +302,50 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
   };
 
   // Función para manejar selección de fecha y hora desde DayScheduleSelector
-  const handleDateTimeSelect = (date: string, time: string) => {
+  const handleDateTimeSelect = async (date: string, time: string) => {
     console.log(`📅 InterviewForm: handleDateTimeSelect llamado con fecha="${date}" y hora="${time}"`);
     console.log(`📅 InterviewForm: Estado actual - fecha="${formData.scheduledDate}" y hora="${formData.scheduledTime}"`);
-    
-    setFormData(prev => ({ 
-      ...prev, 
-      scheduledDate: date, 
-      scheduledTime: time 
+
+    setFormData(prev => ({
+      ...prev,
+      scheduledDate: date,
+      scheduledTime: time
     }));
     setIsDirty(true);
-    
+
     // Limpiar errores relacionados
-    setErrors(prev => ({ 
-      ...prev, 
-      scheduledDate: '', 
-      scheduledTime: '' 
+    setErrors(prev => ({
+      ...prev,
+      scheduledDate: '',
+      scheduledTime: ''
     }));
+
+    // Verificar disponibilidad automáticamente
+    await checkAvailability(date, time);
+  };
+
+  // Verificar disponibilidad de entrevistadores para fecha/hora específica
+  const checkAvailability = async (date: string, time: string) => {
+    try {
+      setConflictWarning(null);
+
+      const response = await httpClient.get(`/api/interviewer-schedules/available?date=${date}&time=${time}`);
+      const { count, interviewers } = response.data;
+
+      console.log(`✅ Entrevistadores disponibles para ${date} ${time}: ${count}`);
+
+      if (count < 2) {
+        setConflictWarning(
+          `Solo hay ${count} entrevistador${count === 1 ? '' : 'es'} disponible${count === 1 ? '' : 's'} en este horario. ` +
+          `Se requieren al menos 2 entrevistadores disponibles simultáneamente para realizar la entrevista.`
+        );
+      } else {
+        console.log(`✅ Horario válido: ${count} entrevistadores disponibles`);
+      }
+    } catch (error) {
+      console.error('Error verificando disponibilidad:', error);
+      setConflictWarning('No se pudo verificar disponibilidad de entrevistadores.');
+    }
   };
 
   const handleInputChange = (field: string, value: any) => {
@@ -441,28 +468,38 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
 
   // Validar conflictos de horarios antes de enviar
   const validateTimeSlotConflicts = async (): Promise<boolean> => {
-    if (!formData.interviewerId || !formData.scheduledDate || !formData.scheduledTime) {
+    if (!formData.scheduledDate || !formData.scheduledTime) {
       return true; // No se puede validar, pero otros validadores lo detectarán
     }
 
-    // Temporalmente simplificado - solo validamos que haya datos básicos
-    // TODO: Re-implementar cuando el microservicio esté completo
     try {
-      console.log('🔍 Validación básica de horarios:', {
-        interviewerId: formData.interviewerId,
+      console.log('🔍 Validando disponibilidad de entrevistadores:', {
         date: formData.scheduledDate,
         time: formData.scheduledTime,
         duration: formData.duration
       });
 
-      // Limpiar advertencias previas
+      const response = await httpClient.get(
+        `/api/interviewer-schedules/available?date=${formData.scheduledDate}&time=${formData.scheduledTime}`
+      );
+      const { count } = response.data;
+
+      if (count < 2) {
+        setConflictWarning(
+          `No se puede programar la entrevista. Solo hay ${count} entrevistador${count === 1 ? '' : 'es'} disponible${count === 1 ? '' : 's'} en este horario. ` +
+          `Se requieren al menos 2 entrevistadores disponibles simultáneamente.`
+        );
+        return false;
+      }
+
+      // Limpiar advertencias si todo está bien
       setConflictWarning(null);
       return true;
-      
+
     } catch (error) {
       console.error('Error validating time slot:', error);
-      // En caso de error, continuar pero mostrar advertencia
-      setConflictWarning('No se pudo validar el horario. Verifique manualmente.');
+      // En caso de error, mostrar advertencia pero permitir continuar
+      setConflictWarning('No se pudo verificar disponibilidad. Verifique manualmente que haya 2 entrevistadores disponibles.');
       return true;
     }
   };
