@@ -225,14 +225,40 @@ class DocumentService {
     async deleteDocument(documentId: number): Promise<void> {
         try {
             console.log('🗑️ Eliminando documento:', documentId);
-            
+
             await api.delete(`/api/documents/${documentId}`);
-            
+
             console.log('✅ Documento eliminado exitosamente');
-            
+
         } catch (error: any) {
             console.error('❌ Error eliminando documento:', error);
             throw new Error('Error al eliminar el documento');
+        }
+    }
+
+    async updateDocumentApproval(
+        documentId: number,
+        approvalStatus: 'APPROVED' | 'REJECTED' | 'PENDING',
+        rejectionReason?: string
+    ): Promise<DocumentResponse> {
+        try {
+            console.log('✅ Actualizando estado de aprobación:', {
+                documentId,
+                approvalStatus,
+                rejectionReason
+            });
+
+            const response = await api.put(`/api/documents/${documentId}/approval`, {
+                approvalStatus,
+                rejectionReason
+            });
+
+            console.log('✅ Estado de aprobación actualizado exitosamente');
+            return response.data.data;
+
+        } catch (error: any) {
+            console.error('❌ Error actualizando estado de aprobación:', error);
+            throw new Error('Error al actualizar el estado de aprobación del documento');
         }
     }
 

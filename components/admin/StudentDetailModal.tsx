@@ -16,6 +16,7 @@ import evaluationService from '../../services/evaluationService';
 import { Evaluation, EvaluationType } from '../../types/evaluation';
 import institutionalEmailService from '../../services/institutionalEmailService';
 import { userService } from '../../services/userService';
+import { documentService } from '../../services/documentService';
 import { DocumentType } from '../../types/document';
 
 interface Postulante {
@@ -527,7 +528,7 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
             // Todos aprobados = TODOS los documentos están aprobados (ninguno rechazado, ninguno sin revisar)
             const allApproved = approvedDocs.length === totalDocuments && rejectedDocs.length === 0;
 
-            console.log('📧 Enviando notificación de revisión de documentos:', {
+            console.log('📧 Preparando notificación de revisión de documentos:', {
                 applicationId: postulante.id,
                 totalDocuments,
                 approvedCount: approvedDocs.length,
@@ -535,7 +536,29 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                 allApproved
             });
 
-            // Llamada real al servicio de email
+            // STEP 1: Save all document approval statuses to database FIRST
+            console.log('💾 Guardando estados de aprobación en la base de datos...');
+            const savePromises = fullApplication.documents.map(async (doc, index) => {
+                const isApproved = documentApprovalStatus[index] === true;
+                const isRejected = documentApprovalStatus[index] === false;
+
+                if (isApproved || isRejected) {
+                    const approvalStatus = isApproved ? 'APPROVED' : 'REJECTED';
+                    console.log(`  - Documento ${doc.id}: ${approvalStatus}`);
+
+                    await documentService.updateDocumentApproval(
+                        doc.id,
+                        approvalStatus,
+                        isRejected ? 'Documento rechazado por el coordinador' : undefined
+                    );
+                }
+            });
+
+            await Promise.all(savePromises);
+            console.log('✅ Todos los estados de aprobación guardados en la base de datos');
+
+            // STEP 2: Now send the email notification
+            console.log('📧 Enviando notificación de revisión de documentos...');
             const response = await institutionalEmailService.sendDocumentReviewEmail(
                 postulante.id,
                 {
@@ -556,11 +579,7 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                         : `Se notificó al apoderado que ${rejectedDocs.length} documento(s) deben ser resubidos`
                 });
 
-                // REMOVED: Do NOT reset approval status - let database persist
-                // The approval status should remain locked after sending notification
-                // setDocumentApprovalStatus({});  // ❌ DELETED - This was causing data loss
-
-                // Refresh application data to get updated approval status from database
+                // STEP 3: Refresh application data to show updated approval status with locked state
                 await loadFullApplication();
             } else {
                 console.error('❌ Error en respuesta del servicio:', response);
