@@ -467,8 +467,12 @@ const CustomAssignmentModal: React.FC<CustomAssignmentModalProps> = ({
   const loadExistingEvaluations = async () => {
     try {
       setIsLoadingEvaluations(true);
+      console.log(`📋 Cargando evaluaciones existentes para application ${application.id}...`);
+
       // Cargar evaluaciones existentes para esta application desde evaluation-service
       const evals = await evaluationService.getEvaluationsByApplicationId(application.id);
+      console.log(`✅ ${evals.length} evaluaciones encontradas:`, evals);
+
       setExistingEvaluations(evals);
 
       // Inicializar assignments con las evaluaciones existentes
@@ -476,6 +480,10 @@ const CustomAssignmentModal: React.FC<CustomAssignmentModalProps> = ({
         const existingEvaluation = evals.find(
           (ev: any) => ev.evaluationType === type
         );
+
+        if (existingEvaluation) {
+          console.log(`✓ Evaluación existente encontrada para ${type}:`, existingEvaluation);
+        }
 
         return {
           evaluationType: type,
@@ -489,8 +497,14 @@ const CustomAssignmentModal: React.FC<CustomAssignmentModalProps> = ({
       setSubmitMessage(null);
       setIsSubmitting(false);
     } catch (error) {
-      console.error('Error loading evaluations:', error);
-      // Si hay error, inicializar sin evaluaciones existentes
+      console.error('❌ Error loading evaluations:', error);
+      // Si hay error al cargar, mostrar advertencia al usuario
+      setSubmitMessage({
+        type: 'error',
+        text: '⚠️ No se pudieron cargar las evaluaciones existentes. Por favor, cierre y vuelva a abrir este modal.'
+      });
+
+      // Inicializar sin evaluaciones existentes (modo seguro)
       const initialAssignments = requiredEvaluations.map(type => ({
         evaluationType: type,
         evaluatorId: 0,
@@ -518,13 +532,22 @@ const CustomAssignmentModal: React.FC<CustomAssignmentModalProps> = ({
   };
 
   const handleSubmit = async () => {
+    console.log('📝 Intentando asignar evaluadores...');
+    console.log('Existing evaluations:', existingEvaluations);
+    console.log('Current assignments:', assignments);
+
     // Filtrar solo las asignaciones que tienen evaluador seleccionado Y no están ya asignadas
     const validAssignments = assignments.filter(a => {
       const isAlreadyAssigned = existingEvaluations.some(
         (ev: any) => ev.evaluationType === a.evaluationType
       );
+
+      console.log(`Evaluación ${a.evaluationType}: evaluatorId=${a.evaluatorId}, isAlreadyAssigned=${isAlreadyAssigned}`);
+
       return a.evaluatorId > 0 && !isAlreadyAssigned;
     });
+
+    console.log('Valid assignments to create:', validAssignments);
 
     if (validAssignments.length === 0) {
       setSubmitMessage({ type: 'error', text: 'Debe asignar al menos un evaluador nuevo. Las evaluaciones ya asignadas no se pueden modificar.' });
@@ -541,16 +564,30 @@ const CustomAssignmentModal: React.FC<CustomAssignmentModalProps> = ({
         text: `✅ Se asignaron ${validAssignments.length} evaluador(es) correctamente. Se han enviado notificaciones por email.`
       });
 
+      // Recargar evaluaciones existentes para actualizar la UI
+      await loadExistingEvaluations();
+
       // Cerrar modal después de 2 segundos para que el usuario vea el mensaje
       setTimeout(() => {
         onClose();
       }, 2000);
     } catch (error: any) {
-      console.error('Error en handleSubmit:', error);
-      setSubmitMessage({
-        type: 'error',
-        text: `❌ Error: ${error.message || 'No se pudieron asignar los evaluadores. Por favor intente nuevamente.'}`
-      });
+      console.error('❌ Error en handleSubmit:', error);
+
+      // Manejar error 409 (duplicado) específicamente
+      if (error.response?.status === 409) {
+        setSubmitMessage({
+          type: 'error',
+          text: '⚠️ Una o más evaluaciones ya fueron asignadas. Recargando información...'
+        });
+        // Recargar evaluaciones para actualizar el estado
+        await loadExistingEvaluations();
+      } else {
+        setSubmitMessage({
+          type: 'error',
+          text: `❌ Error: ${error.message || 'No se pudieron asignar los evaluadores. Por favor intente nuevamente.'}`
+        });
+      }
       setIsSubmitting(false);
     }
   };

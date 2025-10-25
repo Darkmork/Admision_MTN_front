@@ -327,8 +327,11 @@ const AdminDashboard: React.FC = () => {
 
   // Manejar asignación de evaluadores
   const handleAssignEvaluator = async (applicationId: number, assignments: any[]) => {
+    console.log(`🔧 handleAssignEvaluator called for application ${applicationId}`);
+    console.log('Assignments to create:', assignments);
+
     try {
-      // Iterar por cada asignación y llamar al backend
+      // Usar Promise.allSettled en lugar de Promise.all para manejar errores individuales
       const promises = assignments.map(assignment =>
         evaluationService.assignSpecificEvaluation(
           applicationId,
@@ -337,14 +340,41 @@ const AdminDashboard: React.FC = () => {
         )
       );
 
-      await Promise.all(promises);
+      const results = await Promise.allSettled(promises);
+
+      // Contar éxitos y fallos
+      const successful = results.filter(r => r.status === 'fulfilled');
+      const failed = results.filter(r => r.status === 'rejected');
+
+      console.log(`✅ ${successful.length} evaluaciones asignadas exitosamente`);
+      console.log(`❌ ${failed.length} evaluaciones fallaron`);
+
+      if (failed.length > 0) {
+        // Si alguna falló, verificar si son errores 409 (duplicado)
+        const duplicateErrors = failed.filter((f: any) =>
+          f.reason?.response?.status === 409
+        );
+
+        if (duplicateErrors.length > 0) {
+          console.warn(`⚠️ ${duplicateErrors.length} evaluaciones ya existían (409 Conflict)`);
+        }
+
+        // Si todas las fallas fueron por duplicados, considerarlo como éxito parcial
+        if (failed.length === duplicateErrors.length && successful.length > 0) {
+          console.log('✓ Algunas evaluaciones ya existían, pero se crearon las nuevas');
+        } else if (successful.length === 0) {
+          // Si ninguna se creó y no todas son duplicados, lanzar error
+          const firstError = (failed[0] as any).reason;
+          throw firstError;
+        }
+      }
 
       // Recargar aplicaciones para reflejar los cambios
       await loadApplications();
 
       // No mostrar notificación aquí, el modal ya la muestra
     } catch (error: any) {
-      console.error('Error asignando evaluadores:', error);
+      console.error('❌ Error asignando evaluadores:', error);
       // Re-lanzar el error para que el modal lo maneje
       throw error;
     }
