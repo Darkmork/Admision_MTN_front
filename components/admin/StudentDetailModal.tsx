@@ -356,13 +356,24 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
     };
 
     const toggleDocumentApproval = async (docIndex: number) => {
-        if (!fullApplication?.documents) return;
+        console.log('🔘 toggleDocumentApproval called with docIndex:', docIndex);
+
+        if (!fullApplication?.documents) {
+            console.log('❌ No documents in fullApplication');
+            return;
+        }
 
         const document = fullApplication.documents[docIndex];
-        if (!document) return;
+        if (!document) {
+            console.log('❌ No document at index', docIndex);
+            return;
+        }
+
+        console.log('📄 Document:', document);
 
         // LOCK: Prevent toggling if document is already approved in database (permanent lock)
         if (document.approval_status === 'APPROVED') {
+            console.log('🔒 Document already approved, showing notification');
             addNotification({
                 type: 'info',
                 title: 'Documento Bloqueado',
@@ -373,6 +384,7 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
 
         // Get current approval status
         const currentStatus = documentApprovalStatus[docIndex];
+        console.log('📊 Current status at index', docIndex, ':', currentStatus);
 
         // Determine new status:
         // undefined/null -> true (APPROVED)
