@@ -493,23 +493,25 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
         console.log('🔍 DEBUG - approvedDocs:', approvedDocs.length, approvedDocs);
         console.log('🔍 DEBUG - rejectedDocs:', rejectedDocs.length, rejectedDocs);
 
-        // LOCK: Check if there are documents that were ALREADY approved in a previous session
-        // Backend sends approvalStatus in camelCase
-        const alreadyApprovedDocs = (fullApplication?.documents || []).filter(doc =>
-            doc.approvalStatus === 'APPROVED'
-        );
+        // NOTE: Permitimos re-enviar notificaciones aunque haya documentos ya aprobados
+        // Esto permite notificar al apoderado sobre nuevos documentos agregados después
+        // de una revisión previa, facilitando el flujo iterativo de revisión de documentos.
 
-        console.log('🔍 DEBUG - alreadyApprovedDocs:', alreadyApprovedDocs.length, alreadyApprovedDocs);
+        // Antes esta validación bloqueaba el reenvío, pero ahora se ha removido para
+        // permitir múltiples notificaciones cuando el apoderado sube documentos corregidos.
 
-        if (alreadyApprovedDocs.length > 0) {
-            console.log('❌ BLOCKED: Already approved docs found');
-            addNotification({
-                type: 'warning',
-                title: 'Documentos ya aprobados',
-                message: `Hay ${alreadyApprovedDocs.length} documento(s) que ya fueron aprobados previamente. No se puede enviar notificación nuevamente para documentos bloqueados.`
-            });
-            return;
-        }
+        // const alreadyApprovedDocs = (fullApplication?.documents || []).filter(doc =>
+        //     doc.approvalStatus === 'APPROVED'
+        // );
+        // if (alreadyApprovedDocs.length > 0) {
+        //     console.log('❌ BLOCKED: Already approved docs found');
+        //     addNotification({
+        //         type: 'warning',
+        //         title: 'Documentos ya aprobados',
+        //         message: `Hay ${alreadyApprovedDocs.length} documento(s) que ya fueron aprobados previamente.`
+        //     });
+        //     return;
+        // }
 
         // Validar que al menos haya ALGÚN documento revisado (en esta sesión)
         if (approvedDocs.length === 0 && rejectedDocs.length === 0) {
