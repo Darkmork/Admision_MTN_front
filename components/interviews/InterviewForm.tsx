@@ -115,10 +115,25 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
         console.log(`🔍 Cargando entrevistadores con horarios configurados para ${currentYear}...`);
 
         const response = await httpClient.get(`/api/interviewer-schedules/interviewers-with-schedules/${currentYear}`);
-        console.log('✅ Entrevistadores obtenidos:', response.data);
+        console.log('✅ Respuesta del servidor:', response);
+
+        // Verificar que la respuesta tenga datos válidos
+        if (!response || !response.data) {
+          throw new Error('Respuesta inválida del servidor');
+        }
+
+        // Extraer datos - puede venir como response.data directamente o como response.data.data
+        const dataArray = Array.isArray(response.data) ? response.data : response.data.data;
+
+        if (!Array.isArray(dataArray)) {
+          console.error('❌ Formato de datos inválido:', response.data);
+          throw new Error('Formato de datos inválido del servidor');
+        }
+
+        console.log('✅ Entrevistadores obtenidos:', dataArray);
 
         // El backend ya devuelve el formato correcto con firstName, lastName, role, scheduleCount
-        const mappedInterviewers: BackendInterviewer[] = response.data.map((item: any) => ({
+        const mappedInterviewers: BackendInterviewer[] = dataArray.map((item: any) => ({
           id: item.id,
           name: `${item.firstName} ${item.lastName}`,
           role: item.role,
@@ -132,9 +147,9 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
 
         console.log(`✅ Entrevistadores con horarios: ${interviewersWithSchedules.length}/${mappedInterviewers.length}`);
         setInterviewers(interviewersWithSchedules);
-      } catch (error) {
+      } catch (error: any) {
         console.error('❌ Error cargando entrevistadores:', error);
-        setInterviewersError('Error al cargar la lista de entrevistadores');
+        setInterviewersError(error.message || 'Error al cargar la lista de entrevistadores');
       } finally {
         setLoadingInterviewers(false);
       }
@@ -330,6 +345,11 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
       setConflictWarning(null);
 
       const response = await httpClient.get(`/api/interviewer-schedules/available?date=${date}&time=${time}`);
+
+      if (!response || !response.data) {
+        throw new Error('Respuesta inválida del servidor');
+      }
+
       const { count, interviewers } = response.data;
 
       console.log(`✅ Entrevistadores disponibles para ${date} ${time}: ${count}`);
@@ -342,9 +362,9 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
       } else {
         console.log(`✅ Horario válido: ${count} entrevistadores disponibles`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error verificando disponibilidad:', error);
-      setConflictWarning('No se pudo verificar disponibilidad de entrevistadores.');
+      setConflictWarning(error.message || 'No se pudo verificar disponibilidad de entrevistadores.');
     }
   };
 
@@ -482,6 +502,11 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
       const response = await httpClient.get(
         `/api/interviewer-schedules/available?date=${formData.scheduledDate}&time=${formData.scheduledTime}`
       );
+
+      if (!response || !response.data) {
+        throw new Error('Respuesta inválida del servidor');
+      }
+
       const { count } = response.data;
 
       if (count < 2) {
@@ -496,10 +521,10 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
       setConflictWarning(null);
       return true;
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error validating time slot:', error);
       // En caso de error, mostrar advertencia pero permitir continuar
-      setConflictWarning('No se pudo verificar disponibilidad. Verifique manualmente que haya 2 entrevistadores disponibles.');
+      setConflictWarning(error.message || 'No se pudo verificar disponibilidad. Verifique manualmente que haya 2 entrevistadores disponibles.');
       return true;
     }
   };
