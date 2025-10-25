@@ -331,15 +331,18 @@ const EvaluationManagement: React.FC<EvaluationManagementProps> = ({
                           e.evaluationType === 'ENGLISH_EXAM'
                       );
                       const totalAcademicExams = 3; // Siempre 3 exámenes académicos
-                      const completedAcademicExams = academicExams.filter(
-                        (e: any) => e.status === 'COMPLETED'
+
+                      // Contar evaluaciones que tienen evaluador asignado (independiente del status)
+                      const assignedAcademicExams = academicExams.filter(
+                        (e: any) => e.evaluatorId && e.evaluatorId > 0
                       ).length;
-                      const pendingAcademicExams = totalAcademicExams - completedAcademicExams;
+
+                      const pendingAcademicExams = totalAcademicExams - assignedAcademicExams;
 
                       return (
                         <div className="flex items-center space-x-2">
                           <span className="text-sm text-gray-600">
-                            {completedAcademicExams}/{totalAcademicExams}
+                            {assignedAcademicExams}/{totalAcademicExams}
                           </span>
                           {pendingAcademicExams > 0 && (
                             <Badge variant="warning" size="sm">
@@ -352,7 +355,7 @@ const EvaluationManagement: React.FC<EvaluationManagementProps> = ({
                   </td>
                   <td className="px-4 py-4">
                     {(() => {
-                      // Calcular progreso solo con exámenes académicos
+                      // Calcular progreso solo con exámenes académicos asignados
                       const academicExams = (application.evaluations || []).filter(
                         (e: any) =>
                           e.evaluationType === 'MATHEMATICS_EXAM' ||
@@ -360,10 +363,13 @@ const EvaluationManagement: React.FC<EvaluationManagementProps> = ({
                           e.evaluationType === 'ENGLISH_EXAM'
                       );
                       const totalAcademicExams = 3;
-                      const completedAcademicExams = academicExams.filter(
-                        (e: any) => e.status === 'COMPLETED'
+
+                      // Contar evaluaciones que tienen evaluador asignado (independiente del status)
+                      const assignedAcademicExams = academicExams.filter(
+                        (e: any) => e.evaluatorId && e.evaluatorId > 0
                       ).length;
-                      const progressPercentage = (completedAcademicExams / totalAcademicExams) * 100;
+
+                      const progressPercentage = (assignedAcademicExams / totalAcademicExams) * 100;
 
                       return (
                         <div className="w-full bg-gray-200 rounded-full h-2">
