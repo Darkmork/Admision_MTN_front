@@ -1681,7 +1681,10 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
         const requiredTypes = REQUIRED_EVALUATION_TYPES.filter(t => t.required);
         const safeEvaluations = Array.isArray(evaluations) ? evaluations : [];
         const completedEvaluations = safeEvaluations.filter(e => e.status === 'COMPLETED').length;
-        const inProgressEvaluations = safeEvaluations.filter(e => e.status === 'IN_PROGRESS').length;
+        // Contar evaluaciones en progreso O pendientes con evaluador asignado
+        const inProgressEvaluations = safeEvaluations.filter(e =>
+            e.status === 'IN_PROGRESS' || (e.status === 'PENDING' && e.evaluatorId)
+        ).length;
         const missingEvaluations = requiredTypes.filter(type =>
             !safeEvaluations.some(evaluation => evaluation.evaluationType === type.type)
         ).length;
