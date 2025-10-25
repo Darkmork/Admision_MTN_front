@@ -486,54 +486,54 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
 
         // Caso 2: Hay documentos subidos - validar revisión
         const totalDocuments = fullApplication.documents.length;
-        const approvedDocs = fullApplication.documents.filter((_, index) => documentApprovalStatus[index] === true);
-        const rejectedDocs = fullApplication.documents.filter((_, index) => documentApprovalStatus[index] === false);
+
+        // IMPORTANTE: Solo incluir documentos MODIFICADOS en esta sesión (no los ya aprobados en BD)
+        // - approvedDocsNow: Documentos marcados como aprobados EN ESTA SESIÓN
+        // - rejectedDocsNow: Documentos marcados como rechazados EN ESTA SESIÓN
+        const approvedDocsNow = fullApplication.documents.filter((doc, index) => {
+            const currentStatus = documentApprovalStatus[index];
+            const dbStatus = doc.approvalStatus;
+            // Solo incluir si fue marcado como aprobado AHORA (no si ya estaba aprobado en BD)
+            return currentStatus === true && dbStatus !== 'APPROVED';
+        });
+
+        const rejectedDocsNow = fullApplication.documents.filter((doc, index) => {
+            const currentStatus = documentApprovalStatus[index];
+            // Incluir todos los rechazados (nuevos o que cambiaron de aprobado a rechazado)
+            return currentStatus === false;
+        });
+
+        // Contar todos los documentos actualmente aprobados (en BD + en sesión)
+        const allApprovedDocs = fullApplication.documents.filter((doc, index) => {
+            return documentApprovalStatus[index] === true || doc.approvalStatus === 'APPROVED';
+        });
 
         console.log('🔍 DEBUG - documentApprovalStatus:', documentApprovalStatus);
-        console.log('🔍 DEBUG - approvedDocs:', approvedDocs.length, approvedDocs);
-        console.log('🔍 DEBUG - rejectedDocs:', rejectedDocs.length, rejectedDocs);
+        console.log('🔍 DEBUG - approvedDocsNow (new):', approvedDocsNow.length, approvedDocsNow);
+        console.log('🔍 DEBUG - rejectedDocsNow (new/changed):', rejectedDocsNow.length, rejectedDocsNow);
+        console.log('🔍 DEBUG - allApprovedDocs (total):', allApprovedDocs.length);
 
-        // NOTE: Permitimos re-enviar notificaciones aunque haya documentos ya aprobados
-        // Esto permite notificar al apoderado sobre nuevos documentos agregados después
-        // de una revisión previa, facilitando el flujo iterativo de revisión de documentos.
-
-        // Antes esta validación bloqueaba el reenvío, pero ahora se ha removido para
-        // permitir múltiples notificaciones cuando el apoderado sube documentos corregidos.
-
-        // const alreadyApprovedDocs = (fullApplication?.documents || []).filter(doc =>
-        //     doc.approvalStatus === 'APPROVED'
-        // );
-        // if (alreadyApprovedDocs.length > 0) {
-        //     console.log('❌ BLOCKED: Already approved docs found');
-        //     addNotification({
-        //         type: 'warning',
-        //         title: 'Documentos ya aprobados',
-        //         message: `Hay ${alreadyApprovedDocs.length} documento(s) que ya fueron aprobados previamente.`
-        //     });
-        //     return;
-        // }
-
-        // Validar que al menos haya ALGÚN documento revisado (en esta sesión)
-        if (approvedDocs.length === 0 && rejectedDocs.length === 0) {
-            console.log('❌ BLOCKED: No documents approved or rejected in current session');
+        // Validar que haya ALGO que notificar
+        if (approvedDocsNow.length === 0 && rejectedDocsNow.length === 0) {
+            console.log('❌ BLOCKED: No new documents reviewed in current session');
             addNotification({
                 type: 'warning',
-                title: 'Sin revisión',
-                message: 'Debes marcar al menos un documento como aprobado o rechazado antes de enviar la notificación.'
+                title: 'Sin cambios',
+                message: 'No hay documentos nuevos marcados como aprobados o rechazados. Debes revisar al menos un documento antes de enviar la notificación.'
             });
             return;
         }
 
         setSendingNotification(true);
         try {
-            // Todos aprobados = TODOS los documentos están aprobados (ninguno rechazado, ninguno sin revisar)
-            const allApproved = approvedDocs.length === totalDocuments && rejectedDocs.length === 0;
+            // Todos aprobados = TODOS los documentos están aprobados (ninguno rechazado, ninguno pendiente)
+            const allApproved = allApprovedDocs.length === totalDocuments && rejectedDocsNow.length === 0;
 
             console.log('📧 Preparando notificación de revisión de documentos:', {
                 applicationId: postulante.id,
                 totalDocuments,
-                approvedCount: approvedDocs.length,
-                rejectedCount: rejectedDocs.length,
+                approvedDocsNow: approvedDocsNow.length,
+                rejectedDocsNow: rejectedDocsNow.length,
                 allApproved
             });
 
@@ -559,12 +559,13 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
             console.log('✅ Todos los estados de aprobación guardados en la base de datos');
 
             // STEP 2: Now send the email notification
+            // IMPORTANTE: Solo enviar al backend los documentos REVISADOS en esta sesión
             console.log('📧 Enviando notificación de revisión de documentos...');
             const response = await institutionalEmailService.sendDocumentReviewEmail(
                 postulante.id,
                 {
-                    approvedDocuments: approvedDocs.map(doc => doc.fileName || doc.name || 'Documento'),
-                    rejectedDocuments: rejectedDocs.map(doc => doc.fileName || doc.name || 'Documento'),
+                    approvedDocuments: approvedDocsNow.map(doc => doc.fileName || doc.name || 'Documento'),
+                    rejectedDocuments: rejectedDocsNow.map(doc => doc.fileName || doc.name || 'Documento'),
                     allApproved
                 }
             );
@@ -572,12 +573,22 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
             console.log('📧 Respuesta del servicio de email:', response);
 
             if (response.success) {
+                // Mensaje según el contexto
+                let successMessage;
+                if (allApproved) {
+                    successMessage = 'Se notificó al apoderado que todos los documentos fueron aprobados';
+                } else if (rejectedDocsNow.length > 0 && approvedDocsNow.length > 0) {
+                    successMessage = `Se notificó al apoderado: ${approvedDocsNow.length} documento(s) aprobados y ${rejectedDocsNow.length} requieren corrección`;
+                } else if (rejectedDocsNow.length > 0) {
+                    successMessage = `Se notificó al apoderado que ${rejectedDocsNow.length} documento(s) deben ser corregidos y resubidos`;
+                } else {
+                    successMessage = `Se notificó al apoderado sobre ${approvedDocsNow.length} documento(s) aprobados`;
+                }
+
                 addNotification({
                     type: 'success',
                     title: 'Notificación Enviada',
-                    message: allApproved
-                        ? `Se notificó al apoderado que todos los documentos fueron aprobados`
-                        : `Se notificó al apoderado que ${rejectedDocs.length} documento(s) deben ser resubidos`
+                    message: successMessage
                 });
 
                 // STEP 3: Refresh application data to show updated approval status with locked state
@@ -1413,43 +1424,41 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                                         const originalIndex = fullApplication.documents.indexOf(doc);
                                         const isApproved = documentApprovalStatus[originalIndex];
                                         const isRejected = documentApprovalStatus[originalIndex] === false;
-                                        // LOCK: Check if document is permanently locked (approved in database)
-                                        // Backend sends approvalStatus in camelCase
-                                        const isLocked = doc.approvalStatus === 'APPROVED';
+                                        // Show if document was previously approved in database (visual indicator only)
+                                        const wasPreviouslyApproved = doc.approvalStatus === 'APPROVED';
 
                                         return (
                                             <div
                                                 key={originalIndex}
                                                 className={`flex items-center justify-between p-3 bg-white border-2 rounded-lg transition-all ${
-                                                    isLocked ? 'border-green-400 bg-green-100 opacity-90' :
                                                     isApproved ? 'border-green-300 bg-green-50' :
                                                     isRejected ? 'border-red-300 bg-red-50' :
+                                                    wasPreviouslyApproved ? 'border-green-200 bg-green-50/50' :
                                                     'border-gray-200'
                                                 }`}
                                             >
                                                 <div className="flex items-center gap-3 flex-1">
-                                                    {/* Status Button (replaces checkbox) */}
+                                                    {/* Status Button (NO LOCK - always editable) */}
                                                     <button
-                                                        onClick={() => !isLocked && toggleDocumentApproval(originalIndex)}
-                                                        disabled={isLocked}
+                                                        onClick={() => toggleDocumentApproval(originalIndex)}
                                                         className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
-                                                            isLocked
-                                                                ? 'bg-green-600 text-white cursor-not-allowed shadow-md'
-                                                                : isApproved
+                                                            isApproved
                                                                 ? 'bg-green-500 text-white hover:bg-green-600 cursor-pointer shadow-sm'
                                                                 : isRejected
                                                                 ? 'bg-red-500 text-white hover:bg-red-600 cursor-pointer shadow-sm'
+                                                                : wasPreviouslyApproved
+                                                                ? 'bg-green-400 text-white hover:bg-green-500 cursor-pointer shadow-sm'
                                                                 : 'bg-gray-400 text-white hover:bg-gray-500 cursor-pointer shadow-sm'
                                                         }`}
-                                                        title={isLocked ? 'Documento bloqueado' : 'Click para cambiar estado'}
+                                                        title="Click para cambiar estado (Pendiente → Aprobado → Rechazado → Pendiente)"
                                                     >
-                                                        {isLocked ? '🔒 Aprobado' : isApproved ? '✓ Aprobado' : isRejected ? '✗ Rechazado' : '⏱ Pendiente'}
+                                                        {isApproved ? '✓ Aprobado' : isRejected ? '✗ Rechazado' : wasPreviouslyApproved ? '✓ Ya Aprobado' : '⏱ Pendiente'}
                                                     </button>
 
                                                     <FiFileText className={`w-4 h-4 ${
-                                                        isLocked ? 'text-green-700' :
                                                         isApproved ? 'text-green-600' :
                                                         isRejected ? 'text-red-600' :
+                                                        wasPreviouslyApproved ? 'text-green-500' :
                                                         'text-blue-500'
                                                     }`} />
                                                     <div className="flex-1">
