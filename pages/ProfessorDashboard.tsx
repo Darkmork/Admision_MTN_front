@@ -24,13 +24,22 @@ import { Link, useNavigate } from 'react-router-dom';
 import { professorEvaluationService, ProfessorEvaluation, ProfessorEvaluationStats } from '../services/professorEvaluationService';
 import { professorAuthService } from '../services/professorAuthService';
 import { EvaluationStatus, EvaluationType } from '../types/evaluation';
-import { FiRefreshCw, FiBarChart2 } from 'react-icons/fi';
+import { FiRefreshCw, FiBarChart2, FiCalendar, FiEye } from 'react-icons/fi';
 import AvailabilityScheduleManager from '../components/AvailabilityScheduleManager';
 import ChangePasswordButton from '../src/components/common/ChangePasswordButton';
+import {
+    Interview,
+    InterviewStatus,
+    InterviewType,
+    INTERVIEW_STATUS_LABELS,
+    INTERVIEW_TYPE_LABELS
+} from '../types/interview';
+import { interviewService } from '../services/interviewService';
 
 const baseSections = [
     { key: 'dashboard', label: 'Dashboard General', icon: DashboardIcon },
     { key: 'evaluaciones', label: 'Evaluaciones Pendientes', icon: ClockIcon },
+    { key: 'entrevistas', label: 'Mis Entrevistas', icon: UsersIcon },
     { key: 'estudiantes', label: 'Mis Estudiantes', icon: UsersIcon },
     { key: 'horarios', label: 'Mis Horarios', icon: ClockIcon },
     { key: 'reportes', label: 'Reportes y Estadísticas', icon: FileTextIcon },
@@ -63,6 +72,9 @@ const ProfessorDashboard: React.FC = () => {
         averageScore: 0
     });
     const [isLoading, setIsLoading] = useState(true);
+
+    // Estado para las entrevistas
+    const [interviews, setInterviews] = useState<Interview[]>([]);
 
     // Estado para el tab activo en la sección de evaluaciones
     const [activeEvaluationTab, setActiveEvaluationTab] = useState<'academicas' | 'psicologicas' | 'familiares'>('psicologicas');
@@ -150,14 +162,17 @@ const ProfessorDashboard: React.FC = () => {
             try {
                 if (isMounted) setIsLoading(true);
 
-                const [evaluationsData, statsData] = await Promise.all([
+                const [evaluationsData, statsData, interviewsData] = await Promise.all([
                     professorEvaluationService.getMyEvaluations(),
-                    professorEvaluationService.getMyEvaluationStats()
+                    professorEvaluationService.getMyEvaluationStats(),
+                    interviewService.getInterviewsByInterviewer(currentProfessor.id)
                 ]);
 
                 if (isMounted) {
                     setEvaluations(evaluationsData);
                     setEvaluationStats(statsData);
+                    setInterviews(interviewsData);
+                    console.log('📅 Loaded interviews for professor:', interviewsData.length);
                 }
 
             } catch (error: any) {
@@ -542,6 +557,153 @@ const ProfessorDashboard: React.FC = () => {
                     />
                 )}
             </Card>
+        );
+    };
+
+    const renderEntrevistas = () => {
+        // Separate interviews by status
+        const upcomingInterviews = interviews.filter(
+            i => i.status === InterviewStatus.SCHEDULED || i.status === InterviewStatus.CONFIRMED
+        ).sort((a, b) => {
+            const dateA = new Date(`${a.scheduledDate}T${a.scheduledTime}`);
+            const dateB = new Date(`${b.scheduledDate}T${b.scheduledTime}`);
+            return dateA.getTime() - dateB.getTime();
+        });
+
+        const completedInterviews = interviews.filter(
+            i => i.status === InterviewStatus.COMPLETED
+        ).sort((a, b) => {
+            const dateA = new Date(`${a.scheduledDate}T${a.scheduledTime}`);
+            const dateB = new Date(`${b.scheduledDate}T${b.scheduledTime}`);
+            return dateB.getTime() - dateA.getTime(); // Most recent first
+        });
+
+        const getStatusColor = (status: InterviewStatus): 'success' | 'warning' | 'info' | 'error' => {
+            switch (status) {
+                case InterviewStatus.COMPLETED:
+                    return 'success';
+                case InterviewStatus.SCHEDULED:
+                case InterviewStatus.CONFIRMED:
+                    return 'info';
+                case InterviewStatus.CANCELLED:
+                    return 'error';
+                default:
+                    return 'warning';
+            }
+        };
+
+        return (
+            <div className="space-y-6">
+                <Card className="p-6">
+                    <h2 className="text-xl font-bold text-azul-monte-tabor mb-6 flex items-center">
+                        <FiCalendar className="mr-2" />
+                        💬 Mis Entrevistas
+                    </h2>
+
+                    {isLoading ? (
+                        <div className="text-center py-8">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-azul-monte-tabor mx-auto"></div>
+                            <p className="text-gris-piedra mt-4">Cargando entrevistas...</p>
+                        </div>
+                    ) : interviews.length === 0 ? (
+                        <div className="text-center py-8">
+                            <ClockIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                            <p className="text-gris-piedra">No tienes entrevistas asignadas</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-6">
+                            {/* Upcoming Interviews */}
+                            <div>
+                                <h3 className="text-lg font-semibold text-azul-monte-tabor mb-4 flex items-center">
+                                    <ClockIcon className="w-5 h-5 mr-2" />
+                                    📅 Entrevistas Programadas ({upcomingInterviews.length})
+                                </h3>
+                                {upcomingInterviews.length === 0 ? (
+                                    <div className="text-center py-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                        <p className="text-sm text-blue-600">No hay entrevistas programadas próximamente</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {upcomingInterviews.map(interview => (
+                                            <div key={interview.id} className="border border-blue-200 bg-blue-50 rounded-lg p-4">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex-1">
+                                                        <h4 className="font-bold text-azul-monte-tabor">
+                                                            {interview.studentName}
+                                                        </h4>
+                                                        <p className="text-sm text-gris-piedra">
+                                                            Tipo: {INTERVIEW_TYPE_LABELS[interview.type as InterviewType] || interview.type}
+                                                        </p>
+                                                        <div className="text-xs text-gray-600 mt-1 space-y-1">
+                                                            <div>📅 {new Date(interview.scheduledDate).toLocaleDateString('es-CL', {
+                                                                weekday: 'long',
+                                                                day: 'numeric',
+                                                                month: 'long',
+                                                                year: 'numeric'
+                                                            })}</div>
+                                                            <div>🕐 {interview.scheduledTime} ({interview.duration} min)</div>
+                                                            {interview.location && <div>📍 {interview.location}</div>}
+                                                            {interview.secondInterviewerName && (
+                                                                <div>👥 Con: {interview.secondInterviewerName}</div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex flex-col items-end gap-2">
+                                                        <Badge variant={getStatusColor(interview.status)} size="sm">
+                                                            {INTERVIEW_STATUS_LABELS[interview.status]}
+                                                        </Badge>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Completed Interviews */}
+                            <div>
+                                <h3 className="text-lg font-semibold text-azul-monte-tabor mb-4 flex items-center">
+                                    <CheckCircleIcon className="w-5 h-5 mr-2 text-green-600" />
+                                    ✅ Entrevistas Realizadas ({completedInterviews.length})
+                                </h3>
+                                {completedInterviews.length === 0 ? (
+                                    <div className="text-center py-4 bg-green-50 border border-green-200 rounded-lg">
+                                        <p className="text-sm text-green-600">Aún no has completado ninguna entrevista</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {completedInterviews.slice(0, 10).map(interview => (
+                                            <div key={interview.id} className="border border-green-200 bg-green-50 rounded-lg p-4">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex-1">
+                                                        <h4 className="font-bold text-azul-monte-tabor">
+                                                            {interview.studentName}
+                                                        </h4>
+                                                        <p className="text-sm text-gris-piedra">
+                                                            Tipo: {INTERVIEW_TYPE_LABELS[interview.type as InterviewType] || interview.type}
+                                                        </p>
+                                                        <div className="text-xs text-gray-600 mt-1">
+                                                            Realizada el {new Date(interview.scheduledDate).toLocaleDateString('es-CL')} a las {interview.scheduledTime}
+                                                        </div>
+                                                        {interview.secondInterviewerName && (
+                                                            <div className="text-xs text-gray-600">👥 Con: {interview.secondInterviewerName}</div>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex flex-col items-end gap-2">
+                                                        <Badge variant="success" size="sm">
+                                                            Realizada
+                                                        </Badge>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </Card>
+            </div>
         );
     };
 
@@ -1004,6 +1166,8 @@ const ProfessorDashboard: React.FC = () => {
                 return renderDashboard();
             case 'evaluaciones':
                 return renderEvaluaciones();
+            case 'entrevistas':
+                return renderEntrevistas();
             case 'estudiantes':
                 return renderEstudiantes();
             case 'horarios':
