@@ -869,15 +869,24 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
                 {loadingInterviewers ? (
                   <option disabled>Cargando entrevistadores...</option>
                 ) : interviewersError ? (
-                  <option disabled>Error al cargar entrevistadores</option>
+                  <option disabled>{interviewersError}</option>
+                ) : interviewers.length === 0 ? (
+                  <option disabled>No hay entrevistadores con horarios configurados</option>
                 ) : (
-                  interviewers
-                    .filter(interviewer => {
+                  (() => {
+                    const filteredInterviewers = interviewers.filter(interviewer => {
                       // Excluir el primer entrevistador si ya está seleccionado
                       const firstInterviewerId = formData.interviewerId ? formData.interviewerId.toString() : '';
                       return interviewer.id.toString() !== firstInterviewerId;
-                    })
-                    .map(interviewer => (
+                    });
+
+                    console.log(`📋 Segundo entrevistador - Total entrevistadores: ${interviewers.length}, Después del filtro: ${filteredInterviewers.length}, Primer entrevistador ID: ${formData.interviewerId}`);
+
+                    if (filteredInterviewers.length === 0) {
+                      return <option disabled>No hay otros entrevistadores disponibles</option>;
+                    }
+
+                    return filteredInterviewers.map(interviewer => (
                       <option
                         key={interviewer.id}
                         value={interviewer.id}
@@ -885,7 +894,8 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
                       >
                         {interviewer.name} - {interviewer.role} {interviewer.scheduleCount === 0 ? '(Sin horarios)' : `(${interviewer.scheduleCount} horarios)`}
                       </option>
-                    ))
+                    ));
+                  })()
                 )}
               </select>
               {errors.secondInterviewerId && (
