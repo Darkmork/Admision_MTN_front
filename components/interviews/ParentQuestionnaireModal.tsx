@@ -348,6 +348,24 @@ const ParentQuestionnaireModal: React.FC<ParentQuestionnaireModalProps> = ({
             </>
           )}
 
+          {/* Empty State - cuando no hay loading, no hay error, pero tampoco hay datos */}
+          {!loading && !error && !formData && (
+            <div className="flex-1 flex items-center justify-center p-8">
+              <div className="text-center max-w-md">
+                <FiAlertCircle className="w-16 h-16 mx-auto text-blue-400 mb-4" />
+                <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                  Cuestionario No Completado
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  Los padres aún no han completado el cuestionario complementario para esta aplicación.
+                </p>
+                <p className="text-sm text-gray-500">
+                  El cuestionario es necesario para continuar con el proceso de admisión. Por favor, solicite a los padres que lo completen.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Footer */}
           <div className="border-t border-gray-200 p-4 flex justify-end">
             <button
