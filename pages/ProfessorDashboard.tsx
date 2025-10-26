@@ -809,9 +809,10 @@ const ProfessorDashboard: React.FC = () => {
                                                                         console.log('📋 Tipo de entrevista:', interview.type);
 
                                                                         // Determinar qué tipo de evaluación buscar según el tipo de entrevista
-                                                                        const expectedEvalType = interview.type === 'CYCLE_DIRECTOR'
-                                                                            ? 'CYCLE_DIRECTOR_INTERVIEW'
-                                                                            : 'PSYCHOLOGICAL_INTERVIEW';
+                                                                        const expectedEvalType =
+                                                                            interview.type === 'CYCLE_DIRECTOR' ? 'CYCLE_DIRECTOR_INTERVIEW' :
+                                                                            interview.type === 'FAMILY' ? 'FAMILY_INTERVIEW' :
+                                                                            'PSYCHOLOGICAL_INTERVIEW';
 
                                                                         console.log('🔍 Buscando evaluación de tipo:', expectedEvalType);
 
@@ -835,6 +836,9 @@ const ProfessorDashboard: React.FC = () => {
                                                                             } else if (matchingEval.evaluationType === 'PSYCHOLOGICAL_INTERVIEW') {
                                                                                 console.log('➡️ Navegando a formulario Psicológico');
                                                                                 navigate(`/psychological-interview/${matchingEval.id}`);
+                                                                            } else if (matchingEval.evaluationType === 'FAMILY_INTERVIEW') {
+                                                                                console.log('➡️ Navegando a formulario de Entrevista Familiar');
+                                                                                navigate(`/profesor/entrevista-familiar/${matchingEval.id}`);
                                                                             } else {
                                                                                 console.warn('⚠️ Tipo de evaluación no reconocido:', matchingEval.evaluationType);
                                                                                 alert(`Tipo de evaluación no soportado: ${matchingEval.evaluationType}`);
@@ -921,9 +925,10 @@ const ProfessorDashboard: React.FC = () => {
                                                                     const evals = await professorEvaluationService.getMyEvaluations();
 
                                                                     // Determinar qué tipo de evaluación buscar según el tipo de entrevista
-                                                                    const expectedEvalType = interview.type === 'CYCLE_DIRECTOR'
-                                                                        ? 'CYCLE_DIRECTOR_INTERVIEW'
-                                                                        : 'PSYCHOLOGICAL_INTERVIEW';
+                                                                    const expectedEvalType =
+                                                                        interview.type === 'CYCLE_DIRECTOR' ? 'CYCLE_DIRECTOR_INTERVIEW' :
+                                                                        interview.type === 'FAMILY' ? 'FAMILY_INTERVIEW' :
+                                                                        'PSYCHOLOGICAL_INTERVIEW';
 
                                                                     const matchingEval = evals.find(e =>
                                                                         e.applicationId === interview.applicationId &&
@@ -939,6 +944,8 @@ const ProfessorDashboard: React.FC = () => {
                                                                             navigate(`/cycle-director-interview/${matchingEval.id}`);
                                                                         } else if (matchingEval.evaluationType === 'PSYCHOLOGICAL_INTERVIEW') {
                                                                             navigate(`/psychological-interview/${matchingEval.id}`);
+                                                                        } else if (matchingEval.evaluationType === 'FAMILY_INTERVIEW') {
+                                                                            navigate(`/profesor/entrevista-familiar/${matchingEval.id}`);
                                                                         }
                                                                     } else {
                                                                         console.error('❌ No se encontró evaluación para ver resultados');
