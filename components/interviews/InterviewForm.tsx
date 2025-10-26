@@ -264,25 +264,37 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
       setIsLoadingSlots(true);
       let slots: string[];
 
+      console.log(`🔍 loadAvailableTimeSlots - Datos:`, {
+        type: formData.type,
+        interviewerId: formData.interviewerId,
+        secondInterviewerId: formData.secondInterviewerId,
+        hasSecondInterviewer: !!formData.secondInterviewerId,
+        shouldGetCommon: (formData.type === InterviewType.FAMILY || formData.type === InterviewType.CYCLE_DIRECTOR) && !!formData.secondInterviewerId
+      });
+
       // Si es entrevista FAMILY o CYCLE_DIRECTOR y hay dos entrevistadores, obtener horarios comunes
       if ((formData.type === InterviewType.FAMILY || formData.type === InterviewType.CYCLE_DIRECTOR) && formData.secondInterviewerId) {
-        console.log(`🔍 Obteniendo horarios comunes para entrevista ${formData.type}`);
+        console.log(`🔍 Obteniendo horarios comunes para entrevista ${formData.type} (entrevistador 1: ${formData.interviewerId}, entrevistador 2: ${formData.secondInterviewerId})`);
         slots = await interviewService.getCommonTimeSlots(
           parseInt(formData.interviewerId as string),
           parseInt(formData.secondInterviewerId as string),
           formData.scheduledDate,
           formData.duration
         );
+        console.log(`✅ Horarios comunes obtenidos:`, slots);
       } else {
         // Para otros tipos o si solo hay un entrevistador, obtener horarios individuales
+        console.log(`📋 Obteniendo horarios individuales para entrevistador ${formData.interviewerId}`);
         slots = await interviewService.getAvailableTimeSlots(
           parseInt(formData.interviewerId as string),
           formData.scheduledDate,
           formData.duration
         );
+        console.log(`✅ Horarios individuales obtenidos:`, slots);
       }
 
       setAvailableTimeSlots(slots);
+      console.log(`✅ availableTimeSlots actualizados a:`, slots);
 
       // Si la hora actual ya no está disponible, limpiarla
       if (formData.scheduledTime && !slots.includes(formData.scheduledTime)) {
