@@ -50,10 +50,10 @@ interface CycleDirectorInterviewData {
 }
 
 const CycleDirectorInterviewForm: React.FC = () => {
-    const { examId } = useParams<{ examId: string }>();
+    const { evaluationId } = useParams<{ evaluationId: string }>();
     const navigate = useNavigate();
     const { addNotification } = useNotifications();
-    
+
     const [evaluation, setEvaluation] = useState<ProfessorEvaluation | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -110,13 +110,13 @@ const CycleDirectorInterviewForm: React.FC = () => {
 
     useEffect(() => {
         const loadEvaluation = async () => {
-            if (!examId) return;
+            if (!evaluationId) return;
 
             try {
                 setIsLoading(true);
-                console.log('🔄 Cargando evaluación para entrevista director de ciclo:', examId);
+                console.log('🔄 Cargando evaluación para entrevista director de ciclo:', evaluationId);
 
-                const foundEvaluation = await professorEvaluationService.getEvaluationById(parseInt(examId));
+                const foundEvaluation = await professorEvaluationService.getEvaluationById(parseInt(evaluationId));
 
                 if (foundEvaluation) {
                     setEvaluation(foundEvaluation);
@@ -199,7 +199,7 @@ const CycleDirectorInterviewForm: React.FC = () => {
         };
 
         loadEvaluation();
-    }, [examId]); // Solo examId como dependencia - SIN addNotification para evitar bucle infinito
+    }, [evaluationId]); // Solo evaluationId como dependencia - SIN addNotification para evitar bucle infinito
 
     // Effect separado para mostrar notificaciones (se ejecuta solo cuando cambia loadError)
     useEffect(() => {
