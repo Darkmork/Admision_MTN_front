@@ -36,7 +36,7 @@ import {
 } from '../types/interview';
 import { interviewService } from '../services/interviewService';
 import { UserRole, USER_ROLE_LABELS } from '../types/user';
-import api from '../config/api';
+import api from '../services/api';
 
 const baseSections = [
     { key: 'dashboard', label: 'Dashboard General', icon: DashboardIcon },
