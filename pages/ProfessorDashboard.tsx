@@ -696,11 +696,18 @@ const ProfessorDashboard: React.FC = () => {
 
                                                                         if (matchingEval) {
                                                                             console.log('✅ Evaluación encontrada:', matchingEval.id);
-                                                                            // Navegar al formulario correspondiente
-                                                                            if (interview.type === 'CYCLE_DIRECTOR') {
+                                                                            console.log('📝 Tipo de evaluación encontrada:', matchingEval.evaluationType);
+
+                                                                            // Navegar al formulario correspondiente según el tipo de evaluación
+                                                                            if (matchingEval.evaluationType === 'CYCLE_DIRECTOR_INTERVIEW') {
+                                                                                console.log('➡️ Navegando a formulario de Director de Ciclo');
                                                                                 navigate(`/cycle-director-interview/${matchingEval.id}`);
-                                                                            } else {
+                                                                            } else if (matchingEval.evaluationType === 'PSYCHOLOGICAL_INTERVIEW') {
+                                                                                console.log('➡️ Navegando a formulario Psicológico');
                                                                                 navigate(`/psychological-interview/${matchingEval.id}`);
+                                                                            } else {
+                                                                                console.warn('⚠️ Tipo de evaluación no reconocido:', matchingEval.evaluationType);
+                                                                                alert(`Tipo de evaluación no soportado: ${matchingEval.evaluationType}`);
                                                                             }
                                                                         } else {
                                                                             console.error('❌ No se encontró evaluación');
@@ -780,20 +787,30 @@ const ProfessorDashboard: React.FC = () => {
 
                                                                 try {
                                                                     const evals = await professorEvaluationService.getMyEvaluations();
+
+                                                                    // Determinar qué tipo de evaluación buscar según el tipo de entrevista
+                                                                    const expectedEvalType = interview.type === 'CYCLE_DIRECTOR'
+                                                                        ? 'CYCLE_DIRECTOR_INTERVIEW'
+                                                                        : 'PSYCHOLOGICAL_INTERVIEW';
+
                                                                     const matchingEval = evals.find(e =>
                                                                         e.applicationId === interview.applicationId &&
-                                                                        (e.evaluationType === 'CYCLE_DIRECTOR_INTERVIEW' || e.evaluationType === 'PSYCHOLOGICAL_INTERVIEW')
+                                                                        e.evaluationType === expectedEvalType
                                                                     );
 
                                                                     if (matchingEval) {
-                                                                        // Navegar al formulario correspondiente en modo lectura
-                                                                        if (interview.type === 'CYCLE_DIRECTOR') {
+                                                                        console.log('✅ Evaluación encontrada para ver resultados:', matchingEval.id);
+                                                                        console.log('📝 Tipo:', matchingEval.evaluationType);
+
+                                                                        // Navegar al formulario correspondiente según el tipo de evaluación
+                                                                        if (matchingEval.evaluationType === 'CYCLE_DIRECTOR_INTERVIEW') {
                                                                             navigate(`/cycle-director-interview/${matchingEval.id}`);
-                                                                        } else {
+                                                                        } else if (matchingEval.evaluationType === 'PSYCHOLOGICAL_INTERVIEW') {
                                                                             navigate(`/psychological-interview/${matchingEval.id}`);
                                                                         }
                                                                     } else {
-                                                                        alert('No se encontró la evaluación asociada a esta entrevista.');
+                                                                        console.error('❌ No se encontró evaluación para ver resultados');
+                                                                        alert(`No se encontró la evaluación de tipo "${expectedEvalType}" asociada a esta entrevista.`);
                                                                     }
                                                                 } catch (error) {
                                                                     console.error('Error buscando evaluación:', error);
