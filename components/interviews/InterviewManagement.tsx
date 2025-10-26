@@ -791,31 +791,8 @@ const StudentDetailView: React.FC<StudentDetailViewProps> = ({
       console.log(`🔄 StudentDetailView: Cargando entrevistas para aplicación ${applicationId}...`);
       setIsLoading(true);
 
-      // Debug: Probar conexión directa al endpoint
-      console.log('🧪 Debug: Probando conexión directa al endpoint...');
-      try {
-        const directResponse = await fetch('http://localhost:8080/api/interviews');
-        const directData = await directResponse.json();
-        console.log('🧪 Debug: Respuesta directa del endpoint:', directData);
-
-        if (directData.success && directData.data) {
-          const filtered = directData.data.filter((interview: any) =>
-            parseInt(interview.applicationId) === applicationId
-          );
-          console.log(`🧪 Debug: Entrevistas filtradas para app ${applicationId}:`, filtered);
-        }
-      } catch (directError) {
-        console.error('🧪 Debug: Error en conexión directa:', directError);
-      }
-
-      // Usar el servicio normal
       const response = await interviewService.getInterviewsByApplication(applicationId);
       console.log(`✅ StudentDetailView: Entrevistas obtenidas para aplicación ${applicationId}:`, response);
-
-      // DEBUG: Log types of all interviews
-      if (response.interviews && response.interviews.length > 0) {
-        console.log('📋 Tipos de entrevista encontrados:', response.interviews.map(i => ({id: i.id, type: i.type})));
-      }
 
       setStudentInterviews(response.interviews || []);
     } catch (error) {
