@@ -829,7 +829,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
             {/* Entrevistador */}
             <div>
               <label htmlFor="interviewer" className="block text-sm font-medium text-gray-700 mb-2">
-                {formData.type === InterviewType.FAMILY ? 'Primer Entrevistador *' : 'Entrevistador *'}
+                {(formData.type === InterviewType.FAMILY || formData.type === InterviewType.CYCLE_DIRECTOR) ? 'Primer Entrevistador *' : 'Entrevistador *'}
               </label>
               <select
                 id="interviewer"
@@ -932,8 +932,8 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
                   <FiCalendar className="inline w-4 h-4 mr-1" />
                   Seleccionar Fecha y Hora *
                 </label>
-                {/* Mostrar mensaje si es FAMILY y falta el segundo entrevistador */}
-                {formData.type === InterviewType.FAMILY && formData.interviewerId && !formData.secondInterviewerId ? (
+                {/* Mostrar mensaje si es FAMILY o CYCLE_DIRECTOR y falta el segundo entrevistador */}
+                {(formData.type === InterviewType.FAMILY || formData.type === InterviewType.CYCLE_DIRECTOR) && formData.interviewerId && !formData.secondInterviewerId ? (
                   <div className="p-4 bg-yellow-50 border border-yellow-300 rounded-md">
                     <p className="text-sm text-yellow-800 text-center font-medium">
                       ⚠️ Para entrevistas familiares, primero debe seleccionar AMBOS entrevistadores
@@ -942,10 +942,10 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
                       Los horarios disponibles serán solo aquellos donde ambos entrevistadores están libres
                     </p>
                   </div>
-                ) : formData.interviewerId && (formData.type !== InterviewType.FAMILY || formData.secondInterviewerId) ? (
+                ) : formData.interviewerId && ((formData.type !== InterviewType.FAMILY && formData.type !== InterviewType.CYCLE_DIRECTOR) || formData.secondInterviewerId) ? (
                   <div>
-                    {/* Mostrar información de ambos entrevistadores para FAMILY */}
-                    {formData.type === InterviewType.FAMILY && formData.secondInterviewerId && (
+                    {/* Mostrar información de ambos entrevistadores para FAMILY o CYCLE_DIRECTOR */}
+                    {(formData.type === InterviewType.FAMILY || formData.type === InterviewType.CYCLE_DIRECTOR) && formData.secondInterviewerId && (
                       <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
                         <p className="text-sm font-medium text-blue-900 mb-1">
                           📅 Horarios comunes para:
@@ -964,12 +964,12 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
                         'Evaluador'
                       }
                       secondEvaluatorId={
-                        formData.type === InterviewType.FAMILY && formData.secondInterviewerId
+                        (formData.type === InterviewType.FAMILY || formData.type === InterviewType.CYCLE_DIRECTOR) && formData.secondInterviewerId
                           ? parseInt(formData.secondInterviewerId as string)
                           : undefined
                       }
                       secondEvaluatorName={
-                        formData.type === InterviewType.FAMILY && formData.secondInterviewerId
+                        (formData.type === InterviewType.FAMILY || formData.type === InterviewType.CYCLE_DIRECTOR) && formData.secondInterviewerId
                           ? interviewers.find(e => e.id === parseInt(formData.secondInterviewerId as string))?.name
                           : undefined
                       }
@@ -997,7 +997,7 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
                 ) : (
                   <div className="p-4 bg-gray-50 border border-gray-200 rounded-md">
                     <p className="text-sm text-gray-600 text-center">
-                      👆 Primero seleccione {formData.type === InterviewType.FAMILY ? 'ambos entrevistadores' : 'un entrevistador'} para ver los horarios disponibles
+                      👆 Primero seleccione {(formData.type === InterviewType.FAMILY || formData.type === InterviewType.CYCLE_DIRECTOR) ? 'ambos entrevistadores' : 'un entrevistador'} para ver los horarios disponibles
                     </p>
                   </div>
                 )}
