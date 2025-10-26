@@ -439,13 +439,13 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
         newErrors.interviewerId = 'Debe seleccionar un entrevistador';
       }
 
-      // Validar segundo entrevistador para entrevistas familiares
-      if (formData.type === InterviewType.FAMILY && !formData.secondInterviewerId) {
-        newErrors.secondInterviewerId = 'Debe seleccionar un segundo entrevistador para entrevistas familiares';
+      // Validar segundo entrevistador para entrevistas familiares y de director de ciclo
+      if ((formData.type === InterviewType.FAMILY || formData.type === InterviewType.CYCLE_DIRECTOR) && !formData.secondInterviewerId) {
+        newErrors.secondInterviewerId = 'Debe seleccionar un segundo entrevistador para este tipo de entrevista';
       }
 
-      // Validar que los dos entrevistadores no sean el mismo
-      if (formData.type === InterviewType.FAMILY && formData.interviewerId && formData.secondInterviewerId) {
+      // Validar que los dos entrevistadores no sean el mismo (para cualquier tipo de entrevista)
+      if (formData.interviewerId && formData.secondInterviewerId) {
         if (formData.interviewerId === formData.secondInterviewerId) {
           newErrors.secondInterviewerId = 'Debe seleccionar un entrevistador diferente al primero';
         }
@@ -850,49 +850,49 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
               )}
             </div>
 
-            {/* Segundo Entrevistador - Solo para entrevistas familiares */}
-            {formData.type === InterviewType.FAMILY && (
-              <div>
-                <label htmlFor="secondInterviewer" className="block text-sm font-medium text-gray-700 mb-2">
-                  <FiUser className="inline w-4 h-4 mr-1" />
-                  Segundo Entrevistador *
-                </label>
-                <select
-                  id="secondInterviewer"
-                  value={formData.secondInterviewerId}
-                  onChange={(e) => handleInputChange('secondInterviewerId', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-azul-monte-tabor focus:border-transparent ${
-                    errors.secondInterviewerId ? 'border-red-300 bg-red-50' : 'border-gray-300'
-                  }`}
-                  disabled={isViewMode || isCompleteMode}
-                >
-                  <option value="">Seleccionar segundo entrevistador</option>
-                  {loadingInterviewers ? (
-                    <option disabled>Cargando entrevistadores...</option>
-                  ) : interviewersError ? (
-                    <option disabled>Error al cargar entrevistadores</option>
-                  ) : (
-                    interviewers
-                      .filter(interviewer => interviewer.id.toString() !== formData.interviewerId)
-                      .map(interviewer => (
-                        <option
-                          key={interviewer.id}
-                          value={interviewer.id}
-                          disabled={interviewer.scheduleCount === 0}
-                        >
-                          {interviewer.name} - {interviewer.role} {interviewer.scheduleCount === 0 ? '(Sin horarios)' : `(${interviewer.scheduleCount} horarios)`}
-                        </option>
-                      ))
-                  )}
-                </select>
-                {errors.secondInterviewerId && (
-                  <p className="mt-1 text-sm text-red-600">{errors.secondInterviewerId}</p>
+            {/* Segundo Entrevistador */}
+            <div>
+              <label htmlFor="secondInterviewer" className="block text-sm font-medium text-gray-700 mb-2">
+                <FiUser className="inline w-4 h-4 mr-1" />
+                Segundo Entrevistador {(formData.type === InterviewType.FAMILY || formData.type === InterviewType.CYCLE_DIRECTOR) && '*'}
+              </label>
+              <select
+                id="secondInterviewer"
+                value={formData.secondInterviewerId}
+                onChange={(e) => handleInputChange('secondInterviewerId', e.target.value)}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-azul-monte-tabor focus:border-transparent ${
+                  errors.secondInterviewerId ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                }`}
+                disabled={isViewMode || isCompleteMode}
+              >
+                <option value="">Seleccionar segundo entrevistador</option>
+                {loadingInterviewers ? (
+                  <option disabled>Cargando entrevistadores...</option>
+                ) : interviewersError ? (
+                  <option disabled>Error al cargar entrevistadores</option>
+                ) : (
+                  interviewers
+                    .filter(interviewer => interviewer.id.toString() !== formData.interviewerId)
+                    .map(interviewer => (
+                      <option
+                        key={interviewer.id}
+                        value={interviewer.id}
+                        disabled={interviewer.scheduleCount === 0}
+                      >
+                        {interviewer.name} - {interviewer.role} {interviewer.scheduleCount === 0 ? '(Sin horarios)' : `(${interviewer.scheduleCount} horarios)`}
+                      </option>
+                    ))
                 )}
-                <p className="mt-1 text-xs text-gray-500">
-                  Las entrevistas familiares requieren dos entrevistadores
-                </p>
-              </div>
-            )}
+              </select>
+              {errors.secondInterviewerId && (
+                <p className="mt-1 text-sm text-red-600">{errors.secondInterviewerId}</p>
+              )}
+              <p className="mt-1 text-xs text-gray-500">
+                {(formData.type === InterviewType.FAMILY || formData.type === InterviewType.CYCLE_DIRECTOR)
+                  ? 'Este tipo de entrevista requiere dos entrevistadores'
+                  : 'Se recomienda contar con dos entrevistadores disponibles simultáneamente'}
+              </p>
+            </div>
           </div>
 
           {/* Programación */}
