@@ -662,8 +662,18 @@ class InterviewService {
       params.append('interviewerId', interviewerId.toString());
     }
 
-    const response = await api.get<InterviewResponse[]>(`${this.baseUrl}/calendar?${params}`);
-    return response.data.map(item => this.mapInterviewResponse(item));
+    const response = await api.get<any>(`${this.baseUrl}/calendar?${params}`);
+
+    // Backend returns { success: true, data: [...], count: N }
+    // Extract the array from response.data.data
+    const interviews = response.data?.data || response.data || [];
+
+    if (!Array.isArray(interviews)) {
+      console.error('❌ Calendar response is not an array:', response.data);
+      return [];
+    }
+
+    return interviews.map(item => this.mapInterviewResponse(item));
   }
 
   // Validación de disponibilidad
