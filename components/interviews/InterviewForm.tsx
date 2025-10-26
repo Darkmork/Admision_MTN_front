@@ -410,8 +410,8 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
         setFormData(prev => ({ ...prev, virtualMeetingLink: '' }));
       }
     } else if (field === 'type') {
-      // Limpiar segundo entrevistador si el tipo cambia y no es FAMILY
-      if (value !== InterviewType.FAMILY) {
+      // Limpiar segundo entrevistador si el tipo cambia y no es FAMILY ni CYCLE_DIRECTOR
+      if (value !== InterviewType.FAMILY && value !== InterviewType.CYCLE_DIRECTOR) {
         setFormData(prev => ({ ...prev, secondInterviewerId: '' }));
         // Limpiar error del segundo entrevistador también
         if (errors.secondInterviewerId) {
