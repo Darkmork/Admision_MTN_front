@@ -6,6 +6,7 @@ import Badge from '../components/ui/Badge';
 import { FiArrowLeft, FiCheckCircle } from 'react-icons/fi';
 import { professorEvaluationService } from '../services/professorEvaluationService';
 import FamilyInterviewForm, { FamilyInterviewData } from '../components/FamilyInterviewForm';
+import ParentQuestionnaireModal from '../components/interviews/ParentQuestionnaireModal';
 
 interface EvaluationData {
   id: number;
@@ -46,6 +47,7 @@ const FamilyInterviewPage: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [interviewData, setInterviewData] = useState<FamilyInterviewData | null>(null);
+  const [showQuestionnaireModal, setShowQuestionnaireModal] = useState(false);
 
   useEffect(() => {
     loadEvaluation();
@@ -290,25 +292,24 @@ const FamilyInterviewPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Cuestionario de Padres Link */}
+          {/* Cuestionario de Padres Button */}
           <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <h4 className="font-semibold text-azul-monte-tabor mb-2">
               Cuestionario de los Padres
             </h4>
             <p className="text-sm text-gris-piedra mb-3">
-              Los padres deben completar el cuestionario desde su dashboard de postulante.
+              Revisa las respuestas del cuestionario complementario completado por los padres.
             </p>
-            <a
-              href="/dashboard-apoderado"
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={() => setShowQuestionnaireModal(true)}
               className="inline-flex items-center gap-2 px-4 py-2 bg-azul-monte-tabor text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              <span>Ir al Cuestionario de Padres</span>
+              <span>Ver Cuestionario de Padres</span>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
               </svg>
-            </a>
+            </button>
           </div>
         </Card>
 
@@ -328,6 +329,13 @@ const FamilyInterviewPage: React.FC = () => {
           onCancel={() => navigate('/profesor/dashboard')}
           disabled={saving}
           readonly={evaluation.status === 'COMPLETED'}
+        />
+
+        {/* Parent Questionnaire Modal */}
+        <ParentQuestionnaireModal
+          isOpen={showQuestionnaireModal}
+          onClose={() => setShowQuestionnaireModal(false)}
+          applicationId={evaluation.applicationId}
         />
       </div>
     </div>
