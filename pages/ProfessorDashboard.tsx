@@ -35,6 +35,7 @@ import {
     INTERVIEW_TYPE_LABELS
 } from '../types/interview';
 import { interviewService } from '../services/interviewService';
+import { UserRole, USER_ROLE_LABELS } from '../types/user';
 
 const baseSections = [
     { key: 'dashboard', label: 'Dashboard General', icon: DashboardIcon },
@@ -47,16 +48,24 @@ const baseSections = [
 ];
 
 const ProfessorDashboard: React.FC = () => {
-    const [activeSection, setActiveSection] = useState('evaluaciones'); // Cambiado de 'dashboard' a 'evaluaciones'
     const navigate = useNavigate();
-    
-    
+
     // Obtener profesor actual del localStorage
     const [currentProfessor, setCurrentProfessor] = useState(() => {
         const storedProfessor = localStorage.getItem('currentProfessor');
         const parsed = storedProfessor ? JSON.parse(storedProfessor) : null;
         return parsed;
     });
+
+    // Determinar sección inicial según el rol
+    const getInitialSection = () => {
+        if (currentProfessor?.role === 'CYCLE_DIRECTOR' || currentProfessor?.role === 'PSYCHOLOGIST') {
+            return 'entrevistas'; // Directores de ciclo y psicólogos ven entrevistas por defecto
+        }
+        return 'evaluaciones'; // Profesores ven evaluaciones por defecto
+    };
+
+    const [activeSection, setActiveSection] = useState(getInitialSection());
 
     // Usar useRef para estabilizar la referencia y evitar re-renders infinitos
     const currentProfessorRef = useRef(currentProfessor);
@@ -293,7 +302,7 @@ const ProfessorDashboard: React.FC = () => {
                     Profesor/a de {currentProfessor?.subject ? getSubjectName(currentProfessor.subject) : 'Asignatura no especificada'}
                 </p>
                 <p className="text-blue-100 text-sm mt-1">
-                    Rol: {currentProfessor?.role === 'TEACHER' ? 'Docente' : currentProfessor?.role}
+                    Rol: {currentProfessor?.role ? USER_ROLE_LABELS[currentProfessor.role as UserRole] : 'No especificado'}
                 </p>
             </Card>
 
@@ -1196,7 +1205,7 @@ const ProfessorDashboard: React.FC = () => {
                                 <p><strong>Nombre:</strong> {currentProfessor?.firstName} {currentProfessor?.lastName}</p>
                                 <p><strong>Email:</strong> {currentProfessor?.email}</p>
                                 <p><strong>Asignatura:</strong> {currentProfessor?.subject ? getSubjectName(currentProfessor.subject) : 'No especificada'}</p>
-                                <p><strong>Rol:</strong> {currentProfessor?.role === 'TEACHER' ? 'Docente' : currentProfessor?.role}</p>
+                                <p><strong>Rol:</strong> {currentProfessor?.role ? USER_ROLE_LABELS[currentProfessor.role as UserRole] : 'No especificado'}</p>
                                 {currentProfessor?.isAdmin && (
                                     <p className="text-dorado-nazaret"><strong>Permisos:</strong> Administrador</p>
                                 )}
