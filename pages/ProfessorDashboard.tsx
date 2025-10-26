@@ -935,6 +935,8 @@ const ProfessorDashboard: React.FC = () => {
                             </div>
                         </div>
                     )}
+                        </>
+                    )}
                 </Card>
             </div>
         );
