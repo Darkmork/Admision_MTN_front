@@ -936,10 +936,10 @@ const StudentDetailView: React.FC<StudentDetailViewProps> = ({
                             <span className="font-medium">📅 Fecha:</span>
                             <br />
                             {(() => {
-                              // Usar fullScheduledDateTime si existe, sino combinar fecha y hora
-                              const dateTimeString = (existingInterview as any).fullScheduledDateTime ||
-                                                    `${existingInterview.scheduledDate}T${existingInterview.scheduledTime || '00:00'}`;
-                              return new Date(dateTimeString).toLocaleDateString('es-CL', {
+                              // Parsear fecha en zona horaria local para evitar desfase
+                              const [year, month, day] = existingInterview.scheduledDate.split('-');
+                              const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                              return date.toLocaleDateString('es-CL', {
                                 weekday: 'short',
                                 year: 'numeric',
                                 month: 'short',
