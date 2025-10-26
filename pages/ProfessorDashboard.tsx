@@ -823,7 +823,7 @@ const ProfessorDashboard: React.FC = () => {
                                                                                 // Crear evaluación automáticamente
                                                                                 const newEvaluation = await api.post('/api/evaluations', {
                                                                                     applicationId: interview.applicationId,
-                                                                                    evaluatorId: user?.id,
+                                                                                    evaluatorId: currentProfessor?.id,
                                                                                     evaluationType: expectedEvalType,
                                                                                     score: 0,
                                                                                     maxScore: 100,
