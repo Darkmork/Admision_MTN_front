@@ -872,7 +872,11 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
                   <option disabled>Error al cargar entrevistadores</option>
                 ) : (
                   interviewers
-                    .filter(interviewer => interviewer.id.toString() !== formData.interviewerId)
+                    .filter(interviewer => {
+                      // Excluir el primer entrevistador si ya está seleccionado
+                      const firstInterviewerId = formData.interviewerId ? formData.interviewerId.toString() : '';
+                      return interviewer.id.toString() !== firstInterviewerId;
+                    })
                     .map(interviewer => (
                       <option
                         key={interviewer.id}
