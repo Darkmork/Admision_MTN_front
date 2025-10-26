@@ -57,6 +57,10 @@ const FamilyInterviewPage: React.FC = () => {
     try {
       setLoading(true);
       const data = await professorEvaluationService.getEvaluationById(parseInt(evaluationId));
+      console.log('📊 Evaluation data received:', data);
+      console.log('👨‍👦 Father data:', data.father);
+      console.log('👩‍👦 Mother data:', data.mother);
+      console.log('👨‍🏫 Evaluator data:', data.evaluator);
       setEvaluation(data as any);
 
       // Si ya existe data, cargarla en el formulario
