@@ -114,23 +114,19 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
         const currentYear = new Date().getFullYear();
         console.log(`🔍 Cargando entrevistadores con horarios configurados para ${currentYear}...`);
 
-        const response = await httpClient.get(`/api/interviewer-schedules/interviewers-with-schedules/${currentYear}`);
-        console.log('✅ Respuesta del servidor:', response);
+        const data = await httpClient.get(`/api/interviewer-schedules/interviewers-with-schedules/${currentYear}`);
+        console.log('✅ Datos recibidos del servidor:', data);
 
-        // Verificar que la respuesta tenga datos válidos
-        if (!response || !response.data) {
-          throw new Error('Respuesta inválida del servidor');
-        }
-
-        // Extraer datos - puede venir como response.data directamente o como response.data.data
-        const dataArray = Array.isArray(response.data) ? response.data : response.data.data;
+        // httpClient.get ya retorna response.data directamente
+        // Puede ser un array directamente o {data: array}
+        const dataArray = Array.isArray(data) ? data : (data as any).data;
 
         if (!Array.isArray(dataArray)) {
-          console.error('❌ Formato de datos inválido:', response.data);
-          throw new Error('Formato de datos inválido del servidor');
+          console.error('❌ Formato de datos inválido. Se esperaba un array:', data);
+          throw new Error('No se encontraron entrevistadores con horarios configurados');
         }
 
-        console.log('✅ Entrevistadores obtenidos:', dataArray);
+        console.log('✅ Array de entrevistadores:', dataArray);
 
         // El backend ya devuelve el formato correcto con firstName, lastName, role, scheduleCount
         const mappedInterviewers: BackendInterviewer[] = dataArray.map((item: any) => ({
@@ -149,7 +145,15 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
         setInterviewers(interviewersWithSchedules);
       } catch (error: any) {
         console.error('❌ Error cargando entrevistadores:', error);
-        setInterviewersError(error.message || 'Error al cargar la lista de entrevistadores');
+
+        // Manejar errores específicos
+        if (error.status === 401) {
+          setInterviewersError('Sesión expirada. Por favor, inicie sesión nuevamente.');
+        } else if (error.status === 403) {
+          setInterviewersError('No tiene permisos para ver los entrevistadores.');
+        } else {
+          setInterviewersError(error.message || 'Error al cargar la lista de entrevistadores');
+        }
       } finally {
         setLoadingInterviewers(false);
       }
@@ -344,13 +348,10 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
     try {
       setConflictWarning(null);
 
-      const response = await httpClient.get(`/api/interviewer-schedules/available?date=${date}&time=${time}`);
+      const data = await httpClient.get(`/api/interviewer-schedules/available?date=${date}&time=${time}`);
 
-      if (!response || !response.data) {
-        throw new Error('Respuesta inválida del servidor');
-      }
-
-      const { count, interviewers } = response.data;
+      // httpClient.get ya retorna response.data directamente
+      const { count, interviewers } = data;
 
       console.log(`✅ Entrevistadores disponibles para ${date} ${time}: ${count}`);
 
@@ -499,15 +500,12 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
         duration: formData.duration
       });
 
-      const response = await httpClient.get(
+      const data = await httpClient.get(
         `/api/interviewer-schedules/available?date=${formData.scheduledDate}&time=${formData.scheduledTime}`
       );
 
-      if (!response || !response.data) {
-        throw new Error('Respuesta inválida del servidor');
-      }
-
-      const { count } = response.data;
+      // httpClient.get ya retorna response.data directamente
+      const { count } = data;
 
       if (count < 2) {
         setConflictWarning(
