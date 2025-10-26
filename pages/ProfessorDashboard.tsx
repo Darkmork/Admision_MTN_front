@@ -173,6 +173,8 @@ const ProfessorDashboard: React.FC = () => {
                     setEvaluationStats(statsData);
                     setInterviews(interviewsData);
                     console.log('📅 Loaded interviews for professor:', interviewsData.length);
+                    console.log('👤 Professor ID:', currentProfessor.id);
+                    console.log('📋 Interview details:', interviewsData);
                 }
 
             } catch (error: any) {
@@ -1264,6 +1266,9 @@ const ProfessorDashboard: React.FC = () => {
                     <nav className="space-y-2" aria-label="Menú de navegación del profesor">
                         {sections.map((section) => {
                             const IconComponent = section.icon;
+                            // Show count badge for interviews section
+                            const showBadge = section.key === 'entrevistas' && interviews.length > 0;
+
                             return (
                                 <button
                                     key={section.key}
@@ -1277,7 +1282,12 @@ const ProfessorDashboard: React.FC = () => {
                                     aria-current={activeSection === section.key ? 'page' : undefined}
                                 >
                                     <IconComponent className="w-5 h-5" aria-hidden="true" />
-                                    {section.label}
+                                    <span className="flex-1">{section.label}</span>
+                                    {showBadge && (
+                                        <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                                            {interviews.length}
+                                        </span>
+                                    )}
                                 </button>
                             );
                         })}
