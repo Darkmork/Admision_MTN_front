@@ -425,7 +425,30 @@ const ProfessorDashboard: React.FC = () => {
             activeEvaluationTab === 'psicologicas' ? psychologicalEvaluations :
             familyEvaluations;
 
-        // Columnas base que siempre se muestran
+        // Columnas simplificadas para entrevistas/informes
+        const simpleColumns = [
+            {
+                key: 'student' as keyof ProfessorEvaluation,
+                header: 'Nombre Estudiante',
+                render: (value: any, evaluation: ProfessorEvaluation) => (
+                    <p className="font-semibold">{evaluation.studentName}</p>
+                )
+            },
+            {
+                key: 'studentRut' as keyof ProfessorEvaluation,
+                header: 'RUT',
+                render: (value: any, evaluation: ProfessorEvaluation) => (
+                    <p className="text-sm">{evaluation.studentRut || '-'}</p>
+                )
+            },
+            {
+                key: 'status' as keyof ProfessorEvaluation,
+                header: 'Estado',
+                render: (status: EvaluationStatus) => getEvaluationStatusBadge(status)
+            }
+        ];
+
+        // Columnas completas para exámenes académicos
         const baseColumns = [
             {
                 key: 'student' as keyof ProfessorEvaluation,
@@ -476,9 +499,9 @@ const ProfessorDashboard: React.FC = () => {
                     variant="primary"
                     onClick={() => navigate(
                         evaluation.evaluationType === 'CYCLE_DIRECTOR_INTERVIEW'
-                            ? `/profesor/entrevista-director/${evaluation.id}`
+                            ? `/cycle-director-interview/${evaluation.id}`
                             : evaluation.evaluationType === 'PSYCHOLOGICAL_INTERVIEW'
-                            ? `/profesor/entrevista-director/${evaluation.id}`
+                            ? `/psychological-interview/${evaluation.id}`
                             : evaluation.evaluationType === 'CYCLE_DIRECTOR_REPORT'
                             ? `/profesor/informe-director/${evaluation.id}`
                             : evaluation.evaluationType === 'FAMILY_INTERVIEW'
@@ -501,8 +524,8 @@ const ProfessorDashboard: React.FC = () => {
 
         // Determinar qué columnas mostrar según el tab activo
         const evaluationColumns = activeEvaluationTab === 'academicas'
-            ? [...baseColumns, scoreColumn, actionsColumn]
-            : [...baseColumns, actionsColumn];
+            ? [...baseColumns, scoreColumn, actionsColumn]  // Exámenes académicos: info completa
+            : [...simpleColumns, actionsColumn];             // Entrevistas/informes: solo nombre, RUT, estado
 
         return (
             <Card className="p-6">
