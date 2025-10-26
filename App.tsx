@@ -95,7 +95,7 @@ function App() {
                                     <AdmissionReportForm />
                                 </ProtectedProfessorRoute>
                             } />
-                            <Route path="/profesor/informe-director/:examId" element={
+                            <Route path="/profesor/informe-director/:evaluationId" element={
                                 <ProtectedProfessorRoute>
                                     <CycleDirectorReportForm />
                                 </ProtectedProfessorRoute>

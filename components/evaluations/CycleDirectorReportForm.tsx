@@ -35,7 +35,7 @@ interface SubjectResult {
 }
 
 const CycleDirectorReportForm: React.FC = () => {
-    const { examId } = useParams<{ examId: string }>();
+    const { evaluationId } = useParams<{ evaluationId: string }>();
     const navigate = useNavigate();
     const { addNotification } = useNotifications();
     
@@ -66,14 +66,14 @@ const CycleDirectorReportForm: React.FC = () => {
 
     useEffect(() => {
         const loadEvaluationData = async () => {
-            if (!examId) return;
+            if (!evaluationId) return;
             
             try {
                 setIsLoading(true);
-                console.log('🔄 Cargando evaluación director de ciclo:', examId);
+                console.log('🔄 Cargando evaluación director de ciclo:', evaluationId);
                 
                 // Cargar la evaluación del director de ciclo
-                const directorEvaluation = await professorEvaluationService.getEvaluationById(parseInt(examId));
+                const directorEvaluation = await professorEvaluationService.getEvaluationById(parseInt(evaluationId));
                 
                 if (directorEvaluation) {
                     setEvaluation(directorEvaluation);
@@ -130,7 +130,7 @@ const CycleDirectorReportForm: React.FC = () => {
         };
 
         loadEvaluationData();
-    }, [examId]); // ✅ SOLO examId como dependencia
+    }, [evaluationId]); // ✅ SOLO evaluationId como dependencia
 
     const loadStudentInfo = async (applicationId: number): Promise<Partial<CycleDirectorReportData>> => {
         try {
