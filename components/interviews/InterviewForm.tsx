@@ -264,9 +264,9 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
       setIsLoadingSlots(true);
       let slots: string[];
 
-      // Si es entrevista FAMILY y hay dos entrevistadores, obtener horarios comunes
-      if (formData.type === InterviewType.FAMILY && formData.secondInterviewerId) {
-        console.log('🔍 Obteniendo horarios comunes para entrevista FAMILY');
+      // Si es entrevista FAMILY o CYCLE_DIRECTOR y hay dos entrevistadores, obtener horarios comunes
+      if ((formData.type === InterviewType.FAMILY || formData.type === InterviewType.CYCLE_DIRECTOR) && formData.secondInterviewerId) {
+        console.log(`🔍 Obteniendo horarios comunes para entrevista ${formData.type}`);
         slots = await interviewService.getCommonTimeSlots(
           parseInt(formData.interviewerId as string),
           parseInt(formData.secondInterviewerId as string),
