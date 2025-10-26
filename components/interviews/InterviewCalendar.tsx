@@ -80,7 +80,8 @@ const InterviewCalendar: React.FC<InterviewCalendarProps> = ({
       date.setDate(startDate.getDate() + i);
       
       const dayInterviews = interviews.filter(interview => {
-        const interviewDate = new Date(interview.scheduledDate);
+        // Usar parseLocalDate para evitar problemas de zona horaria
+        const interviewDate = parseLocalDate(interview.scheduledDate);
         return interviewDate.toDateString() === date.toDateString();
       });
       
@@ -241,7 +242,8 @@ const InterviewCalendar: React.FC<InterviewCalendarProps> = ({
     if (!selectedDate) return null;
     
     const dayInterviews = interviews.filter(interview => {
-      const interviewDate = new Date(interview.scheduledDate);
+      // Usar parseLocalDate para evitar problemas de zona horaria
+      const interviewDate = parseLocalDate(interview.scheduledDate);
       return interviewDate.toDateString() === selectedDate.toDateString();
     });
     
