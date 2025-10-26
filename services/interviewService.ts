@@ -101,7 +101,11 @@ class InterviewService {
 
     // Extraer fecha y hora por separado para compatibilidad
     const scheduledDate = backendData.scheduledDate ? backendData.scheduledDate.split('T')[0] : '';
-    const scheduledTime = this.extractTimeFromDate(backendData.scheduledDate);
+    // FIX: Usar scheduledTime del backend directamente (ya viene en formato HH:MM:SS o HH:MM)
+    // No extraer de scheduledDate porque new Date() causa conversión de zona horaria
+    const scheduledTime = backendData.scheduledTime
+      ? (backendData.scheduledTime.length > 5 ? backendData.scheduledTime.substring(0, 5) : backendData.scheduledTime)
+      : this.extractTimeFromDate(backendData.scheduledDate);
 
     return {
       id: parseInt(backendData.id) || 0,
