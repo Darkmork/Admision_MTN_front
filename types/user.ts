@@ -7,6 +7,7 @@ export enum UserRole {
   TEACHER = 'TEACHER',
   COORDINATOR = 'COORDINATOR',
   PSYCHOLOGIST = 'PSYCHOLOGIST',
+  INTERVIEWER = 'INTERVIEWER',
   CYCLE_DIRECTOR = 'CYCLE_DIRECTOR'
 }
 
@@ -34,6 +35,7 @@ export const USER_ROLE_LABELS: Record<UserRole, string> = {
   [UserRole.TEACHER]: 'Profesor',
   [UserRole.COORDINATOR]: 'Coordinador',
   [UserRole.PSYCHOLOGIST]: 'Psicólogo/a',
+  [UserRole.INTERVIEWER]: 'Entrevistador/a',
   [UserRole.CYCLE_DIRECTOR]: 'Director de Ciclo'
 };
 
@@ -238,6 +240,7 @@ export const UserUtils = {
     UserRole.TEACHER,
     UserRole.COORDINATOR,
     UserRole.PSYCHOLOGIST,
+    UserRole.INTERVIEWER,
     UserRole.CYCLE_DIRECTOR
   ],
 
@@ -252,6 +255,7 @@ export const UserUtils = {
     UserRole.TEACHER,
     UserRole.COORDINATOR,
     UserRole.PSYCHOLOGIST,
+    UserRole.INTERVIEWER,
     UserRole.CYCLE_DIRECTOR
   ],
 
@@ -293,6 +297,8 @@ export const UserUtils = {
       case UserRole.CYCLE_DIRECTOR:
         return 'primary';
       case UserRole.PSYCHOLOGIST:
+        return 'warning';
+      case UserRole.INTERVIEWER:
         return 'warning';
       case UserRole.COORDINATOR:
         return 'primary';
@@ -348,6 +354,8 @@ export const UserUtils = {
       case UserRole.COORDINATOR:
         return 'Coordinación';
       case UserRole.PSYCHOLOGIST:
+        return 'Psicología';
+      case UserRole.INTERVIEWER:
         return 'Psicología';
       case UserRole.CYCLE_DIRECTOR:
         return 'Dirección';
