@@ -547,8 +547,13 @@ const SharedCalendar: React.FC<SharedCalendarProps> = ({
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-gray-600">Entrevistador</label>
-                  <p className="text-gray-900">{selectedInterview.interviewerName}</p>
+                  <label className="text-sm font-medium text-gray-600">Entrevistador{selectedInterview.secondInterviewerName ? 'es' : ''}</label>
+                  <p className="text-gray-900">
+                    {selectedInterview.interviewerName}
+                    {selectedInterview.secondInterviewerName && (
+                      <span> y {selectedInterview.secondInterviewerName}</span>
+                    )}
+                  </p>
                 </div>
 
                 <div>
