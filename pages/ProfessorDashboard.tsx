@@ -667,10 +667,32 @@ const ProfessorDashboard: React.FC = () => {
                                                             <Button
                                                                 variant="primary"
                                                                 size="sm"
-                                                                onClick={() => {
-                                                                    // TODO: Navigate to interview form/pauta
+                                                                onClick={async () => {
                                                                     console.log('Realizar entrevista:', interview.id);
-                                                                    alert(`Próximamente: Realizar entrevista para ${interview.studentName}\n\nAquí se abrirá el formulario con la pauta de entrevista.`);
+                                                                    console.log('Application ID:', interview.applicationId);
+
+                                                                    // Buscar evaluación existente o crear placeholder
+                                                                    try {
+                                                                        const evals = await professorEvaluationService.getMyEvaluations();
+                                                                        const matchingEval = evals.find(e =>
+                                                                            e.applicationId === interview.applicationId &&
+                                                                            (e.evaluationType === 'CYCLE_DIRECTOR_INTERVIEW' || e.evaluationType === 'PSYCHOLOGICAL_INTERVIEW')
+                                                                        );
+
+                                                                        if (matchingEval) {
+                                                                            // Navegar al formulario correspondiente
+                                                                            if (interview.type === 'CYCLE_DIRECTOR') {
+                                                                                navigate(`/cycle-director-interview/${matchingEval.id}`);
+                                                                            } else {
+                                                                                navigate(`/psychological-interview/${matchingEval.id}`);
+                                                                            }
+                                                                        } else {
+                                                                            alert(`No se encontró una evaluación asociada a esta entrevista.\n\nPor favor, asigna primero una evaluación de tipo "${interview.type === 'CYCLE_DIRECTOR' ? 'Director de Ciclo' : 'Psicológica'}" para esta aplicación.`);
+                                                                        }
+                                                                    } catch (error) {
+                                                                        console.error('Error buscando evaluación:', error);
+                                                                        alert('Error al buscar la evaluación asociada');
+                                                                    }
                                                                 }}
                                                             >
                                                                 📝 Realizar
@@ -679,8 +701,9 @@ const ProfessorDashboard: React.FC = () => {
                                                                 variant="outline"
                                                                 size="sm"
                                                                 onClick={() => {
-                                                                    // TODO: Navigate to interview details
+                                                                    // TODO: Navigate to interview details modal
                                                                     console.log('Ver detalles:', interview.id);
+                                                                    alert(`Detalles de entrevista:\n\nEstudiante: ${interview.studentName}\nFecha: ${interview.scheduledDate}\nHora: ${interview.scheduledTime}\nTipo: ${INTERVIEW_TYPE_LABELS[interview.type as InterviewType]}`);
                                                                 }}
                                                             >
                                                                 👁️ Ver
@@ -730,9 +753,31 @@ const ProfessorDashboard: React.FC = () => {
                                                         <Button
                                                             variant="outline"
                                                             size="sm"
-                                                            onClick={() => {
-                                                                // TODO: Navigate to interview results/pauta
+                                                            onClick={async () => {
                                                                 console.log('Ver resultados:', interview.id);
+                                                                console.log('Application ID:', interview.applicationId);
+
+                                                                try {
+                                                                    const evals = await professorEvaluationService.getMyEvaluations();
+                                                                    const matchingEval = evals.find(e =>
+                                                                        e.applicationId === interview.applicationId &&
+                                                                        (e.evaluationType === 'CYCLE_DIRECTOR_INTERVIEW' || e.evaluationType === 'PSYCHOLOGICAL_INTERVIEW')
+                                                                    );
+
+                                                                    if (matchingEval) {
+                                                                        // Navegar al formulario correspondiente en modo lectura
+                                                                        if (interview.type === 'CYCLE_DIRECTOR') {
+                                                                            navigate(`/cycle-director-interview/${matchingEval.id}`);
+                                                                        } else {
+                                                                            navigate(`/psychological-interview/${matchingEval.id}`);
+                                                                        }
+                                                                    } else {
+                                                                        alert('No se encontró la evaluación asociada a esta entrevista.');
+                                                                    }
+                                                                } catch (error) {
+                                                                    console.error('Error buscando evaluación:', error);
+                                                                    alert('Error al cargar los resultados');
+                                                                }
                                                             }}
                                                         >
                                                             📄 Ver Resultados
