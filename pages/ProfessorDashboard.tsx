@@ -672,21 +672,24 @@ const ProfessorDashboard: React.FC = () => {
                                     >
                                         🎓 Entrevistas Director de Ciclo ({directorInterviews.length})
                                     </button>
-                                    <button
-                                        onClick={() => setActiveInterviewTab('informes')}
-                                        className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
-                                            activeInterviewTab === 'informes'
-                                                ? 'border-azul-monte-tabor text-azul-monte-tabor'
-                                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                                        }`}
-                                    >
-                                        📊 Informes Finales
-                                    </button>
+                                    {/* Solo mostrar Informes Finales para Directores de Ciclo */}
+                                    {currentProfessor?.role === 'CYCLE_DIRECTOR' && (
+                                        <button
+                                            onClick={() => setActiveInterviewTab('informes')}
+                                            className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                                                activeInterviewTab === 'informes'
+                                                    ? 'border-azul-monte-tabor text-azul-monte-tabor'
+                                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                            }`}
+                                        >
+                                            📊 Informes Finales
+                                        </button>
+                                    )}
                                 </nav>
                             </div>
 
                             {/* Contenido según tab activo */}
-                            {activeInterviewTab === 'informes' ? (
+                            {activeInterviewTab === 'informes' && currentProfessor?.role === 'CYCLE_DIRECTOR' ? (
                                 <div className="space-y-6">
                                     {/* Informes Finales - CYCLE_DIRECTOR_REPORT */}
                                     <div>
