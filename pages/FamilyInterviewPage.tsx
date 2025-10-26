@@ -20,6 +20,21 @@ interface EvaluationData {
   observations?: string;
   createdAt: string;
   updatedAt: string;
+  evaluator?: {
+    firstName: string;
+    lastName: string;
+    subject?: string;
+  };
+  father?: {
+    name: string;
+    email?: string;
+    phone?: string;
+  };
+  mother?: {
+    name: string;
+    email?: string;
+    phone?: string;
+  };
 }
 
 const FamilyInterviewPage: React.FC = () => {
@@ -170,6 +185,27 @@ const FamilyInterviewPage: React.FC = () => {
           )}
         </div>
 
+        {/* Interviewer Info Card */}
+        <Card className="p-6">
+          <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">
+            Entrevistador
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium text-gris-piedra">Nombre del Entrevistador</label>
+              <p className="text-lg font-semibold">
+                {evaluation.evaluator?.firstName} {evaluation.evaluator?.lastName}
+              </p>
+            </div>
+            {evaluation.evaluator?.subject && (
+              <div>
+                <label className="text-sm font-medium text-gris-piedra">Área</label>
+                <p className="text-lg">{evaluation.evaluator.subject}</p>
+              </div>
+            )}
+          </div>
+        </Card>
+
         {/* Student Info Card */}
         <Card className="p-6">
           <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">
@@ -198,6 +234,77 @@ const FamilyInterviewPage: React.FC = () => {
                 </p>
               </div>
             )}
+          </div>
+        </Card>
+
+        {/* Parent Info Card */}
+        <Card className="p-6">
+          <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">
+            Información de los Padres
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Father */}
+            <div className="space-y-3">
+              <h3 className="font-semibold text-azul-monte-tabor">Padre</h3>
+              <div>
+                <label className="text-sm font-medium text-gris-piedra">Nombre</label>
+                <p className="text-lg">{evaluation.father?.name || 'No registrado'}</p>
+              </div>
+              {evaluation.father?.email && (
+                <div>
+                  <label className="text-sm font-medium text-gris-piedra">Email</label>
+                  <p className="text-lg">{evaluation.father.email}</p>
+                </div>
+              )}
+              {evaluation.father?.phone && (
+                <div>
+                  <label className="text-sm font-medium text-gris-piedra">Teléfono</label>
+                  <p className="text-lg">{evaluation.father.phone}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Mother */}
+            <div className="space-y-3">
+              <h3 className="font-semibold text-azul-monte-tabor">Madre</h3>
+              <div>
+                <label className="text-sm font-medium text-gris-piedra">Nombre</label>
+                <p className="text-lg">{evaluation.mother?.name || 'No registrado'}</p>
+              </div>
+              {evaluation.mother?.email && (
+                <div>
+                  <label className="text-sm font-medium text-gris-piedra">Email</label>
+                  <p className="text-lg">{evaluation.mother.email}</p>
+                </div>
+              )}
+              {evaluation.mother?.phone && (
+                <div>
+                  <label className="text-sm font-medium text-gris-piedra">Teléfono</label>
+                  <p className="text-lg">{evaluation.mother.phone}</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Cuestionario de Padres Link */}
+          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <h4 className="font-semibold text-azul-monte-tabor mb-2">
+              Cuestionario de los Padres
+            </h4>
+            <p className="text-sm text-gris-piedra mb-3">
+              Los padres deben completar el cuestionario desde su dashboard de postulante.
+            </p>
+            <a
+              href="/dashboard-apoderado"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-azul-monte-tabor text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <span>Ir al Cuestionario de Padres</span>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+            </a>
           </div>
         </Card>
 
