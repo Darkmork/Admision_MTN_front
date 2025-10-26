@@ -30,6 +30,21 @@ export interface ProfessorEvaluation {
             currentSchool?: string;
         };
     };
+    evaluator?: {
+        firstName: string;
+        lastName: string;
+        subject?: string;
+    };
+    father?: {
+        name: string;
+        email?: string;
+        phone?: string;
+    } | null;
+    mother?: {
+        name: string;
+        email?: string;
+        phone?: string;
+    } | null;
 }
 
 export interface ProfessorEvaluationStats {
@@ -212,9 +227,12 @@ class ProfessorEvaluationService {
             followUpNotes: apiEvaluation.followUpNotes,
             evaluatorName: this.getEvaluatorName(apiEvaluation),
             evaluatorSubject: this.getEvaluatorSubject(apiEvaluation),
-            application: apiEvaluation.application
+            application: apiEvaluation.application,
+            evaluator: apiEvaluation.evaluator,
+            father: apiEvaluation.father,
+            mother: apiEvaluation.mother
         };
-        
+
         return mappedEvaluation;
     }
     
