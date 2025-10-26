@@ -5,8 +5,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { FiX, FiRefreshCw } from 'react-icons/fi';
-import { dashboardClient } from '../../api/dashboard.client';
-import type { DetailedAdminStats, Alert } from '../../api/dashboard.types';
+import { dashboardClient } from '../../src/api/dashboard.client';
+import type { DetailedAdminStats, Alert } from '../../src/api/dashboard.types';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface CoordinatorDashboardModalProps {
