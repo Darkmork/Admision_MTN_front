@@ -820,14 +820,22 @@ const ProfessorDashboard: React.FC = () => {
                                                                             console.warn('⚠️ No se encontró evaluación existente, creando una nueva...');
 
                                                                             try {
-                                                                                // Crear evaluación automáticamente
+                                                                                // Crear evaluación automáticamente con campos inicializados
                                                                                 const newEvaluation = await api.post('/api/evaluations', {
                                                                                     applicationId: interview.applicationId,
                                                                                     evaluatorId: currentProfessor?.id,
                                                                                     evaluationType: expectedEvalType,
                                                                                     score: 0,
                                                                                     maxScore: 100,
-                                                                                    status: 'IN_PROGRESS'
+                                                                                    status: 'IN_PROGRESS',
+                                                                                    observations: '',
+                                                                                    strengths: '',
+                                                                                    areasForImprovement: '',
+                                                                                    recommendations: '',
+                                                                                    socialSkillsAssessment: '',
+                                                                                    emotionalMaturity: '',
+                                                                                    motivationAssessment: '',
+                                                                                    familySupportAssessment: ''
                                                                                 });
 
                                                                                 console.log('✅ Evaluación creada automáticamente:', newEvaluation.data);
