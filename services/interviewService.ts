@@ -68,6 +68,8 @@ class InterviewService {
       gradeApplied: response.gradeApplied,
       interviewerId: response.interviewerId,
       interviewerName: response.interviewerName,
+      secondInterviewerId: response.secondInterviewerId,
+      secondInterviewerName: response.secondInterviewerName,
       status: response.status,
       type: response.interviewType || response.type || InterviewType.INDIVIDUAL,
       mode: response.mode,
@@ -673,7 +675,8 @@ class InterviewService {
       return [];
     }
 
-    return interviews.map(item => this.mapInterviewResponse(item));
+    // Use mapBackendResponse to properly map secondInterviewerId and secondInterviewerName
+    return interviews.map(item => this.mapBackendResponse(item));
   }
 
   // Validación de disponibilidad
