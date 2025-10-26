@@ -55,6 +55,7 @@ import { GuardianManagement, StaffManagement } from '../components/users';
 import { InterviewManagement } from '../components/interviews';
 import SharedCalendar from '../components/admin/SharedCalendar';
 import { Application, applicationService } from '../services/applicationService';
+import CoordinatorDashboardModal from '../components/modals/CoordinatorDashboardModal';
 // Mock service removido - usando applicationService real
 import { useAuth } from '../context/AuthContext';
 import ApplicationsTable from '../components/admin/ApplicationsTable';
@@ -125,7 +126,10 @@ const AdminDashboard: React.FC = () => {
 
   // User management subsection state
   const [userSubsection, setUserSubsection] = useState<'staff' | 'guardians'>('staff');
-  
+
+  // Coordinator Dashboard Modal state
+  const [showCoordinatorDashboard, setShowCoordinatorDashboard] = useState(false);
+
   // Estados para aplicaciones reales
   const { applications } = useApplications();
   const { addNotification } = useNotifications();
@@ -813,9 +817,9 @@ Esta acción:
           {/* Botón de Acceso al Módulo del Coordinador */}
           <div className="px-4 mb-4">
             <button
-              onClick={() => navigate('/coordinador')}
+              onClick={() => setShowCoordinatorDashboard(true)}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-md hover:shadow-lg"
-              aria-label="Ir al dashboard del coordinador con analytics y búsqueda avanzada"
+              aria-label="Abrir dashboard del coordinador con analytics y búsqueda avanzada"
             >
               <FiBarChart2 className="w-5 h-5" aria-hidden="true" />
               <div className="flex-1">
@@ -1017,6 +1021,12 @@ Esta acción:
           )}
         </div>
       </Modal>
+
+      {/* Coordinator Dashboard Modal */}
+      <CoordinatorDashboardModal
+        isOpen={showCoordinatorDashboard}
+        onClose={() => setShowCoordinatorDashboard(false)}
+      />
     </div>
   );
 };
