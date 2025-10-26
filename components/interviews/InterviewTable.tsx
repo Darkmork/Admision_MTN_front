@@ -149,7 +149,14 @@ const InterviewTable: React.FC<InterviewTableProps> = ({
   };
 
   const formatDateTime = (date: string, time: string) => {
-    const dateObj = new Date(`${date}T${time}`);
+    // NO usar new Date() para evitar problemas de zona horaria
+    // date viene como "2024-11-03", time como "14:00:00"
+    const [year, month, day] = date.split('-');
+    const [hour, minute] = time.split(':');
+
+    // Crear fecha en zona horaria local explícitamente
+    const dateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute));
+
     return {
       date: dateObj.toLocaleDateString('es-CL', {
         day: '2-digit',

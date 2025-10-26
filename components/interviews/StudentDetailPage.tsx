@@ -218,7 +218,11 @@ const InterviewCard: React.FC<InterviewCardProps> = ({
           {existingInterview && (
             <div className="space-y-1 mb-3">
               <p className="text-xs text-gray-500">
-                📅 {new Date(existingInterview.scheduledDate).toLocaleDateString('es-CL')}
+                📅 {(() => {
+                  const [year, month, day] = existingInterview.scheduledDate.split('-');
+                  const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                  return date.toLocaleDateString('es-CL');
+                })()}
               </p>
               <p className="text-xs text-gray-500">
                 🕐 {existingInterview.scheduledTime}
@@ -378,7 +382,10 @@ const StudentDetailPage: React.FC<StudentDetailPageProps> = ({
 
   const formatDate = (dateString: string): string => {
     if (!dateString) return 'Sin fecha';
-    return new Date(dateString).toLocaleDateString('es-CL');
+    // NO usar new Date(dateString) para evitar problemas de zona horaria
+    const [year, month, day] = dateString.split('-');
+    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    return date.toLocaleDateString('es-CL');
   };
 
   const getInterviewStatusSummary = (studentDetail: StudentDetail) => {

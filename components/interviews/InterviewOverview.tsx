@@ -126,7 +126,10 @@ const InterviewOverview: React.FC<InterviewOverviewProps> = ({
 
   const formatDateTime = (date: string, time: string) => {
     try {
-      const dateObj = new Date(date);
+      // NO usar new Date(date) para evitar problemas de zona horaria
+      // date viene como "2024-11-03"
+      const [year, month, day] = date.split('-');
+      const dateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
       const formattedDate = dateObj.toLocaleDateString('es-CL', {
         day: '2-digit',
         month: '2-digit',

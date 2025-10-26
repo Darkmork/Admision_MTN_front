@@ -515,14 +515,22 @@ const EnhancedInterviewCalendar: React.FC<EnhancedInterviewCalendarProps> = ({
               <div>
                 <h5 className="font-medium text-gray-900 mb-2">Fecha y Hora Actual</h5>
                 <div className="text-sm text-gray-600">
-                  <p>{new Date(rescheduleConfirmation.interview.scheduledDate).toLocaleDateString('es-CL')}</p>
+                  <p>{(() => {
+                    const [year, month, day] = rescheduleConfirmation.interview.scheduledDate.split('-');
+                    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                    return date.toLocaleDateString('es-CL');
+                  })()}</p>
                   <p>{rescheduleConfirmation.interview.scheduledTime}</p>
                 </div>
               </div>
               <div>
                 <h5 className="font-medium text-gray-900 mb-2">Nueva Fecha y Hora</h5>
                 <div className="text-sm text-green-700 font-medium">
-                  <p>{new Date(rescheduleConfirmation.newDate).toLocaleDateString('es-CL')}</p>
+                  <p>{(() => {
+                    const [year, month, day] = rescheduleConfirmation.newDate.split('-');
+                    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                    return date.toLocaleDateString('es-CL');
+                  })()}</p>
                   <p>{rescheduleConfirmation.newTime}</p>
                 </div>
               </div>

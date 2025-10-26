@@ -306,7 +306,11 @@ const InterviewDashboard: React.FC<InterviewDashboardProps> = ({
                     <div>
                       <h4 className="font-medium text-gray-900">{interview.studentName}</h4>
                       <p className="text-sm text-gray-600">
-                        {new Date(interview.scheduledDate).toLocaleDateString('es-CL')} - {interview.scheduledTime}
+                        {(() => {
+                          const [year, month, day] = interview.scheduledDate.split('-');
+                          const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                          return date.toLocaleDateString('es-CL');
+                        })()} - {interview.scheduledTime}
                       </p>
                       <p className="text-xs text-gray-500">{interview.interviewerName}</p>
                     </div>
