@@ -2,16 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { FiSave, FiCheck, FiAlertCircle, FiUser, FiUsers, FiHeart, FiTrendingUp } from 'react-icons/fi';
 
 interface FamilyInterviewFormProps {
-  interviewId?: number;
-  applicationId: number;
-  familyName: string;
-  studentName: string;
-  currentSchool?: string;
-  motherName?: string;
-  fatherName?: string;
-  interviewerNames?: string;
-  onSubmit: (data: FamilyInterviewData) => void;
+  evaluation: any; // Evaluation data from parent
+  initialData?: FamilyInterviewData; // Saved form data if exists
+  onSave: (data: FamilyInterviewData) => Promise<void>;
+  onSaveDraft: (data: FamilyInterviewData) => Promise<void>;
   onCancel?: () => void;
+  disabled?: boolean;
   readonly?: boolean;
 }
 
@@ -66,25 +62,21 @@ export interface FamilyInterviewData {
 }
 
 const FamilyInterviewForm: React.FC<FamilyInterviewFormProps> = ({
-  interviewId,
-  applicationId,
-  familyName: initialFamilyName,
-  studentName,
-  currentSchool: initialCurrentSchool,
-  motherName: initialMotherName,
-  fatherName: initialFatherName,
-  interviewerNames: initialInterviewerNames,
-  onSubmit,
+  evaluation,
+  initialData,
+  onSave,
+  onSaveDraft,
   onCancel,
+  disabled = false,
   readonly = false
 }) => {
-  const [formData, setFormData] = useState<FamilyInterviewData>({
-    interviewerNames: initialInterviewerNames || '',
-    familyName: initialFamilyName || '',
-    studentsApplying: studentName || '',
-    currentSchool: initialCurrentSchool || '',
-    motherName: initialMotherName || '',
-    fatherName: initialFatherName || '',
+  const [formData, setFormData] = useState<FamilyInterviewData>(initialData || {
+    interviewerNames: '',
+    familyName: '',
+    studentsApplying: evaluation.studentName || '',
+    currentSchool: evaluation.currentSchool || '',
+    motherName: evaluation.mother?.name || '',
+    fatherName: evaluation.father?.name || '',
     questionnaireLink: '',
 
     motivationScore: 0,
@@ -170,9 +162,13 @@ const FamilyInterviewForm: React.FC<FamilyInterviewFormProps> = ({
     formData.finalOpinion
   ]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    await onSave(formData);
+  };
+
+  const handleSaveDraft = async () => {
+    await onSaveDraft(formData);
   };
 
   const ScoreSelector: React.FC<{
@@ -224,108 +220,7 @@ const FamilyInterviewForm: React.FC<FamilyInterviewFormProps> = ({
         <p className="text-gray-600">Formulario de evaluación individual para entrevistadores</p>
       </div>
 
-      {/* Información Básica */}
-      <section className="bg-gray-50 p-6 rounded-lg space-y-4">
-        <h2 className="text-xl font-bold text-gray-800 flex items-center">
-          <FiUser className="mr-2" />
-          Información Básica
-        </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nombre de entrevistador(es)
-            </label>
-            <input
-              type="text"
-              value={formData.interviewerNames}
-              onChange={(e) => setFormData({ ...formData, interviewerNames: e.target.value })}
-              disabled={readonly}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              placeholder="Ej: Oscar Soto y Alejandra Díaz"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Familia Postulante
-            </label>
-            <input
-              type="text"
-              value={formData.familyName}
-              onChange={(e) => setFormData({ ...formData, familyName: e.target.value })}
-              disabled={readonly}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Hijo(s) que postula(n)
-            </label>
-            <input
-              type="text"
-              value={formData.studentsApplying}
-              onChange={(e) => setFormData({ ...formData, studentsApplying: e.target.value })}
-              disabled={readonly}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Colegio actual
-            </label>
-            <input
-              type="text"
-              value={formData.currentSchool}
-              onChange={(e) => setFormData({ ...formData, currentSchool: e.target.value })}
-              disabled={readonly}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nombre Mamá
-            </label>
-            <input
-              type="text"
-              value={formData.motherName}
-              onChange={(e) => setFormData({ ...formData, motherName: e.target.value })}
-              disabled={readonly}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nombre Papá
-            </label>
-            <input
-              type="text"
-              value={formData.fatherName}
-              onChange={(e) => setFormData({ ...formData, fatherName: e.target.value })}
-              disabled={readonly}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            />
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Cuestionario de los padres (enlace)
-            </label>
-            <input
-              type="url"
-              value={formData.questionnaireLink}
-              onChange={(e) => setFormData({ ...formData, questionnaireLink: e.target.value })}
-              disabled={readonly}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              placeholder="https://docs.google.com/..."
-            />
-          </div>
-        </div>
-      </section>
+      {/* Información Básica section removed - now displayed as info cards in FamilyInterviewPage.tsx */}
 
       {/* Sección I: Familia y Educación */}
       <section className="border-t pt-6">
@@ -639,17 +534,28 @@ const FamilyInterviewForm: React.FC<FamilyInterviewFormProps> = ({
             <button
               type="button"
               onClick={onCancel}
-              className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+              disabled={disabled}
+              className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancelar
             </button>
           )}
           <button
-            type="submit"
-            className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            type="button"
+            onClick={handleSaveDraft}
+            disabled={disabled || readonly}
+            className="flex items-center px-6 py-2 border border-blue-600 text-blue-600 rounded-md hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <FiSave className="mr-2" />
-            Guardar Entrevista
+            Guardar Borrador
+          </button>
+          <button
+            type="submit"
+            disabled={disabled || readonly}
+            className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <FiCheck className="mr-2" />
+            Guardar y Completar
           </button>
         </div>
       )}
