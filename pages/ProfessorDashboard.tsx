@@ -671,15 +671,31 @@ const ProfessorDashboard: React.FC = () => {
                                                                     console.log('Realizar entrevista:', interview.id);
                                                                     console.log('Application ID:', interview.applicationId);
 
-                                                                    // Buscar evaluación existente o crear placeholder
+                                                                    // Buscar evaluación existente
                                                                     try {
                                                                         const evals = await professorEvaluationService.getMyEvaluations();
-                                                                        const matchingEval = evals.find(e =>
-                                                                            e.applicationId === interview.applicationId &&
-                                                                            (e.evaluationType === 'CYCLE_DIRECTOR_INTERVIEW' || e.evaluationType === 'PSYCHOLOGICAL_INTERVIEW')
-                                                                        );
+                                                                        console.log('🔍 Total evaluaciones cargadas:', evals.length);
+                                                                        console.log('📋 Buscando evaluación para application_id:', interview.applicationId);
+                                                                        console.log('📋 Tipo de entrevista:', interview.type);
+
+                                                                        // Determinar qué tipo de evaluación buscar según el tipo de entrevista
+                                                                        const expectedEvalType = interview.type === 'CYCLE_DIRECTOR'
+                                                                            ? 'CYCLE_DIRECTOR_INTERVIEW'
+                                                                            : 'PSYCHOLOGICAL_INTERVIEW';
+
+                                                                        console.log('🔍 Buscando evaluación de tipo:', expectedEvalType);
+
+                                                                        // Buscar evaluación que coincida con applicationId y tipo
+                                                                        const matchingEval = evals.find(e => {
+                                                                            const matches = e.applicationId === interview.applicationId && e.evaluationType === expectedEvalType;
+                                                                            if (e.applicationId === interview.applicationId) {
+                                                                                console.log(`  - Evaluación ${e.id}: applicationId=${e.applicationId}, type=${e.evaluationType}, matches=${matches}`);
+                                                                            }
+                                                                            return matches;
+                                                                        });
 
                                                                         if (matchingEval) {
+                                                                            console.log('✅ Evaluación encontrada:', matchingEval.id);
                                                                             // Navegar al formulario correspondiente
                                                                             if (interview.type === 'CYCLE_DIRECTOR') {
                                                                                 navigate(`/cycle-director-interview/${matchingEval.id}`);
@@ -687,7 +703,12 @@ const ProfessorDashboard: React.FC = () => {
                                                                                 navigate(`/psychological-interview/${matchingEval.id}`);
                                                                             }
                                                                         } else {
-                                                                            alert(`No se encontró una evaluación asociada a esta entrevista.\n\nPor favor, asigna primero una evaluación de tipo "${interview.type === 'CYCLE_DIRECTOR' ? 'Director de Ciclo' : 'Psicológica'}" para esta aplicación.`);
+                                                                            console.error('❌ No se encontró evaluación');
+                                                                            console.log('📊 Evaluaciones disponibles para esta aplicación:');
+                                                                            const appEvals = evals.filter(e => e.applicationId === interview.applicationId);
+                                                                            appEvals.forEach(e => console.log(`  - ID: ${e.id}, Tipo: ${e.evaluationType}`));
+
+                                                                            alert(`No se encontró una evaluación asociada a esta entrevista.\n\nDetalles:\n- Aplicación ID: ${interview.applicationId}\n- Tipo requerido: ${expectedEvalType}\n- Tipo de entrevista: ${interview.type}\n\nPor favor, asigna primero una evaluación de tipo "${interview.type === 'CYCLE_DIRECTOR' ? 'Director de Ciclo' : 'Psicológica'}" para esta aplicación desde el dashboard de administrador.`);
                                                                         }
                                                                     } catch (error) {
                                                                         console.error('Error buscando evaluación:', error);
