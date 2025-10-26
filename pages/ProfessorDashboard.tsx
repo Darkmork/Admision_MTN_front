@@ -36,6 +36,7 @@ import {
 } from '../types/interview';
 import { interviewService } from '../services/interviewService';
 import { UserRole, USER_ROLE_LABELS } from '../types/user';
+import api from '../config/api';
 
 const baseSections = [
     { key: 'dashboard', label: 'Dashboard General', icon: DashboardIcon },
@@ -816,12 +817,35 @@ const ProfessorDashboard: React.FC = () => {
                                                                                 alert(`Tipo de evaluación no soportado: ${matchingEval.evaluationType}`);
                                                                             }
                                                                         } else {
-                                                                            console.error('❌ No se encontró evaluación');
-                                                                            console.log('📊 Evaluaciones disponibles para esta aplicación:');
-                                                                            const appEvals = evals.filter(e => e.applicationId === interview.applicationId);
-                                                                            appEvals.forEach(e => console.log(`  - ID: ${e.id}, Tipo: ${e.evaluationType}`));
+                                                                            console.warn('⚠️ No se encontró evaluación existente, creando una nueva...');
 
-                                                                            alert(`No se encontró una evaluación asociada a esta entrevista.\n\nDetalles:\n- Aplicación ID: ${interview.applicationId}\n- Tipo requerido: ${expectedEvalType}\n- Tipo de entrevista: ${interview.type}\n\nPor favor, asigna primero una evaluación de tipo "${interview.type === 'CYCLE_DIRECTOR' ? 'Director de Ciclo' : 'Psicológica'}" para esta aplicación desde el dashboard de administrador.`);
+                                                                            try {
+                                                                                // Crear evaluación automáticamente
+                                                                                const newEvaluation = await api.post('/api/evaluations', {
+                                                                                    applicationId: interview.applicationId,
+                                                                                    evaluatorId: user?.id,
+                                                                                    evaluationType: expectedEvalType,
+                                                                                    score: 0,
+                                                                                    maxScore: 100,
+                                                                                    status: 'IN_PROGRESS'
+                                                                                });
+
+                                                                                console.log('✅ Evaluación creada automáticamente:', newEvaluation.data);
+
+                                                                                const evalId = newEvaluation.data.data?.id || newEvaluation.data.id;
+
+                                                                                // Navegar al formulario correspondiente
+                                                                                if (expectedEvalType === 'CYCLE_DIRECTOR_INTERVIEW') {
+                                                                                    console.log('➡️ Navegando a formulario de Director de Ciclo');
+                                                                                    navigate(`/cycle-director-interview/${evalId}`);
+                                                                                } else if (expectedEvalType === 'PSYCHOLOGICAL_INTERVIEW') {
+                                                                                    console.log('➡️ Navegando a formulario Psicológico');
+                                                                                    navigate(`/psychological-interview/${evalId}`);
+                                                                                }
+                                                                            } catch (createError) {
+                                                                                console.error('❌ Error al crear evaluación:', createError);
+                                                                                alert(`Error al crear la evaluación: ${createError.response?.data?.message || createError.message}`);
+                                                                            }
                                                                         }
                                                                     } catch (error) {
                                                                         console.error('Error buscando evaluación:', error);
