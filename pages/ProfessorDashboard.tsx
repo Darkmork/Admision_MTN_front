@@ -817,43 +817,14 @@ const ProfessorDashboard: React.FC = () => {
                                                                                 alert(`Tipo de evaluación no soportado: ${matchingEval.evaluationType}`);
                                                                             }
                                                                         } else {
-                                                                            console.warn('⚠️ No se encontró evaluación existente, creando una nueva...');
-
-                                                                            try {
-                                                                                // Crear evaluación automáticamente con campos inicializados
-                                                                                const newEvaluation = await api.post('/api/evaluations', {
-                                                                                    applicationId: interview.applicationId,
-                                                                                    evaluatorId: currentProfessor?.id,
-                                                                                    evaluationType: expectedEvalType,
-                                                                                    score: 0,
-                                                                                    maxScore: 100,
-                                                                                    status: 'IN_PROGRESS',
-                                                                                    observations: '',
-                                                                                    strengths: '',
-                                                                                    areasForImprovement: '',
-                                                                                    recommendations: '',
-                                                                                    socialSkillsAssessment: '',
-                                                                                    emotionalMaturity: '',
-                                                                                    motivationAssessment: '',
-                                                                                    familySupportAssessment: ''
-                                                                                });
-
-                                                                                console.log('✅ Evaluación creada automáticamente:', newEvaluation.data);
-
-                                                                                const evalId = newEvaluation.data.data?.id || newEvaluation.data.id;
-
-                                                                                // Navegar al formulario correspondiente
-                                                                                if (expectedEvalType === 'CYCLE_DIRECTOR_INTERVIEW') {
-                                                                                    console.log('➡️ Navegando a formulario de Director de Ciclo');
-                                                                                    navigate(`/cycle-director-interview/${evalId}`);
-                                                                                } else if (expectedEvalType === 'PSYCHOLOGICAL_INTERVIEW') {
-                                                                                    console.log('➡️ Navegando a formulario Psicológico');
-                                                                                    navigate(`/psychological-interview/${evalId}`);
-                                                                                }
-                                                                            } catch (createError) {
-                                                                                console.error('❌ Error al crear evaluación:', createError);
-                                                                                alert(`Error al crear la evaluación: ${createError.response?.data?.message || createError.message}`);
-                                                                            }
+                                                                            console.warn('⚠️ No se encontró evaluación existente para esta entrevista');
+                                                                            alert(
+                                                                                `Esta entrevista aún no tiene una evaluación asignada.\n\n` +
+                                                                                `Por favor, ve a la pestaña "Evaluaciones Pendientes" ` +
+                                                                                `para ver las evaluaciones que te han sido asignadas.\n\n` +
+                                                                                `Si la evaluación no aparece allí, contacta al administrador ` +
+                                                                                `para que te asigne esta evaluación.`
+                                                                            );
                                                                         }
                                                                     } catch (error) {
                                                                         console.error('Error buscando evaluación:', error);
