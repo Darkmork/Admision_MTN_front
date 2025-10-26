@@ -663,6 +663,29 @@ const ProfessorDashboard: React.FC = () => {
                                                         <Badge variant={getStatusColor(interview.status)} size="sm">
                                                             {INTERVIEW_STATUS_LABELS[interview.status]}
                                                         </Badge>
+                                                        <div className="flex gap-2 mt-2">
+                                                            <Button
+                                                                variant="primary"
+                                                                size="sm"
+                                                                onClick={() => {
+                                                                    // TODO: Navigate to interview form/pauta
+                                                                    console.log('Realizar entrevista:', interview.id);
+                                                                    alert(`Próximamente: Realizar entrevista para ${interview.studentName}\n\nAquí se abrirá el formulario con la pauta de entrevista.`);
+                                                                }}
+                                                            >
+                                                                📝 Realizar
+                                                            </Button>
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                onClick={() => {
+                                                                    // TODO: Navigate to interview details
+                                                                    console.log('Ver detalles:', interview.id);
+                                                                }}
+                                                            >
+                                                                👁️ Ver
+                                                            </Button>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -704,6 +727,16 @@ const ProfessorDashboard: React.FC = () => {
                                                         <Badge variant="success" size="sm">
                                                             Realizada
                                                         </Badge>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => {
+                                                                // TODO: Navigate to interview results/pauta
+                                                                console.log('Ver resultados:', interview.id);
+                                                            }}
+                                                        >
+                                                            📄 Ver Resultados
+                                                        </Button>
                                                     </div>
                                                 </div>
                                             </div>
