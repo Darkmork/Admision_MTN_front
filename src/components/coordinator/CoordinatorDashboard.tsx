@@ -10,6 +10,7 @@ import React, { useState, useEffect } from 'react';
 import { dashboardClient } from '../../api/dashboard.client';
 import type { DetailedAdminStats, Alert } from '../../api/dashboard.types';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { ApplicantMetricsModal } from '../../../components/modals/ApplicantMetricsModal';
 
 export const CoordinatorDashboard: React.FC = () => {
   const [stats, setStats] = useState<DetailedAdminStats | null>(null);
@@ -17,6 +18,7 @@ export const CoordinatorDashboard: React.FC = () => {
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear() + 1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showApplicantMetrics, setShowApplicantMetrics] = useState(false);
 
   useEffect(() => {
     loadDashboardData();
@@ -171,6 +173,17 @@ export const CoordinatorDashboard: React.FC = () => {
                 ))}
               </select>
             </div>
+
+            {/* Applicant Metrics Button */}
+            <button
+              onClick={() => setShowApplicantMetrics(true)}
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              Ver Métricas de Postulantes
+            </button>
 
             {/* Refresh Button */}
             <button
@@ -444,6 +457,12 @@ export const CoordinatorDashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Applicant Metrics Modal */}
+      <ApplicantMetricsModal
+        isOpen={showApplicantMetrics}
+        onClose={() => setShowApplicantMetrics(false)}
+      />
     </div>
   );
 };
