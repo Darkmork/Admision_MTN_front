@@ -151,6 +151,12 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
       const newSchedule = JSON.parse(JSON.stringify(prev)) as WeeklySchedule;
       const currentSlot = newSchedule[day as keyof WeeklySchedule][timeSlot];
 
+      // DEFENSIVE CHECK: Verify slot exists before trying to access it
+      if (!currentSlot) {
+        console.error(`❌ Slot ${timeSlot} no existe para ${day}`);
+        return prev; // Return previous state unchanged
+      }
+
       // Si ya tiene horario guardado, lo marcamos para eliminación
       if (currentSlot.hasSchedule) {
         newSchedule[day as keyof WeeklySchedule][timeSlot] = {
