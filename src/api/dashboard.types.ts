@@ -147,3 +147,40 @@ export interface DashboardFilters {
   gradeLevel?: string;
   status?: string;
 }
+
+export interface ApplicantMetric {
+  applicationId: number;
+  studentId: number;
+  studentName: string;
+  gradeApplied: string;
+  applicationStatus: string;
+  applicationDate: string;
+  guardianName: string;
+  guardianEmail: string;
+  evaluationsCompleted: number;
+  evaluationsTotal: number;
+  evaluationPassRate: string;
+  evaluationAvgScore: string | null;
+  familyInterviewsCompleted: number;
+  interviewAvgScore: string | null;
+  documentsApproved: number;
+  documentsTotal: number;
+  documentCompletionRate: string;
+}
+
+export interface ApplicantMetricsFilters {
+  academicYear?: number;
+  grade?: string;
+  status?: string;
+  sortBy?: 'studentName' | 'gradeApplied' | 'evaluationPassRate' | 'interviewAvg' | 'applicationStatus';
+  sortOrder?: 'ASC' | 'DESC';
+}
+
+export interface ApplicantMetricsResponse {
+  success: boolean;
+  data: ApplicantMetric[];
+  meta: {
+    total: number;
+    timestamp: string;
+  };
+}

@@ -13,7 +13,10 @@ import type {
   GradeDistribution,
   Alert,
   DetailedAdminStats,
-  DashboardFilters
+  DashboardFilters,
+  ApplicantMetric,
+  ApplicantMetricsFilters,
+  ApplicantMetricsResponse
 } from './dashboard.types';
 
 class DashboardClient {
@@ -249,6 +252,35 @@ class DashboardClient {
       actionable: false,
       timestamp: new Date().toISOString()
     }));
+  }
+
+  /**
+   * Get applicant metrics (detailed metrics for all applicants)
+   * Endpoint: GET /api/dashboard/applicant-metrics
+   * Cache: 5 minutes TTL
+   */
+  async getApplicantMetrics(filters?: ApplicantMetricsFilters): Promise<ApplicantMetricsResponse> {
+    try {
+      const params: Record<string, string | number> = {};
+
+      if (filters?.academicYear) params.academicYear = filters.academicYear;
+      if (filters?.grade) params.grade = filters.grade;
+      if (filters?.status) params.status = filters.status;
+      if (filters?.sortBy) params.sortBy = filters.sortBy;
+      if (filters?.sortOrder) params.sortOrder = filters.sortOrder;
+
+      const response = await httpClient.get<ApplicantMetricsResponse>(
+        `${this.basePath}/applicant-metrics`,
+        { params }
+      );
+
+      return response.data;
+    } catch (error: any) {
+      console.error('Error fetching applicant metrics:', error);
+      throw new Error(
+        error.response?.data?.message || 'Error al obtener métricas de postulantes'
+      );
+    }
   }
 
   /**
