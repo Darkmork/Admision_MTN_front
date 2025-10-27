@@ -135,7 +135,7 @@ const CreateUserForm: React.FC<CreateUserFormProps> = ({ isOpen, onClose, onSubm
 
     // Helper function to check if role can have schedules
     const isEvaluatorRole = (role: UserRole): boolean => {
-        return ['TEACHER_LANGUAGE', 'TEACHER_MATHEMATICS', 'TEACHER_ENGLISH', 'CYCLE_DIRECTOR', 'PSYCHOLOGIST', 'ADMIN'].includes(role);
+        return ['TEACHER_LANGUAGE', 'TEACHER_MATHEMATICS', 'TEACHER_ENGLISH', 'CYCLE_DIRECTOR', 'PSYCHOLOGIST', 'INTERVIEWER', 'ADMIN'].includes(role);
     };
 
     // Schedule management functions
@@ -445,6 +445,7 @@ const CreateUserForm: React.FC<CreateUserFormProps> = ({ isOpen, onClose, onSubm
                                 <option value={UserRole.TEACHER_ENGLISH}>Profesor de Inglés</option>
                                 <option value={UserRole.CYCLE_DIRECTOR}>Director de Ciclo</option>
                                 <option value={UserRole.PSYCHOLOGIST}>Psicólogo/a</option>
+                                <option value={UserRole.INTERVIEWER}>Entrevistador/a</option>
                             </select>
                         </div>
                     </div>
