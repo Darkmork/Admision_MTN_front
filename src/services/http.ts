@@ -96,6 +96,12 @@ class HttpClient {
 
         config.baseURL = runtimeBaseURL;
 
+        // Add JWT token from localStorage if available
+        const token = localStorage.getItem('auth_token') || localStorage.getItem('professor_token');
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+
         this.metrics.requestCount++;
         this.metrics.lastRequestTime = new Date();
 
