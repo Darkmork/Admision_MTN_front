@@ -1,3 +1,44 @@
+# BACKUP - Cambio a Intervalos de 30 Minutos en Gestión de Horarios
+
+**Fecha de Backup**: 2025-10-27
+**Razón**: Cambio de intervalos de horarios de 1 hora a 30 minutos (08:00-16:00)
+
+## Archivos Modificados
+
+1. `services/interviewerScheduleService.ts` - Línea 471
+2. `components/schedule/WeeklyCalendar.tsx` - Múltiples cambios en estructura
+
+---
+
+## 📦 BACKUP DE CÓDIGO ORIGINAL
+
+### 1. services/interviewerScheduleService.ts
+
+**Líneas 469-479 (ORIGINAL)**:
+```typescript
+export const getTimeSlotOptions = () => {
+    const slots = [];
+    for (let hour = 8; hour <= 18; hour++) {
+        for (let minute of [0, 30]) {
+            const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+            const displayTime = `${hour}:${minute === 0 ? '00' : '30'}`;
+            slots.push({ value: time, label: displayTime });
+        }
+    }
+    return slots;
+};
+```
+
+**Cambio realizado**: `hour <= 18` → `hour <= 16`
+**Resultado**: Genera slots desde 08:00 hasta 16:30 (en vez de hasta 18:30)
+
+---
+
+### 2. components/schedule/WeeklyCalendar.tsx
+
+**ARCHIVO COMPLETO ORIGINAL** (394 líneas):
+
+```typescript
 import React, { useState, useEffect } from 'react';
 import Button from '../ui/Button';
 import LoadingSpinner from '../ui/LoadingSpinner';
@@ -11,15 +52,13 @@ interface WeeklyCalendarProps {
 
 interface TimeSlot {
   hour: number;
-  minute: number;
-  time: string; // "08:00", "08:30", etc.
   isSelected: boolean;
   hasSchedule: boolean;
   scheduleId?: number;
 }
 
 interface DaySchedule {
-  [key: string]: TimeSlot; // key is "08:00", "08:30", etc.
+  [key: string]: TimeSlot; // key is "08", "09", etc.
 }
 
 interface WeeklySchedule {
@@ -48,19 +87,8 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
   const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
-  // Generar slots de 30 minutos desde 8:00 AM hasta 4:30 PM
-  const generateTimeSlots = (): string[] => {
-    const slots: string[] = [];
-    for (let hour = 8; hour <= 16; hour++) {
-      slots.push(`${hour.toString().padStart(2, '0')}:00`);
-      if (hour < 16) { // No agregar 16:30 si solo queremos hasta 16:00
-        slots.push(`${hour.toString().padStart(2, '0')}:30`);
-      }
-    }
-    return slots;
-  };
-
-  const timeSlots = generateTimeSlots(); // ["08:00", "08:30", ..., "16:00", "16:30"]
+  // Horarios de 8 AM a 4 PM
+  const hours = Array.from({length: 8}, (_, i) => i + 8); // [8, 9, 10, 11, 12, 13, 14, 15]
   const days = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'];
   const dayLabels = {
     MONDAY: 'Lunes',
@@ -81,12 +109,10 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
     };
 
     days.forEach(day => {
-      timeSlots.forEach(timeSlot => {
-        const [hourStr, minuteStr] = timeSlot.split(':');
-        emptySchedule[day as keyof WeeklySchedule][timeSlot] = {
-          hour: parseInt(hourStr),
-          minute: parseInt(minuteStr),
-          time: timeSlot,
+      hours.forEach(hour => {
+        const hourStr = hour.toString().padStart(2, '0');
+        emptySchedule[day as keyof WeeklySchedule][hourStr] = {
+          hour,
           isSelected: false,
           hasSchedule: false
         };
@@ -108,22 +134,23 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
       // Marcar horarios existentes
       schedules.forEach((schedule: InterviewerSchedule) => {
         if (schedule.dayOfWeek && schedule.scheduleType === 'RECURRING') {
-          const startTime = schedule.startTime; // "09:00"
-          const endTime = schedule.endTime;     // "11:30"
+          const startHour = parseInt(schedule.startTime.split(':')[0]);
+          const endHour = parseInt(schedule.endTime.split(':')[0]);
 
-          // Marcar todos los slots en el rango como ocupados
-          timeSlots.forEach(slot => {
-            if (slot >= startTime && slot < endTime) {
-              if (newSchedule[schedule.dayOfWeek as keyof WeeklySchedule][slot]) {
-                newSchedule[schedule.dayOfWeek as keyof WeeklySchedule][slot] = {
-                  ...newSchedule[schedule.dayOfWeek as keyof WeeklySchedule][slot],
-                  hasSchedule: true,
+          // Marcar todas las horas del rango como ocupadas (solo dentro del rango 8-15)
+          for (let hour = startHour; hour < endHour; hour++) {
+            if (hour >= 8 && hour <= 15) { // Solo horas dentro del rango del calendario
+              const hourStr = hour.toString().padStart(2, '0');
+              if (newSchedule[schedule.dayOfWeek as keyof WeeklySchedule][hourStr]) {
+                newSchedule[schedule.dayOfWeek as keyof WeeklySchedule][hourStr] = {
+                  hour,
                   isSelected: false,
+                  hasSchedule: true,
                   scheduleId: schedule.id
                 };
               }
             }
-          });
+          }
         }
       });
 
@@ -144,23 +171,23 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
     }
   }, [userId]);
 
-  // Alternar selección de slot de tiempo
-  const toggleTimeSlot = (day: string, timeSlot: string) => {
+  // Alternar selección de hora
+  const toggleTimeSlot = (day: string, hourStr: string) => {
     setSchedule(prev => {
       // Crear copia profunda para evitar mutaciones
       const newSchedule = JSON.parse(JSON.stringify(prev)) as WeeklySchedule;
-      const currentSlot = newSchedule[day as keyof WeeklySchedule][timeSlot];
+      const currentSlot = newSchedule[day as keyof WeeklySchedule][hourStr];
 
       // Si ya tiene horario guardado, lo marcamos para eliminación
       if (currentSlot.hasSchedule) {
-        newSchedule[day as keyof WeeklySchedule][timeSlot] = {
+        newSchedule[day as keyof WeeklySchedule][hourStr] = {
           ...currentSlot,
           hasSchedule: false,
           isSelected: false
         };
       } else {
         // Alternar selección normal
-        newSchedule[day as keyof WeeklySchedule][timeSlot] = {
+        newSchedule[day as keyof WeeklySchedule][hourStr] = {
           ...currentSlot,
           isSelected: !currentSlot.isSelected
         };
@@ -171,13 +198,13 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
     });
   };
 
-  // Obtener slots seleccionados para un día (ordenados)
-  const getSelectedSlots = (day: string): string[] => {
+  // Obtener horas seleccionadas para un día
+  const getSelectedHours = (day: string): number[] => {
     const daySchedule = schedule[day as keyof WeeklySchedule];
-    return Object.entries(daySchedule)
-      .filter(([_, slot]) => slot.isSelected)
-      .map(([time, _]) => time)
-      .sort();
+    return Object.values(daySchedule)
+      .filter(slot => slot.isSelected)
+      .map(slot => slot.hour)
+      .sort((a, b) => a - b);
   };
 
   // Guardar cambios
@@ -195,31 +222,22 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
 
       // 2. Luego crear los nuevos horarios basados en la selección
       for (const day of days) {
-        const selectedSlots = getSelectedSlots(day);
+        const selectedHours = getSelectedHours(day);
 
-        if (selectedSlots.length === 0) continue;
+        if (selectedHours.length === 0) continue;
 
-        // Agrupar slots consecutivos en rangos
-        const ranges: Array<{start: string, end: string}> = [];
-        let currentRange: {start: string, end: string} | null = null;
+        // Agrupar horas consecutivas en rangos
+        const ranges: Array<{start: number, end: number}> = [];
+        let currentRange: {start: number, end: number} | null = null;
 
-        for (const slot of selectedSlots) {
-          const [hour, minute] = slot.split(':').map(Number);
-
-          // Calcular el siguiente slot (30 min después)
-          const nextMinute = minute === 0 ? 30 : 0;
-          const nextHour = minute === 30 ? hour + 1 : hour;
-          const nextSlot = `${nextHour.toString().padStart(2, '0')}:${nextMinute.toString().padStart(2, '0')}`;
-
+        for (const hour of selectedHours) {
           if (!currentRange) {
-            currentRange = { start: slot, end: nextSlot };
-          } else if (slot === currentRange.end) {
-            // Slot consecutivo, extender el rango
-            currentRange.end = nextSlot;
+            currentRange = { start: hour, end: hour + 1 };
+          } else if (hour === currentRange.end) {
+            currentRange.end = hour + 1;
           } else {
-            // Slot no consecutivo, guardar rango actual y empezar uno nuevo
             ranges.push(currentRange);
-            currentRange = { start: slot, end: nextSlot };
+            currentRange = { start: hour, end: hour + 1 };
           }
         }
 
@@ -232,8 +250,8 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
           const scheduleData = {
             interviewer: { id: userId },
             dayOfWeek: day,
-            startTime: range.start,
-            endTime: range.end,
+            startTime: `${range.start.toString().padStart(2, '0')}:00`,
+            endTime: `${range.end.toString().padStart(2, '0')}:00`,
             scheduleType: 'RECURRING' as const,
             year: 2025,
             isActive: true,
@@ -261,14 +279,10 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
   };
 
   // Formatear hora para mostrar
-  const formatHour = (timeSlot: string): string => {
-    const [hourStr, minuteStr] = timeSlot.split(':');
-    const hour = parseInt(hourStr);
-    const minute = minuteStr;
-
-    if (hour === 12) return `12:${minute} PM`;
-    if (hour > 12) return `${hour - 12}:${minute} PM`;
-    return `${hour}:${minute} AM`;
+  const formatHour = (hour: number): string => {
+    if (hour === 12) return '12 PM';
+    if (hour > 12) return `${hour - 12} PM`;
+    return `${hour} AM`;
   };
 
   if (loading) {
@@ -288,7 +302,7 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
             📅 Horarios Disponibles para Entrevistas
           </h3>
           <p className="text-sm text-gray-600 mt-1">
-            Haz click en las casillas para marcar tus horarios disponibles (8:00 AM - 4:30 PM, intervalos de 30 min)
+            Haz click en las casillas para marcar tus horarios disponibles (8 AM - 4 PM)
           </p>
         </div>
 
@@ -326,31 +340,32 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
             </tr>
           </thead>
           <tbody>
-            {timeSlots.map(timeSlot => {
+            {hours.map(hour => {
+              const hourStr = hour.toString().padStart(2, '0');
               return (
-                <tr key={timeSlot}>
-                  <td className="border border-gray-300 bg-gray-50 p-2 font-medium text-gray-700 text-center text-sm">
-                    {formatHour(timeSlot)}
+                <tr key={hour}>
+                  <td className="border border-gray-300 bg-gray-50 p-3 font-medium text-gray-700 text-center">
+                    {formatHour(hour)}
                   </td>
                   {days.map(day => {
-                    const slot = schedule[day as keyof WeeklySchedule][timeSlot];
+                    const slot = schedule[day as keyof WeeklySchedule][hourStr];
                     const isSelected = slot?.isSelected;
                     const hasSchedule = slot?.hasSchedule;
 
 
                     return (
-                      <td key={`${day}-${timeSlot}`} className="border border-gray-300 p-1">
+                      <td key={`${day}-${hourStr}`} className="border border-gray-300 p-1">
                         <button
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            toggleTimeSlot(day, timeSlot);
+                            toggleTimeSlot(day, hourStr);
                           }}
                           style={{
                             width: '100%',
-                            height: '32px', // Reducido de 48px para acomodar más filas
+                            height: '48px',
                             borderRadius: '4px',
-                            fontSize: '12px',
+                            fontSize: '14px',
                             fontWeight: '500',
                             border: '2px solid #333',
                             cursor: 'pointer',
@@ -418,3 +433,90 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
 };
 
 export default WeeklyCalendar;
+```
+
+---
+
+## 🔄 INSTRUCCIONES DE ROLLBACK
+
+### Opción 1: Rollback Manual (Recomendado)
+
+Si necesitas volver al estado original, ejecuta estos comandos:
+
+```bash
+cd "/Users/jorgegangale/Library/Mobile Documents/com~apple~CloudDocs/Proyectos/Admision_MTN/Admision_MTN_front"
+
+# 1. Restaurar interviewerScheduleService.ts
+# Edita el archivo manualmente y cambia la línea 471:
+# DE: for (let hour = 8; hour <= 16; hour++) {
+# A:  for (let hour = 8; hour <= 18; hour++) {
+
+# 2. Restaurar WeeklyCalendar.tsx
+# Copia el contenido completo del backup de arriba al archivo
+```
+
+### Opción 2: Rollback con Git (Si has commiteado)
+
+```bash
+cd "/Users/jorgegangale/Library/Mobile Documents/com~apple~CloudDocs/Proyectos/Admision_MTN/Admision_MTN_front"
+
+# Ver el hash del commit antes de los cambios
+git log --oneline
+
+# Revertir al commit anterior (reemplaza <commit-hash> con el hash real)
+git revert <commit-hash>
+
+# O hacer reset si no has pusheado
+git reset --hard HEAD~1
+```
+
+### Opción 3: Usar este archivo de backup
+
+```bash
+# Copiar este archivo a una ubicación segura
+cp BACKUP_SCHEDULE_30MIN.md ~/Desktop/BACKUP_SCHEDULE_30MIN_$(date +%Y%m%d_%H%M%S).md
+
+# Cuando necesites restaurar, abre este archivo y copia manualmente
+# el código original a los archivos correspondientes
+```
+
+---
+
+## ✅ VERIFICACIÓN POST-ROLLBACK
+
+Después de restaurar, verifica que funcione correctamente:
+
+1. **Abrir el formulario de gestión de horarios**
+2. **Verificar que los dropdowns muestren horarios hasta 18:30** (no 16:30)
+3. **Verificar que el calendario semanal muestre bloques de 1 hora** (8 AM - 4 PM)
+4. **Probar crear un horario recurrente**
+5. **Verificar que se guarde correctamente en la base de datos**
+
+---
+
+## 📝 NOTAS ADICIONALES
+
+- **Fecha de creación**: 2025-10-27
+- **Autor**: Claude Code Assistant
+- **Motivo del cambio**: Solicitud del usuario para intervalos de 30 minutos (08:00-16:00)
+- **Impacto**: Solo frontend, backend no requiere cambios
+- **Riesgo**: Medio (cambios estructurales en WeeklyCalendar.tsx)
+
+---
+
+## 🚨 IMPORTANTE
+
+Este backup contiene el **código completo y funcional** de ambos archivos ANTES de hacer cualquier cambio.
+
+**NO ELIMINES ESTE ARCHIVO** hasta estar 100% seguro de que los cambios funcionan correctamente en producción.
+
+**Ubicación del archivo**: `BACKUP_SCHEDULE_30MIN.md` en la raíz del proyecto frontend.
+
+---
+
+## 📞 Contacto
+
+Si tienes problemas con el rollback, revisa:
+1. Git history: `git log --all --graph --decorate --oneline`
+2. Git diff: `git diff HEAD~1 services/interviewerScheduleService.ts`
+3. Este archivo de backup para referencia del código original

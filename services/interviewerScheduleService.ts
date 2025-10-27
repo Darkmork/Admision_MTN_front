@@ -468,7 +468,7 @@ export const getScheduleTypeOptions = () => [
 
 export const getTimeSlotOptions = () => {
     const slots = [];
-    for (let hour = 8; hour <= 18; hour++) {
+    for (let hour = 8; hour <= 16; hour++) {
         for (let minute of [0, 30]) {
             const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
             const displayTime = `${hour}:${minute === 0 ? '00' : '30'}`;

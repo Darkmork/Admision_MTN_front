@@ -7,7 +7,7 @@ import UserForm from './UserForm';
 import UserTable from './UserTable';
 import UserFilters from './UserFilters';
 import UserStats from './UserStats';
-import AdminResetPasswordModal from '../../src/components/admin/AdminResetPasswordModal';
+import AdminResetPasswordModal from '@/src/components/admin/AdminResetPasswordModal';
 import {
   User,
   CreateUserRequest,
