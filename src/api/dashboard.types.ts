@@ -148,24 +148,39 @@ export interface DashboardFilters {
   status?: string;
 }
 
+export interface ExamScore {
+  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED';
+  score: number | null;
+  maxScore: number | null;
+  percentage: string | null;
+}
+
+export interface FamilyInterview {
+  interviewerName: string;
+  score: number | null;
+  result: 'POSITIVE' | 'NEGATIVE' | 'NEUTRAL' | null;
+}
+
+export interface DocumentMetrics {
+  approved: number;
+  total: number;
+  completionRate: string;
+}
+
 export interface ApplicantMetric {
   applicationId: number;
   studentId: number;
   studentName: string;
   gradeApplied: string;
   applicationStatus: string;
-  applicationDate: string;
-  guardianName: string;
-  guardianEmail: string;
-  evaluationsCompleted: number;
-  evaluationsTotal: number;
-  evaluationPassRate: string;
-  evaluationAvgScore: string | null;
-  familyInterviewsCompleted: number;
-  interviewAvgScore: string | null;
-  documentsApproved: number;
-  documentsTotal: number;
-  documentCompletionRate: string;
+  examScores: {
+    mathematics: ExamScore;
+    language: ExamScore;
+    english: ExamScore;
+    completionRate: string;
+  };
+  familyInterviews: FamilyInterview[];
+  documents: DocumentMetrics;
 }
 
 export interface ApplicantMetricsFilters {

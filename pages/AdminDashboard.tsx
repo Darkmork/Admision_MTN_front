@@ -54,6 +54,7 @@ import EvaluationReports from '../components/admin/EvaluationReports';
 import { GuardianManagement, StaffManagement } from '../components/users';
 import { InterviewManagement } from '../components/interviews';
 import SharedCalendar from '../components/admin/SharedCalendar';
+import ApplicantMetricsView from '../components/admin/ApplicantMetricsView';
 import { Application, applicationService } from '../services/applicationService';
 import CoordinatorDashboardModal from '../components/modals/CoordinatorDashboardModal';
 // Mock service removido - usando applicationService real
@@ -69,6 +70,7 @@ import interviewService from '../services/interviewService';
 
 const sections = [
   { key: 'dashboard', label: 'Dashboard General' },
+  { key: 'metricas', label: 'Métricas de Postulantes' },
   { key: 'tablas', label: 'Tablas de Datos' },
   { key: 'postulaciones', label: 'Gestión de Postulaciones' },
   { key: 'evaluaciones', label: 'Gestión de Evaluaciones' },
@@ -462,6 +464,13 @@ Esta acción:
 
   const renderSection = () => {
     switch (activeSection) {
+      case 'metricas':
+        return (
+          <div className="space-y-6">
+            <ApplicantMetricsView />
+          </div>
+        );
+
       case 'tablas':
         return (
           <div className="space-y-6">
