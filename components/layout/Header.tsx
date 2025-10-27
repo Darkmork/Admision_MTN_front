@@ -1,9 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import Button from '../ui/Button';
 
 const Header: React.FC = () => {
+    const navigate = useNavigate();
     const navLinkClasses = "text-gris-piedra hover:text-azul-monte-tabor font-semibold transition-colors duration-200";
     const activeLinkClasses = "text-azul-monte-tabor";
     const [isAdmin, setIsAdmin] = useState(false);
@@ -58,17 +59,51 @@ const Header: React.FC = () => {
         };
     }, []);
 
+    // Función para hacer logout completo
+    const handleLogoutAndGoHome = (e: React.MouseEvent<HTMLAnchorElement>) => {
+        // Solo hacer logout si hay un usuario autenticado
+        if (isAnyUserLoggedIn) {
+            e.preventDefault(); // Prevenir navegación predeterminada
+
+            // Limpiar TODOS los tokens y datos de autenticación
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('professor_token');
+            localStorage.removeItem('apoderado_token');
+            localStorage.removeItem('currentProfessor');
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('currentApoderado');
+
+            // Actualizar estados locales
+            setIsAdmin(false);
+            setIsProfessorLoggedIn(false);
+            setIsAnyUserLoggedIn(false);
+
+            // Navegar a la página de inicio
+            navigate('/');
+
+            // Forzar recarga para limpiar cualquier estado en memoria
+            window.location.reload();
+        }
+        // Si no hay usuario autenticado, dejar que el link funcione normalmente
+    };
+
     return (
         <header className="bg-blanco-pureza shadow-md sticky top-0 z-50">
             <div className="container mx-auto px-6 py-3 flex justify-between items-center">
-                <Link to="/" className="flex items-center gap-3">
+                <Link to="/" onClick={handleLogoutAndGoHome} className="flex items-center gap-3">
                     <img src="/images/logoMTN.png" alt="Logo Colegio Monte Tabor y Nazaret" className="h-12" />
                     <span className="text-xl font-bold text-azul-monte-tabor font-serif">
                         Colegio Monte Tabor y Nazaret
                     </span>
                 </Link>
                 <nav className="hidden md:flex items-center gap-8">
-                    <NavLink to="/" className={({ isActive }) => isActive ? `${navLinkClasses} ${activeLinkClasses}`: navLinkClasses}>Inicio</NavLink>
+                    <NavLink
+                        to="/"
+                        onClick={handleLogoutAndGoHome}
+                        className={({ isActive }) => isActive ? `${navLinkClasses} ${activeLinkClasses}`: navLinkClasses}
+                    >
+                        Inicio
+                    </NavLink>
                     <NavLink to="/examenes" className={({ isActive }) => isActive ? `${navLinkClasses} ${activeLinkClasses}`: navLinkClasses}>Exámenes</NavLink>
                     <NavLink to="/apoderado/login" className={({ isActive }) => isActive ? `${navLinkClasses} ${activeLinkClasses}`: navLinkClasses}>Portal Familia</NavLink>
                     {/* Ocultar "Profesores" si hay un profesor autenticado (para evitar que salga de su sesión) */}
