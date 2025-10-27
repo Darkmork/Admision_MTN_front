@@ -151,7 +151,37 @@ const evaluation = await professorEvaluationService.getEvaluationById(parseInt(e
 
 **Why**: Mismatched parameter names (`examId` vs `evaluationId`) cause components to get `undefined`, resulting in infinite "Cargando..." states.
 
-### 5. Authentication & Protected Routes
+### 5. UI Component Patterns
+
+**Password Input with Visibility Toggle**:
+The `Input` component (`components/ui/Input.tsx`) supports password visibility toggling via the `showPasswordToggle` prop.
+
+```typescript
+// Input component with password toggle
+<Input
+  id="password"
+  label="Contraseña"
+  type="password"
+  value={password}
+  onChange={(e) => setPassword(e.target.value)}
+  isRequired
+  showPasswordToggle  // Adds eye icon toggle
+/>
+```
+
+**Features**:
+- Eye icon (FiEye) shows when password is hidden
+- Eye-off icon (FiEyeOff) shows when password is visible
+- Toggle button positioned absolutely on the right
+- Proper accessibility labels in Spanish
+- Automatic input padding adjustment when toggle is present
+
+**Used in**:
+- `ApoderadoLogin.tsx` (login + registration forms)
+- `ProfessorLoginPage.tsx`
+- `AdminLoginPage.tsx`
+
+### 6. Authentication & Protected Routes
 
 **Three authentication contexts**:
 1. **Apoderados** (guardians): `ProtectedApoderadoRoute`
@@ -171,7 +201,7 @@ const evaluation = await professorEvaluationService.getEvaluationById(parseInt(e
 - `PSYCHOLOGIST`
 - `CYCLE_DIRECTOR`
 
-### 6. Component Organization
+### 7. Component Organization
 
 **Root-level components** (`/components`):
 - `auth/` - Login forms, protected routes
@@ -199,7 +229,7 @@ const evaluation = await professorEvaluationService.getEvaluationById(parseInt(e
 - `csrfService.ts` - CSRF token management
 - `oidcService.ts` - OIDC authentication (if configured)
 
-### 7. Evaluation Auto-Creation Pattern
+### 8. Evaluation Auto-Creation Pattern
 
 **Backend behavior** (as of Jan 2025 rollback point):
 - When an interview is created, backend automatically creates N evaluations (one per interviewer)
@@ -414,6 +444,12 @@ Frontend → Gateway (public) → Backend Service (private) → PostgreSQL
 ```
 
 ## Changelog Highlights
+
+**Oct 27, 2025** - Password visibility toggle:
+- Enhanced `Input` component with optional `showPasswordToggle` prop
+- Added eye icon toggle (FiEye/FiEyeOff from react-icons)
+- Updated all login forms (Apoderado, Professor, Admin) with password visibility
+- 5 total password fields now have toggle functionality
 
 **Jan 26, 2025** - Rollback point created:
 - Fixed `CycleDirectorInterviewForm` route parameter mismatch (`examId` → `evaluationId`)

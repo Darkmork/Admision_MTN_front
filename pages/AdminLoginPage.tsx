@@ -98,6 +98,7 @@ const LoginPage: React.FC = () => {
                             onChange={(e) => setPassword(e.target.value)}
                             placeholder="••••••••"
                             isRequired
+                            showPasswordToggle
                         />
                         <div className="text-right">
                             <a href="#" className="text-sm text-azul-monte-tabor hover:underline">¿Olvidó su contraseña?</a>

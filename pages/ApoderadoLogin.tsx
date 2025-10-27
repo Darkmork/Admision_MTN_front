@@ -148,6 +148,7 @@ const ApoderadoLogin: React.FC = () => {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 isRequired
+                                showPasswordToggle
                             />
 
                             <Button
@@ -236,6 +237,7 @@ const ApoderadoLogin: React.FC = () => {
                                     value={registerData.password}
                                     onChange={(e) => updateRegisterField('password', e.target.value)}
                                     isRequired
+                                    showPasswordToggle
                                 />
                                 <Input
                                     id="confirmPassword"
@@ -245,6 +247,7 @@ const ApoderadoLogin: React.FC = () => {
                                     value={registerData.confirmPassword}
                                     onChange={(e) => updateRegisterField('confirmPassword', e.target.value)}
                                     isRequired
+                                    showPasswordToggle
                                 />
                             </div>
 

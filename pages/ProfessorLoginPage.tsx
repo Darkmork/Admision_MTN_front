@@ -308,6 +308,7 @@ const ProfessorLoginPage: React.FC = () => {
                                 error={errors.password}
                                 placeholder="Ingresa tu contraseña"
                                 isRequired
+                                showPasswordToggle
                             />
                         </div>
 
