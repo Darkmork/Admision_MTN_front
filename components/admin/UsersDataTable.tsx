@@ -76,13 +76,14 @@ const UsersDataTable: React.FC<UsersDataTableProps> = ({
             filterType: 'select',
             width: 150,
             render: (_, record) => {
-                const roleColors: Record<string, string> = {
-                    'ADMIN': 'red',
-                    'TEACHER': 'blue',
-                    'COORDINATOR': 'purple',
-                    'CYCLE_DIRECTOR': 'indigo',
-                    'PSYCHOLOGIST': 'green',
-                    'APODERADO': 'gray'
+                const roleColors: Record<string, 'success' | 'warning' | 'error' | 'info' | 'neutral'> = {
+                    'ADMIN': 'error',          // Rojo
+                    'TEACHER': 'info',         // Azul
+                    'COORDINATOR': 'info',     // Azul
+                    'CYCLE_DIRECTOR': 'info',  // Azul
+                    'PSYCHOLOGIST': 'warning', // Dorado/Naranja
+                    'INTERVIEWER': 'warning',  // Dorado/Naranja
+                    'APODERADO': 'neutral'     // Gris
                 };
                 return (
                     <Badge 
@@ -458,11 +459,13 @@ const UsersDataTable: React.FC<UsersDataTableProps> = ({
                                 <div>
                                     <p className="text-sm text-gray-500">Rol</p>
                                     <Badge variant={
-                                        selectedUser.role === 'ADMIN' ? 'red' :
-                                        selectedUser.role === 'TEACHER' ? 'blue' :
-                                        selectedUser.role === 'COORDINATOR' ? 'purple' :
-                                        selectedUser.role === 'PSYCHOLOGIST' ? 'green' :
-                                        'gray'
+                                        selectedUser.role === 'ADMIN' ? 'error' :
+                                        selectedUser.role === 'TEACHER' ? 'info' :
+                                        selectedUser.role === 'COORDINATOR' ? 'info' :
+                                        selectedUser.role === 'CYCLE_DIRECTOR' ? 'info' :
+                                        selectedUser.role === 'PSYCHOLOGIST' ? 'warning' :
+                                        selectedUser.role === 'INTERVIEWER' ? 'warning' :
+                                        'neutral'
                                     } size="sm">
                                         {selectedUser.roleDisplayName}
                                     </Badge>
