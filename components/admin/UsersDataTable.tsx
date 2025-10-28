@@ -86,8 +86,8 @@ const UsersDataTable: React.FC<UsersDataTableProps> = ({
                     'APODERADO': 'neutral'     // Gris
                 };
                 return (
-                    <Badge 
-                        variant={roleColors[record.role] as any || 'gray'} 
+                    <Badge
+                        variant={roleColors[record.role] || 'neutral'}
                         size="sm"
                     >
                         {record.roleDisplayName}
