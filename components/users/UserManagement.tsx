@@ -75,7 +75,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ onBack }) => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      const response = await userService.getSchoolStaffUsers(filters);
+      const response = await userService.getAllUsers(filters);
 
       // DEFENSIVE CHECK: Verify response exists before accessing properties
       if (!response) {
