@@ -421,6 +421,9 @@ const UserForm: React.FC<UserFormProps> = ({
                   <option value={UserRole.CYCLE_DIRECTOR}>
                     {USER_ROLE_LABELS[UserRole.CYCLE_DIRECTOR]}
                   </option>
+                  <option value={UserRole.INTERVIEWER}>
+                    {USER_ROLE_LABELS[UserRole.INTERVIEWER]}
+                  </option>
                 </optgroup>
               </select>
             </div>
