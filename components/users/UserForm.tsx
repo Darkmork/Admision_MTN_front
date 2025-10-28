@@ -139,10 +139,8 @@ const UserForm: React.FC<UserFormProps> = ({
       newErrors.email = USER_VALIDATION_ERRORS.INVALID_EMAIL;
     }
 
-    // Validar RUT
-    if (!formData.rut.trim()) {
-      newErrors.rut = USER_VALIDATION_ERRORS.REQUIRED_FIELD;
-    } else if (!UserUtils.validateRut(formData.rut)) {
+    // Validar RUT (opcional - solo valida formato si se proporciona)
+    if (formData.rut.trim() && !UserUtils.validateRut(formData.rut)) {
       newErrors.rut = USER_VALIDATION_ERRORS.INVALID_RUT;
     }
 
@@ -348,7 +346,7 @@ const UserForm: React.FC<UserFormProps> = ({
             <div>
               <label htmlFor="rut" className="block text-sm font-medium text-gray-700 mb-2">
                 <IdentificationIcon className="inline w-4 h-4 mr-1" />
-                RUT *
+                RUT (opcional)
               </label>
               <input
                 id="rut"
