@@ -65,8 +65,15 @@ const AvailabilityScheduleManager: React.FC<AvailabilityScheduleManagerProps> = 
 
   const handleAdd = async () => {
     try {
+      // Asegurar que interviewerId sea un número
+      const numericInterviewerId = typeof interviewerId === 'string'
+        ? parseInt(interviewerId, 10)
+        : interviewerId;
+
+      console.log('📅 Creando horario con interviewerId:', numericInterviewerId, typeof numericInterviewerId);
+
       await scheduleService.createAvailabilitySchedule({
-        interviewerId,
+        interviewerId: numericInterviewerId,
         dayOfWeek: formData.dayOfWeek,
         startTime: `${formData.startTime}:00`,
         endTime: `${formData.endTime}:00`,
@@ -85,9 +92,18 @@ const AvailabilityScheduleManager: React.FC<AvailabilityScheduleManagerProps> = 
       });
 
       await loadSchedules();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error agregando horario:', error);
-      alert('Error al agregar horario');
+
+      // Manejo más detallado de errores
+      if (error.response) {
+        const errorMessage = error.response.data?.error?.message || error.response.data?.message || 'Error desconocido';
+        alert(`Error al agregar horario: ${errorMessage} (${error.response.status})`);
+      } else if (error.request) {
+        alert('Error de conexión. No se pudo contactar con el servidor.');
+      } else {
+        alert(`Error al agregar horario: ${error.message || 'Error desconocido'}`);
+      }
     }
   };
 
