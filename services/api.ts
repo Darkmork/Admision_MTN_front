@@ -20,6 +20,7 @@ const isPublicRoute = (url: string): boolean => {
         '/api/auth/register',
         '/api/auth/refresh',
         '/api/auth/public-key',
+        '/api/auth/csrf-token',  // CSRF token endpoint must be public
         '/api/email/',
         '/api/usuario-auth/',
         '/api/public/',
@@ -29,7 +30,7 @@ const isPublicRoute = (url: string): boolean => {
         '/api/evaluations/public/',
         '/api/rut/'
     ];
-    
+
     return publicPaths.some(path => url.includes(path));
 };
 
