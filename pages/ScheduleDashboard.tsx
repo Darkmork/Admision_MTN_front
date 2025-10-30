@@ -1,6 +1,6 @@
 import React, { useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
-import InterviewerScheduleManager from '../components/schedule/InterviewerScheduleManager';
+import WeeklyCalendar from '../components/schedule/WeeklyCalendar';
 import ScheduleCalendarView from '../components/schedule/ScheduleCalendarView';
 import ScheduleAnalytics from '../components/schedule/ScheduleAnalytics';
 import { Calendar, Settings, BarChart3, Clock, Users, ChevronRight } from 'lucide-react';
@@ -25,7 +25,7 @@ const ScheduleDashboard: React.FC = () => {
     }
 
     const isAdmin = user.role === 'ADMIN';
-    const isAuthorized = ['ADMIN', 'CYCLE_DIRECTOR', 'PSYCHOLOGIST', 'COORDINATOR'].includes(user.role);
+    const isAuthorized = ['ADMIN', 'CYCLE_DIRECTOR', 'PSYCHOLOGIST', 'COORDINATOR', 'INTERVIEWER'].includes(user.role);
 
     if (!isAuthorized) {
         return (
@@ -69,10 +69,12 @@ const ScheduleDashboard: React.FC = () => {
         switch (activeTab) {
             case 'schedule':
                 return (
-                    <InterviewerScheduleManager 
-                        currentUser={user} 
-                        isAdmin={isAdmin}
-                        year={new Date().getFullYear()}
+                    <WeeklyCalendar
+                        userId={user.id}
+                        userRole={user.role}
+                        onScheduleChange={() => {
+                            console.log('📅 Horarios actualizados en ScheduleDashboard');
+                        }}
                     />
                 );
             case 'calendar':

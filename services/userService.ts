@@ -281,34 +281,24 @@ class UserService {
    */
   async getSchoolStaffUsers(filters: UserFilters = {}): Promise<PagedResponse<User>> {
     try {
-      console.log('👨‍🏫 Obteniendo usuarios del colegio desde microservicio');
-      
-      // Filtrar en el backend excluyendo APODERADOS mediante parámetros
-      const staffFilters = {
-        ...filters,
-        excludeRole: 'APODERADO' // Nuevo parámetro para excluir APODERADOS
-      };
-      
-      const params = new URLSearchParams();
-      
-      if (staffFilters.search) params.append('search', staffFilters.search);
-      if (staffFilters.role) params.append('role', staffFilters.role);
-      if (staffFilters.active !== undefined) params.append('active', staffFilters.active.toString());
-      if (staffFilters.page !== undefined) params.append('page', staffFilters.page.toString());
-      if (staffFilters.size !== undefined) params.append('size', staffFilters.size.toString());
-      if (staffFilters.sort) params.append('sort', staffFilters.sort);
-      // Excluir APODERADOS en el backend
-      params.append('excludeRole', 'APODERADO');
+      console.log('👨‍🏫 Obteniendo usuarios del colegio desde microservicio (usando /api/users/staff)');
 
-      const response = await api.get(`/api/users?${params.toString()}`);
-      
-      console.log('✅ Respuesta cruda staff del microservicio:', response.data);
-      
-      // Usar el adaptador para convertir datos simples a estructura compleja
-      const adaptedResponse = DataAdapter.adaptUserApiResponse(response);
-      
-      console.log('✅ Usuarios staff adaptados exitosamente:', adaptedResponse.content.length);
-      return adaptedResponse;
+      const params = new URLSearchParams();
+
+      if (filters.search) params.append('search', filters.search);
+      if (filters.role) params.append('role', filters.role);
+      if (filters.active !== undefined) params.append('active', filters.active.toString());
+      if (filters.page !== undefined) params.append('page', filters.page.toString());
+      if (filters.size !== undefined) params.append('size', filters.size.toString());
+      if (filters.sort) params.append('sort', filters.sort);
+
+      // FIXED: Use /api/users/staff endpoint which correctly excludes APODERADOS and supports pagination
+      const response = await api.get(`/api/users/staff?${params.toString()}`);
+
+      console.log('✅ Respuesta del endpoint /api/users/staff:', response.data);
+
+      // Backend /api/users/staff already returns paginated format, no adapter needed
+      return response.data;
 
     } catch (error: any) {
       console.error('❌ Error obteniendo usuarios staff del microservicio:', error);

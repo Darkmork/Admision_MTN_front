@@ -203,7 +203,10 @@ const UserForm: React.FC<UserFormProps> = ({
   const availableSubjects = formData.educationalLevel ? UserUtils.getSubjectsForLevel(formData.educationalLevel) : [];
   
   // Determinar si el usuario puede realizar entrevistas (necesita gestión de horarios)
-  const canInterview = formData.role === UserRole.PSYCHOLOGIST || formData.role === UserRole.CYCLE_DIRECTOR || formData.role === UserRole.COORDINATOR;
+  const canInterview = formData.role === UserRole.PSYCHOLOGIST ||
+                       formData.role === UserRole.CYCLE_DIRECTOR ||
+                       formData.role === UserRole.COORDINATOR ||
+                       formData.role === UserRole.INTERVIEWER;
   
   console.log(`👤 UserForm - Usuario: ${formData.firstName} ${formData.lastName}`);
   console.log(`🏷️ UserForm - Role: ${formData.role}`);
@@ -511,8 +514,9 @@ const UserForm: React.FC<UserFormProps> = ({
               
               <div className="bg-gray-50 rounded-lg p-4">
                 <p className="text-sm text-gray-600 mb-4">
-                  Como {formData.role === UserRole.PSYCHOLOGIST ? 'psicólogo(a)' : 
-                       formData.role === UserRole.CYCLE_DIRECTOR ? 'director(a) de ciclo' : 'coordinador(a)'}, 
+                  Como {formData.role === UserRole.PSYCHOLOGIST ? 'psicólogo(a)' :
+                       formData.role === UserRole.CYCLE_DIRECTOR ? 'director(a) de ciclo' :
+                       formData.role === UserRole.INTERVIEWER ? 'entrevistador(a)' : 'coordinador(a)'},
                   puedes marcar tus horarios disponibles haciendo click en las casillas del calendario (8 AM - 4 PM).
                 </p>
                 
@@ -536,8 +540,9 @@ const UserForm: React.FC<UserFormProps> = ({
                 <div>
                   <h4 className="text-sm font-medium text-blue-900 mb-1">Gestión de Horarios</h4>
                   <p className="text-sm text-blue-700">
-                    Después de crear este usuario {formData.role === UserRole.PSYCHOLOGIST ? 'psicólogo' : 
-                                                   formData.role === UserRole.CYCLE_DIRECTOR ? 'director de ciclo' : 'coordinador'}, 
+                    Después de crear este usuario {formData.role === UserRole.PSYCHOLOGIST ? 'psicólogo' :
+                                                   formData.role === UserRole.CYCLE_DIRECTOR ? 'director de ciclo' :
+                                                   formData.role === UserRole.INTERVIEWER ? 'entrevistador' : 'coordinador'},
                     podrás configurar sus horarios disponibles para entrevistas editando su perfil.
                   </p>
                 </div>
