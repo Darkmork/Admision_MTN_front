@@ -92,6 +92,9 @@ const ApplicationForm: React.FC = () => {
     const [uploadedDocuments, setUploadedDocuments] = useState<Map<string, File>>(new Map());
     const [existingDocuments, setExistingDocuments] = useState<any[]>([]);
 
+    // Flag to indicate if user is adding another child (skip family data steps)
+    const [isAddingAnotherChild, setIsAddingAnotherChild] = useState(false);
+
     // Estado para el modal de errores
     const [showErrorModal, setShowErrorModal] = useState(false);
     const [errorModalData, setErrorModalData] = useState({
@@ -425,9 +428,79 @@ const ApplicationForm: React.FC = () => {
         return { street, number, commune, apartment };
     }, []);
 
-    // Pre-fill form when in edit mode (from dashboard)
+    // Pre-fill form when in edit mode (from dashboard) OR when adding another child (prefill family data)
     useEffect(() => {
         const loadEditModeData = async () => {
+            console.log('🔍 ApplicationForm useEffect - Checking location.state:', location.state);
+
+            // CASO 1: Agregar otro hijo - pre-llenar datos familiares
+            if (location.state?.prefillFamilyData && location.state?.familyData) {
+                const familyData = location.state.familyData;
+                console.log('👨‍👩‍👧‍👦 Prefill family data detected!');
+                console.log('👨‍👩‍👧‍👦 Family data received:', familyData);
+                console.log('👨‍👩‍👧‍👦 Father data:', familyData.father);
+                console.log('👨‍👩‍👧‍👦 Mother data:', familyData.mother);
+                console.log('👨‍👩‍👧‍👦 Guardian data:', familyData.guardian);
+                console.log('👨‍👩‍👧‍👦 Supporter data:', familyData.supporter);
+
+                // Hide auth form since user is already authenticated
+                setShowAuthForm(false);
+
+                // Set flag to skip family data steps (steps 1, 2, 3)
+                setIsAddingAnotherChild(true);
+
+                // Extract family address (prefer father's, then mother's)
+                const familyAddress = familyData.father?.address || familyData.mother?.address || '';
+
+                // Calculate application year (current year + 1)
+                const currentYear = new Date().getFullYear();
+                const nextYear = currentYear + 1;
+
+                // Pre-llenar datos familiares (padres, apoderado, sostenedor)
+                // Y también pre-llenar la dirección del estudiante (típicamente la misma que la familia)
+                setData({
+                    // Application year (always next year)
+                    applicationYear: nextYear.toString(),
+
+                    // Student address (pre-filled with family address)
+                    studentAddress: familyAddress,
+
+                    // Father data (parent1)
+                    parent1Name: familyData.father?.fullName || '',
+                    parent1Email: familyData.father?.email || '',
+                    parent1Phone: familyData.father?.phone || '',
+                    parent1Rut: familyData.father?.rut || '',
+                    parent1Address: familyData.father?.address || '',
+                    parent1Profession: familyData.father?.profession || '',
+
+                    // Mother data (parent2)
+                    parent2Name: familyData.mother?.fullName || '',
+                    parent2Email: familyData.mother?.email || '',
+                    parent2Phone: familyData.mother?.phone || '',
+                    parent2Rut: familyData.mother?.rut || '',
+                    parent2Address: familyData.mother?.address || '',
+                    parent2Profession: familyData.mother?.profession || '',
+
+                    // Supporter data
+                    supporterName: familyData.supporter?.fullName || '',
+                    supporterEmail: familyData.supporter?.email || '',
+                    supporterPhone: familyData.supporter?.phone || '',
+                    supporterRut: familyData.supporter?.rut || '',
+                    supporterRelation: familyData.supporter?.relationship || '',
+
+                    // Guardian data
+                    guardianName: familyData.guardian?.fullName || '',
+                    guardianEmail: familyData.guardian?.email || '',
+                    guardianPhone: familyData.guardian?.phone || '',
+                    guardianRut: familyData.guardian?.rut || '',
+                    guardianRelation: familyData.guardian?.relationship || ''
+                });
+
+                console.log('✅ Family data pre-filled successfully - student fields remain empty for new application');
+                return; // Exit early - no need to check edit mode
+            }
+
+            // CASO 2: Modo edición - pre-llenar toda la postulación existente
             if (location.state?.editMode && location.state?.applicationData) {
                 const appData = location.state.applicationData;
                 console.log('✏️ Edit mode detected, pre-filling form with:', appData);
@@ -740,8 +813,14 @@ const ApplicationForm: React.FC = () => {
 
     const nextStep = async () => {
         if (validateCurrentStep()) {
-            const nextStepIndex = currentStep + 1;
-            
+            // When adding another child, skip steps 1, 2, 3 (family data)
+            // Jump from step 0 (student data) directly to step 4 (documents)
+            let nextStepIndex = currentStep + 1;
+            if (isAddingAnotherChild && currentStep === 0) {
+                nextStepIndex = 4; // Skip to documents step
+                console.log('👨‍👩‍👧‍👦 Adding another child - skipping family data steps (1,2,3), going directly to step 4 (documents)');
+            }
+
             // Si es el último paso (documentos), enviar la postulación
             if (currentStep === 4) {
                 setIsSubmitting(true);

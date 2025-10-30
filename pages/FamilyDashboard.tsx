@@ -82,6 +82,7 @@ const FamilyDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState('resumen');
   const [realApplications, setRealApplications] = useState<Application[]>([]);
+  const [selectedApplicationIndex, setSelectedApplicationIndex] = useState(0);
   const [documents, setDocuments] = useState<any[]>([]);
   const [loadingDocuments, setLoadingDocuments] = useState(false);
 
@@ -187,8 +188,28 @@ const FamilyDashboard: React.FC = () => {
   // Use real applications if available, otherwise fallback to context or mock data
   const hasRealApplication = Array.isArray(realApplications) && realApplications.length > 0;
   const myApplication = hasRealApplication
-    ? realApplications[0]
+    ? realApplications[selectedApplicationIndex]
     : (applications.length > 0 ? applications[0] : null);
+
+  // Handler for adding another child (navigate to form with family data pre-filled)
+  const handleAddAnotherChild = () => {
+    if (hasRealApplication && realApplications.length > 0) {
+      // Pass the first application's family data to pre-fill the form
+      navigate('/postulacion', {
+        state: {
+          prefillFamilyData: true,
+          familyData: {
+            father: realApplications[0].father,
+            mother: realApplications[0].mother,
+            guardian: realApplications[0].guardian,
+            supporter: realApplications[0].supporter
+          }
+        }
+      });
+    } else {
+      navigate('/postulacion');
+    }
+  };
 
   const renderSection = () => {
     switch (activeSection) {
@@ -278,34 +299,93 @@ const FamilyDashboard: React.FC = () => {
               </Card>
             ) : (
               <div className="space-y-6">
-                {/* Estadísticas de postulaciones */}
-                {Array.isArray(realApplications) && realApplications.length > 1 && (
-                  <Card className="p-6">
-                    <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">Resumen de Postulaciones</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Lista de Hijos Postulantes */}
+                <Card className="p-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-xl font-bold text-azul-monte-tabor">Mis Hijos Postulantes</h2>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={handleAddAnotherChild}
+                      className="flex items-center gap-2"
+                    >
+                      <FiPlus className="w-4 h-4" />
+                      Postular Otro Hijo
+                    </Button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                    {realApplications.map((app, index) => (
+                      <button
+                        key={app.id}
+                        onClick={() => setSelectedApplicationIndex(index)}
+                        className={`p-4 rounded-lg border-2 transition-all text-left ${
+                          selectedApplicationIndex === index
+                            ? 'border-azul-monte-tabor bg-blue-50'
+                            : 'border-gray-200 bg-white hover:border-azul-monte-tabor hover:bg-blue-50'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <FiUser className="w-5 h-5 text-azul-monte-tabor" />
+                            <h3 className="font-semibold text-azul-monte-tabor">
+                              {app.student.firstName} {app.student.lastName}
+                            </h3>
+                          </div>
+                          {selectedApplicationIndex === index && (
+                            <FiCheckCircle className="w-5 h-5 text-verde-esperanza" />
+                          )}
+                        </div>
+                        <p className="text-sm text-gris-piedra mb-1">
+                          <strong>Nivel:</strong> {app.student.gradeApplied}
+                        </p>
+                        <Badge
+                          variant={
+                            app.status === 'APPROVED' ? 'success' :
+                            app.status === 'REJECTED' ? 'error' :
+                            app.status === 'WAITLIST' ? 'warning' : 'info'
+                          }
+                          size="sm"
+                        >
+                          {app.status === 'PENDING' ? 'Pendiente' :
+                           app.status === 'UNDER_REVIEW' ? 'En Revisión' :
+                           app.status === 'APPROVED' ? 'Aprobado' :
+                           app.status === 'REJECTED' ? 'Rechazado' :
+                           app.status === 'WAITLIST' ? 'Lista de Espera' :
+                           app.status}
+                        </Badge>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Estadísticas de postulaciones */}
+                  {Array.isArray(realApplications) && realApplications.length > 1 && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-gray-200">
                       <div className="text-center p-4 bg-blue-50 rounded-lg">
-                        <p className="text-2xl font-bold text-azul-monte-tabor">{Array.isArray(realApplications) ? realApplications.length : 0}</p>
+                        <p className="text-2xl font-bold text-azul-monte-tabor">{realApplications.length}</p>
                         <p className="text-sm text-gris-piedra">Total Postulaciones</p>
                       </div>
                       <div className="text-center p-4 bg-green-50 rounded-lg">
                         <p className="text-2xl font-bold text-verde-esperanza">
-                          {Array.isArray(realApplications) ? realApplications.filter(app => app.status === 'APPROVED').length : 0}
+                          {realApplications.filter(app => app.status === 'APPROVED').length}
                         </p>
                         <p className="text-sm text-gris-piedra">Aprobadas</p>
                       </div>
                       <div className="text-center p-4 bg-yellow-50 rounded-lg">
                         <p className="text-2xl font-bold text-dorado-nazaret">
-                          {Array.isArray(realApplications) ? realApplications.filter(app => ['PENDING', 'UNDER_REVIEW'].includes(app.status)).length : 0}
+                          {realApplications.filter(app => ['PENDING', 'UNDER_REVIEW'].includes(app.status)).length}
                         </p>
                         <p className="text-sm text-gris-piedra">En Proceso</p>
                       </div>
                     </div>
-                  </Card>
-                )}
+                  )}
+                </Card>
                 
                 <Card className="p-6">
                 <h2 className="text-xl font-bold text-azul-monte-tabor mb-6">
-                  {Array.isArray(realApplications) && realApplications.length > 1 ? 'Postulación Principal' : 'Resumen de Postulación'}
+                  {Array.isArray(realApplications) && realApplications.length > 1
+                    ? `Detalles de ${myApplication.student.firstName}`
+                    : 'Resumen de Postulación'}
                 </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
