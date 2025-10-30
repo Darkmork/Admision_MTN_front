@@ -178,7 +178,9 @@ const ProfessorLoginPage: React.FC = () => {
                 return ['MATH', 'SPANISH', 'ENGLISH', 'SCIENCE', 'HISTORY'];
             case 'PSYCHOLOGIST':
                 return ['PSYCHOLOGY'];
-            
+            case 'INTERVIEWER':
+                return ['PSYCHOLOGY']; // Los entrevistadores trabajan principalmente con evaluaciones psicológicas y entrevistas familiares
+
             // Legacy roles
             case 'TEACHER_MATHEMATICS':
                 return ['MATH'];
@@ -244,7 +246,9 @@ const ProfessorLoginPage: React.FC = () => {
                 return 'Dirección de Ciclo';
             case 'PSYCHOLOGIST':
                 return 'Psicología';
-            
+            case 'INTERVIEWER':
+                return 'Entrevistas y Admisión';
+
             // Legacy roles
             case 'TEACHER_MATHEMATICS':
                 return 'Matemática (Sistema Anterior)';

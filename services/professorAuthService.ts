@@ -119,40 +119,41 @@ class ProfessorAuthService {
         const professorRoles = [
             // Administración
             'ADMIN',
-            
+
             // Roles del backend (actuales)
             'TEACHER',
             'COORDINATOR',
             'CYCLE_DIRECTOR',
             'PSYCHOLOGIST',
-            
+            'INTERVIEWER',
+
             // Profesores por ciclo (legacy/específicos)
             'TEACHER_EARLY_CYCLE',
-            
+
             // Profesores básica (3° a 7°)
             'TEACHER_LANGUAGE_BASIC',
             'TEACHER_MATHEMATICS_BASIC',
             'TEACHER_ENGLISH_BASIC',
             'TEACHER_SCIENCE_BASIC',
             'TEACHER_HISTORY_BASIC',
-            
+
             // Profesores media (8° a IV)
             'TEACHER_LANGUAGE_HIGH',
             'TEACHER_MATHEMATICS_HIGH',
             'TEACHER_ENGLISH_HIGH',
             'TEACHER_SCIENCE_HIGH',
             'TEACHER_HISTORY_HIGH',
-            
+
             // Coordinadores específicos
             'COORDINATOR_LANGUAGE',
             'COORDINATOR_MATHEMATICS',
             'COORDINATOR_ENGLISH',
             'COORDINATOR_SCIENCE',
             'COORDINATOR_HISTORY',
-            
+
             // Legacy roles (compatibilidad)
             'TEACHER_LANGUAGE',
-            'TEACHER_MATHEMATICS', 
+            'TEACHER_MATHEMATICS',
             'TEACHER_ENGLISH'
         ];
         return professorRoles.includes(role);
