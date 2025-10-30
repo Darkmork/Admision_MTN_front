@@ -25,7 +25,7 @@ import { professorEvaluationService, ProfessorEvaluation, ProfessorEvaluationSta
 import { professorAuthService } from '../services/professorAuthService';
 import { EvaluationStatus, EvaluationType } from '../types/evaluation';
 import { FiRefreshCw, FiBarChart2, FiCalendar, FiEye } from 'react-icons/fi';
-import AvailabilityScheduleManager from '../components/AvailabilityScheduleManager';
+import WeeklyCalendar from '../components/schedule/WeeklyCalendar';
 import ChangePasswordButton from '../src/components/common/ChangePasswordButton';
 import {
     Interview,
@@ -1443,10 +1443,12 @@ const ProfessorDashboard: React.FC = () => {
                 return renderEstudiantes();
             case 'horarios':
                 return currentProfessor ? (
-                    <AvailabilityScheduleManager
-                        interviewerId={currentProfessor.id}
-                        interviewerName={`${currentProfessor.firstName} ${currentProfessor.lastName}`}
-                        readonly={false}
+                    <WeeklyCalendar
+                        userId={currentProfessor.id}
+                        userRole={currentProfessor.role}
+                        onScheduleChange={() => {
+                            console.log('📅 Horarios actualizados en ProfessorDashboard - Usando WeeklyCalendar');
+                        }}
                     />
                 ) : (
                     <Card className="p-6">
