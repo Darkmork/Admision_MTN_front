@@ -200,6 +200,7 @@ The `Input` component (`components/ui/Input.tsx`) supports password visibility t
 - `TEACHER`
 - `PSYCHOLOGIST`
 - `CYCLE_DIRECTOR`
+- `INTERVIEWER` - Functionally equivalent to PSYCHOLOGIST but specialized for family interviews
 
 ### 7. Component Organization
 
@@ -247,6 +248,41 @@ The `Input` component (`components/ui/Input.tsx`) supports password visibility t
 - Interview type `FAMILY` → Evaluation type `FAMILY_INTERVIEW`
 - Interview type `CYCLE_DIRECTOR` → Evaluation type `CYCLE_DIRECTOR_INTERVIEW`
 - Interview type `INDIVIDUAL` → Evaluation type `PSYCHOLOGICAL_INTERVIEW`
+
+### 9. Schedule Management Component Pattern
+
+**CRITICAL**: The system uses `WeeklyCalendar` component for ALL schedule management interfaces.
+
+**Single source of truth**: `components/schedule/WeeklyCalendar.tsx`
+- Modern grid-based weekly calendar view (Monday-Sunday)
+- Visual slot selection interface
+- Supports recurrent schedules, specific dates, and exceptions
+- Role-agnostic (works with any user role via `userId` and `userRole` props)
+
+**Usage locations**:
+1. **Admin panel** (`AdminDashboard.tsx` → User management modal)
+2. **Professor dashboard** (`ProfessorDashboard.tsx` → 'horarios' section)
+3. **Schedule dashboard** (`ScheduleDashboard.tsx` → Standalone page for ADMIN/CYCLE_DIRECTOR/PSYCHOLOGIST/INTERVIEWER)
+
+**Usage pattern**:
+```typescript
+<WeeklyCalendar
+  userId={user.id}
+  userRole={user.role}
+  onScheduleChange={() => {
+    console.log('📅 Horarios actualizados');
+  }}
+/>
+```
+
+**DEPRECATED components** (do NOT use):
+- `AvailabilityScheduleManager.tsx` - Old dropdown-based interface (replaced Oct 2025)
+- `InterviewerScheduleManager.tsx` - Old component, use WeeklyCalendar instead
+
+**Why this pattern**:
+- Ensures consistent UX/UI across all schedule management screens
+- Changes made in admin panel automatically sync with professor's own view (same backend data)
+- Single component to maintain and improve
 
 ## Path Aliases (vite.config.ts)
 
@@ -444,6 +480,13 @@ Frontend → Gateway (public) → Backend Service (private) → PostgreSQL
 ```
 
 ## Changelog Highlights
+
+**Oct 30, 2025** - INTERVIEWER role support and schedule component unification:
+- Added INTERVIEWER role support to professor login portal (`professorAuthService.isProfessorRole()`)
+- Added subject and department mappings for INTERVIEWER role in `ProfessorLoginPage.tsx`
+- Replaced `AvailabilityScheduleManager` with `WeeklyCalendar` in `ProfessorDashboard.tsx` 'horarios' section
+- Unified schedule management UX/UI across admin panel and professor dashboard
+- INTERVIEWER users can now log in and manage interview schedules like PSYCHOLOGIST users
 
 **Oct 27, 2025** - Password visibility toggle:
 - Enhanced `Input` component with optional `showPasswordToggle` prop
