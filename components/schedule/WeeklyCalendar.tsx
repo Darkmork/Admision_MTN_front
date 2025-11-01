@@ -108,8 +108,10 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
       // Marcar horarios existentes
       schedules.forEach((schedule: InterviewerSchedule) => {
         if (schedule.dayOfWeek && schedule.scheduleType === 'RECURRING') {
-          const startTime = schedule.startTime; // "09:00"
-          const endTime = schedule.endTime;     // "11:30"
+          // Normalizar tiempos para asegurar formato "08:00" (con cero adelante)
+          // Esto previene problemas de comparación con tiempos como "8:00"
+          const startTime = schedule.startTime.padStart(5, '0'); // "8:00" → "08:00"
+          const endTime = schedule.endTime.padStart(5, '0');     // "8:30" → "08:30"
 
           // Marcar todos los slots en el rango como ocupados
           timeSlots.forEach(slot => {
