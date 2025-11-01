@@ -259,7 +259,8 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
         await interviewerScheduleService.deleteSchedule(scheduleId);
       }
 
-      // Crear horarios nuevos (agrupados en rangos consecutivos por día)
+      // Crear horarios nuevos (UN registro de 30 minutos por cada bloque)
+      // NO agrupar bloques consecutivos - cada bloque es independiente
       const slotsByDay: Record<string, string[]> = {};
       slotsToCreate.forEach(({ day, time }) => {
         if (!slotsByDay[day]) slotsByDay[day] = [];
@@ -270,46 +271,26 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
         // Ordenar tiempos
         times.sort();
 
-        // Agrupar slots consecutivos en rangos
-        const ranges: Array<{start: string, end: string}> = [];
-        let currentRange: {start: string, end: string} | null = null;
-
+        // Crear UN registro por cada bloque de 30 minutos
         for (const slot of times) {
           const [hour, minute] = slot.split(':').map(Number);
 
-          // Calcular el siguiente slot (30 min después)
+          // Calcular el fin del bloque (siempre +30 minutos)
           const nextMinute = minute === 0 ? 30 : 0;
           const nextHour = minute === 30 ? hour + 1 : hour;
-          const nextSlot = `${nextHour.toString().padStart(2, '0')}:${nextMinute.toString().padStart(2, '0')}`;
+          const endTime = `${nextHour.toString().padStart(2, '0')}:${nextMinute.toString().padStart(2, '0')}`;
 
-          if (!currentRange) {
-            currentRange = { start: slot, end: nextSlot };
-          } else if (slot === currentRange.end) {
-            // Slot consecutivo, extender el rango
-            currentRange.end = nextSlot;
-          } else {
-            // Slot no consecutivo, guardar rango actual y empezar uno nuevo
-            ranges.push(currentRange);
-            currentRange = { start: slot, end: nextSlot };
-          }
-        }
+          console.log(`➕ Creando bloque de 30 min: ${day} ${slot}-${endTime}`);
 
-        if (currentRange) {
-          ranges.push(currentRange);
-        }
-
-        // Crear horarios para cada rango
-        for (const range of ranges) {
-          console.log(`➕ Creando horario: ${day} ${range.start}-${range.end}`);
           const scheduleData = {
             interviewer: { id: userId },
             dayOfWeek: day,
-            startTime: range.start,
-            endTime: range.end,
+            startTime: slot,
+            endTime: endTime,  // Siempre +30 minutos
             scheduleType: 'RECURRING' as const,
             year: 2025,
             isActive: true,
-            notes: 'Horario configurado desde calendario semanal'
+            notes: 'Bloque de 30 minutos - Sistema de horarios'
           };
 
           await interviewerScheduleService.createSchedule(scheduleData);
