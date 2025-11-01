@@ -119,6 +119,8 @@ const ApplicationForm: React.FC = () => {
         lastName: '',
         phone: '',
         rut: '',
+        passport: '', // Para estudiantes extranjeros
+        nationality: 'CHILENA', // 'CHILENA' o 'EXTRANJERA'
         confirmPassword: '',
         address: '',
         profession: '',
@@ -889,7 +891,9 @@ const ApplicationForm: React.FC = () => {
                             firstName: data.firstName,
                             paternalLastName: data.paternalLastName,
                             maternalLastName: data.maternalLastName,
-                            rut: data.rut,
+                            rut: data.rut || null, // Nullable para estudiantes extranjeros
+                            nationality: authData.nationality, // 'CHILENA' o 'EXTRANJERA'
+                            passport: authData.passport || null, // Para estudiantes extranjeros
                             birthDate: data.birthDate,
                             studentEmail: data.studentEmail,
                             studentAddress: data.studentAddress,
@@ -1271,14 +1275,46 @@ const ApplicationForm: React.FC = () => {
                                     />
                                 </div>
 
-                                <RutInput
-                                    name="rut"
-                                    label="RUT"
-                                    placeholder="12.345.678-9"
-                                    value={authData.rut}
-                                    onChange={(value) => updateAuthField('rut', value)}
-                                    required
+                                <Select
+                                    id="nationality"
+                                    label="Nacionalidad del Estudiante"
+                                    options={[
+                                        { value: 'CHILENA', label: 'Chilena' },
+                                        { value: 'EXTRANJERA', label: 'Extranjera' }
+                                    ]}
+                                    isRequired
+                                    value={authData.nationality}
+                                    onChange={(e) => {
+                                        updateAuthField('nationality', e.target.value);
+                                        // Limpiar RUT o passport al cambiar nacionalidad
+                                        if (e.target.value === 'CHILENA') {
+                                            updateAuthField('passport', '');
+                                        } else {
+                                            updateAuthField('rut', '');
+                                        }
+                                    }}
                                 />
+
+                                {authData.nationality === 'CHILENA' ? (
+                                    <RutInput
+                                        name="rut"
+                                        label="RUT del Estudiante"
+                                        placeholder="12.345.678-9"
+                                        value={authData.rut}
+                                        onChange={(value) => updateAuthField('rut', value)}
+                                        required
+                                    />
+                                ) : (
+                                    <Input
+                                        id="passport"
+                                        label="Número de Pasaporte del Estudiante"
+                                        type="text"
+                                        placeholder="Ej: P123456789"
+                                        value={authData.passport}
+                                        onChange={(e) => updateAuthField('passport', e.target.value.toUpperCase())}
+                                        isRequired
+                                    />
+                                )}
 
                                 <Select
                                     id="guardianType"
