@@ -186,30 +186,95 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
       .sort();
   };
 
-  // Guardar cambios
+  // Guardar cambios con lógica incremental (solo modifica lo que cambió)
   const saveSchedules = async () => {
     try {
       setSaving(true);
 
-      // 1. Primero eliminar todos los horarios existentes del usuario
+      console.log('💾 Iniciando guardado incremental de horarios...');
+
+      // 1. Cargar horarios actuales de la BD
       const existingSchedules = await interviewerScheduleService.getInterviewerSchedulesByYear(userId, 2025);
-      for (const existingSchedule of existingSchedules) {
-        if (existingSchedule.id) {
-          await interviewerScheduleService.deleteSchedule(existingSchedule.id);
+      console.log(`📊 Horarios existentes en BD: ${existingSchedules.length}`);
+
+      // 2. Construir conjunto de slots seleccionados en pantalla
+      // IMPORTANTE: Incluir tanto los nuevos (isSelected) como los existentes (hasSchedule)
+      const selectedSlots = new Set<string>();
+      for (const day of days) {
+        const daySchedule = schedule[day as keyof WeeklySchedule];
+        Object.entries(daySchedule).forEach(([time, slot]) => {
+          // Considerar tanto slots nuevos como existentes que no han sido desmarcados
+          if (slot.isSelected || slot.hasSchedule) {
+            selectedSlots.add(`${day}-${time}`);
+          }
+        });
+      }
+      console.log(`✅ Slots activos en pantalla (nuevos + existentes): ${selectedSlots.size}`);
+
+      // 3. Construir mapa de slots existentes en BD
+      const existingSlotsMap = new Map<string, number>(); // key: "MONDAY-09:00", value: scheduleId
+      existingSchedules.forEach((schedule: InterviewerSchedule) => {
+        if (schedule.dayOfWeek && schedule.scheduleType === 'RECURRING') {
+          const startTime = schedule.startTime;
+          const endTime = schedule.endTime;
+
+          // Marcar todos los slots en el rango
+          timeSlots.forEach(slot => {
+            if (slot >= startTime && slot < endTime) {
+              const key = `${schedule.dayOfWeek}-${slot}`;
+              existingSlotsMap.set(key, schedule.id!);
+            }
+          });
         }
+      });
+      console.log(`📋 Slots existentes mapeados: ${existingSlotsMap.size}`);
+
+      // 4. Calcular diferencias
+      const slotsToDelete = new Set<number>(); // scheduleIds a eliminar
+      const slotsToCreate: Array<{day: string, time: string}> = []; // slots a crear
+
+      // Encontrar slots a eliminar (en BD pero NO en pantalla)
+      existingSlotsMap.forEach((scheduleId, key) => {
+        if (!selectedSlots.has(key)) {
+          slotsToDelete.add(scheduleId);
+        }
+      });
+
+      // Encontrar slots a crear (en pantalla pero NO en BD)
+      selectedSlots.forEach(key => {
+        if (!existingSlotsMap.has(key)) {
+          const [day, time] = key.split('-');
+          slotsToCreate.push({ day, time });
+        }
+      });
+
+      console.log(`❌ Horarios a eliminar: ${slotsToDelete.size}`);
+      console.log(`➕ Horarios a crear: ${slotsToCreate.length}`);
+
+      // 5. Ejecutar solo los cambios necesarios
+
+      // Eliminar horarios desmarcados
+      for (const scheduleId of slotsToDelete) {
+        console.log(`🗑️ Eliminando horario ID: ${scheduleId}`);
+        await interviewerScheduleService.deleteSchedule(scheduleId);
       }
 
-      // 2. Luego crear los nuevos horarios basados en la selección
-      for (const day of days) {
-        const selectedSlots = getSelectedSlots(day);
+      // Crear horarios nuevos (agrupados en rangos consecutivos por día)
+      const slotsByDay: Record<string, string[]> = {};
+      slotsToCreate.forEach(({ day, time }) => {
+        if (!slotsByDay[day]) slotsByDay[day] = [];
+        slotsByDay[day].push(time);
+      });
 
-        if (selectedSlots.length === 0) continue;
+      for (const [day, times] of Object.entries(slotsByDay)) {
+        // Ordenar tiempos
+        times.sort();
 
         // Agrupar slots consecutivos en rangos
         const ranges: Array<{start: string, end: string}> = [];
         let currentRange: {start: string, end: string} | null = null;
 
-        for (const slot of selectedSlots) {
+        for (const slot of times) {
           const [hour, minute] = slot.split(':').map(Number);
 
           // Calcular el siguiente slot (30 min después)
@@ -235,6 +300,7 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
 
         // Crear horarios para cada rango
         for (const range of ranges) {
+          console.log(`➕ Creando horario: ${day} ${range.start}-${range.end}`);
           const scheduleData = {
             interviewer: { id: userId },
             dayOfWeek: day,
@@ -250,7 +316,9 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
         }
       }
 
-      // 3. Recargar horarios
+      console.log('✅ Guardado incremental completado');
+
+      // 6. Recargar horarios
       await loadSchedules();
       setHasChanges(false);
 
@@ -259,7 +327,7 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
       }
 
     } catch (error) {
-      console.error('Error saving schedules:', error);
+      console.error('❌ Error saving schedules:', error);
       alert('Error al guardar los horarios. Por favor, inténtalo nuevamente.');
     } finally {
       setSaving(false);
