@@ -122,8 +122,8 @@ const AdmissionReportForm: React.FC = () => {
                         difficulties: '', // Campo que completa el director, no auto-poblar
                         examAdaptation: '', // Campo que completa el director, no auto-poblar
                         observations: '', // Campo que completa el director, no auto-poblar desde profesor
-                        comments: evaluationData.areasForImprovement || '', // COMENTARIOS ← Áreas de mejora del profesor
-                        areasToWork: evaluationData.recommendations || '' // ÁREAS A TRABAJAR ← Recomendaciones del profesor
+                        comments: evaluationData.recommendations || '', // COMENTARIOS ← Recomendaciones del profesor (jorge gangale)
+                        areasToWork: evaluationData.areasForImprovement || '' // ÁREAS A TRABAJAR ← Áreas de mejora del profesor (chatgpt)
                     }));
 
                     console.log('✅ Informe cargado con datos:', evaluationData);
@@ -219,9 +219,9 @@ const AdmissionReportForm: React.FC = () => {
                 score: reportData.score,
                 maxScore: reportData.maxScore, // Guardar el puntaje máximo personalizado
                 strengths: reportData.strengths,
-                areasForImprovement: reportData.comments,  // SAVE: Director's COMENTARIOS → Backend areasForImprovement
+                areasForImprovement: reportData.areasToWork,  // SAVE: Director's ÁREAS A TRABAJAR → Backend areasForImprovement
                 observations: `${reportData.observations}\n\nAdecuación al examen: ${reportData.examAdaptation}\nDificultades: ${reportData.difficulties}\n\n=== RECOMENDACIONES FINALES ===\nDecisión: ${reportData.admissionDecision}\nCurso ingreso: ${reportData.entranceGrade}\nComentarios finales: ${reportData.finalRecommendations}`,
-                recommendations: reportData.areasToWork,  // SAVE: Director's ÁREAS A TRABAJAR → Backend recommendations
+                recommendations: reportData.comments,  // SAVE: Director's COMENTARIOS → Backend recommendations
                 status: 'COMPLETED' // Cambiar estado a COMPLETED
             };
 
