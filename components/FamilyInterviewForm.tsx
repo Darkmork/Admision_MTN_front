@@ -187,9 +187,9 @@ const FamilyInterviewForm: React.FC<FamilyInterviewFormProps> = ({
       const result = await familyInterviewService.saveInterviewData(evaluation.id, interviewData);
 
       console.log('✅ Interview data saved:', result);
-      alert(`Entrevista guardada exitosamente. Porcentaje: ${currentScore}%`);
 
       // Call parent onSave callback if provided
+      // Parent will handle navigation and success message
       if (onSave) {
         await onSave(result.interview_data, result.totalScore);
       }
