@@ -146,7 +146,16 @@ export default defineConfig(({ command, mode }) => {
     plugins: [
       react()  // CRITICAL: Required for React + TypeScript + JSON imports
     ],
-    
+
+    // JSON handling configuration
+    // CRITICAL: Prevents JSON.parse() transformation issues in production
+    // Forces Vite to inline JSON as native JS objects instead of JSON.parse() strings
+    // This fixes the "Cannot convert undefined or null to object" error in Vercel
+    json: {
+      stringify: false,  // Inline as JS object literal, NOT JSON.parse()
+      namedExports: true  // Allow named imports from JSON files
+    },
+
     // Test configuration (if using Vitest)
     test: {
       environment: 'jsdom',
