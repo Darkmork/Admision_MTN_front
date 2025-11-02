@@ -104,7 +104,7 @@ const FamilyInterviewPage: React.FC = () => {
       await professorEvaluationService.updateEvaluation(parseInt(evaluationId), updateData);
 
       // Navigate back to dashboard
-      navigate('/profesor/dashboard');
+      navigate('/profesor');
     } catch (err: any) {
       console.error('Error saving family interview:', err);
       setError(err.message || 'Error al guardar la entrevista familiar');
@@ -129,7 +129,7 @@ const FamilyInterviewPage: React.FC = () => {
 
       await professorEvaluationService.updateEvaluation(parseInt(evaluationId), updateData);
 
-      navigate('/profesor/dashboard');
+      navigate('/profesor');
     } catch (err: any) {
       console.error('Error saving draft:', err);
       setError(err.message || 'Error al guardar el borrador');
