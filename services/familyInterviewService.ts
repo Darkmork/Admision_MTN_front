@@ -141,30 +141,18 @@ class FamilyInterviewService {
 
             // Checklist items (4 items × 1pt each = 4pt total)
             if (obsData.checklist) {
-                console.log('🔍 DEBUG - Checklist data:', obsData.checklist);
-                console.log('🔍 DEBUG - Checklist values:', Object.values(obsData.checklist));
-
                 for (const item of Object.values(obsData.checklist)) {
-                    console.log('🔍 DEBUG - Processing checklist item:', item, 'Type:', typeof item);
-
                     if (typeof item === 'number') {
-                        console.log('  ✅ Adding numeric value:', item);
                         observationScore += item;  // Add actual score value (1, 2, etc.)
                     } else if (item === true) {
-                        console.log('  ✅ Adding boolean as 1 point');
                         observationScore += 1;  // Fallback for boolean checkboxes
-                    } else {
-                        console.log('  ⚠️ Item not counted (not number or true)');
                     }
                 }
-                console.log('🔍 DEBUG - Checklist total:', observationScore);
             }
 
             // Overall opinion (up to 5 points)
             if (obsData.overallOpinion && typeof obsData.overallOpinion.score === 'number') {
-                console.log('🔍 DEBUG - Overall opinion score:', obsData.overallOpinion.score);
                 observationScore += obsData.overallOpinion.score;
-                console.log('🔍 DEBUG - Total observation score after opinion:', observationScore);
             }
         }
 
@@ -300,15 +288,6 @@ class FamilyInterviewService {
 
         // Combined percentage (already in 0-100 scale)
         const totalPercentage = sectionPercentage + observationPercentage;
-
-        // DEBUG: Log values to console
-        console.log('🔍 Score Calculation Debug:');
-        console.log('  Section Score:', sectionScore, '/ 20');
-        console.log('  Section Percentage:', sectionPercentage, '% (should be 90% if perfect)');
-        console.log('  Observation Score:', observationScore, '/ 11');
-        console.log('  Observation Percentage:', observationPercentage, '% (should be 10% if perfect)');
-        console.log('  Total Percentage (before rounding):', totalPercentage);
-        console.log('  Total Percentage (after rounding):', Math.round(totalPercentage));
 
         return Math.round(Math.min(100, Math.max(0, totalPercentage)));
     }
