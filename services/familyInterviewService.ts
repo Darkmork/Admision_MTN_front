@@ -139,7 +139,7 @@ class FamilyInterviewService {
         if (interviewData.observations) {
             const obsData = interviewData.observations;
 
-            // Checklist items (variable points: 1pt + 2pt + 2pt + 1pt = 6pt total)
+            // Checklist items (4 items × 1pt each = 4pt total)
             if (obsData.checklist) {
                 console.log('🔍 DEBUG - Checklist data:', obsData.checklist);
                 console.log('🔍 DEBUG - Checklist values:', Object.values(obsData.checklist));
@@ -281,10 +281,10 @@ class FamilyInterviewService {
 
     /**
      * Get score percentage using weighted formula
-     * Formula: (sectionScore/20 * 90) + (observationScore/11 * 10)
+     * Formula: (sectionScore/20 * 90) + (observationScore/9 * 10)
      * - Sections (max 20 points) = 90% weight
-     * - Observations (max 11 points) = 10% weight
-     *   - Checklist: 6 points (1pt + 2pt + 2pt + 1pt)
+     * - Observations (max 9 points) = 10% weight
+     *   - Checklist: 4 points (4 items × 1pt each)
      *   - Overall opinion: up to 5 points
      * @param interviewData - Interview responses object
      * @returns Percentage score (0-100)
@@ -295,8 +295,8 @@ class FamilyInterviewService {
         // Calculate section percentage (max 20 points = 90%)
         const sectionPercentage = (sectionScore / 20) * 90;
 
-        // Calculate observation percentage (max 11 points = 10%)
-        const observationPercentage = (observationScore / 11) * 10;
+        // Calculate observation percentage (max 9 points = 10%)
+        const observationPercentage = (observationScore / 9) * 10;
 
         // Combined percentage (already in 0-100 scale)
         const totalPercentage = sectionPercentage + observationPercentage;
