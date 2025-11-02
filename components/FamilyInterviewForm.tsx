@@ -29,27 +29,17 @@ const FamilyInterviewForm: React.FC<FamilyInterviewFormProps> = ({
       try {
         setLoading(true);
 
-        // Get student's grade from evaluation
-        // CRITICAL FIX: Backend returns 'studentGrade', not 'gradeApplied'
-        const studentGrade = evaluation.studentGrade ||
-                            evaluation.gradeApplied ||
-                            evaluation.student?.gradeApplied;
+        // TEMPORAL: Cargar template completo sin filtrar por grado para debugging
+        console.log('🔍 Loading FULL template (no grade filtering)');
 
-        if (!studentGrade) {
-          console.error('❌ No se pudo determinar el grado del estudiante');
-          console.error('❌ Evaluation object received:', evaluation);
-          console.error('❌ Available fields:', Object.keys(evaluation));
-          alert('No se pudo determinar el grado del estudiante. Ver consola para detalles.');
-          return;
-        }
+        // Cargar el template minificado completo directamente
+        const fullTemplate = await import('../src/data/minified_template.json');
+        const templateData = fullTemplate.default;
 
-        console.log(`✅ Grade determined successfully: ${studentGrade}`);
-
-        // Fetch template for this grade
-        const templateData = await familyInterviewService.getTemplateForGrade(studentGrade);
         setTemplate(templateData);
-
-        console.log('✅ Template loaded:', templateData);
+        console.log('✅ FULL Template loaded:', templateData);
+        console.log('📋 Sections available:', Object.keys(templateData.sections || {}));
+        console.log('👁️ Observations:', templateData.observations);
 
         // Load existing interview data if evaluation exists
         if (evaluation.id) {
