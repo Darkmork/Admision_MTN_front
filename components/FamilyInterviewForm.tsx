@@ -201,6 +201,18 @@ const FamilyInterviewForm: React.FC<FamilyInterviewFormProps> = ({
     }
   };
 
+  // Helper function to get grade range label
+  const getGradeRangeLabel = (applicableTo: string): string | null => {
+    const rangeMap: Record<string, string> = {
+      'PREKINDER_2BASICO': 'Pre Kinder a 2° Básico',
+      '3BASICO_4BASICO': '3° Básico a 4° Básico',
+      '5BASICO_3MEDIO': '5° Básico a IV Medio',
+      '4MEDIO': 'IV Medio',
+      'ALL_LEVELS': null, // Don't show for all levels
+    };
+    return rangeMap[applicableTo] || null;
+  };
+
   // Render score selector for a question
   const renderScoreSelector = (
     sectionKey: string,
@@ -208,14 +220,22 @@ const FamilyInterviewForm: React.FC<FamilyInterviewFormProps> = ({
     question: any
   ) => {
     const currentValue = interviewData[sectionKey]?.[questionKey]?.score || 0;
+    const gradeRangeLabel = getGradeRangeLabel(question.applicableTo);
 
     return (
       <div className="space-y-3">
         {/* Question Title */}
-        <h4 className="text-base font-semibold text-gray-900">
-          {question.number && `${question.number}. `}
-          {question.title || question.text}
-        </h4>
+        <div className="flex items-center justify-between">
+          <h4 className="text-base font-semibold text-gray-900">
+            {question.number && `${question.number}. `}
+            {question.title || question.text}
+          </h4>
+          {gradeRangeLabel && (
+            <span className="text-xs font-medium px-2 py-1 bg-purple-100 text-purple-800 rounded-full">
+              {gradeRangeLabel}
+            </span>
+          )}
+        </div>
 
         {/* Question Statement (if exists) */}
         {question.question && (
