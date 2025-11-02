@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FiSave, FiCheck, FiLoader, FiAlertCircle } from 'react-icons/fi';
 import { familyInterviewService } from '../services/familyInterviewService';
-import fullTemplateData from '../src/data/minified_template.json';
+import fullTemplateData from '@/src/data/minified_template.json';
 
 interface FamilyInterviewFormProps {
   evaluation: any; // Evaluation data with gradeApplied
@@ -32,9 +32,18 @@ const FamilyInterviewForm: React.FC<FamilyInterviewFormProps> = ({
 
         // TEMPORAL: Cargar template completo sin filtrar por grado para debugging
         console.log('🔍 Loading FULL template (no grade filtering)');
+        console.log('🔍 fullTemplateData imported:', fullTemplateData);
+        console.log('🔍 typeof fullTemplateData:', typeof fullTemplateData);
+        console.log('🔍 fullTemplateData keys:', fullTemplateData ? Object.keys(fullTemplateData) : 'NULL/UNDEFINED');
 
         // Usar el template importado estáticamente
         const templateData = fullTemplateData as any;
+
+        if (!templateData) {
+          console.error('❌ Template is null or undefined after import!');
+          alert('Error: El template no se pudo cargar. Ver consola para detalles.');
+          return;
+        }
 
         setTemplate(templateData);
         console.log('✅ FULL Template loaded:', templateData);
