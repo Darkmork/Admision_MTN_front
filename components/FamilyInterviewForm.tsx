@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FiSave, FiCheck, FiLoader, FiAlertCircle } from 'react-icons/fi';
 import { familyInterviewService } from '../services/familyInterviewService';
-import fullTemplateData from '@/src/data/minified_template.json';
+import { fullTemplateData } from '@/src/data/minified_template';
 
 interface FamilyInterviewFormProps {
   evaluation: any; // Evaluation data with gradeApplied
@@ -30,13 +30,14 @@ const FamilyInterviewForm: React.FC<FamilyInterviewFormProps> = ({
       try {
         setLoading(true);
 
-        // TEMPORAL: Cargar template completo sin filtrar por grado para debugging
-        console.log('🔍 Loading FULL template (no grade filtering)');
+        // Template is now imported as TypeScript constant (not JSON)
+        // This ensures it's bundled as native JS and works in Vercel production
+        console.log('🔍 Loading FULL template (TypeScript constant, no grade filtering)');
         console.log('🔍 fullTemplateData imported:', fullTemplateData);
         console.log('🔍 typeof fullTemplateData:', typeof fullTemplateData);
         console.log('🔍 fullTemplateData keys:', fullTemplateData ? Object.keys(fullTemplateData) : 'NULL/UNDEFINED');
 
-        // Usar el template importado estáticamente
+        // Use the statically imported template
         const templateData = fullTemplateData as any;
 
         if (!templateData) {
