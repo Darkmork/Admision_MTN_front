@@ -141,18 +141,30 @@ class FamilyInterviewService {
 
             // Checklist items (variable points: 1pt + 2pt + 2pt + 1pt = 6pt total)
             if (obsData.checklist) {
+                console.log('🔍 DEBUG - Checklist data:', obsData.checklist);
+                console.log('🔍 DEBUG - Checklist values:', Object.values(obsData.checklist));
+
                 for (const item of Object.values(obsData.checklist)) {
+                    console.log('🔍 DEBUG - Processing checklist item:', item, 'Type:', typeof item);
+
                     if (typeof item === 'number') {
+                        console.log('  ✅ Adding numeric value:', item);
                         observationScore += item;  // Add actual score value (1, 2, etc.)
                     } else if (item === true) {
+                        console.log('  ✅ Adding boolean as 1 point');
                         observationScore += 1;  // Fallback for boolean checkboxes
+                    } else {
+                        console.log('  ⚠️ Item not counted (not number or true)');
                     }
                 }
+                console.log('🔍 DEBUG - Checklist total:', observationScore);
             }
 
             // Overall opinion (up to 5 points)
             if (obsData.overallOpinion && typeof obsData.overallOpinion.score === 'number') {
+                console.log('🔍 DEBUG - Overall opinion score:', obsData.overallOpinion.score);
                 observationScore += obsData.overallOpinion.score;
+                console.log('🔍 DEBUG - Total observation score after opinion:', observationScore);
             }
         }
 
