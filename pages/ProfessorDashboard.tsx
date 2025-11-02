@@ -40,7 +40,6 @@ import api from '../services/api';
 
 const baseSections = [
     { key: 'dashboard', label: 'Dashboard General', icon: DashboardIcon },
-    { key: 'evaluaciones', label: 'Evaluaciones Pendientes', icon: ClockIcon },
     { key: 'entrevistas', label: 'Mis Entrevistas', icon: UsersIcon },
     { key: 'estudiantes', label: 'Mis Estudiantes', icon: UsersIcon },
     { key: 'horarios', label: 'Mis Horarios', icon: ClockIcon },
@@ -598,6 +597,24 @@ const ProfessorDashboard: React.FC = () => {
         );
     };
 
+    // Helper function to check if an interview has a completed evaluation
+    const isInterviewCompleted = (interview: Interview): boolean => {
+        // Map interview type to expected evaluation type
+        const expectedEvalType =
+            interview.type === 'CYCLE_DIRECTOR' ? 'CYCLE_DIRECTOR_INTERVIEW' :
+            interview.type === 'FAMILY' ? 'FAMILY_INTERVIEW' :
+            'PSYCHOLOGICAL_INTERVIEW';
+
+        // Search for matching evaluation
+        const matchingEval = evaluations.find(e =>
+            e.applicationId === interview.applicationId &&
+            e.evaluationType === expectedEvalType
+        );
+
+        // Return true only if evaluation exists AND is COMPLETED
+        return matchingEval?.status === 'COMPLETED';
+    };
+
     const renderEntrevistas = () => {
         // Separate interviews by status
         const upcomingInterviews = interviews.filter(
@@ -608,8 +625,9 @@ const ProfessorDashboard: React.FC = () => {
             return dateA.getTime() - dateB.getTime();
         });
 
+        // Use helper function to check if evaluation is completed
         const completedInterviews = interviews.filter(
-            i => i.status === InterviewStatus.COMPLETED
+            i => isInterviewCompleted(i)
         ).sort((a, b) => {
             const dateA = new Date(`${a.scheduledDate}T${a.scheduledTime}`);
             const dateB = new Date(`${b.scheduledDate}T${b.scheduledTime}`);
@@ -850,10 +868,7 @@ const ProfessorDashboard: React.FC = () => {
                                                                             console.warn('⚠️ No se encontró evaluación existente para esta entrevista');
                                                                             alert(
                                                                                 `Esta entrevista aún no tiene una evaluación asignada.\n\n` +
-                                                                                `Por favor, ve a la pestaña "Evaluaciones Pendientes" ` +
-                                                                                `para ver las evaluaciones que te han sido asignadas.\n\n` +
-                                                                                `Si la evaluación no aparece allí, contacta al administrador ` +
-                                                                                `para que te asigne esta evaluación.`
+                                                                                `Por favor, contacta al administrador para que te asigne esta evaluación.`
                                                                             );
                                                                         }
                                                                     } catch (error) {
@@ -862,7 +877,7 @@ const ProfessorDashboard: React.FC = () => {
                                                                     }
                                                                 }}
                                                             >
-                                                                📝 Realizar
+                                                                {isInterviewCompleted(interview) ? '✏️ Modificar' : '📝 Realizar'}
                                                             </Button>
                                                             <Button
                                                                 variant="outline"
