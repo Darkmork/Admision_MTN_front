@@ -30,10 +30,10 @@ const FamilyInterviewForm: React.FC<FamilyInterviewFormProps> = ({
         setLoading(true);
 
         // Get student's grade from evaluation
-        // Try multiple field names for compatibility
-        const studentGrade = evaluation.gradeApplied ||
-                            evaluation.student?.gradeApplied ||
-                            (evaluation as any).studentGrade;
+        // CRITICAL FIX: Backend returns 'studentGrade', not 'gradeApplied'
+        const studentGrade = evaluation.studentGrade ||
+                            evaluation.gradeApplied ||
+                            evaluation.student?.gradeApplied;
 
         if (!studentGrade) {
           console.error('No se pudo determinar el grado del estudiante');
@@ -79,7 +79,7 @@ const FamilyInterviewForm: React.FC<FamilyInterviewFormProps> = ({
     };
 
     loadTemplate();
-  }, [evaluation.id, evaluation.gradeApplied, evaluation.student?.gradeApplied]);
+  }, [evaluation.id, evaluation.studentGrade, evaluation.gradeApplied, evaluation.student?.gradeApplied]);
 
   // Calculate score whenever interview data changes
   useEffect(() => {
