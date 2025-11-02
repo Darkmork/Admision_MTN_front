@@ -15,13 +15,13 @@ interface AdmissionReportData {
     currentSchool: string;
     gradeApplied: string;
     evaluatorName: string;
-    
+
     // Actitud frente al examen
     strengths: string;
     difficulties: string;
     examAdaptation: string;
     observations: string;
-    
+
     // Resultados académicos
     subject: string;
     score: number;
@@ -29,6 +29,11 @@ interface AdmissionReportData {
     percentage: number;
     comments: string;
     areasToWork: string;
+
+    // Recomendaciones finales (nueva sección)
+    finalRecommendations: string;
+    admissionDecision: string;
+    entranceGrade: string;
 }
 
 const AdmissionReportForm: React.FC = () => {
@@ -56,7 +61,10 @@ const AdmissionReportForm: React.FC = () => {
         maxScore: 30,
         percentage: 0,
         comments: '',
-        areasToWork: ''
+        areasToWork: '',
+        finalRecommendations: '',
+        admissionDecision: '',
+        entranceGrade: ''
     });
 
     // Obtener profesor actual del localStorage
@@ -109,13 +117,13 @@ const AdmissionReportForm: React.FC = () => {
                         percentage: evaluationData.score && (evaluationData.maxScore || defaultMaxScore) ?
                             Math.round((evaluationData.score / (evaluationData.maxScore || defaultMaxScore)) * 100) : 0,
 
-                        // Campos específicos de evaluación
+                        // Campos específicos de evaluación - mapeo desde evaluación del profesor
                         strengths: evaluationData.strengths || '',
-                        difficulties: '',
-                        examAdaptation: '',
-                        observations: evaluationData.observations || '',
-                        comments: evaluationData.recommendations || '',
-                        areasToWork: evaluationData.areasForImprovement || ''
+                        difficulties: '', // Campo que completa el director, no auto-poblar
+                        examAdaptation: '', // Campo que completa el director, no auto-poblar
+                        observations: '', // Campo que completa el director, no auto-poblar desde profesor
+                        comments: evaluationData.recommendations || '', // Comentarios/recomendaciones del profesor
+                        areasToWork: evaluationData.areasForImprovement || '' // Áreas de mejora del profesor
                     }));
 
                     console.log('✅ Informe cargado con datos:', evaluationData);
@@ -202,9 +210,9 @@ const AdmissionReportForm: React.FC = () => {
 
     const handleSave = async () => {
         if (!evaluation) return;
-        
+
         setIsSubmitting(true);
-        
+
         try {
             // Actualizar la evaluación con los datos del informe y marcar como completada
             const updatedEvaluation: Partial<ProfessorEvaluation> = {
@@ -212,7 +220,7 @@ const AdmissionReportForm: React.FC = () => {
                 maxScore: reportData.maxScore, // Guardar el puntaje máximo personalizado
                 strengths: reportData.strengths,
                 areasForImprovement: reportData.areasToWork,
-                observations: `${reportData.observations}\n\nAdecuación al examen: ${reportData.examAdaptation}\nDificultades: ${reportData.difficulties}`,
+                observations: `${reportData.observations}\n\nAdecuación al examen: ${reportData.examAdaptation}\nDificultades: ${reportData.difficulties}\n\n=== RECOMENDACIONES FINALES ===\nDecisión: ${reportData.admissionDecision}\nCurso ingreso: ${reportData.entranceGrade}\nComentarios finales: ${reportData.finalRecommendations}`,
                 recommendations: reportData.comments,
                 status: 'COMPLETED' // Cambiar estado a COMPLETED
             };
@@ -229,7 +237,7 @@ const AdmissionReportForm: React.FC = () => {
             setTimeout(() => {
                 navigate('/profesor');
             }, 1500);
-            
+
         } catch (error) {
             console.error('❌ Error al guardar informe:', error);
             addNotification({
@@ -535,12 +543,13 @@ const AdmissionReportForm: React.FC = () => {
                             <div className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4">
                                 <div className="mb-2">
                                     <span className="font-bold text-azul-monte-tabor text-sm">COMENTARIOS</span>
+                                    <span className="text-xs text-gray-600 ml-2">(Se llena automáticamente con las recomendaciones del profesor)</span>
                                 </div>
                                 <textarea
-                                    rows={5}
+                                    rows={6}
                                     value={reportData.comments}
                                     onChange={(e) => updateReportData('comments', e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-azul-monte-tabor text-sm resize-none"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-azul-monte-tabor text-sm resize-y min-h-[100px]"
                                     placeholder="Comentarios sobre el desempeño del estudiante en el examen..."
                                 />
                             </div>
@@ -551,13 +560,115 @@ const AdmissionReportForm: React.FC = () => {
                             <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
                                 <div className="mb-2">
                                     <span className="font-bold text-azul-monte-tabor text-sm">ÁREAS A TRABAJAR / RECOMENDACIONES</span>
+                                    <span className="text-xs text-gray-600 ml-2">(Se llena automáticamente con las áreas de mejora del profesor)</span>
                                 </div>
                                 <textarea
-                                    rows={5}
+                                    rows={6}
                                     value={reportData.areasToWork}
                                     onChange={(e) => updateReportData('areasToWork', e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-azul-monte-tabor text-sm resize-none"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-azul-monte-tabor text-sm resize-y min-h-[100px]"
                                     placeholder="Áreas a trabajar y recomendaciones para el estudiante..."
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* III. RECOMENDACIONES - Sección final crítica para decisión de admisión */}
+                    <div className="mb-8">
+                        <h2 className="text-lg font-bold text-azul-monte-tabor mb-6 border-b-2 border-azul-monte-tabor pb-2">
+                            III. RECOMENDACIONES
+                        </h2>
+
+                        {/* Decisión de Admisión */}
+                        <div className="mb-6">
+                            <div className="bg-gradient-to-r from-green-50 to-blue-50 border-2 border-azul-monte-tabor rounded-lg p-5">
+                                <label className="block text-sm font-bold text-azul-monte-tabor mb-3">
+                                    Decisión de Admisión <span className="text-red-500">*</span>
+                                </label>
+                                <div className="space-y-3">
+                                    <label className="flex items-center gap-3 p-3 bg-white rounded-lg border-2 border-gray-200 cursor-pointer hover:border-green-500 hover:bg-green-50 transition-all">
+                                        <input
+                                            type="radio"
+                                            name="admissionDecision"
+                                            value="ACEPTADO"
+                                            checked={reportData.admissionDecision === 'ACEPTADO'}
+                                            onChange={(e) => updateReportData('admissionDecision', e.target.value)}
+                                            className="w-5 h-5 text-green-600"
+                                        />
+                                        <span className="font-semibold text-green-700">✓ Aceptación - Postulante cumple con los requisitos</span>
+                                    </label>
+                                    <label className="flex items-center gap-3 p-3 bg-white rounded-lg border-2 border-gray-200 cursor-pointer hover:border-yellow-500 hover:bg-yellow-50 transition-all">
+                                        <input
+                                            type="radio"
+                                            name="admissionDecision"
+                                            value="REPAROS"
+                                            checked={reportData.admissionDecision === 'REPAROS'}
+                                            onChange={(e) => updateReportData('admissionDecision', e.target.value)}
+                                            className="w-5 h-5 text-yellow-600"
+                                        />
+                                        <span className="font-semibold text-yellow-700">⚠ Con Reparos - Requiere seguimiento o condiciones</span>
+                                    </label>
+                                    <label className="flex items-center gap-3 p-3 bg-white rounded-lg border-2 border-gray-200 cursor-pointer hover:border-red-500 hover:bg-red-50 transition-all">
+                                        <input
+                                            type="radio"
+                                            name="admissionDecision"
+                                            value="NO_ACEPTADO"
+                                            checked={reportData.admissionDecision === 'NO_ACEPTADO'}
+                                            onChange={(e) => updateReportData('admissionDecision', e.target.value)}
+                                            className="w-5 h-5 text-red-600"
+                                        />
+                                        <span className="font-semibold text-red-700">✗ No Aceptación - Postulante no cumple requisitos</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Curso de Ingreso */}
+                        <div className="mb-6">
+                            <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
+                                <label className="block text-sm font-bold text-azul-monte-tabor mb-2">
+                                    Curso de Ingreso Recomendado <span className="text-red-500">*</span>
+                                </label>
+                                <select
+                                    value={reportData.entranceGrade}
+                                    onChange={(e) => updateReportData('entranceGrade', e.target.value)}
+                                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-azul-monte-tabor focus:border-azul-monte-tabor text-base font-medium"
+                                >
+                                    <option value="">Seleccionar curso...</option>
+                                    <option value="PRE_KINDER">Pre-Kínder</option>
+                                    <option value="KINDER">Kínder</option>
+                                    <option value="1_BASICO">1° Básico</option>
+                                    <option value="2_BASICO">2° Básico</option>
+                                    <option value="3_BASICO">3° Básico</option>
+                                    <option value="4_BASICO">4° Básico</option>
+                                    <option value="5_BASICO">5° Básico</option>
+                                    <option value="6_BASICO">6° Básico</option>
+                                    <option value="7_BASICO">7° Básico</option>
+                                    <option value="8_BASICO">8° Básico</option>
+                                    <option value="I_MEDIO">I Medio</option>
+                                    <option value="II_MEDIO">II Medio</option>
+                                    <option value="III_MEDIO">III Medio</option>
+                                    <option value="IV_MEDIO">IV Medio</option>
+                                    <option value="NO_APLICA">No Aplica (No Aceptado)</option>
+                                </select>
+                                <p className="text-xs text-gray-600 mt-2">
+                                    Indicar el curso al que debería ingresar el estudiante si es aceptado
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Comentarios Finales */}
+                        <div className="mb-6">
+                            <div className="bg-purple-50 border-2 border-purple-200 rounded-lg p-4">
+                                <label className="block text-sm font-bold text-azul-monte-tabor mb-2">
+                                    Comentarios y Observaciones Finales
+                                </label>
+                                <textarea
+                                    rows={5}
+                                    value={reportData.finalRecommendations}
+                                    onChange={(e) => updateReportData('finalRecommendations', e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-azul-monte-tabor text-sm resize-y min-h-[120px]"
+                                    placeholder="Comentarios adicionales sobre la decisión de admisión, condiciones especiales, seguimiento requerido, etc..."
                                 />
                             </div>
                         </div>
