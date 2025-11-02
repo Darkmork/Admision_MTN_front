@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FiSave, FiCheck, FiLoader, FiAlertCircle } from 'react-icons/fi';
 import { familyInterviewService } from '../services/familyInterviewService';
+import fullTemplateData from '../src/data/minified_template.json';
 
 interface FamilyInterviewFormProps {
   evaluation: any; // Evaluation data with gradeApplied
@@ -32,9 +33,8 @@ const FamilyInterviewForm: React.FC<FamilyInterviewFormProps> = ({
         // TEMPORAL: Cargar template completo sin filtrar por grado para debugging
         console.log('🔍 Loading FULL template (no grade filtering)');
 
-        // Cargar el template minificado completo directamente
-        const fullTemplate = await import('../src/data/minified_template.json');
-        const templateData = fullTemplate.default;
+        // Usar el template importado estáticamente
+        const templateData = fullTemplateData as any;
 
         setTemplate(templateData);
         console.log('✅ FULL Template loaded:', templateData);
