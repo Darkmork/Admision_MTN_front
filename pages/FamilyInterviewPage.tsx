@@ -158,7 +158,7 @@ const FamilyInterviewPage: React.FC = () => {
         <div className="max-w-6xl mx-auto">
           <Card className="p-8 text-center">
             <p className="text-red-600 mb-4">No se pudo cargar la evaluación</p>
-            <Button onClick={() => navigate('/profesor/dashboard')}>
+            <Button onClick={() => navigate('/profesor')}>
               Volver al Dashboard
             </Button>
           </Card>
@@ -174,7 +174,7 @@ const FamilyInterviewPage: React.FC = () => {
         <div className="flex items-center justify-between">
           <div>
             <button
-              onClick={() => navigate('/profesor/dashboard')}
+              onClick={() => navigate('/profesor')}
               className="flex items-center gap-2 text-azul-monte-tabor hover:underline mb-2"
             >
               <FiArrowLeft /> Volver al Dashboard
@@ -326,7 +326,7 @@ const FamilyInterviewPage: React.FC = () => {
           initialData={interviewData || undefined}
           onSave={handleSave}
           onSaveDraft={handleSaveDraft}
-          onCancel={() => navigate('/profesor/dashboard')}
+          onCancel={() => navigate('/profesor')}
           disabled={saving}
           readonly={evaluation.status === 'COMPLETED'}
         />
