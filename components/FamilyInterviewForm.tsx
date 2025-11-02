@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FiSave, FiCheck, FiLoader, FiAlertCircle } from 'react-icons/fi';
 import { familyInterviewService } from '../services/familyInterviewService';
-import { toast } from 'react-hot-toast';
 
 interface FamilyInterviewFormProps {
   evaluation: any; // Evaluation data with gradeApplied
@@ -34,7 +33,8 @@ const FamilyInterviewForm: React.FC<FamilyInterviewFormProps> = ({
         const studentGrade = evaluation.gradeApplied || evaluation.student?.gradeApplied;
 
         if (!studentGrade) {
-          toast.error('No se pudo determinar el grado del estudiante');
+          console.error('No se pudo determinar el grado del estudiante');
+          alert('No se pudo determinar el grado del estudiante');
           return;
         }
 
@@ -68,7 +68,7 @@ const FamilyInterviewForm: React.FC<FamilyInterviewFormProps> = ({
         }
       } catch (error: any) {
         console.error('❌ Error loading template:', error);
-        toast.error(error.message || 'Error al cargar el template de entrevista');
+        alert(error.message || 'Error al cargar el template de entrevista');
       } finally {
         setLoading(false);
       }
@@ -161,7 +161,8 @@ const FamilyInterviewForm: React.FC<FamilyInterviewFormProps> = ({
     e.preventDefault();
 
     if (!evaluation.id) {
-      toast.error('ID de evaluación no encontrado');
+      console.error('ID de evaluación no encontrado');
+      alert('ID de evaluación no encontrado');
       return;
     }
 
@@ -173,7 +174,7 @@ const FamilyInterviewForm: React.FC<FamilyInterviewFormProps> = ({
 
       if (!validation.valid) {
         console.warn('⚠️ Validation errors:', validation.errors);
-        toast.error(`Formulario incompleto: ${validation.errors.length} campos faltantes`);
+        alert(`Formulario incompleto: ${validation.errors.length} campos faltantes`);
         return;
       }
 
@@ -181,7 +182,7 @@ const FamilyInterviewForm: React.FC<FamilyInterviewFormProps> = ({
       const result = await familyInterviewService.saveInterviewData(evaluation.id, interviewData);
 
       console.log('✅ Interview data saved:', result);
-      toast.success(`Entrevista guardada exitosamente. Puntaje: ${result.totalScore}/51`);
+      alert(`Entrevista guardada exitosamente. Puntaje: ${result.totalScore}/51`);
 
       // Call parent onSave callback if provided
       if (onSave) {
@@ -189,7 +190,7 @@ const FamilyInterviewForm: React.FC<FamilyInterviewFormProps> = ({
       }
     } catch (error: any) {
       console.error('❌ Error saving interview:', error);
-      toast.error(error.message || 'Error al guardar la entrevista');
+      alert(error.message || 'Error al guardar la entrevista');
     } finally {
       setSaving(false);
     }
