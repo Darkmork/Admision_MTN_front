@@ -267,9 +267,9 @@ class FamilyInterviewService {
 
     /**
      * Get score percentage using weighted formula
-     * Formula: ((sectionScore/20 * 0.9) + (observationScore/22 * 0.1)) * 100
+     * Formula: ((sectionScore/20 * 0.9) + (observationScore/11 * 0.1)) * 100
      * - Sections (max 20 points) = 90% weight, divided by 20 for normalization
-     * - Observations (max 11 points) = 10% weight, divided by 22 so that 11 points = 5.5 in normalization
+     * - Observations (max 11 points) = 10% weight, divided by 11 for normalization
      * @param interviewData - Interview responses object
      * @returns Percentage score (0-100)
      */
@@ -279,8 +279,8 @@ class FamilyInterviewService {
         // Normalize section score (max 20 points, weight 90%)
         const sectionPercentage = (sectionScore / 20) * 0.9;
 
-        // Normalize observation score (max 11 points, divided by 22, weight 10%)
-        const observationPercentage = (observationScore / 22) * 0.1;
+        // Normalize observation score (max 11 points, weight 10%)
+        const observationPercentage = (observationScore / 11) * 0.1;
 
         // Combined percentage
         const totalPercentage = (sectionPercentage + observationPercentage) * 100;
