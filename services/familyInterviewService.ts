@@ -139,11 +139,13 @@ class FamilyInterviewService {
         if (interviewData.observations) {
             const obsData = interviewData.observations;
 
-            // Checklist items (1 point each)
+            // Checklist items (variable points: 1pt + 2pt + 2pt + 1pt = 6pt total)
             if (obsData.checklist) {
                 for (const item of Object.values(obsData.checklist)) {
-                    if (item === true || item === 1) {
-                        observationScore += 1;
+                    if (typeof item === 'number') {
+                        observationScore += item;  // Add actual score value (1, 2, etc.)
+                    } else if (item === true) {
+                        observationScore += 1;  // Fallback for boolean checkboxes
                     }
                 }
             }
@@ -286,6 +288,15 @@ class FamilyInterviewService {
 
         // Combined percentage (already in 0-100 scale)
         const totalPercentage = sectionPercentage + observationPercentage;
+
+        // DEBUG: Log values to console
+        console.log('🔍 Score Calculation Debug:');
+        console.log('  Section Score:', sectionScore, '/ 20');
+        console.log('  Section Percentage:', sectionPercentage, '% (should be 90% if perfect)');
+        console.log('  Observation Score:', observationScore, '/ 11');
+        console.log('  Observation Percentage:', observationPercentage, '% (should be 10% if perfect)');
+        console.log('  Total Percentage (before rounding):', totalPercentage);
+        console.log('  Total Percentage (after rounding):', Math.round(totalPercentage));
 
         return Math.round(Math.min(100, Math.max(0, totalPercentage)));
     }
