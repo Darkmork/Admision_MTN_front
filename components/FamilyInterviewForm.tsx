@@ -30,10 +30,14 @@ const FamilyInterviewForm: React.FC<FamilyInterviewFormProps> = ({
         setLoading(true);
 
         // Get student's grade from evaluation
-        const studentGrade = evaluation.gradeApplied || evaluation.student?.gradeApplied;
+        // Try multiple field names for compatibility
+        const studentGrade = evaluation.gradeApplied ||
+                            evaluation.student?.gradeApplied ||
+                            (evaluation as any).studentGrade;
 
         if (!studentGrade) {
           console.error('No se pudo determinar el grado del estudiante');
+          console.error('Evaluation object:', evaluation);
           alert('No se pudo determinar el grado del estudiante');
           return;
         }
