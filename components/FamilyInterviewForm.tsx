@@ -36,13 +36,14 @@ const FamilyInterviewForm: React.FC<FamilyInterviewFormProps> = ({
                             evaluation.student?.gradeApplied;
 
         if (!studentGrade) {
-          console.error('No se pudo determinar el grado del estudiante');
-          console.error('Evaluation object:', evaluation);
-          alert('No se pudo determinar el grado del estudiante');
+          console.error('❌ No se pudo determinar el grado del estudiante');
+          console.error('❌ Evaluation object received:', evaluation);
+          console.error('❌ Available fields:', Object.keys(evaluation));
+          alert('No se pudo determinar el grado del estudiante. Ver consola para detalles.');
           return;
         }
 
-        console.log(`📋 Loading template for grade: ${studentGrade}`);
+        console.log(`✅ Grade determined successfully: ${studentGrade}`);
 
         // Fetch template for this grade
         const templateData = await familyInterviewService.getTemplateForGrade(studentGrade);
