@@ -102,18 +102,19 @@ class HttpClient {
         };
 
         // Add CSRF token for POST, PUT, DELETE, PATCH requests
-        const method = (config.method || 'get').toUpperCase();
+        const method = String(config.method || 'get').toUpperCase();
         const needsCsrf = ['POST', 'PUT', 'DELETE', 'PATCH'].includes(method);
-        const url = config.url || '';
+        const url = String(config.url || '');
 
         if (needsCsrf && !url.includes('/csrf-token')) {
           try {
             const csrfHeaders = await csrfService.getCsrfHeaders();
+            const csrfToken = String(csrfHeaders['X-CSRF-Token']);
             config.headers = {
               ...config.headers,
-              'X-CSRF-Token': csrfHeaders['X-CSRF-Token'],
+              'X-CSRF-Token': csrfToken,
             };
-            console.log(`🛡️ http.ts - Added CSRF token to ${method} request`);
+            console.log(`🛡️ http.ts - Added CSRF token to ${method} request:`, csrfToken.substring(0, 20) + '...');
           } catch (error) {
             console.error('❌ http.ts - Failed to get CSRF token:', error);
             // Continue without CSRF - backend will reject if required
