@@ -1,561 +1,471 @@
 import React, { useState, useEffect } from 'react';
-import { FiSave, FiCheck, FiAlertCircle, FiUser, FiUsers, FiHeart, FiTrendingUp } from 'react-icons/fi';
+import { FiSave, FiCheck, FiLoader, FiAlertCircle } from 'react-icons/fi';
+import { familyInterviewService } from '../services/familyInterviewService';
+import { toast } from 'react-hot-toast';
 
 interface FamilyInterviewFormProps {
-  evaluation: any; // Evaluation data from parent
-  initialData?: FamilyInterviewData; // Saved form data if exists
-  onSave: (data: FamilyInterviewData) => Promise<void>;
-  onSaveDraft: (data: FamilyInterviewData) => Promise<void>;
+  evaluation: any; // Evaluation data with gradeApplied
+  onSave?: (data: any, score: number) => Promise<void>;
   onCancel?: () => void;
   disabled?: boolean;
   readonly?: boolean;
 }
 
-export interface FamilyInterviewData {
-  // Información básica
-  interviewerNames: string;
-  familyName: string;
-  studentsApplying: string;
-  currentSchool: string;
-  motherName: string;
-  fatherName: string;
-  questionnaireLink: string;
-
-  // Sección I: Familia y Educación
-  motivationScore: number;
-  valuesScore: number;
-  habitsScore: number;
-  section1Total: number;
-
-  // Sección II: Hijo que postula
-  strengthsScore: number;
-  frustrationScore: number;
-  section2Total: number;
-
-  // Sección III: Espiritualidad
-  spiritualityScore: number;
-  section3Total: number;
-
-  // Sección IV: Responsabilidad Social
-  socialResponsibilityScore: number;
-  section4Total: number;
-
-  // Observaciones
-  belongsToSchoenstatt: boolean | null;
-  coupleRespect: boolean | null;
-  simplicityHonesty: boolean | null;
-  belongingDesire: boolean | null;
-  observationsTotal: number;
-
-  // Opinión final
-  finalOpinion: number;
-  finalOpinionTotal: number;
-
-  // Justificación
-  justification: string;
-
-  // Totales
-  interviewTotal: number;
-  observationsPercentage: number;
-  opinionPercentage: number;
-  grandTotal: number;
-}
-
 const FamilyInterviewForm: React.FC<FamilyInterviewFormProps> = ({
   evaluation,
-  initialData,
   onSave,
-  onSaveDraft,
   onCancel,
   disabled = false,
   readonly = false
 }) => {
-  const [formData, setFormData] = useState<FamilyInterviewData>(initialData || {
-    interviewerNames: '',
-    familyName: '',
-    studentsApplying: evaluation.studentName || '',
-    currentSchool: evaluation.currentSchool || '',
-    motherName: evaluation.mother?.name || '',
-    fatherName: evaluation.father?.name || '',
-    questionnaireLink: '',
+  const [template, setTemplate] = useState<any>(null);
+  const [interviewData, setInterviewData] = useState<any>({});
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [currentScore, setCurrentScore] = useState(0);
 
-    motivationScore: 0,
-    valuesScore: 0,
-    habitsScore: 0,
-    section1Total: 0,
-
-    strengthsScore: 0,
-    frustrationScore: 0,
-    section2Total: 0,
-
-    spiritualityScore: 0,
-    section3Total: 0,
-
-    socialResponsibilityScore: 0,
-    section4Total: 0,
-
-    belongsToSchoenstatt: null,
-    coupleRespect: null,
-    simplicityHonesty: null,
-    belongingDesire: null,
-    observationsTotal: 0,
-
-    finalOpinion: 0,
-    finalOpinionTotal: 0,
-
-    justification: '',
-
-    interviewTotal: 0,
-    observationsPercentage: 0,
-    opinionPercentage: 0,
-    grandTotal: 0
-  });
-
-  // Calcular totales automáticamente
+  // Load template and existing data when component mounts
   useEffect(() => {
-    const section1Total = formData.motivationScore + formData.valuesScore + formData.habitsScore;
-    const section2Total = formData.strengthsScore + formData.frustrationScore;
-    const section3Total = formData.spiritualityScore;
-    const section4Total = formData.socialResponsibilityScore;
+    const loadTemplate = async () => {
+      try {
+        setLoading(true);
 
-    const interviewTotal = section1Total + section2Total + section3Total + section4Total;
-    const interviewPercentage = Math.round((interviewTotal / 26) * 100);
+        // Get student's grade from evaluation
+        const studentGrade = evaluation.gradeApplied || evaluation.student?.gradeApplied;
 
-    const observationsTotal =
-      (formData.belongsToSchoenstatt ? 1 : 0) +
-      (formData.coupleRespect ? 2 : 0) +
-      (formData.simplicityHonesty ? 2 : 0) +
-      (formData.belongingDesire ? 1 : 0);
+        if (!studentGrade) {
+          toast.error('No se pudo determinar el grado del estudiante');
+          return;
+        }
 
-    const observationsPercentage = Math.round((observationsTotal / 6) * 100);
+        console.log(`📋 Loading template for grade: ${studentGrade}`);
 
-    const finalOpinionTotal = formData.finalOpinion;
-    const opinionPercentage = Math.round((finalOpinionTotal / 5) * 100);
+        // Fetch template for this grade
+        const templateData = await familyInterviewService.getTemplateForGrade(studentGrade);
+        setTemplate(templateData);
 
-    const grandTotal = interviewPercentage + observationsPercentage + opinionPercentage;
+        console.log('✅ Template loaded:', templateData);
 
-    setFormData(prev => ({
+        // Load existing interview data if evaluation exists
+        if (evaluation.id) {
+          try {
+            const { data, score } = await familyInterviewService.getInterviewData(evaluation.id);
+
+            if (data && Object.keys(data).length > 0) {
+              setInterviewData(data);
+              setCurrentScore(score);
+              console.log('✅ Existing interview data loaded:', data);
+            } else {
+              // Initialize empty structure
+              setInterviewData(initializeEmptyData(templateData));
+            }
+          } catch (error) {
+            console.log('ℹ️ No existing interview data found, starting fresh');
+            setInterviewData(initializeEmptyData(templateData));
+          }
+        } else {
+          setInterviewData(initializeEmptyData(templateData));
+        }
+      } catch (error: any) {
+        console.error('❌ Error loading template:', error);
+        toast.error(error.message || 'Error al cargar el template de entrevista');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadTemplate();
+  }, [evaluation.id, evaluation.gradeApplied, evaluation.student?.gradeApplied]);
+
+  // Calculate score whenever interview data changes
+  useEffect(() => {
+    if (template && interviewData) {
+      const score = familyInterviewService.calculateScore(interviewData);
+      setCurrentScore(score);
+    }
+  }, [interviewData, template]);
+
+  // Initialize empty data structure based on template
+  const initializeEmptyData = (templateData: any) => {
+    const data: any = {};
+
+    // Initialize sections
+    if (templateData.sections) {
+      for (const [sectionKey, sectionData] of Object.entries(templateData.sections as any)) {
+        data[sectionKey] = {};
+
+        for (const questionKey of Object.keys(sectionData.questions)) {
+          data[sectionKey][questionKey] = {
+            score: 0,
+            text: ''
+          };
+        }
+      }
+    }
+
+    // Initialize observations
+    data.observations = {
+      checklist: {},
+      overallOpinion: {
+        score: 0,
+        text: ''
+      }
+    };
+
+    return data;
+  };
+
+  // Handle question score change
+  const handleScoreChange = (sectionKey: string, questionKey: string, score: number) => {
+    setInterviewData((prev: any) => ({
       ...prev,
-      section1Total,
-      section2Total,
-      section3Total,
-      section4Total,
-      interviewTotal,
-      observationsTotal,
-      finalOpinionTotal,
-      observationsPercentage,
-      opinionPercentage,
-      grandTotal
+      [sectionKey]: {
+        ...prev[sectionKey],
+        [questionKey]: {
+          ...prev[sectionKey]?.[questionKey],
+          score
+        }
+      }
     }));
-  }, [
-    formData.motivationScore,
-    formData.valuesScore,
-    formData.habitsScore,
-    formData.strengthsScore,
-    formData.frustrationScore,
-    formData.spiritualityScore,
-    formData.socialResponsibilityScore,
-    formData.belongsToSchoenstatt,
-    formData.coupleRespect,
-    formData.simplicityHonesty,
-    formData.belongingDesire,
-    formData.finalOpinion
-  ]);
+  };
 
+  // Handle observation checklist change
+  const handleChecklistChange = (itemKey: string, checked: boolean) => {
+    setInterviewData((prev: any) => ({
+      ...prev,
+      observations: {
+        ...prev.observations,
+        checklist: {
+          ...prev.observations?.checklist,
+          [itemKey]: checked
+        }
+      }
+    }));
+  };
+
+  // Handle overall opinion change
+  const handleOverallOpinionChange = (score: number) => {
+    setInterviewData((prev: any) => ({
+      ...prev,
+      observations: {
+        ...prev.observations,
+        overallOpinion: {
+          score
+        }
+      }
+    }));
+  };
+
+  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onSave(formData);
+
+    if (!evaluation.id) {
+      toast.error('ID de evaluación no encontrado');
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      // Validate responses
+      const validation = familyInterviewService.validateResponses(template, interviewData);
+
+      if (!validation.valid) {
+        console.warn('⚠️ Validation errors:', validation.errors);
+        toast.error(`Formulario incompleto: ${validation.errors.length} campos faltantes`);
+        return;
+      }
+
+      // Save to backend
+      const result = await familyInterviewService.saveInterviewData(evaluation.id, interviewData);
+
+      console.log('✅ Interview data saved:', result);
+      toast.success(`Entrevista guardada exitosamente. Puntaje: ${result.totalScore}/51`);
+
+      // Call parent onSave callback if provided
+      if (onSave) {
+        await onSave(result.interview_data, result.totalScore);
+      }
+    } catch (error: any) {
+      console.error('❌ Error saving interview:', error);
+      toast.error(error.message || 'Error al guardar la entrevista');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleSaveDraft = async () => {
-    await onSaveDraft(formData);
-  };
+  // Render score selector for a question
+  const renderScoreSelector = (
+    sectionKey: string,
+    questionKey: string,
+    question: any
+  ) => {
+    const currentValue = interviewData[sectionKey]?.[questionKey]?.score || 0;
 
-  const ScoreSelector: React.FC<{
-    value: number;
-    onChange: (value: number) => void;
-    max: number;
-    disabled?: boolean;
-    label: string;
-    descriptions: { [key: number]: string };
-  }> = ({ value, onChange, max, disabled, label, descriptions }) => (
-    <div className="space-y-2">
-      <label className="block text-sm font-medium text-gray-700">{label}</label>
+    return (
       <div className="space-y-2">
-        {Array.from({ length: max }, (_, i) => i + 1).map(score => (
-          <label
-            key={score}
-            className={`flex items-start p-3 border rounded-lg cursor-pointer transition-colors ${
-              value === score
-                ? 'bg-blue-50 border-blue-500'
-                : 'bg-white border-gray-200 hover:bg-gray-50'
-            } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-          >
-            <input
-              type="radio"
-              name={`score-${label}`}
-              value={score}
-              checked={value === score}
-              onChange={() => !disabled && onChange(score)}
-              disabled={disabled}
-              className="mt-1 mr-3"
-            />
-            <div className="flex-1">
-              <div className="font-semibold text-gray-900">{score} punto{score > 1 ? 's' : ''}</div>
-              <div className="text-sm text-gray-600">{descriptions[score]}</div>
-            </div>
-          </label>
-        ))}
+        <p className="text-sm font-medium text-gray-900 mb-3">{question.text}</p>
+        <div className="space-y-2">
+          {Object.entries(question.rubric).map(([score, description]) => {
+            const scoreNum = parseInt(score);
+            const isSelected = currentValue === scoreNum;
+
+            return (
+              <label
+                key={score}
+                className={`flex items-start p-3 border rounded-lg cursor-pointer transition-colors ${
+                  isSelected
+                    ? 'bg-blue-50 border-blue-500'
+                    : 'bg-white border-gray-200 hover:bg-gray-50'
+                } ${readonly ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                <input
+                  type="radio"
+                  name={`${sectionKey}-${questionKey}`}
+                  value={scoreNum}
+                  checked={isSelected}
+                  onChange={() => !readonly && handleScoreChange(sectionKey, questionKey, scoreNum)}
+                  disabled={readonly || disabled}
+                  className="mt-1 mr-3"
+                />
+                <div className="flex-1">
+                  <div className="font-semibold text-gray-900">
+                    {scoreNum} punto{scoreNum > 1 ? 's' : ''}
+                  </div>
+                  <div className="text-sm text-gray-600">{description as string}</div>
+                </div>
+              </label>
+            );
+          })}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-12">
+        <div className="text-center">
+          <FiLoader className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600">Cargando formulario de entrevista...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!template) {
+    return (
+      <div className="flex items-center justify-center p-12">
+        <div className="text-center">
+          <FiAlertCircle className="w-8 h-8 text-red-600 mx-auto mb-4" />
+          <p className="text-gray-600">No se pudo cargar el template de entrevista</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="max-w-6xl mx-auto bg-white rounded-lg shadow-lg p-6 space-y-8">
       {/* Header */}
       <div className="border-b pb-4">
         <h1 className="text-3xl font-bold text-blue-900 mb-2">
-          Entrevista a Familias Nuevas
+          {template.metadata?.title || 'Entrevista a Familias'}
         </h1>
-        <p className="text-gray-600">Formulario de evaluación individual para entrevistadores</p>
-      </div>
-
-      {/* Información Básica section removed - now displayed as info cards in FamilyInterviewPage.tsx */}
-
-      {/* Sección I: Familia y Educación */}
-      <section className="border-t pt-6">
-        <h2 className="text-2xl font-bold text-blue-900 mb-4 flex items-center">
-          <FiUsers className="mr-2" />
-          I. Familia y Educación de los Hijos
-        </h2>
-
-        <div className="space-y-6">
-          <ScoreSelector
-            label="1. Motivos de postulación al MTN"
-            value={formData.motivationScore}
-            onChange={(value) => setFormData({ ...formData, motivationScore: value })}
-            max={3}
-            disabled={readonly}
-            descriptions={{
-              1: 'Cerca de la casa, buenos resultados académicos, conocen alumnos (al menos 2 indicadores)',
-              2: 'Colegio familiar, innovación pedagógica, dual, coeducacional, inclusión, católico, Schoenstatt (al menos 2)',
-              3: 'Originalidad, vínculos, responsabilidad social, respeto, sencillez, unidad familiar (al menos 3)'
-            }}
-          />
-
-          <ScoreSelector
-            label="2. Valores familiares"
-            value={formData.valuesScore}
-            onChange={(value) => setFormData({ ...formData, valuesScore: value })}
-            max={3}
-            disabled={readonly}
-            descriptions={{
-              1: 'Identifican valores de familia de origen, no se percibe proyecto común',
-              2: 'Identifican valores y han definido valores comunes',
-              3: 'Adhieren a varios valores vistos en cosas concretas: familia, solidaridad, sencillez, respeto (al menos 3)'
-            }}
-          />
-
-          <ScoreSelector
-            label="3. Hábitos, normas y límites"
-            value={formData.habitsScore}
-            onChange={(value) => setFormData({ ...formData, habitsScore: value })}
-            max={3}
-            disabled={readonly}
-            descriptions={{
-              1: 'Sin rutinas claras, no hay autoridad / Reglas rígidas y autoritarias',
-              2: 'Reglas claras pero la implementación no facilita autonomía',
-              3: 'Normas claras aplicadas con firmeza y afecto, fomentando autonomía y seguridad'
-            }}
-          />
-        </div>
-
-        <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-          <p className="text-sm font-semibold">
-            Subtotal Sección I: {formData.section1Total} / 9 puntos
-          </p>
-        </div>
-      </section>
-
-      {/* Sección II: Hijo que Postula */}
-      <section className="border-t pt-6">
-        <h2 className="text-2xl font-bold text-blue-900 mb-4 flex items-center">
-          <FiHeart className="mr-2" />
-          II. Hijo/a que Postula
-        </h2>
-
-        <div className="space-y-6">
-          <ScoreSelector
-            label="Fortalezas del hijo/a"
-            value={formData.strengthsScore}
-            onChange={(value) => setFormData({ ...formData, strengthsScore: value })}
-            max={3}
-            disabled={readonly}
-            descriptions={{
-              1: 'Respuesta vaga, no queda claro el aporte concreto a la familia',
-              2: 'Describen el aporte con ejemplos que lo caracterizan actualmente',
-              3: 'Desarrollo claro de aportes con ejemplos concretos, proyectan originalidad como aporte a sociedad'
-            }}
-          />
-
-          <ScoreSelector
-            label="Frustración y reacción ante dificultades"
-            value={formData.frustrationScore}
-            onChange={(value) => setFormData({ ...formData, frustrationScore: value })}
-            max={2}
-            disabled={readonly}
-            descriptions={{
-              1: 'Conoce a su hijo/a e identifica formas de reaccionar frente a frustración',
-              2: 'Conoce reacciones y muestra cómo lo han ayudado/apoyado en el proceso'
-            }}
-          />
-        </div>
-
-        <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-          <p className="text-sm font-semibold">
-            Subtotal Sección II: {formData.section2Total} / 5 puntos
-          </p>
-        </div>
-      </section>
-
-      {/* Sección III: Espiritualidad */}
-      <section className="border-t pt-6">
-        <h2 className="text-2xl font-bold text-blue-900 mb-4 flex items-center">
-          <FiHeart className="mr-2" />
-          III. Espiritualidad
-        </h2>
-
-        <ScoreSelector
-          label="Educación en la fe"
-          value={formData.spiritualityScore}
-          onChange={(value) => setFormData({ ...formData, spiritualityScore: value })}
-          max={3}
-          disabled={readonly}
-          descriptions={{
-            1: 'Espacios de oración personal o con hijos. Actividades formales: misa, mes de María, etc.',
-            2: 'Idea clara de transmitir espiritualidad. Leen cuentos con valores, comparten vivencias, participan con sentido',
-            3: 'Camino espiritual familiar claro y profundo. Participan en parroquias/movimientos. Anhelo profundo de vivir en fe'
-          }}
-        />
-
-        <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-          <p className="text-sm font-semibold">
-            Subtotal Sección III: {formData.section3Total} / 3 puntos
-          </p>
-        </div>
-      </section>
-
-      {/* Sección IV: Responsabilidad Social */}
-      <section className="border-t pt-6">
-        <h2 className="text-2xl font-bold text-blue-900 mb-4 flex items-center">
-          <FiTrendingUp className="mr-2" />
-          IV. Responsabilidad por la Sociedad
-        </h2>
-
-        <ScoreSelector
-          label="Participación social"
-          value={formData.socialResponsibilityScore}
-          onChange={(value) => setFormData({ ...formData, socialResponsibilityScore: value })}
-          max={3}
-          disabled={readonly}
-          descriptions={{
-            1: 'Acciones esporádicas con enfoque en donación (caja navidad, kilo alimento)',
-            2: 'Preocupación continua, múltiples acciones. Interés en ayudar, importancia de participar',
-            3: 'Anhelo profundo. Compromiso en trabajo y estilo de vida. Empatía. Fomento con hijos. Aportan desde talentos'
-          }}
-        />
-
-        <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-          <p className="text-sm font-semibold">
-            Subtotal Sección IV: {formData.section4Total} / 3 puntos
-          </p>
-        </div>
-      </section>
-
-      {/* Total Entrevista */}
-      <div className="border-t pt-4">
-        <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-          <p className="text-lg font-bold text-green-900">
-            Total Puntos Entrevista: {formData.interviewTotal} / 26 puntos = {Math.round((formData.interviewTotal / 26) * 100)}%
-          </p>
-        </div>
-      </div>
-
-      {/* Observaciones */}
-      <section className="border-t pt-6">
-        <h2 className="text-2xl font-bold text-blue-900 mb-4">Observaciones de los Entrevistadores</h2>
-
-        <div className="space-y-3">
-          {[
-            { key: 'belongsToSchoenstatt', label: 'Pertenecen o pertenecieron al Movimiento de Schoenstatt', points: 1 },
-            { key: 'coupleRespect', label: 'Respeto, sintonía, cariño de la pareja', points: 2 },
-            { key: 'simplicityHonesty', label: 'Sencillez, honestidad y transparencia', points: 2 },
-            { key: 'belongingDesire', label: 'Anhelo de pertenencia', points: 1 }
-          ].map(item => (
-            <label key={item.key} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
-              <span className="font-medium">{item.label}</span>
-              <div className="flex items-center space-x-4">
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name={item.key}
-                    checked={formData[item.key as keyof FamilyInterviewData] === true}
-                    onChange={() => setFormData({ ...formData, [item.key]: true })}
-                    disabled={readonly}
-                    className="mr-2"
-                  />
-                  Sí ({item.points} pt)
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name={item.key}
-                    checked={formData[item.key as keyof FamilyInterviewData] === false}
-                    onChange={() => setFormData({ ...formData, [item.key]: false })}
-                    disabled={readonly}
-                    className="mr-2"
-                  />
-                  No (0 pt)
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name={item.key}
-                    checked={formData[item.key as keyof FamilyInterviewData] === null}
-                    onChange={() => setFormData({ ...formData, [item.key]: null })}
-                    disabled={readonly}
-                    className="mr-2"
-                  />
-                  N/A
-                </label>
-              </div>
-            </label>
-          ))}
-        </div>
-
-        <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-          <p className="text-sm font-semibold">
-            Subtotal Observaciones: {formData.observationsTotal} / 6 puntos = {formData.observationsPercentage}%
-          </p>
-        </div>
-      </section>
-
-      {/* Opinión Final */}
-      <section className="border-t pt-6">
-        <h2 className="text-2xl font-bold text-blue-900 mb-4">Opinión de los Entrevistadores</h2>
-
-        <div className="space-y-2">
-          {[
-            { value: 5, label: 'Tenemos claridad que la familia posee el perfil de las familias del colegio MTN' },
-            { value: 4, label: 'Tenemos claridad que la familia posee el perfil, con reparos' },
-            { value: 3, label: 'No tenemos claridad que la familia posea el perfil' },
-            { value: 2, label: 'La familia muestra un bajo perfil respecto a las familias del colegio' },
-            { value: 1, label: 'La familia no cumple con el perfil de las familias del colegio MTN' }
-          ].map(option => (
-            <label
-              key={option.value}
-              className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${
-                formData.finalOpinion === option.value
-                  ? 'bg-blue-50 border-blue-500'
-                  : 'bg-white border-gray-200 hover:bg-gray-50'
-              }`}
-            >
-              <input
-                type="radio"
-                name="finalOpinion"
-                value={option.value}
-                checked={formData.finalOpinion === option.value}
-                onChange={() => setFormData({ ...formData, finalOpinion: option.value })}
-                disabled={readonly}
-                className="mr-3"
-              />
-              <span className="flex-1">{option.label}</span>
-              <span className="font-semibold text-blue-900">{option.value} pts</span>
-            </label>
-          ))}
-        </div>
-
-        <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-          <p className="text-sm font-semibold">
-            Subtotal Opinión: {formData.finalOpinionTotal} / 5 puntos = {formData.opinionPercentage}%
-          </p>
-        </div>
-      </section>
-
-      {/* Justificación */}
-      <section className="border-t pt-6">
-        <h2 className="text-xl font-bold text-gray-800 mb-3">
-          Justificación de la opinión (máximo 5 líneas)
-        </h2>
-        <textarea
-          value={formData.justification}
-          onChange={(e) => setFormData({ ...formData, justification: e.target.value })}
-          disabled={readonly}
-          rows={5}
-          maxLength={500}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md"
-          placeholder="Justifique su opinión sobre el perfil de la familia..."
-        />
-        <p className="text-sm text-gray-500 mt-1">
-          {formData.justification.length} / 500 caracteres
+        <p className="text-gray-600">
+          Grado: <span className="font-semibold">{template.gradeApplied}</span>
+          {' · '}
+          Rango: <span className="font-semibold">{template.gradeRange}</span>
         </p>
-      </section>
+      </div>
 
-      {/* Total General */}
+      {/* Dynamic Sections */}
+      {template.sections && Object.entries(template.sections).map(([sectionKey, sectionData]: [string, any]) => {
+        // Calculate section score
+        const sectionScore = Object.keys(sectionData.questions).reduce((total, qKey) => {
+          return total + (interviewData[sectionKey]?.[qKey]?.score || 0);
+        }, 0);
+
+        const maxSectionScore = Object.keys(sectionData.questions).reduce((total, qKey) => {
+          const question = sectionData.questions[qKey];
+          const maxScore = Math.max(...Object.keys(question.rubric).map(Number));
+          return total + maxScore;
+        }, 0);
+
+        return (
+          <section key={sectionKey} className="border-t pt-6">
+            <h2 className="text-2xl font-bold text-blue-900 mb-4">
+              {sectionData.title}
+            </h2>
+
+            <div className="space-y-6">
+              {Object.entries(sectionData.questions).map(([questionKey, question]: [string, any]) => (
+                <div key={questionKey} className="p-4 bg-gray-50 rounded-lg">
+                  {renderScoreSelector(sectionKey, questionKey, question)}
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+              <p className="text-sm font-semibold">
+                Subtotal {sectionData.title}: {sectionScore} / {maxSectionScore} puntos
+              </p>
+            </div>
+          </section>
+        );
+      })}
+
+      {/* Observations Section */}
+      {template.observations && (
+        <section className="border-t pt-6">
+          <h2 className="text-2xl font-bold text-blue-900 mb-4">
+            {template.observations.title || 'Observaciones'}
+          </h2>
+
+          {/* Checklist */}
+          {template.observations.checklist && (
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                {template.observations.checklist.title || 'Lista de Verificación'}
+              </h3>
+              <div className="space-y-3">
+                {Object.entries(template.observations.checklist.items).map(([itemKey, itemData]: [string, any]) => {
+                  const isChecked = interviewData.observations?.checklist?.[itemKey] || false;
+
+                  return (
+                    <label
+                      key={itemKey}
+                      className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"
+                    >
+                      <span className="font-medium">{itemData.text}</span>
+                      <div className="flex items-center space-x-4">
+                        <label className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={(e) => !readonly && handleChecklistChange(itemKey, e.target.checked)}
+                            disabled={readonly || disabled}
+                            className="mr-2"
+                          />
+                          {isChecked ? `Sí (${itemData.points} pt)` : 'No (0 pt)'}
+                        </label>
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+
+              <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                <p className="text-sm font-semibold">
+                  Subtotal Checklist: {
+                    Object.keys(interviewData.observations?.checklist || {}).filter(
+                      k => interviewData.observations.checklist[k]
+                    ).reduce((total, k) => {
+                      const itemData = template.observations.checklist.items[k];
+                      return total + (itemData?.points || 0);
+                    }, 0)
+                  } / {
+                    Object.values(template.observations.checklist.items).reduce(
+                      (total: number, item: any) => total + (item.points || 0), 0
+                    )
+                  } puntos
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Overall Opinion */}
+          {template.observations.overallOpinion && (
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                {template.observations.overallOpinion.title || 'Opinión General'}
+              </h3>
+              <div className="space-y-2">
+                {Object.entries(template.observations.overallOpinion.options).map(([score, text]: [string, any]) => {
+                  const scoreNum = parseInt(score);
+                  const isSelected = interviewData.observations?.overallOpinion?.score === scoreNum;
+
+                  return (
+                    <label
+                      key={score}
+                      className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${
+                        isSelected
+                          ? 'bg-blue-50 border-blue-500'
+                          : 'bg-white border-gray-200 hover:bg-gray-50'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="overallOpinion"
+                        value={scoreNum}
+                        checked={isSelected}
+                        onChange={() => !readonly && handleOverallOpinionChange(scoreNum)}
+                        disabled={readonly || disabled}
+                        className="mr-3"
+                      />
+                      <span className="flex-1">{text}</span>
+                      <span className="font-semibold text-blue-900">{scoreNum} pts</span>
+                    </label>
+                  );
+                })}
+              </div>
+
+              <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                <p className="text-sm font-semibold">
+                  Subtotal Opinión: {interviewData.observations?.overallOpinion?.score || 0} / {
+                    Math.max(...Object.keys(template.observations.overallOpinion.options).map(Number))
+                  } puntos
+                </p>
+              </div>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Total Score */}
       <div className="border-t pt-6">
         <div className="p-6 bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-lg">
-          <h3 className="text-2xl font-bold mb-4">Puntaje Total Final</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-            <div>
-              <p className="text-sm opacity-90">Entrevista</p>
-              <p className="text-3xl font-bold">{Math.round((formData.interviewTotal / 26) * 100)}%</p>
-            </div>
-            <div>
-              <p className="text-sm opacity-90">Observaciones</p>
-              <p className="text-3xl font-bold">{formData.observationsPercentage}%</p>
-            </div>
-            <div>
-              <p className="text-sm opacity-90">Opinión</p>
-              <p className="text-3xl font-bold">{formData.opinionPercentage}%</p>
-            </div>
-          </div>
-          <div className="mt-6 pt-6 border-t border-blue-400">
-            <p className="text-4xl font-bold text-center">
-              TOTAL: {formData.grandTotal}%
+          <h3 className="text-2xl font-bold mb-4">Puntaje Total</h3>
+          <div className="text-center">
+            <p className="text-5xl font-bold">
+              {currentScore} / {familyInterviewService.getMaxScore()}
+            </p>
+            <p className="text-xl mt-2 opacity-90">
+              {familyInterviewService.getScorePercentage(currentScore)}% del puntaje máximo
             </p>
           </div>
         </div>
       </div>
 
-      {/* Botones */}
+      {/* Action Buttons */}
       {!readonly && (
         <div className="flex items-center justify-end space-x-4 border-t pt-6">
           {onCancel && (
             <button
               type="button"
               onClick={onCancel}
-              disabled={disabled}
+              disabled={disabled || saving}
               className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancelar
             </button>
           )}
           <button
-            type="button"
-            onClick={handleSaveDraft}
-            disabled={disabled || readonly}
-            className="flex items-center px-6 py-2 border border-blue-600 text-blue-600 rounded-md hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <FiSave className="mr-2" />
-            Guardar Borrador
-          </button>
-          <button
             type="submit"
-            disabled={disabled || readonly}
+            disabled={disabled || saving}
             className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <FiCheck className="mr-2" />
-            Guardar y Completar
+            {saving ? (
+              <>
+                <FiLoader className="mr-2 animate-spin" />
+                Guardando...
+              </>
+            ) : (
+              <>
+                <FiCheck className="mr-2" />
+                Guardar Entrevista
+              </>
+            )}
           </button>
         </div>
       )}
