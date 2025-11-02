@@ -266,8 +266,8 @@ const CycleDirectorReportForm: React.FC = () => {
                 subject,
                 score,
                 percentage,
-                comments: evaluation.observations || '',
-                recommendations: evaluation.recommendations || (evaluation as any).areasForImprovement || ''
+                comments: evaluation.recommendations || '', // COMENTARIOS ← recommendations de BD (Jorge Gangale)
+                recommendations: evaluation.areasForImprovement || '' // ÁREAS A TRABAJAR ← areasForImprovement de BD (chatgpt)
             };
         });
     };
