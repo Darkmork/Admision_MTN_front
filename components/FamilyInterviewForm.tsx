@@ -210,11 +210,12 @@ const FamilyInterviewForm: React.FC<FamilyInterviewFormProps> = ({
 
     return (
       <div className="space-y-2">
-        <p className="text-sm font-medium text-gray-900 mb-3">{question.text}</p>
+        <p className="text-sm font-medium text-gray-900 mb-3">{question.title || question.text}</p>
         <div className="space-y-2">
-          {Object.entries(question.rubric).map(([score, description]) => {
+          {Object.entries(question.rubric).map(([score, rubricData]) => {
             const scoreNum = parseInt(score);
             const isSelected = currentValue === scoreNum;
+            const description = typeof rubricData === 'object' ? (rubricData as any).description : rubricData;
 
             return (
               <label
@@ -238,7 +239,7 @@ const FamilyInterviewForm: React.FC<FamilyInterviewFormProps> = ({
                   <div className="font-semibold text-gray-900">
                     {scoreNum} punto{scoreNum > 1 ? 's' : ''}
                   </div>
-                  <div className="text-sm text-gray-600">{description as string}</div>
+                  <div className="text-sm text-gray-600">{description}</div>
                 </div>
               </label>
             );
@@ -321,107 +322,129 @@ const FamilyInterviewForm: React.FC<FamilyInterviewFormProps> = ({
       })}
 
       {/* Observations Section */}
-      {template.observations && (
+      {template.observations && template.observations.sections && (
         <section className="border-t pt-6">
           <h2 className="text-2xl font-bold text-blue-900 mb-4">
-            {template.observations.title || 'Observaciones'}
+            {template.observations.title || 'OBSERVACIONES DE LOS ENTREVISTADORES'}
           </h2>
 
+          <p className="text-sm text-gray-600 mb-4">{template.observations.note}</p>
+
           {/* Checklist */}
-          {template.observations.checklist && (
+          {template.observations.sections.observations_checklist && (
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-gray-800 mb-3">
-                {template.observations.checklist.title || 'Lista de Verificación'}
+                {template.observations.sections.observations_checklist.title}
               </h3>
               <div className="space-y-3">
-                {Object.entries(template.observations.checklist.items).map(([itemKey, itemData]: [string, any]) => {
-                  const isChecked = interviewData.observations?.checklist?.[itemKey] || false;
+                {Array.isArray(template.observations.sections.observations_checklist.items) &&
+                  template.observations.sections.observations_checklist.items.map((item: any, index: number) => {
+                    const isChecked = interviewData.observations?.checklist?.[item.id] || false;
 
-                  return (
-                    <label
-                      key={itemKey}
-                      className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"
-                    >
-                      <span className="font-medium">{itemData.text}</span>
-                      <div className="flex items-center space-x-4">
-                        <label className="flex items-center">
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={(e) => !readonly && handleChecklistChange(itemKey, e.target.checked)}
-                            disabled={readonly || disabled}
-                            className="mr-2"
-                          />
-                          {isChecked ? `Sí (${itemData.points} pt)` : 'No (0 pt)'}
-                        </label>
+                    return (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"
+                      >
+                        <span className="font-medium flex-1">{item.text}</span>
+                        <div className="flex items-center space-x-4">
+                          <label className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => !readonly && handleChecklistChange(item.id, e.target.checked)}
+                              disabled={readonly || disabled}
+                              className="mr-2"
+                            />
+                            {isChecked ? `Sí (${item.score} pt)` : 'No (0 pt)'}
+                          </label>
+                        </div>
                       </div>
-                    </label>
-                  );
-                })}
+                    );
+                  })}
               </div>
 
               <div className="mt-3 p-3 bg-blue-50 rounded-lg">
                 <p className="text-sm font-semibold">
                   Subtotal Checklist: {
-                    Object.keys(interviewData.observations?.checklist || {}).filter(
-                      k => interviewData.observations.checklist[k]
-                    ).reduce((total, k) => {
-                      const itemData = template.observations.checklist.items[k];
-                      return total + (itemData?.points || 0);
-                    }, 0)
-                  } / {
-                    Object.values(template.observations.checklist.items).reduce(
-                      (total: number, item: any) => total + (item.points || 0), 0
-                    )
-                  } puntos
+                    template.observations.sections.observations_checklist.items.filter((item: any) =>
+                      interviewData.observations?.checklist?.[item.id]
+                    ).reduce((total: number, item: any) => total + item.score, 0)
+                  } / {template.observations.sections.observations_checklist.maxScore} puntos
                 </p>
               </div>
             </div>
           )}
 
           {/* Overall Opinion */}
-          {template.observations.overallOpinion && (
-            <div>
+          {template.observations.sections.overall_opinion && (
+            <div className="mb-6">
               <h3 className="text-lg font-semibold text-gray-800 mb-3">
-                {template.observations.overallOpinion.title || 'Opinión General'}
+                {template.observations.sections.overall_opinion.title}
               </h3>
               <div className="space-y-2">
-                {Object.entries(template.observations.overallOpinion.options).map(([score, text]: [string, any]) => {
-                  const scoreNum = parseInt(score);
-                  const isSelected = interviewData.observations?.overallOpinion?.score === scoreNum;
+                {Array.isArray(template.observations.sections.overall_opinion.options) &&
+                  template.observations.sections.overall_opinion.options.map((option: any, index: number) => {
+                    const isSelected = interviewData.observations?.overallOpinion?.score === option.score;
 
-                  return (
-                    <label
-                      key={score}
-                      className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${
-                        isSelected
-                          ? 'bg-blue-50 border-blue-500'
-                          : 'bg-white border-gray-200 hover:bg-gray-50'
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="overallOpinion"
-                        value={scoreNum}
-                        checked={isSelected}
-                        onChange={() => !readonly && handleOverallOpinionChange(scoreNum)}
-                        disabled={readonly || disabled}
-                        className="mr-3"
-                      />
-                      <span className="flex-1">{text}</span>
-                      <span className="font-semibold text-blue-900">{scoreNum} pts</span>
-                    </label>
-                  );
-                })}
+                    return (
+                      <label
+                        key={option.score}
+                        className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${
+                          isSelected
+                            ? 'bg-blue-50 border-blue-500'
+                            : 'bg-white border-gray-200 hover:bg-gray-50'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="overallOpinion"
+                          value={option.score}
+                          checked={isSelected}
+                          onChange={() => !readonly && handleOverallOpinionChange(option.score)}
+                          disabled={readonly || disabled}
+                          className="mr-3"
+                        />
+                        <span className="flex-1">{option.text}</span>
+                        <span className="font-semibold text-blue-900">{option.score} pts</span>
+                      </label>
+                    );
+                  })}
               </div>
 
               <div className="mt-3 p-3 bg-blue-50 rounded-lg">
                 <p className="text-sm font-semibold">
-                  Subtotal Opinión: {interviewData.observations?.overallOpinion?.score || 0} / {
-                    Math.max(...Object.keys(template.observations.overallOpinion.options).map(Number))
-                  } puntos
+                  Subtotal Opinión: {interviewData.observations?.overallOpinion?.score || 0} / {template.observations.sections.overall_opinion.maxScore} puntos
                 </p>
               </div>
+            </div>
+          )}
+
+          {/* Justification Text Area */}
+          {template.observations.sections.justification && (
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                {template.observations.sections.justification.title}
+              </h3>
+              <p className="text-sm text-gray-600 mb-2">{template.observations.sections.justification.note}</p>
+              <textarea
+                value={interviewData.observations?.justification || ''}
+                onChange={(e) => !readonly && setInterviewData((prev: any) => ({
+                  ...prev,
+                  observations: {
+                    ...prev.observations,
+                    justification: e.target.value
+                  }
+                }))}
+                disabled={readonly || disabled}
+                rows={5}
+                maxLength={500}
+                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Escriba su justificación aquí (máximo 5 líneas)..."
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                {interviewData.observations?.justification?.length || 0} / 500 caracteres
+              </p>
             </div>
           )}
         </section>
