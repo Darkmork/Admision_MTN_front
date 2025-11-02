@@ -597,6 +597,37 @@ const CycleDirectorReportForm: React.FC = () => {
                     </div>
 
                     {/* Información adicional para el pie */}
+                    {/* III. RECOMENDACIONES Section */}
+                    <div className="mt-8">
+                        <h3 className="text-lg font-bold text-azul-monte-tabor mb-4">III. RECOMENDACIONES</h3>
+                        <table className="w-full border-collapse border border-gray-400">
+                            <tbody>
+                                <tr>
+                                    <td className="border border-gray-400 px-4 py-3 bg-gray-100 font-semibold w-1/3">
+                                        1. Aceptación/ No aceptación/ reparos
+                                    </td>
+                                    <td className="border border-gray-400 px-4 py-3">
+                                        {/* Campo editable para decisión final */}
+                                        <div className="min-h-[60px]">
+                                            {/* Aquí se puede agregar lógica para editar */}
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td className="border border-gray-400 px-4 py-3 bg-gray-100 font-semibold w-1/3">
+                                        2. Curso ingreso
+                                    </td>
+                                    <td className="border border-gray-400 px-4 py-3">
+                                        {/* Campo editable para curso de ingreso */}
+                                        <div className="min-h-[60px]">
+                                            {/* Aquí se puede agregar lógica para editar */}
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
                     <div className="mt-8 pt-4 border-t border-gray-300 text-xs text-gray-600">
                         <p>Fecha de evaluación: {new Date().toLocaleDateString('es-CL')}</p>
                         <p>Director de Ciclo: {currentProfessor?.firstName} {currentProfessor?.lastName}</p>
