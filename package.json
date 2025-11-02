@@ -34,6 +34,7 @@
     "@playwright/test": "^1.48.0",
     "@tanstack/react-query-devtools": "^5.90.2",
     "@types/node": "^22.14.0",
+    "@vitejs/plugin-react": "^5.1.0",
     "openapi-typescript": "^7.9.1",
     "terser": "^5.44.0",
     "typescript": "~5.7.2",

@@ -1,6 +1,7 @@
 import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import { resolve } from 'path';
+import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ command, mode }) => {
   // Load env file based on `mode` in the current working directory.
@@ -143,7 +144,7 @@ export default defineConfig(({ command, mode }) => {
     
     // Plugin configuration (add any needed plugins here)
     plugins: [
-      // React plugin would go here if using @vitejs/plugin-react
+      react()  // CRITICAL: Required for React + TypeScript + JSON imports
     ],
     
     // Test configuration (if using Vitest)
