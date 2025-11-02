@@ -210,9 +210,36 @@ const FamilyInterviewForm: React.FC<FamilyInterviewFormProps> = ({
     const currentValue = interviewData[sectionKey]?.[questionKey]?.score || 0;
 
     return (
-      <div className="space-y-2">
-        <p className="text-sm font-medium text-gray-900 mb-3">{question.title || question.text}</p>
-        <div className="space-y-2">
+      <div className="space-y-3">
+        {/* Question Title */}
+        <h4 className="text-base font-semibold text-gray-900">
+          {question.number && `${question.number}. `}
+          {question.title || question.text}
+        </h4>
+
+        {/* Question Statement (if exists) */}
+        {question.question && (
+          <div className="bg-blue-50 border-l-4 border-blue-500 p-3 rounded">
+            <p className="text-sm text-gray-700 font-medium">
+              Pregunta: {question.question}
+            </p>
+          </div>
+        )}
+
+        {/* Focus/Context (if exists) */}
+        {question.focus && (
+          <div className="bg-amber-50 border-l-4 border-amber-500 p-3 rounded">
+            <p className="text-xs font-semibold text-amber-800 mb-1">
+              FOCO PARA EL ENTREVISTADOR:
+            </p>
+            <p className="text-sm text-gray-700">
+              {question.focus}
+            </p>
+          </div>
+        )}
+
+        {/* Score Options */}
+        <div className="space-y-2 mt-4">
           {Object.entries(question.rubric).map(([score, rubricData]) => {
             const scoreNum = parseInt(score);
             const isSelected = currentValue === scoreNum;
@@ -285,6 +312,32 @@ const FamilyInterviewForm: React.FC<FamilyInterviewFormProps> = ({
           Rango: <span className="font-semibold">{template.gradeRange}</span>
         </p>
       </div>
+
+      {/* Presentación Familia Postulante */}
+      <section className="bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-600 p-6 rounded-lg">
+        <h2 className="text-2xl font-bold text-blue-900 mb-4 flex items-center">
+          <span className="mr-2">👥</span>
+          PRESENTACIÓN FAMILIA POSTULANTE
+        </h2>
+        <div className="space-y-3 text-gray-700">
+          <div className="flex items-start">
+            <span className="text-blue-600 mr-2 font-bold">•</span>
+            <p>Se presenta cada una de los entrevistadores.</p>
+          </div>
+          <div className="flex items-start">
+            <span className="text-blue-600 mr-2 font-bold">•</span>
+            <p>Luego una de ellos los invita a presentarse en forma personal: su familia de origen, paso por el colegio y universidad…</p>
+          </div>
+          <div className="flex items-start">
+            <span className="text-blue-600 mr-2 font-bold">•</span>
+            <p className="font-medium">¿Cómo fue su experiencia en el colegio?</p>
+          </div>
+          <div className="flex items-start">
+            <span className="text-blue-600 mr-2 font-bold">•</span>
+            <p>Ahondar en otras situaciones que resalten en su historia familiar.</p>
+          </div>
+        </div>
+      </section>
 
       {/* Dynamic Sections */}
       {template.sections && Object.entries(template.sections).map(([sectionKey, sectionData]: [string, any]) => {
