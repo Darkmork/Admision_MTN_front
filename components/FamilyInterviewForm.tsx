@@ -82,11 +82,11 @@ const FamilyInterviewForm: React.FC<FamilyInterviewFormProps> = ({
     loadTemplate();
   }, [evaluation.id, evaluation.studentGrade, evaluation.gradeApplied, evaluation.student?.gradeApplied]);
 
-  // Calculate score whenever interview data changes
+  // Calculate percentage whenever interview data changes
   useEffect(() => {
     if (template && interviewData) {
-      const score = familyInterviewService.calculateScore(interviewData);
-      setCurrentScore(score);
+      const percentage = familyInterviewService.getScorePercentage(interviewData);
+      setCurrentScore(percentage);
     }
   }, [interviewData, template]);
 
@@ -187,7 +187,7 @@ const FamilyInterviewForm: React.FC<FamilyInterviewFormProps> = ({
       const result = await familyInterviewService.saveInterviewData(evaluation.id, interviewData);
 
       console.log('✅ Interview data saved:', result);
-      alert(`Entrevista guardada exitosamente. Puntaje: ${result.totalScore}/51`);
+      alert(`Entrevista guardada exitosamente. Porcentaje: ${currentScore}%`);
 
       // Call parent onSave callback if provided
       if (onSave) {
@@ -527,13 +527,10 @@ const FamilyInterviewForm: React.FC<FamilyInterviewFormProps> = ({
       {/* Total Score */}
       <div className="border-t pt-6">
         <div className="p-6 bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-lg">
-          <h3 className="text-2xl font-bold mb-4">Puntaje Total</h3>
+          <h3 className="text-2xl font-bold mb-4">Porcentaje Total</h3>
           <div className="text-center">
             <p className="text-5xl font-bold">
-              {currentScore} / {familyInterviewService.getMaxScore()}
-            </p>
-            <p className="text-xl mt-2 opacity-90">
-              {familyInterviewService.getScorePercentage(currentScore)}% del puntaje máximo
+              {currentScore}%
             </p>
           </div>
         </div>

@@ -113,13 +113,14 @@ class FamilyInterviewService {
     }
 
     /**
-     * Calculate local score from interview responses (client-side validation)
-     * This matches the backend calculation logic
+     * Calculate scores separated by sections and observations
+     * Returns both section score and observation score for percentage calculation
      * @param interviewData - Interview responses
-     * @returns Calculated score
+     * @returns Object with sectionScore and observationScore
      */
-    calculateScore(interviewData: any): number {
-        let totalScore = 0;
+    calculateScores(interviewData: any): { sectionScore: number; observationScore: number } {
+        let sectionScore = 0;
+        let observationScore = 0;
 
         // Sum scores from all sections (section1, section2, section3, section4)
         for (const [sectionKey, sectionResponses] of Object.entries(interviewData)) {
@@ -128,7 +129,7 @@ class FamilyInterviewService {
             if (sectionResponses && typeof sectionResponses === 'object') {
                 for (const response of Object.values(sectionResponses as any)) {
                     if (response && typeof response.score === 'number') {
-                        totalScore += response.score;
+                        sectionScore += response.score;
                     }
                 }
             }
@@ -142,18 +143,28 @@ class FamilyInterviewService {
             if (obsData.checklist) {
                 for (const item of Object.values(obsData.checklist)) {
                     if (item === true || item === 1) {
-                        totalScore += 1;
+                        observationScore += 1;
                     }
                 }
             }
 
-            // Overall opinion (up to 4 points)
+            // Overall opinion (up to 5 points)
             if (obsData.overallOpinion && typeof obsData.overallOpinion.score === 'number') {
-                totalScore += obsData.overallOpinion.score;
+                observationScore += obsData.overallOpinion.score;
             }
         }
 
-        return totalScore;
+        return { sectionScore, observationScore };
+    }
+
+    /**
+     * Calculate total score (for backward compatibility)
+     * @param interviewData - Interview responses
+     * @returns Total score
+     */
+    calculateScore(interviewData: any): number {
+        const { sectionScore, observationScore } = this.calculateScores(interviewData);
+        return sectionScore + observationScore;
     }
 
     /**
@@ -255,10 +266,26 @@ class FamilyInterviewService {
     }
 
     /**
-     * Get score percentage
+     * Get score percentage using weighted formula
+     * Formula: (sectionScore/20 * 0.9) + (observationScore/5.5 * 0.1) * 100
+     * - Sections (40 points max) = 90% weight, divided by 20 for normalization
+     * - Observations (11 points max) = 10% weight, divided by 5.5 (11/2) for normalization
+     * @param interviewData - Interview responses object
+     * @returns Percentage score (0-100)
      */
-    getScorePercentage(score: number): number {
-        return Math.round((score / this.getMaxScore()) * 100);
+    getScorePercentage(interviewData: any): number {
+        const { sectionScore, observationScore } = this.calculateScores(interviewData);
+
+        // Normalize section score (max 20 points, weight 90%)
+        const sectionPercentage = (sectionScore / 20) * 0.9;
+
+        // Normalize observation score (max 11 points → 5.5 for calculation, weight 10%)
+        const observationPercentage = (observationScore / 5.5) * 0.1;
+
+        // Combined percentage
+        const totalPercentage = (sectionPercentage + observationPercentage) * 100;
+
+        return Math.round(Math.min(100, Math.max(0, totalPercentage)));
     }
 }
 
