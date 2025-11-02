@@ -127,6 +127,10 @@ const AdmissionReportForm: React.FC = () => {
                     }));
 
                     console.log('✅ Informe cargado con datos:', evaluationData);
+                    console.log('🔍 DEBUG - Campo recommendations de BD:', evaluationData.recommendations);
+                    console.log('🔍 DEBUG - Campo areasForImprovement de BD:', evaluationData.areasForImprovement);
+                    console.log('🔍 DEBUG - Mapeado a comments (COMENTARIOS):', evaluationData.recommendations);
+                    console.log('🔍 DEBUG - Mapeado a areasToWork (ÁREAS A TRABAJAR):', evaluationData.areasForImprovement);
                 } else {
                     console.error('❌ Evaluación no encontrada');
                     addNotification({
