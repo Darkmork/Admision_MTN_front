@@ -302,7 +302,7 @@ Entrevistador: ${currentProfessor?.firstName} ${currentProfessor?.lastName}`,
             
             // Navegar de regreso al dashboard después de guardar exitosamente
             setTimeout(() => {
-                navigate('/profesor/dashboard');
+                navigate('/profesor');
             }, 1500);
             
         } catch (error) {
