@@ -166,7 +166,7 @@ api.interceptors.response.use(
             // Si es 403, puede ser un CSRF token inválido
             if (error.response.status === 403) {
                 // DEFENSIVE: Use optional chaining for error.response.data
-                const errorMessage = error.response?.data?.error || '';
+                const errorMessage = String(error.response?.data?.error || error.response?.data?.message || '');
                 if (errorMessage.toLowerCase().includes('csrf') || errorMessage.toLowerCase().includes('invalid token')) {
                     console.warn('🛡️ CSRF token invalid or missing - clearing token');
                     csrfService.clearToken();
