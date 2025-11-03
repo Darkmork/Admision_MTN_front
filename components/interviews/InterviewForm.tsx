@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import httpClient from '../../services/http';
 import Button from '../ui/Button';
@@ -103,6 +103,11 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
   const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>(INTERVIEW_CONFIG.DEFAULT_TIME_SLOTS);
   const [isLoadingSlots, setIsLoadingSlots] = useState(false);
   const [conflictWarning, setConflictWarning] = useState<string | null>(null);
+
+  // useRef para rastrear llamadas en progreso y prevenir race conditions
+  const loadingSlotsRef = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Cargar entrevistadores disponibles al montar el componente
   useEffect(() => {
@@ -253,18 +258,39 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
     }
   };
 
-  // Función para cargar horarios disponibles
+  // Función para cargar horarios disponibles con prevención de race conditions
   const loadAvailableTimeSlots = async () => {
+    // Validación de parámetros requeridos
     if (!formData.interviewerId || !formData.scheduledDate) {
+      console.log('⚠️ [loadAvailableTimeSlots] Faltan parámetros requeridos - abortando');
       setAvailableTimeSlots(INTERVIEW_CONFIG.DEFAULT_TIME_SLOTS);
       return;
     }
+
+    // Verificar si ya hay una llamada en progreso
+    if (loadingSlotsRef.current) {
+      console.log('⚠️ [loadAvailableTimeSlots] Ya hay una llamada en progreso - abortando llamada anterior');
+      // Cancelar la llamada anterior si existe
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    }
+
+    // Marcar que hay una llamada en progreso
+    loadingSlotsRef.current = true;
+
+    // Crear nuevo AbortController para esta llamada
+    const currentController = new AbortController();
+    abortControllerRef.current = currentController;
+
+    const timestamp = Date.now();
+    console.log(`🚀 [loadAvailableTimeSlots #${timestamp}] INICIO - Llamada iniciada`);
 
     try {
       setIsLoadingSlots(true);
       let slots: string[];
 
-      console.log(`🔍 loadAvailableTimeSlots - Datos:`, {
+      console.log(`🔍 [#${timestamp}] Datos:`, {
         type: formData.type,
         interviewerId: formData.interviewerId,
         secondInterviewerId: formData.secondInterviewerId,
@@ -274,45 +300,100 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
 
       // Si es entrevista FAMILY o CYCLE_DIRECTOR y hay dos entrevistadores, obtener horarios comunes
       if ((formData.type === InterviewType.FAMILY || formData.type === InterviewType.CYCLE_DIRECTOR) && formData.secondInterviewerId) {
-        console.log(`🔍 Obteniendo horarios comunes para entrevista ${formData.type} (entrevistador 1: ${formData.interviewerId}, entrevistador 2: ${formData.secondInterviewerId})`);
+        console.log(`🔍 [#${timestamp}] Obteniendo horarios comunes para entrevista ${formData.type} (entrevistador 1: ${formData.interviewerId}, entrevistador 2: ${formData.secondInterviewerId})`);
+
         slots = await interviewService.getCommonTimeSlots(
           parseInt(formData.interviewerId as string),
           parseInt(formData.secondInterviewerId as string),
           formData.scheduledDate,
           formData.duration
         );
-        console.log(`✅ Horarios comunes obtenidos:`, slots);
+
+        console.log(`✅ [#${timestamp}] Horarios comunes obtenidos (${slots.length} slots):`, slots);
       } else {
         // Para otros tipos o si solo hay un entrevistador, obtener horarios individuales
-        console.log(`📋 Obteniendo horarios individuales para entrevistador ${formData.interviewerId}`);
+        console.log(`📋 [#${timestamp}] Obteniendo horarios individuales para entrevistador ${formData.interviewerId}`);
+
         slots = await interviewService.getAvailableTimeSlots(
           parseInt(formData.interviewerId as string),
           formData.scheduledDate,
           formData.duration
         );
-        console.log(`✅ Horarios individuales obtenidos:`, slots);
+
+        console.log(`✅ [#${timestamp}] Horarios individuales obtenidos (${slots.length} slots):`, slots);
       }
 
+      // Solo actualizar estado si esta llamada no fue cancelada
+      if (currentController.signal.aborted) {
+        console.log(`⚠️ [#${timestamp}] Llamada cancelada - NO actualizando estado`);
+        return;
+      }
+
+      console.log(`✅ [#${timestamp}] Actualizando availableTimeSlots a:`, slots);
       setAvailableTimeSlots(slots);
-      console.log(`✅ availableTimeSlots actualizados a:`, slots);
 
       // Si la hora actual ya no está disponible, limpiarla
       if (formData.scheduledTime && !slots.includes(formData.scheduledTime)) {
+        console.log(`⚠️ [#${timestamp}] Hora seleccionada "${formData.scheduledTime}" ya no disponible - limpiando`);
         setFormData(prev => ({ ...prev, scheduledTime: '' }));
       }
-    } catch (error) {
-      console.error('Error loading available time slots:', error);
-      setAvailableTimeSlots(INTERVIEW_CONFIG.DEFAULT_TIME_SLOTS);
+
+      console.log(`✅ [#${timestamp}] FIN - Llamada completada exitosamente`);
+    } catch (error: any) {
+      // Ignorar errores de cancelación
+      if (error.name === 'AbortError') {
+        console.log(`⚠️ [#${timestamp}] Llamada abortada intencionalmente`);
+        return;
+      }
+
+      console.error(`❌ [#${timestamp}] Error loading available time slots:`, error);
+
+      // Solo actualizar estado si no fue cancelada
+      if (!currentController.signal.aborted) {
+        setAvailableTimeSlots(INTERVIEW_CONFIG.DEFAULT_TIME_SLOTS);
+      }
     } finally {
-      setIsLoadingSlots(false);
+      // Solo limpiar loading state si esta es la llamada más reciente
+      if (!currentController.signal.aborted) {
+        setIsLoadingSlots(false);
+        loadingSlotsRef.current = false;
+        console.log(`✅ [#${timestamp}] Loading state limpiado`);
+      }
     }
   };
 
-  // Efecto para recargar horarios cuando cambien los parámetros relevantes
+  // Efecto para recargar horarios cuando cambien los parámetros relevantes con debouncing y cleanup
   useEffect(() => {
-    if (mode === InterviewFormMode.CREATE || mode === InterviewFormMode.EDIT) {
-      loadAvailableTimeSlots();
+    if (mode !== InterviewFormMode.CREATE && mode !== InterviewFormMode.EDIT) {
+      return;
     }
+
+    console.log(`🔄 [useEffect] Cambio detectado en dependencias - programando carga de horarios con debounce (300ms)`);
+
+    // Limpiar timer anterior si existe
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      console.log(`⚠️ [useEffect] Timer anterior cancelado`);
+    }
+
+    // Programar nueva carga con debounce de 300ms
+    debounceTimerRef.current = setTimeout(() => {
+      console.log(`✅ [useEffect] Debounce completado - ejecutando loadAvailableTimeSlots`);
+      loadAvailableTimeSlots();
+    }, 300);
+
+    // Cleanup function: cancelar timer y llamadas pendientes al desmontar o cambiar dependencias
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+        console.log(`🧹 [useEffect cleanup] Timer cancelado`);
+      }
+
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        console.log(`🧹 [useEffect cleanup] Llamada API cancelada`);
+      }
+    };
   }, [formData.interviewerId, formData.secondInterviewerId, formData.scheduledDate, formData.duration, formData.type, mode]);
 
   // Función para manejar selección de horario desde el calendario
