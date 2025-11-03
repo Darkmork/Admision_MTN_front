@@ -724,6 +724,8 @@ class InterviewService {
     duration: number = 60
   ): Promise<string[]> {
     try {
+      console.log(`🔍 [getAvailableTimeSlots] INICIO - Parámetros recibidos:`, { interviewerId, date, duration });
+
       // ✅ Validar formato de fecha antes de enviar al backend
       const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
       if (!dateRegex.test(date)) {
@@ -747,6 +749,8 @@ class InterviewService {
         duration: validDuration.toString()
       });
 
+      console.log(`🚀 [getAvailableTimeSlots] Llamando al backend con URL: ${this.baseUrl}/available-slots?${params.toString()}`);
+
       const response = await api.get<any>(`${this.baseUrl}/available-slots?${params}`);
 
       console.log('🔍 Respuesta completa de available-slots:', response);
@@ -767,15 +771,16 @@ class InterviewService {
         // Si los slots son objetos con estructura { time, display } o { time, available, duration }
         if (Array.isArray(slots) && slots.length > 0 && typeof slots[0] === 'object' && 'time' in slots[0]) {
           console.log('✅ Procesando slots con formato completo del backend');
+          console.log(`📊 [getAvailableTimeSlots] Total de slots recibidos: ${slots.length}`);
           // El backend ya filtra los slots disponibles, solo necesitamos extraer el campo display
           const availableSlots = slots.map(slot => slot.display || slot.time);
-          console.log('✅ Slots disponibles extraídos:', availableSlots);
+          console.log(`✅ [getAvailableTimeSlots] Slots disponibles extraídos (${availableSlots.length}):`, availableSlots);
           return availableSlots;
         }
 
         // Si los slots ya son strings
         if (Array.isArray(slots) && (slots.length === 0 || typeof slots[0] === 'string')) {
-          console.log('✅ Devolviendo slots del backend (strings):', slots);
+          console.log(`✅ [getAvailableTimeSlots] Devolviendo slots del backend (strings, ${slots.length}):`, slots);
           return slots;
         }
       }
