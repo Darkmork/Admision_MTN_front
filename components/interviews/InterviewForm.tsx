@@ -351,8 +351,13 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
       scheduledTime: ''
     }));
 
-    // Verificar disponibilidad automáticamente
-    await checkAvailability(date, time);
+    // Verificar disponibilidad automáticamente solo si ambos parámetros están presentes
+    if (date && time) {
+      console.log(`✅ Verificando disponibilidad para fecha="${date}" hora="${time}"`);
+      await checkAvailability(date, time);
+    } else {
+      console.log(`⚠️ Omitiendo verificación de disponibilidad: fecha="${date}" hora="${time}" (uno o ambos están vacíos)`);
+    }
   };
 
   // Verificar disponibilidad de entrevistadores para fecha/hora específica
