@@ -1063,6 +1063,8 @@ const InterviewForm: React.FC<InterviewFormProps> = ({
                       selectedTime={formData.scheduledTime}
                       onDateTimeSelect={handleDateTimeSelect}
                       disabled={isViewMode || isCompleteMode}
+                      availableTimeSlots={availableTimeSlots}
+                      isLoadingSlots={isLoadingSlots}
                     />
                     {(errors.scheduledDate || errors.scheduledTime) && (
                       <p className="mt-2 text-sm text-red-600">

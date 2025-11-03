@@ -18,6 +18,8 @@ interface DayScheduleSelectorProps {
   selectedTime?: string;
   onDateTimeSelect: (date: string, time: string) => void;
   disabled?: boolean;
+  availableTimeSlots?: string[]; // Horarios disponibles pasados desde el padre
+  isLoadingSlots?: boolean; // Estado de carga pasado desde el padre
 }
 
 const DayScheduleSelector: React.FC<DayScheduleSelectorProps> = ({
@@ -28,31 +30,46 @@ const DayScheduleSelector: React.FC<DayScheduleSelectorProps> = ({
   selectedDate,
   selectedTime,
   onDateTimeSelect,
-  disabled = false
+  disabled = false,
+  availableTimeSlots, // Si se pasa desde el padre, usar esos horarios
+  isLoadingSlots: isLoadingSlotsFromParent // Si se pasa desde el padre, usar ese estado
 }) => {
-  const [availableSlots, setAvailableSlots] = useState<string[]>([]);
-  const [isLoadingSlots, setIsLoadingSlots] = useState(false);
+  // Estado interno solo si NO se pasan desde el padre
+  const [internalAvailableSlots, setInternalAvailableSlots] = useState<string[]>([]);
+  const [internalIsLoadingSlots, setInternalIsLoadingSlots] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Cargar horarios cuando se selecciona una fecha
+  // Usar horarios pasados desde el padre o estado interno
+  const availableSlots = availableTimeSlots ?? internalAvailableSlots;
+  const isLoadingSlots = isLoadingSlotsFromParent ?? internalIsLoadingSlots;
+
+  // Cargar horarios cuando se selecciona una fecha - SOLO si NO se pasan desde el padre
   useEffect(() => {
-    console.log(`📅 DayScheduleSelector useEffect: selectedDate="${selectedDate}", evaluatorId="${evaluatorId}", secondEvaluatorId="${secondEvaluatorId}"`);
+    console.log(`📅 DayScheduleSelector useEffect: selectedDate="${selectedDate}", evaluatorId="${evaluatorId}", secondEvaluatorId="${secondEvaluatorId}", availableTimeSlots pasados=${availableTimeSlots ? 'SÍ' : 'NO'}`);
+
+    // Si los horarios se pasan desde el padre, NO cargar aquí
+    if (availableTimeSlots !== undefined) {
+      console.log(`✅ DayScheduleSelector: Usando ${availableTimeSlots.length} horarios pasados desde el padre`);
+      return;
+    }
+
+    // Solo cargar si NO se pasaron desde el padre
     if (selectedDate && evaluatorId) {
       loadDaySlots(selectedDate);
     } else {
-      setAvailableSlots([]);
+      setInternalAvailableSlots([]);
     }
-  }, [selectedDate, evaluatorId, secondEvaluatorId]);
+  }, [selectedDate, evaluatorId, secondEvaluatorId, availableTimeSlots]);
 
   const loadDaySlots = async (date: string) => {
-    setIsLoadingSlots(true);
+    setInternalIsLoadingSlots(true);
     setError(null);
 
     try {
       // Validar que tenemos un evaluadorId válido
       if (!evaluatorId || evaluatorId <= 0) {
         console.warn(`⚠️ EvaluatorId inválido: ${evaluatorId}`);
-        setAvailableSlots([]);
+        setInternalAvailableSlots([]);
         return;
       }
 
@@ -78,17 +95,17 @@ const DayScheduleSelector: React.FC<DayScheduleSelectorProps> = ({
         );
         console.log(`✅ Horarios individuales obtenidos:`, slots);
       }
-      
+
       console.log(`✅ Horarios obtenidos:`, slots);
       console.log(`🔍 Tipo de slots:`, Array.isArray(slots), typeof slots);
-      
+
       // Validar que slots sea un array
       if (!Array.isArray(slots)) {
         console.error(`❌ Los slots no son un array:`, slots);
-        setAvailableSlots([]);
+        setInternalAvailableSlots([]);
         return;
       }
-      
+
       // Validación defensiva: asegurar que tenemos strings
       const validSlots = slots.map((slot, index) => {
         console.log(`🔍 Slot ${index}:`, slot, typeof slot);
@@ -106,21 +123,21 @@ const DayScheduleSelector: React.FC<DayScheduleSelectorProps> = ({
           return fallback;
         }
       }).filter(slot => slot && typeof slot === 'string');
-      
+
       console.log(`✅ Slots válidos finales:`, validSlots);
-      setAvailableSlots(validSlots);
-      
+      setInternalAvailableSlots(validSlots);
+
       // Si el horario previamente seleccionado ya no está disponible, limpiarlo
       if (selectedTime && !validSlots.includes(selectedTime)) {
         onDateTimeSelect(date, '');
       }
-      
+
     } catch (error) {
       console.error('Error cargando horarios del día:', error);
       setError('Error al cargar horarios disponibles');
-      setAvailableSlots([]);
+      setInternalAvailableSlots([]);
     } finally {
-      setIsLoadingSlots(false);
+      setInternalIsLoadingSlots(false);
     }
   };
 
