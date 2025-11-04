@@ -405,18 +405,48 @@ class InterviewService {
     return this.mapInterviewResponse(response.data);
   }
 
-  async cancelInterview(id: number): Promise<Interview> {
-    const response = await api.post<InterviewResponse>(`${this.baseUrl}/${id}/cancel`);
-    return this.mapInterviewResponse(response.data);
+  async cancelInterview(id: number, cancellationReason: string): Promise<Interview> {
+    console.log(`🚫 Cancelando entrevista ${id} con razón: ${cancellationReason}`);
+    const response = await api.patch<any>(`${this.baseUrl}/${id}/cancel`, {
+      cancellationReason
+    });
+
+    // Backend devuelve { success: true, data: { message, interview } }
+    if (response.data && response.data.success && response.data.data && response.data.data.interview) {
+      console.log('✅ Entrevista cancelada exitosamente');
+      return this.mapBackendResponse(response.data.data.interview);
+    }
+
+    // Fallback si la estructura es diferente
+    if (response.data && response.data.interview) {
+      return this.mapBackendResponse(response.data.interview);
+    }
+
+    console.warn('⚠️ Estructura de respuesta inesperada al cancelar entrevista');
+    return this.mapBackendResponse(response.data);
   }
 
-  async rescheduleInterview(id: number, newDate: string, newTime: string): Promise<Interview> {
-    const params = new URLSearchParams({
+  async rescheduleInterview(id: number, newDate: string, newTime: string, reason: string): Promise<Interview> {
+    console.log(`🔄 Reagendando entrevista ${id} a ${newDate} ${newTime} con razón: ${reason}`);
+    const response = await api.patch<any>(`${this.baseUrl}/${id}/reschedule`, {
       newDate,
-      newTime
+      newTime,
+      reason
     });
-    const response = await api.post<InterviewResponse>(`${this.baseUrl}/${id}/reschedule?${params}`);
-    return this.mapInterviewResponse(response.data);
+
+    // Backend devuelve { success: true, data: { message, interview } }
+    if (response.data && response.data.success && response.data.data && response.data.data.interview) {
+      console.log('✅ Entrevista reagendada exitosamente');
+      return this.mapBackendResponse(response.data.data.interview);
+    }
+
+    // Fallback si la estructura es diferente
+    if (response.data && response.data.interview) {
+      return this.mapBackendResponse(response.data.interview);
+    }
+
+    console.warn('⚠️ Estructura de respuesta inesperada al reagendar entrevista');
+    return this.mapBackendResponse(response.data);
   }
 
   async markAsNoShow(id: number): Promise<Interview> {

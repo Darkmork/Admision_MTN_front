@@ -42,6 +42,8 @@ import InterviewCalendar from './InterviewCalendar';
 import InterviewStatsPanel from './InterviewStatsPanel';
 import InterviewStatusPanel from './InterviewStatusPanel';
 import InterviewOverview from './InterviewOverview';
+import CancelInterviewModal from './CancelInterviewModal';
+import RescheduleInterviewModal from './RescheduleInterviewModal';
 // Removed excessive imports for simplification
 import interviewService from '../../services/interviewService';
 import { emailTemplateService, EmailTemplate } from '../../services/emailTemplateService';
@@ -67,7 +69,13 @@ const InterviewManagement: React.FC<InterviewManagementProps> = ({ className = '
   const [showCalendar, setShowCalendar] = useState(false);
   const [showStats, setShowStats] = useState(false);
   const [formMode, setFormMode] = useState<InterviewFormMode>(InterviewFormMode.CREATE);
-  
+
+  // Estados para modales de cancelación y reagendación
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+  const [interviewToCancel, setInterviewToCancel] = useState<Interview | null>(null);
+  const [interviewToReschedule, setInterviewToReschedule] = useState<Interview | null>(null);
+
   // Estado para sincronización entre vistas
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -286,23 +294,32 @@ const InterviewManagement: React.FC<InterviewManagementProps> = ({ className = '
     }
   };
 
-  const handleCancelInterview = async (interview: Interview) => {
-    try {
-      await interviewService.cancelInterview(interview.id);
-      showToast('Entrevista cancelada exitosamente', 'success');
-      await loadInterviews();
-      await loadStats();
-      setRefreshKey(prev => prev + 1); // Sincronizar todas las vistas
-    } catch (err: any) {
-      console.error('Error cancelando entrevista:', err);
-      showToast(err.message || 'Error al cancelar la entrevista', 'error');
-    }
+  const handleCancelInterview = (interview: Interview) => {
+    setInterviewToCancel(interview);
+    setShowCancelModal(true);
+  };
+
+  const handleCancelSuccess = async () => {
+    showToast('Entrevista cancelada exitosamente', 'success');
+    setShowCancelModal(false);
+    setInterviewToCancel(null);
+    await loadInterviews();
+    await loadStats();
+    setRefreshKey(prev => prev + 1);
   };
 
   const handleRescheduleInterview = (interview: Interview) => {
-    setSelectedInterview(interview);
-    setFormMode(InterviewFormMode.EDIT);
-    setShowForm(true);
+    setInterviewToReschedule(interview);
+    setShowRescheduleModal(true);
+  };
+
+  const handleRescheduleSuccess = async () => {
+    showToast('Entrevista reagendada exitosamente', 'success');
+    setShowRescheduleModal(false);
+    setInterviewToReschedule(null);
+    await loadInterviews();
+    await loadStats();
+    setRefreshKey(prev => prev + 1);
   };
 
   const handleFilterChange = (newFilters: Partial<InterviewFilters>) => {
@@ -639,6 +656,28 @@ const InterviewManagement: React.FC<InterviewManagementProps> = ({ className = '
           isSubmitting={isSubmitting}
         />
       </Modal>
+
+      {/* Modal de cancelación de entrevista */}
+      <CancelInterviewModal
+        isOpen={showCancelModal}
+        onClose={() => {
+          setShowCancelModal(false);
+          setInterviewToCancel(null);
+        }}
+        interview={interviewToCancel}
+        onSuccess={handleCancelSuccess}
+      />
+
+      {/* Modal de reagendación de entrevista */}
+      <RescheduleInterviewModal
+        isOpen={showRescheduleModal}
+        onClose={() => {
+          setShowRescheduleModal(false);
+          setInterviewToReschedule(null);
+        }}
+        interview={interviewToReschedule}
+        onSuccess={handleRescheduleSuccess}
+      />
 
       {/* Removed complex email modal for simplification */}
 
