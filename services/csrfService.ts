@@ -5,7 +5,8 @@
  * Implements synchronizer token pattern for CSRF protection
  */
 
-import api from './api';
+import axios from 'axios';
+import { getApiBaseUrl } from '../config/api.config';
 
 class CsrfService {
     private csrfToken: string | null = null;
@@ -15,12 +16,23 @@ class CsrfService {
     /**
      * Fetch a new CSRF token from the backend
      * This should be called before making any POST/PUT/DELETE requests
+     *
+     * IMPORTANT: Uses axios directly (not the api client) to avoid interceptor loops.
+     * The api client has an interceptor that tries to add CSRF tokens, which would
+     * cause infinite recursion if we used it to fetch the CSRF token itself.
      */
     async fetchCsrfToken(): Promise<string> {
         try {
             console.log('[CSRF] Fetching new CSRF token...');
 
-            const response = await api.get('/api/auth/csrf-token');
+            // Use axios directly to avoid interceptor loop
+            const baseUrl = getApiBaseUrl();
+            const response = await axios.get(`${baseUrl}/api/auth/csrf-token`, {
+                withCredentials: true,
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
 
             if (response.data.success && response.data.csrfToken) {
                 this.csrfToken = response.data.csrfToken;
