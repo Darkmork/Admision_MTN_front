@@ -927,7 +927,7 @@ const ProfessorDashboard: React.FC = () => {
                                     </div>
                                 ) : (
                                     <div className="space-y-3">
-                                        {completedInterviews.filter(i => i.type === (activeInterviewTab === 'familiares' ? 'FAMILY' : 'CYCLE_DIRECTOR')).slice(0, 10).map(interview => (
+                                        {completedInterviews.filter(i => i.type === (activeInterviewTab === 'familiares' ? 'FAMILY' : 'CYCLE_DIRECTOR')).slice(0, 200).map(interview => (
                                             <div key={interview.id} className="border border-green-200 bg-green-50 rounded-lg p-4">
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex-1">
