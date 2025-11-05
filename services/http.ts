@@ -259,11 +259,28 @@ class HttpClient {
   }
 
   private async handle401Error(error: AxiosError): Promise<void> {
-    
+    // Check if this is a session invalidation (user logged in from another device/tab)
+    const errorData = error.response?.data as any;
+    if (errorData?.code === 'SESSION_INVALIDATED') {
+      console.warn('⚠️ Session invalidated - User logged in from another device');
+
+      // Clear ALL tokens
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('professor_token');
+      sessionStorage.clear();
+
+      // Show alert to user
+      alert('Tu sesión ha sido cerrada porque iniciaste sesión en otro dispositivo o pestaña.');
+
+      // Redirect to login
+      this.redirectToLogin();
+      return;
+    }
+
+    // For other 401 errors, try to renew token
     try {
-      // Intentar renovar el token
       const newUser = await oidcService.renewToken();
-      
+
       if (!newUser) {
         this.redirectToLogin();
       }

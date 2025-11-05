@@ -479,7 +479,50 @@ Frontend → Gateway (public) → Backend Service (private) → PostgreSQL
 }
 ```
 
+## Known Issues & Planned Solutions
+
+### Multiple Session Management (Nov 2025)
+
+**Issue**: When the same user opens multiple sessions (different browser tabs/windows), the system enters a conflicting state causing ERR_TOO_MANY_REDIRECTS or CSRF token failures.
+
+**Root Cause**:
+- Multiple tabs use same JWT token from localStorage
+- Backend may invalidate token when new login occurs
+- Frontend doesn't detect session invalidation
+- CSRF tokens get out of sync between sessions
+
+**Planned Solution** (not yet implemented):
+1. **Invalidate previous session on new login** (Backend - user-service):
+   - Create `active_sessions` table: `(user_id, token_hash, created_at, last_activity)`
+   - On login: mark all previous sessions as invalid
+   - On token validation: check if token is in active_sessions
+   - Return 401 if token has been invalidated
+
+2. **Single session enforcement** (Frontend):
+   - On 401 error: clear localStorage and redirect to login
+   - Show message: "Tu sesión ha sido cerrada porque iniciaste sesión en otro dispositivo"
+   - Optional: Use BroadcastChannel API to notify other tabs of logout
+
+**Alternative Solutions**:
+- **Multi-session support**: Generate unique JTI (JWT ID) per session, track all active sessions
+- **Session refresh with conflict detection**: Frontend polls for session validity
+- **WebSocket-based session management**: Real-time session invalidation
+
+**Current Workaround**: Users should close all tabs/windows and log in again if experiencing redirect loops.
+
+**Files to modify** (when implementing):
+- Backend: `user-service/src/controllers/AuthController.js` (login logic)
+- Backend: `user-service/src/middleware/auth.js` (token validation)
+- Backend: New migration for `active_sessions` table
+- Frontend: `services/authService.ts` (handle 401 errors)
+- Frontend: `services/http.ts` (improve error handling)
+
 ## Changelog Highlights
+
+**Nov 4, 2025** - Documented multiple session issue:
+- Identified ERR_TOO_MANY_REDIRECTS cause (multiple active sessions)
+- Planned solution: session invalidation on new login
+- Added to Known Issues section for future implementation
 
 **Oct 30, 2025** - INTERVIEWER role support and schedule component unification:
 - Added INTERVIEWER role support to professor login portal (`professorAuthService.isProfessorRole()`)
