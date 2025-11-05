@@ -98,19 +98,22 @@ const EvaluationManagement: React.FC<EvaluationManagementProps> = ({
 
       const languageTeachers = allStaff.filter(user =>
         (user.role === 'TEACHER' || user.role === 'COORDINATOR') &&
-        user.subject === 'LANGUAGE' && user.active && user.emailVerified
+        (user.subject === 'LANGUAGE' || user.subject === 'ALL_SUBJECTS') &&
+        user.active && user.emailVerified
       );
       console.log('📚 LANGUAGE teachers:', languageTeachers.map(u => `${u.firstName} ${u.lastName}`));
 
       const mathTeachers = allStaff.filter(user =>
         (user.role === 'TEACHER' || user.role === 'COORDINATOR') &&
-        user.subject === 'MATHEMATICS' && user.active && user.emailVerified
+        (user.subject === 'MATHEMATICS' || user.subject === 'ALL_SUBJECTS') &&
+        user.active && user.emailVerified
       );
       console.log('🧮 MATHEMATICS teachers:', mathTeachers.map(u => `${u.firstName} ${u.lastName}`));
 
       const englishTeachers = allStaff.filter(user =>
         (user.role === 'TEACHER' || user.role === 'COORDINATOR') &&
-        user.subject === 'ENGLISH' && user.active && user.emailVerified
+        (user.subject === 'ENGLISH' || user.subject === 'ALL_SUBJECTS') &&
+        user.active && user.emailVerified
       );
       console.log('🇺🇸 ENGLISH teachers:', englishTeachers.map(u => `${u.firstName} ${u.lastName}`));
 
