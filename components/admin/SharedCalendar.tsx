@@ -164,8 +164,11 @@ const SharedCalendar: React.FC<SharedCalendarProps> = ({
       date.setDate(startDate.getDate() + i);
       
       const dayInterviews = interviews.filter(interview => {
-        const interviewDate = new Date(interview.scheduledDate);
-        return interviewDate.toDateString() === date.toDateString();
+        // Parse date as YYYY-MM-DD WITHOUT timezone conversion
+        // scheduledDate from backend is "2025-01-17" (no time, no timezone)
+        // We need to compare it to calendar day without UTC conversion
+        const dateStr = date.toISOString().split('T')[0]; // "2025-01-17"
+        return interview.scheduledDate === dateStr;
       });
       
       days.push({
