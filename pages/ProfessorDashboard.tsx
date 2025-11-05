@@ -797,16 +797,32 @@ const ProfessorDashboard: React.FC = () => {
                                                             Tipo: {INTERVIEW_TYPE_LABELS[interview.type as InterviewType] || interview.type}
                                                         </p>
                                                         <div className="text-xs text-gray-600 mt-1 space-y-1">
-                                                            <div>📅 {new Date(interview.scheduledDate).toLocaleDateString('es-CL', {
-                                                                weekday: 'long',
-                                                                day: 'numeric',
-                                                                month: 'long',
-                                                                year: 'numeric'
-                                                            })}</div>
+                                                            <div>📅 {(() => {
+                                                                // Parse date in local timezone to avoid offset issues
+                                                                const [year, month, day] = interview.scheduledDate.split('-');
+                                                                const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                                                                return date.toLocaleDateString('es-CL', {
+                                                                    weekday: 'long',
+                                                                    day: 'numeric',
+                                                                    month: 'long',
+                                                                    year: 'numeric'
+                                                                });
+                                                            })()}</div>
                                                             <div>🕐 {interview.scheduledTime} ({interview.duration} min)</div>
                                                             {interview.location && <div>📍 {interview.location}</div>}
-                                                            {interview.secondInterviewerName && (
-                                                                <div>👥 Con: {interview.secondInterviewerName}</div>
+                                                            {/* Show both interviewers if there's a second one, otherwise just show the main interviewer */}
+                                                            {interview.secondInterviewerName ? (
+                                                                <div>👥 Entrevistadores: {interview.interviewerName} y {interview.secondInterviewerName}</div>
+                                                            ) : (
+                                                                <div>👥 Entrevistador: {interview.interviewerName}</div>
+                                                            )}
+                                                            {interview.notes && (
+                                                                <div className="mt-2 pt-2 border-t border-gray-200">
+                                                                    <div className="font-medium text-gray-700">📝 Notas/Enlaces:</div>
+                                                                    <div className="text-gray-600 whitespace-pre-wrap break-words">
+                                                                        {interview.notes}
+                                                                    </div>
+                                                                </div>
                                                             )}
                                                         </div>
                                                     </div>
