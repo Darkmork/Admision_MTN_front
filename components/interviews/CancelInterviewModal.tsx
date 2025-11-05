@@ -32,8 +32,8 @@ const CancelInterviewModal: React.FC<CancelInterviewModalProps> = ({
       return;
     }
 
-    if (cancellationReason.trim().length < 10) {
-      setError('El motivo debe tener al menos 10 caracteres');
+    if (cancellationReason.trim().length < 5) {
+      setError('El motivo debe tener al menos 5 caracteres');
       return;
     }
 
@@ -178,7 +178,7 @@ const CancelInterviewModal: React.FC<CancelInterviewModalProps> = ({
               setCancellationReason(e.target.value);
               setError(null);
             }}
-            placeholder="Ingrese el motivo detallado de la cancelación (mínimo 10 caracteres)..."
+            placeholder="Ingrese el motivo detallado de la cancelación (mínimo 5 caracteres)..."
             rows={4}
             disabled={isSubmitting}
             className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-colors resize-none ${
@@ -213,7 +213,7 @@ const CancelInterviewModal: React.FC<CancelInterviewModalProps> = ({
           <Button
             type="submit"
             variant="danger"
-            disabled={isSubmitting || !cancellationReason.trim() || cancellationReason.trim().length < 10}
+            disabled={isSubmitting || !cancellationReason.trim() || cancellationReason.trim().length < 5}
             className="bg-red-600 hover:bg-red-700 text-white disabled:bg-gray-300 disabled:cursor-not-allowed"
           >
             {isSubmitting ? (
