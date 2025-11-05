@@ -634,6 +634,13 @@ const ProfessorDashboard: React.FC = () => {
             return dateB.getTime() - dateA.getTime(); // Most recent first
         });
 
+        // DEBUG: Log interview counts
+        console.log('📊 DEBUG - Interview counts:');
+        console.log(`  Total interviews loaded: ${interviews.length}`);
+        console.log(`  Completed interviews (with COMPLETED evaluation): ${completedInterviews.length}`);
+        console.log(`  Family interviews in completedInterviews: ${completedInterviews.filter(i => i.type === 'FAMILY').length}`);
+        console.log(`  CYCLE_DIRECTOR interviews in completedInterviews: ${completedInterviews.filter(i => i.type === 'CYCLE_DIRECTOR').length}`);
+
         const getStatusColor = (status: InterviewStatus): 'success' | 'warning' | 'info' | 'error' => {
             switch (status) {
                 case InterviewStatus.COMPLETED:
