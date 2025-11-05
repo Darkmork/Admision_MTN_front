@@ -18,7 +18,6 @@ const CancelInterviewModal: React.FC<CancelInterviewModalProps> = ({
   interview,
   onSuccess
 }) => {
-  const [cancellationReason, setCancellationReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,33 +26,22 @@ const CancelInterviewModal: React.FC<CancelInterviewModalProps> = ({
 
     if (!interview) return;
 
-    if (!cancellationReason.trim()) {
-      setError('Por favor ingrese un motivo de cancelación');
-      return;
-    }
-
-    if (cancellationReason.trim().length < 5) {
-      setError('El motivo debe tener al menos 5 caracteres');
-      return;
-    }
-
     try {
       setIsSubmitting(true);
       setError(null);
 
-      console.log(`🚫 Cancelando entrevista ${interview.id} con razón: "${cancellationReason}"`);
+      console.log(`🗑️ Eliminando entrevista ${interview.id} permanentemente...`);
 
-      await interviewService.cancelInterview(interview.id, cancellationReason.trim());
+      await interviewService.deleteInterview(interview.id);
 
-      console.log('✅ Entrevista cancelada exitosamente');
+      console.log('✅ Entrevista eliminada exitosamente');
 
-      // Limpiar formulario y cerrar modal
-      setCancellationReason('');
+      // Cerrar modal y notificar éxito
       onSuccess();
       onClose();
     } catch (error: any) {
-      console.error('❌ Error al cancelar entrevista:', error);
-      setError(error.response?.data?.message || error.message || 'Error al cancelar la entrevista');
+      console.error('❌ Error al eliminar entrevista:', error);
+      setError(error.response?.data?.message || error.message || 'Error al eliminar la entrevista');
     } finally {
       setIsSubmitting(false);
     }
@@ -61,7 +49,6 @@ const CancelInterviewModal: React.FC<CancelInterviewModalProps> = ({
 
   const handleClose = () => {
     if (!isSubmitting) {
-      setCancellationReason('');
       setError(null);
       onClose();
     }
@@ -95,7 +82,7 @@ const CancelInterviewModal: React.FC<CancelInterviewModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title="Cancelar Entrevista"
+      title="Eliminar Entrevista"
       size="md"
     >
       <form onSubmit={handleSubmit} className="p-6 space-y-6">
@@ -104,10 +91,10 @@ const CancelInterviewModal: React.FC<CancelInterviewModalProps> = ({
           <FiAlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
           <div className="flex-1">
             <h4 className="text-sm font-semibold text-red-800 mb-1">
-              ¿Está seguro que desea cancelar esta entrevista?
+              ¿Está seguro que desea ELIMINAR PERMANENTEMENTE esta entrevista?
             </h4>
             <p className="text-sm text-red-700">
-              Esta acción no se puede deshacer. Se enviará una notificación automática al apoderado y al entrevistador.
+              Esta acción NO se puede deshacer. La entrevista será eliminada completamente de la base de datos y desaparecerá de todos los dashboards (apoderados, entrevistadores, coordinadores).
             </p>
           </div>
         </div>
@@ -115,7 +102,7 @@ const CancelInterviewModal: React.FC<CancelInterviewModalProps> = ({
         {/* Detalles de la entrevista */}
         <div className="bg-gray-50 rounded-lg p-4 space-y-3">
           <h4 className="text-sm font-semibold text-gray-700 mb-3">
-            Detalles de la Entrevista a Cancelar
+            Detalles de la Entrevista a Eliminar
           </h4>
 
           <div className="grid grid-cols-1 gap-3">
@@ -166,33 +153,6 @@ const CancelInterviewModal: React.FC<CancelInterviewModalProps> = ({
           </div>
         </div>
 
-        {/* Campo de motivo de cancelación */}
-        <div>
-          <label htmlFor="cancellationReason" className="block text-sm font-medium text-gray-700 mb-2">
-            Motivo de Cancelación *
-          </label>
-          <textarea
-            id="cancellationReason"
-            value={cancellationReason}
-            onChange={(e) => {
-              setCancellationReason(e.target.value);
-              setError(null);
-            }}
-            placeholder="Ingrese el motivo detallado de la cancelación (mínimo 5 caracteres)..."
-            rows={4}
-            disabled={isSubmitting}
-            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-colors resize-none ${
-              error
-                ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
-                : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
-            } ${isSubmitting ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
-            required
-          />
-          <p className="mt-1 text-xs text-gray-500">
-            {cancellationReason.length}/500 caracteres
-          </p>
-        </div>
-
         {/* Error message */}
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-3">
@@ -213,18 +173,18 @@ const CancelInterviewModal: React.FC<CancelInterviewModalProps> = ({
           <Button
             type="submit"
             variant="danger"
-            disabled={isSubmitting || !cancellationReason.trim() || cancellationReason.trim().length < 5}
+            disabled={isSubmitting}
             className="bg-red-600 hover:bg-red-700 text-white disabled:bg-gray-300 disabled:cursor-not-allowed"
           >
             {isSubmitting ? (
               <>
                 <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></span>
-                Cancelando...
+                Eliminando...
               </>
             ) : (
               <>
                 <FiX className="w-4 h-4 mr-2" />
-                Cancelar Entrevista
+                Eliminar Entrevista
               </>
             )}
           </Button>
