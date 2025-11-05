@@ -1,6 +1,14 @@
 import api from './api';
-import axios from 'axios';
+import axios, { AxiosInstance } from 'axios';
 import { getApiBaseUrl } from '../config/api.config';
+
+// Create a clean axios instance WITHOUT interceptors for interview deletion
+const cleanAxios: AxiosInstance = axios.create({
+  baseURL: getApiBaseUrl(),
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
 import {
   Interview,
   InterviewStatus,
@@ -388,16 +396,15 @@ class InterviewService {
   }
 
   async deleteInterview(id: number): Promise<void> {
-    // ⚠️ Use direct axios call to bypass CSRF token interceptors
+    // ⚠️ Use clean axios instance WITHOUT interceptors
     // Backend DELETE endpoint does NOT require CSRF validation
     const token = localStorage.getItem('auth_token') || localStorage.getItem('professor_token');
 
-    console.log(`🗑️ [deleteInterview] Bypassing CSRF interceptors for DELETE /api/interviews/${id}`);
+    console.log(`🗑️ [deleteInterview] Using clean axios instance (no CSRF) for DELETE /api/interviews/${id}`);
 
-    await axios.delete(`${getApiBaseUrl()}${this.baseUrl}/${id}`, {
+    await cleanAxios.delete(`${this.baseUrl}/${id}`, {
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+        'Authorization': `Bearer ${token}`
       }
     });
 
