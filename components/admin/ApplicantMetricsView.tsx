@@ -552,22 +552,7 @@ export const ApplicantMetricsView: React.FC = () => {
   );
 };
 
-export default ApplicantMetricsView;/**
- * Applicant Metrics View Component
- * Detailed metrics for each applicant showing exam scores, interviews, and documents
- * with Excel export, filters, and visual charts
- */
-
-import React, { useState, useEffect } from 'react';
-import { FiUser, FiFileText, FiAward, FiTrendingUp, FiFilter, FiDownload, FiX } from 'react-icons/fi';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
-import Button from '../ui/Button';
-import { dashboardClient } from '../../src/api/dashboard.client';
-import type { ApplicantMetric, ApplicantMetricsFilters } from '../../src/api/dashboard.types';
-import { PieChart, Pie, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-
-export const ApplicantMetricsView: React.FC = () => {
+export default ApplicantMetricsView;
   const [applicants, setApplicants] = useState<ApplicantMetric[]>([]);
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
