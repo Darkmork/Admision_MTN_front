@@ -40,6 +40,28 @@ export interface DetailedDashboardStats {
   timestamp: string;
 }
 
+export interface ApplicantSummary {
+  applicantId: number;
+  studentName: string;
+  gradeApplied: string;
+  applicationStatus: string;
+  scores: {
+    languagePct: number | null;
+    englishPct: number | null;
+    mathPct: number | null;
+  };
+  familyInterview: {
+    avgScore: number | null;
+    count: number;
+  };
+  cycleDirectorDecision: {
+    decision: 'ACEPTA' | 'NO_ACEPTA' | 'PENDIENTE';
+    decisionDate: string | null;
+    highlights: string;
+    rawComment: string;
+  };
+}
+
 class DashboardService {
   /**
    * Obtiene estadísticas detalladas del dashboard administrativo
@@ -73,6 +95,25 @@ class DashboardService {
       // Fallback: retornar años por defecto
       const currentYear = new Date().getFullYear();
       return [currentYear, currentYear + 1, currentYear + 2];
+    }
+  }
+
+  /**
+   * Obtiene el resumen completo de un postulante
+   * Incluye: puntuaciones normalizadas de exámenes, promedio de entrevistas familiares, y decisión del director de ciclo
+   * @param applicantId - ID de la aplicación del postulante
+   */
+  async getApplicantSummary(applicantId: number): Promise<ApplicantSummary> {
+    try {
+      const response = await api.get<{ success: boolean; data: ApplicantSummary }>(
+        `/api/dashboard/applicants/${applicantId}/summary`
+      );
+      return response.data.data;
+    } catch (error: any) {
+      console.error(`Error fetching applicant summary for ID ${applicantId}:`, error);
+      throw new Error(
+        error.response?.data?.message || 'Error al obtener resumen del postulante'
+      );
     }
   }
 }

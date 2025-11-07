@@ -485,6 +485,21 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
         }
 
         // Caso 2: Hay documentos subidos - validar revisión
+
+        // CRÍTICO: Refrescar datos de la aplicación desde el backend ANTES de calcular
+        // Esto previene race conditions cuando múltiples administradores trabajan simultáneamente
+        console.log('🔄 Refrescando datos de la aplicación desde el backend...');
+        await loadFullApplication();
+
+        if (!fullApplication || !fullApplication.documents) {
+            addNotification({
+                type: 'error',
+                title: 'Error',
+                message: 'No se pudieron cargar los datos actualizados de la postulación'
+            });
+            return;
+        }
+
         const totalDocuments = fullApplication.documents.length;
 
         // IMPORTANTE: Solo incluir documentos MODIFICADOS en esta sesión (no los ya aprobados en BD)
@@ -1144,7 +1159,23 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
             !interviews.some(interview => interview.type === type.type)
         ).length;
 
-        const progress = Math.round(((completedInterviews + scheduledInterviews) / requiredTypes.length) * 100);
+        // CRITICAL: Cap progress at 100% to prevent overflow in UI
+        const progress = Math.min(100, Math.round(((completedInterviews + scheduledInterviews) / requiredTypes.length) * 100));
+
+        // VALIDATION: Verify sum of interview categories matches required types
+        const totalInterviewsAssigned = completedInterviews + scheduledInterviews + missingInterviews;
+        if (totalInterviewsAssigned !== requiredTypes.length) {
+            console.warn(
+                `⚠️ Interview counter mismatch detected!`,
+                `\n  Required types: ${requiredTypes.length}`,
+                `\n  Completed: ${completedInterviews}`,
+                `\n  Scheduled: ${scheduledInterviews}`,
+                `\n  Missing: ${missingInterviews}`,
+                `\n  Sum: ${totalInterviewsAssigned}`,
+                `\n  Difference: ${requiredTypes.length - totalInterviewsAssigned}`,
+                `\n  This indicates an interview may be counted in multiple categories or filter logic error`
+            );
+        }
 
         return (
             <div className="space-y-6">
@@ -1342,6 +1373,21 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
         const otherDocsCount = hasDocuments ? fullApplication.documents.filter(isOtherDocument).length : 0;
 
         console.log('📋 academicDocsCount:', academicDocsCount, 'otherDocsCount:', otherDocsCount);
+
+        // VALIDATION: Verify sum of categories matches total
+        const totalDocuments = fullApplication?.documents?.length || 0;
+        const sumCategories = academicDocsCount + otherDocsCount;
+        if (sumCategories !== totalDocuments) {
+            console.warn(
+                `⚠️ Document counter mismatch detected!`,
+                `\n  Total documents: ${totalDocuments}`,
+                `\n  Academic: ${academicDocsCount}`,
+                `\n  Other: ${otherDocsCount}`,
+                `\n  Sum: ${sumCategories}`,
+                `\n  Difference: ${totalDocuments - sumCategories}`,
+                `\n  This indicates a classification error in isAcademicDocument() or isOtherDocument()`
+            );
+        }
 
         return (
             <div className="space-y-6">
@@ -1689,7 +1735,8 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
             !safeEvaluations.some(evaluation => evaluation.evaluationType === type.type)
         ).length;
 
-        const progress = Math.round(((completedEvaluations + inProgressEvaluations) / requiredTypes.length) * 100);
+        // CRITICAL: Cap progress at 100% to prevent overflow in UI
+        const progress = Math.min(100, Math.round(((completedEvaluations + inProgressEvaluations) / requiredTypes.length) * 100));
 
         return (
             <div className="space-y-6">
@@ -1780,7 +1827,9 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                                 {evaluation && (
                                     <div className="space-y-1 text-xs text-gray-600">
                                         {evaluation.score !== null && evaluation.score !== undefined && (
-                                            <p className="font-medium text-blue-600">Puntaje: {evaluation.score}/{evaluation.maxScore || 100}</p>
+                                            <p className="font-medium text-blue-600">
+                                                Puntaje: {evaluation.score}/{evaluation.maxScore ?? '—'}
+                                            </p>
                                         )}
                                         {evaluation.evaluator && (
                                             <p className="font-medium">{evaluation.evaluator.firstName} {evaluation.evaluator.lastName}</p>
@@ -1986,8 +2035,7 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                                 <div className="flex items-center justify-between">
                                     <span className="text-lg font-semibold text-green-900">Puntaje Obtenido:</span>
                                     <span className="text-3xl font-bold text-green-700">
-                                        {selectedEvaluation.score}
-                                        {selectedEvaluation.evaluationType && selectedEvaluation.evaluationType.includes('EXAM') ? '/100' : '/10'}
+                                        {selectedEvaluation.score}/{selectedEvaluation.maxScore ?? '—'}
                                     </span>
                                 </div>
                             </div>
