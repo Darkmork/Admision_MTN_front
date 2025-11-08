@@ -499,19 +499,33 @@ class InterviewService {
 
   async getInterviewsByInterviewer(interviewerId: number): Promise<Interview[]> {
     try {
-      const response = await api.get<InterviewResponse[]>(`${this.baseUrl}/interviewer/${interviewerId}`);
-      
+      // 🔄 Add cache-busting headers and timestamp to force fresh data
+      const timestamp = Date.now();
+      console.log(`🔄 [getInterviewsByInterviewer] Fetching with timestamp: ${timestamp} for interviewer ${interviewerId}`);
+
+      const response = await api.get<InterviewResponse[]>(
+        `${this.baseUrl}/interviewer/${interviewerId}?_t=${timestamp}`,
+        {
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        }
+      );
+
       // Verificar si la respuesta es del placeholder (microservicio no implementado)
       if (response.data && typeof response.data === 'object' && 'error' in response.data) {
         console.log('⚠️ Interviews by interviewer service no implementado, devolviendo array vacío');
         return [];
       }
-      
+
       // Verificar si es un array válido
       if (Array.isArray(response.data)) {
+        console.log(`✅ [getInterviewsByInterviewer] Received ${response.data.length} interviews for interviewer ${interviewerId}`);
         return response.data.map(item => this.mapInterviewResponse(item));
       }
-      
+
       console.log('⚠️ Estructura de respuesta inesperada para interviews by interviewer');
       return [];
     } catch (error) {

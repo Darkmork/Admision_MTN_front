@@ -468,12 +468,17 @@ export const getScheduleTypeOptions = () => [
 
 export const getTimeSlotOptions = () => {
     const slots = [];
-    for (let hour = 8; hour <= 16; hour++) {
+    // Generate 18 slots from 08:00 to 17:00 (every 30 minutes)
+    for (let hour = 8; hour <= 17; hour++) {
         for (let minute of [0, 30]) {
+            // Skip 17:30 to end exactly at 17:00
+            if (hour === 17 && minute === 30) break;
+
             const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
             const displayTime = `${hour}:${minute === 0 ? '00' : '30'}`;
             slots.push({ value: time, label: displayTime });
         }
     }
+    // Should return exactly 18 slots: 08:00, 08:30, 09:00, ..., 16:30, 17:00
     return slots;
 };

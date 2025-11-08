@@ -85,6 +85,9 @@ const ProfessorDashboard: React.FC = () => {
     // Estado para las entrevistas
     const [interviews, setInterviews] = useState<Interview[]>([]);
 
+    // 🔄 Estado para forzar recarga de datos (cache busting)
+    const [refreshKey, setRefreshKey] = useState(0);
+
     // Estado para el tab activo en la sección de evaluaciones
     const [activeEvaluationTab, setActiveEvaluationTab] = useState<'academicas' | 'psicologicas' | 'familiares'>('psicologicas');
 
@@ -220,7 +223,7 @@ const ProfessorDashboard: React.FC = () => {
             isMounted = false;
             abortController.abort();
         };
-    }, []); // ✅ DEPENDENCIAS VACÍAS - SOLO SE EJECUTA AL MONTAR
+    }, [refreshKey]); // 🔄 Re-ejecuta cuando refreshKey cambia (force refresh)
 
 
     // Datos mock para compatibilidad (se pueden eliminar después)
@@ -662,10 +665,26 @@ const ProfessorDashboard: React.FC = () => {
         return (
             <div className="space-y-6">
                 <Card className="p-6">
-                    <h2 className="text-xl font-bold text-azul-monte-tabor mb-6 flex items-center">
-                        <FiCalendar className="mr-2" />
-                        💬 Mis Entrevistas e Informes
-                    </h2>
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-xl font-bold text-azul-monte-tabor flex items-center">
+                            <FiCalendar className="mr-2" />
+                            💬 Mis Entrevistas e Informes
+                        </h2>
+                        {/* 🔄 Botón de recarga manual */}
+                        <Button
+                            onClick={() => {
+                                console.log('🔄 Manual refresh triggered - incrementing refreshKey');
+                                setRefreshKey(prev => prev + 1);
+                            }}
+                            variant="outline"
+                            size="sm"
+                            className="flex items-center gap-2"
+                            disabled={isLoading}
+                        >
+                            <FiRefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                            Actualizar
+                        </Button>
+                    </div>
 
                     {isLoading ? (
                         <div className="text-center py-8">
