@@ -53,30 +53,22 @@ const InterviewTable: React.FC<InterviewTableProps> = ({
   const [deletingId, setDeletingId] = React.useState<number | null>(null);
 
   const handleDelete = async (interview: Interview) => {
-    if (!confirm(`¿Está seguro que desea eliminar esta entrevista cancelada? Esta acción no se puede deshacer.`)) {
+    if (!confirm(`¿Está seguro que desea cancelar esta entrevista? Esta acción marcará la entrevista como cancelada.`)) {
       return;
     }
 
     try {
       setDeletingId(interview.id);
-      const response = await fetch(`http://localhost:8080/api/interviews/${interview.id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token') || localStorage.getItem('professor_token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Error al eliminar la entrevista');
-      }
+      // Use interviewService.cancelInterview for soft delete (sets status to CANCELLED)
+      const interviewService = (await import('../../services/interviewService')).default;
+      await interviewService.cancelInterview(interview.id, 'Cancelada por administrador');
 
       // Reload page to refresh the list
       window.location.reload();
     } catch (error) {
-      console.error('Error deleting interview:', error);
-      alert(`Error al eliminar la entrevista: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+      console.error('Error cancelling interview:', error);
+      alert(`Error al cancelar la entrevista: ${error instanceof Error ? error.message : 'Error desconocido'}`);
     } finally {
       setDeletingId(null);
     }
