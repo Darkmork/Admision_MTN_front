@@ -232,24 +232,32 @@ class DashboardClient {
    */
   async getInsights(): Promise<Alert[]> {
     const response = await httpClient.get<{
-      recommendations: Array<{
-        type: string;
-        title: string;
-        message: string;
-        level: string;
-      }>;
-      totalInsights: number;
+      success: boolean;
+      data: {
+        insights: Array<{
+          type: string;
+          message: string;
+          action: string | null;
+        }>;
+        metrics: {
+          totalApplications: number;
+          completedEvaluations: number;
+          averageScore: string;
+        };
+      };
+      timestamp: string;
     }>(`${this.analyticsPath}/insights`);
 
-    // Transformar recommendations a Alert[]
-    const recommendations = response.data.recommendations || [];
-    return recommendations.map((rec, index) => ({
+    // Transformar insights del backend a Alert[] del frontend
+    const insights = response.data.data?.insights || [];
+    return insights.map((insight, index) => ({
       id: `alert-${index}`,
-      type: rec.type as 'capacity' | 'trend' | 'performance' | 'warning',
-      severity: rec.level === 'warning' ? 'warning' : rec.level === 'success' ? 'info' : 'info' as 'info' | 'warning' | 'error',
-      title: rec.title,
-      message: rec.message,
-      actionable: false,
+      type: insight.type as 'capacity' | 'trend' | 'performance' | 'warning',
+      severity: (insight.type === 'warning' ? 'warning' : insight.type === 'alert' ? 'error' : 'info') as 'info' | 'warning' | 'error',
+      title: insight.type === 'warning' ? 'Advertencia' : insight.type === 'alert' ? 'Alerta' : 'Información',
+      message: insight.message,
+      action: insight.action || undefined,
+      actionable: !!insight.action,
       timestamp: new Date().toISOString()
     }));
   }
