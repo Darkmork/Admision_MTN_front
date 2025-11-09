@@ -345,64 +345,34 @@ const ProfessorDashboard: React.FC = () => {
                 </Card>
             </div>
 
-            {/* Recent Evaluations - Usando datos reales */}
+            {/* Evaluaciones Recientes */}
             <Card className="p-6">
-                <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">Evaluaciones Recientes</h2>
+                <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">
+                    Evaluaciones Recientes
+                </h2>
                 {isLoading ? (
                     <div className="text-center py-8">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-azul-monte-tabor mx-auto"></div>
                         <p className="text-gris-piedra mt-2">Cargando evaluaciones...</p>
                     </div>
-                ) : evaluations.length > 0 ? (
+                ) : evaluations.length === 0 ? (
+                    <p className="text-gris-piedra text-center py-4">No hay evaluaciones asignadas</p>
+                ) : (
                     <div className="space-y-3">
-                        {evaluations.map((evaluation) => (
-                            <div key={evaluation.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        {evaluations.slice(0, 5).map((evaluation) => (
+                            <div key={evaluation.id} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                                 <div>
-                                    <p className="font-medium">
-                                        {evaluation.studentName}
-                                    </p>
+                                    <p className="font-semibold text-azul-monte-tabor">{evaluation.studentName}</p>
                                     <p className="text-sm text-gris-piedra">
                                         {getEvaluationTypeLabel(evaluation.evaluationType)} - {evaluation.studentGrade}
                                     </p>
-                                    {evaluation.scheduledDate && (
-                                        <p className="text-xs text-gris-piedra">
-                                            Programada: {new Date(evaluation.scheduledDate).toLocaleDateString('es-CL')}
-                                        </p>
-                                    )}
                                 </div>
-                                <div className="flex items-center gap-2">
+                                <div>
                                     {getEvaluationStatusBadge(evaluation.status)}
-                                    <Button
-                                        size="sm"
-                                        variant="primary"
-                                        onClick={() => navigate(
-                                            evaluation.evaluationType === 'CYCLE_DIRECTOR_INTERVIEW'
-                                                ? `/profesor/entrevista-director/${evaluation.id}`
-                                                : evaluation.evaluationType === 'PSYCHOLOGICAL_INTERVIEW'
-                                                ? `/profesor/entrevista-director/${evaluation.id}`
-                                                : evaluation.evaluationType === 'CYCLE_DIRECTOR_REPORT'
-                                                ? `/profesor/informe-director/${evaluation.id}`
-                                                : evaluation.evaluationType === 'FAMILY_INTERVIEW'
-                                                ? `/profesor/entrevista-familiar/${evaluation.id}`
-                                                : `/profesor/informe/${evaluation.id}`
-                                        )}
-                                    >
-                                        {evaluation.evaluationType === 'CYCLE_DIRECTOR_INTERVIEW'
-                                            ? (evaluation.status === EvaluationStatus.COMPLETED ? "Ver Entrevista" : "Crear Entrevista")
-                                            : evaluation.evaluationType === 'PSYCHOLOGICAL_INTERVIEW'
-                                            ? (evaluation.status === EvaluationStatus.COMPLETED ? "Ver Entrevista" : "Crear Entrevista")
-                                            : evaluation.evaluationType === 'FAMILY_INTERVIEW'
-                                            ? (evaluation.status === EvaluationStatus.COMPLETED ? "Ver Entrevista" : "Crear Entrevista")
-                                            : (evaluation.status === EvaluationStatus.COMPLETED ? "Ver Informe" : "Crear Informe")}
-                                    </Button>
                                 </div>
                             </div>
                         ))}
                     </div>
-                ) : (
-                    <p className="text-gris-piedra text-center py-4">
-                        No hay evaluaciones asignadas en este momento
-                    </p>
                 )}
             </Card>
         </div>
