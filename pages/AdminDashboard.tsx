@@ -199,30 +199,63 @@ const AdminDashboard: React.FC = () => {
 
   const loadApplications = async () => {
     try {
+      console.log('📦 [loadApplications] Iniciando carga de aplicaciones...');
       dispatch({ type: 'SET_LOADING', payload: true });
       // Use the applicationService which handles the API calls properly
       const applications = await applicationService.getAllApplications();
+      console.log(`✅ [loadApplications] ${applications.length} aplicaciones obtenidas del backend`);
 
       // Load evaluations for each application
       const applicationsWithEvaluations = await Promise.all(
         applications.map(async (app) => {
           try {
+            console.log(`🔍 [loadApplications] Cargando evaluaciones para application ${app.id} (${app.student?.firstName} ${app.student?.lastName})...`);
             const evaluations = await evaluationService.getEvaluationsByApplicationId(app.id);
+            console.log(`✅ [loadApplications] Application ${app.id}: ${evaluations.length} evaluaciones obtenidas`);
+
+            // Log detalles de evaluaciones académicas
+            const academicEvals = evaluations.filter(e =>
+              e.evaluationType === 'MATHEMATICS_EXAM' ||
+              e.evaluationType === 'LANGUAGE_EXAM' ||
+              e.evaluationType === 'ENGLISH_EXAM'
+            );
+            console.log(`📚 [loadApplications] Application ${app.id}: ${academicEvals.length} evaluaciones académicas (${academicEvals.map(e => `${e.evaluationType} - evaluator: ${e.evaluatorId}`).join(', ')})`);
+
             return { ...app, evaluations };
           } catch (error) {
-            console.error(`Error loading evaluations for application ${app.id}:`, error);
+            console.error(`❌ [loadApplications] Error loading evaluations for application ${app.id}:`, error);
+            console.error(`❌ [loadApplications] Error details:`, {
+              message: error.message,
+              response: error.response?.data,
+              status: error.response?.status
+            });
             return { ...app, evaluations: [] };
           }
         })
       );
 
+      console.log(`🎯 [loadApplications] Total aplicaciones con evaluaciones: ${applicationsWithEvaluations.length}`);
+      console.log(`📊 [loadApplications] Distribución de evaluaciones:`,
+        applicationsWithEvaluations.map(app => ({
+          id: app.id,
+          student: `${app.student?.firstName} ${app.student?.lastName}`,
+          totalEvals: app.evaluations?.length || 0,
+          academicEvals: app.evaluations?.filter((e: any) =>
+            e.evaluationType === 'MATHEMATICS_EXAM' ||
+            e.evaluationType === 'LANGUAGE_EXAM' ||
+            e.evaluationType === 'ENGLISH_EXAM'
+          ).length || 0
+        }))
+      );
+
       dispatch({ type: 'SET_APPLICATIONS', payload: applicationsWithEvaluations });
     } catch (error) {
-      console.error('Error loading applications:', error);
+      console.error('❌ [loadApplications] Error loading applications:', error);
       // applicationService already handles fallbacks, but set empty array if it fails completely
       dispatch({ type: 'SET_APPLICATIONS', payload: [] });
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
+      console.log('🏁 [loadApplications] Carga completada');
     }
   };
 
