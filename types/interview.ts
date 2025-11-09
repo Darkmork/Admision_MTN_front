@@ -265,6 +265,7 @@ export interface InterviewTableProps {
   onView: (interview: Interview) => void;
   onSendNotification?: (interview: Interview, type: 'scheduled' | 'confirmed' | 'reminder') => void;
   onSendReminder?: (interview: Interview) => void;
+  onRefreshDashboard?: () => void; // Callback to refresh parent dashboard data
   className?: string;
 }
 

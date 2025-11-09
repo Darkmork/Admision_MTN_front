@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
@@ -87,6 +87,12 @@ const ProfessorDashboard: React.FC = () => {
 
     // 🔄 Estado para forzar recarga de datos (cache busting)
     const [refreshKey, setRefreshKey] = useState(0);
+
+    // 🔄 Callback para refrescar dashboard desde componentes hijos
+    const handleRefreshDashboard = useCallback(() => {
+        console.log('🔄 Dashboard refresh triggered by child component');
+        setRefreshKey(prev => prev + 1);
+    }, []);
 
     // Estado para el tab activo en la sección de evaluaciones
     const [activeEvaluationTab, setActiveEvaluationTab] = useState<'academicas' | 'psicologicas' | 'familiares'>('psicologicas');

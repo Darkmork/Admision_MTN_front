@@ -48,6 +48,7 @@ const InterviewTable: React.FC<InterviewTableProps> = ({
   onView,
   onSendNotification,
   onSendReminder,
+  onRefreshDashboard,
   className = ''
 }) => {
   const [deletingId, setDeletingId] = React.useState<number | null>(null);
@@ -64,8 +65,15 @@ const InterviewTable: React.FC<InterviewTableProps> = ({
       const interviewService = (await import('../../services/interviewService')).default;
       await interviewService.cancelInterview(interview.id, 'Cancelada por administrador');
 
-      // Reload page to refresh the list
-      window.location.reload();
+      console.log('🔄 Interview cancelled successfully, triggering dashboard refresh');
+
+      // Use callback to refresh parent dashboard instead of full page reload
+      if (onRefreshDashboard) {
+        onRefreshDashboard();
+      } else {
+        // Fallback to page reload if callback not provided (backward compatibility)
+        window.location.reload();
+      }
     } catch (error) {
       console.error('Error cancelling interview:', error);
       alert(`Error al cancelar la entrevista: ${error instanceof Error ? error.message : 'Error desconocido'}`);
