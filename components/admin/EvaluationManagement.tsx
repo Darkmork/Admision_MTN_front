@@ -461,9 +461,7 @@ const CustomAssignmentModal: React.FC<CustomAssignmentModalProps> = ({
   const requiredEvaluations = [
     EvaluationType.LANGUAGE_EXAM,
     EvaluationType.MATHEMATICS_EXAM,
-    EvaluationType.ENGLISH_EXAM,
-    EvaluationType.CYCLE_DIRECTOR_REPORT,
-    EvaluationType.PSYCHOLOGICAL_INTERVIEW
+    EvaluationType.ENGLISH_EXAM
   ];
 
   useEffect(() => {
