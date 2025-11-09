@@ -15,7 +15,7 @@ import { ApplicantMetricsModal } from '../../../components/modals/ApplicantMetri
 export const CoordinatorDashboard: React.FC = () => {
   const [stats, setStats] = useState<DetailedAdminStats | null>(null);
   const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear() + 1);
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showApplicantMetrics, setShowApplicantMetrics] = useState(false);
@@ -61,7 +61,7 @@ export const CoordinatorDashboard: React.FC = () => {
         monthlyTrends: dashboardData.monthlyTrends || [],
         availableYears: dashboardData.availableYears?.length > 0
           ? dashboardData.availableYears
-          : [currentYear + 1]
+          : [currentYear]
       };
 
       setStats(normalizedData);
