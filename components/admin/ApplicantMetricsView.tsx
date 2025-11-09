@@ -5,7 +5,7 @@ import Badge from '../ui/Badge';
 import Button from '../ui/Button';
 import { dashboardClient } from '../../src/api/dashboard.client';
 import type { ApplicantMetric, ApplicantMetricsFilters } from '../../src/api/dashboard.types';
-import { PieChart, Pie, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList } from 'recharts';
 
 export const ApplicantMetricsView: React.FC = () => {
   const [applicants, setApplicants] = useState<ApplicantMetric[]>([]);
@@ -379,7 +379,7 @@ export const ApplicantMetricsView: React.FC = () => {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, percent }: { name?: string; percent?: number }) => `${name || ''}: ${Math.round((percent || 0) * 100)}%`}
+                label={({ percent }: { percent?: number }) => `${Math.round((percent || 0) * 100)}%`}
                 outerRadius={80}
                 fill="#8884d8"
                 dataKey="value"
@@ -389,6 +389,11 @@ export const ApplicantMetricsView: React.FC = () => {
                 ))}
               </Pie>
               <Tooltip />
+              <Legend
+                verticalAlign="bottom"
+                height={36}
+                formatter={(value, entry: any) => entry.payload.name}
+              />
             </PieChart>
           </ResponsiveContainer>
         </Card>
@@ -402,7 +407,9 @@ export const ApplicantMetricsView: React.FC = () => {
               <YAxis domain={[0, 100]} />
               <Tooltip />
               <Legend />
-              <Bar dataKey="promedio" fill="#3B82F6" name="Promedio (%)" />
+              <Bar dataKey="promedio" fill="#3B82F6" name="Promedio (%)">
+                <LabelList dataKey="promedio" position="top" formatter={(value: number) => `${value}%`} />
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </Card>
