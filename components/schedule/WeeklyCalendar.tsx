@@ -119,6 +119,13 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
           scheduleType: schedule.scheduleType
         });
 
+        // Validar que el día existe en nuestro calendario (solo Lunes-Viernes)
+        const validDays = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'];
+        if (!schedule.dayOfWeek || !validDays.includes(schedule.dayOfWeek)) {
+          console.log(`⚠️ [WeeklyCalendar] Día no soportado o inválido: ${schedule.dayOfWeek} (solo Lun-Vie)`);
+          return; // Skip este horario
+        }
+
         if (schedule.dayOfWeek && schedule.scheduleType === 'RECURRING') {
           // Normalizar tiempos para asegurar formato "08:00" (con cero adelante)
           // Esto previene problemas de comparación con tiempos como "8:00"
