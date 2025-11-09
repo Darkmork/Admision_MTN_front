@@ -14,6 +14,8 @@ export const ApplicantMetricsView: React.FC = () => {
   const [filters, setFilters] = useState<ApplicantMetricsFilters>({
     academicYear: new Date().getFullYear()
   });
+  const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
+  const [subjectDistribution, setSubjectDistribution] = useState<any[]>([]);
 
   useEffect(() => {
     console.log('🔄 [ApplicantMetricsView] useEffect triggered - filters changed:', filters);
@@ -169,6 +171,42 @@ export const ApplicantMetricsView: React.FC = () => {
 
   const uniqueGrades = [...new Set(applicants.map(a => a.gradeApplied))].sort();
   const uniqueStatuses = [...new Set(applicants.map(a => a.applicationStatus))];
+
+  const handleSubjectClick = (subjectName: string) => {
+    // Map display name to exam key
+    const subjectKeyMap: Record<string, 'mathematics' | 'language' | 'english'> = {
+      'Matemáticas': 'mathematics',
+      'Lenguaje': 'language',
+      'Inglés': 'english'
+    };
+
+    const subjectKey = subjectKeyMap[subjectName];
+    if (!subjectKey) return;
+
+    // Calculate distribution for this subject
+    const distribution = applicants.reduce((acc, app) => {
+      const exam = app.examScores?.[subjectKey];
+      if (!exam || !exam.percentage) {
+        acc.pendiente++;
+      } else {
+        const score = parseFloat(exam.percentage);
+        if (score >= 80) acc.excelente++;
+        else if (score >= 60) acc.bueno++;
+        else acc.regular++;
+      }
+      return acc;
+    }, { excelente: 0, bueno: 0, regular: 0, pendiente: 0 });
+
+    const distributionData = [
+      { name: 'Excelente (≥80%)', value: distribution.excelente, color: '#10B981' },
+      { name: 'Bueno (60-79%)', value: distribution.bueno, color: '#F59E0B' },
+      { name: 'Regular (<60%)', value: distribution.regular, color: '#EF4444' },
+      { name: 'Pendiente', value: distribution.pendiente, color: '#9CA3AF' }
+    ].filter(item => item.value > 0);
+
+    setSubjectDistribution(distributionData);
+    setSelectedSubject(subjectName);
+  };
 
   if (loading) {
     return (
@@ -400,14 +438,24 @@ export const ApplicantMetricsView: React.FC = () => {
 
         <Card className="p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Promedio por Examen</h3>
+          <p className="text-sm text-gray-500 mb-2">Haz clic en una barra para ver la distribución detallada</p>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={avgData}>
+            <BarChart data={avgData} onClick={(data) => {
+              if (data && data.activeLabel) {
+                handleSubjectClick(data.activeLabel);
+              }
+            }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
               <YAxis domain={[0, 100]} />
               <Tooltip />
               <Legend />
-              <Bar dataKey="promedio" fill="#3B82F6" name="Promedio (%)">
+              <Bar
+                dataKey="promedio"
+                fill="#3B82F6"
+                name="Promedio (%)"
+                cursor="pointer"
+              >
                 <LabelList dataKey="promedio" position="top" formatter={(value: number) => `${value}%`} />
               </Bar>
             </BarChart>
@@ -560,6 +608,93 @@ export const ApplicantMetricsView: React.FC = () => {
           )}
         </div>
       </Card>
+
+      {/* Modal de distribución por asignatura */}
+      {selectedSubject && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">
+                    Distribución de Rendimiento - {selectedSubject}
+                  </h3>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Basado en {applicants.length} postulantes
+                  </p>
+                </div>
+                <button
+                  onClick={() => setSelectedSubject(null)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <FiX className="h-6 w-6" />
+                </button>
+              </div>
+
+              <div className="mb-6">
+                <ResponsiveContainer width="100%" height={350}>
+                  <PieChart>
+                    <Pie
+                      data={subjectDistribution}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }: { name: string, percent?: number }) =>
+                        `${name}: ${Math.round((percent || 0) * 100)}%`
+                      }
+                      outerRadius={120}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {subjectDistribution.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="border-t pt-4">
+                <h4 className="font-semibold text-gray-900 mb-3">Desglose Detallado</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  {subjectDistribution.map((item, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-3 p-3 rounded-lg border"
+                      style={{ borderColor: item.color }}
+                    >
+                      <div
+                        className="w-4 h-4 rounded-full"
+                        style={{ backgroundColor: item.color }}
+                      ></div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">{item.name}</p>
+                        <p className="text-lg font-bold" style={{ color: item.color }}>
+                          {item.value} estudiantes
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {Math.round((item.value / applicants.length) * 100)}% del total
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => setSelectedSubject(null)}
+                  className="flex items-center gap-2"
+                >
+                  Cerrar
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
