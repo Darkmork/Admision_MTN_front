@@ -100,18 +100,31 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
   const loadSchedules = async () => {
     try {
       setLoading(true);
+      console.log(`🔍 [WeeklyCalendar] Cargando horarios para userId: ${userId}, año: 2025`);
       const schedules = await interviewerScheduleService.getInterviewerSchedulesByYear(userId, 2025);
+      console.log(`📊 [WeeklyCalendar] Horarios recibidos del backend:`, schedules);
+      console.log(`📈 [WeeklyCalendar] Total de horarios: ${schedules.length}`);
 
       // Inicializar calendario vacío
       const newSchedule = initializeEmptySchedule();
 
       // Marcar horarios existentes
+      let markedCount = 0;
       schedules.forEach((schedule: InterviewerSchedule) => {
+        console.log(`🔄 [WeeklyCalendar] Procesando schedule:`, {
+          id: schedule.id,
+          dayOfWeek: schedule.dayOfWeek,
+          startTime: schedule.startTime,
+          endTime: schedule.endTime,
+          scheduleType: schedule.scheduleType
+        });
+
         if (schedule.dayOfWeek && schedule.scheduleType === 'RECURRING') {
           // Normalizar tiempos para asegurar formato "08:00" (con cero adelante)
           // Esto previene problemas de comparación con tiempos como "8:00"
           const startTime = schedule.startTime.padStart(5, '0'); // "8:00" → "08:00"
           const endTime = schedule.endTime.padStart(5, '0');     // "8:30" → "08:30"
+          console.log(`⏰ [WeeklyCalendar] Tiempos normalizados - Start: ${startTime}, End: ${endTime}`);
 
           // Marcar todos los slots en el rango como ocupados
           timeSlots.forEach(slot => {
@@ -123,15 +136,21 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                   isSelected: false,
                   scheduleId: schedule.id
                 };
+                markedCount++;
+                console.log(`✅ [WeeklyCalendar] Marcado slot ${schedule.dayOfWeek} ${slot} con schedule ID ${schedule.id}`);
               }
             }
           });
+        } else {
+          console.log(`⚠️ [WeeklyCalendar] Schedule omitido - dayOfWeek: ${schedule.dayOfWeek}, tipo: ${schedule.scheduleType}`);
         }
       });
 
+      console.log(`✨ [WeeklyCalendar] Total de slots marcados: ${markedCount}`);
       setSchedule(newSchedule);
     } catch (error) {
-      console.error('Error loading schedules:', error);
+      console.error('❌ [WeeklyCalendar] Error loading schedules:', error);
+      console.error('❌ [WeeklyCalendar] Error details:', error);
     } finally {
       setLoading(false);
     }
