@@ -577,106 +577,108 @@ const AdmissionReportForm: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* III. RECOMENDACIONES - Sección final crítica para decisión de admisión */}
-                    <div className="mb-8">
-                        <h2 className="text-lg font-bold text-azul-monte-tabor mb-6 border-b-2 border-azul-monte-tabor pb-2">
-                            III. RECOMENDACIONES
-                        </h2>
+                    {/* III. RECOMENDACIONES - Solo para Director de Ciclo */}
+                    {evaluation?.evaluationType === 'CYCLE_DIRECTOR_INTERVIEW' && (
+                        <div className="mb-8">
+                            <h2 className="text-lg font-bold text-azul-monte-tabor mb-6 border-b-2 border-azul-monte-tabor pb-2">
+                                III. RECOMENDACIONES
+                            </h2>
 
-                        {/* Decisión de Admisión */}
-                        <div className="mb-6">
-                            <div className="bg-gradient-to-r from-green-50 to-blue-50 border-2 border-azul-monte-tabor rounded-lg p-5">
-                                <label className="block text-sm font-bold text-azul-monte-tabor mb-3">
-                                    Decisión de Admisión <span className="text-red-500">*</span>
-                                </label>
-                                <div className="space-y-3">
-                                    <label className="flex items-center gap-3 p-3 bg-white rounded-lg border-2 border-gray-200 cursor-pointer hover:border-green-500 hover:bg-green-50 transition-all">
-                                        <input
-                                            type="radio"
-                                            name="admissionDecision"
-                                            value="ACEPTADO"
-                                            checked={reportData.admissionDecision === 'ACEPTADO'}
-                                            onChange={(e) => updateReportData('admissionDecision', e.target.value)}
-                                            className="w-5 h-5 text-green-600"
-                                        />
-                                        <span className="font-semibold text-green-700">✓ Aceptación - Postulante cumple con los requisitos</span>
+                            {/* Decisión de Admisión */}
+                            <div className="mb-6">
+                                <div className="bg-gradient-to-r from-green-50 to-blue-50 border-2 border-azul-monte-tabor rounded-lg p-5">
+                                    <label className="block text-sm font-bold text-azul-monte-tabor mb-3">
+                                        Decisión de Admisión <span className="text-red-500">*</span>
                                     </label>
-                                    <label className="flex items-center gap-3 p-3 bg-white rounded-lg border-2 border-gray-200 cursor-pointer hover:border-yellow-500 hover:bg-yellow-50 transition-all">
-                                        <input
-                                            type="radio"
-                                            name="admissionDecision"
-                                            value="REPAROS"
-                                            checked={reportData.admissionDecision === 'REPAROS'}
-                                            onChange={(e) => updateReportData('admissionDecision', e.target.value)}
-                                            className="w-5 h-5 text-yellow-600"
-                                        />
-                                        <span className="font-semibold text-yellow-700">⚠ Con Reparos - Requiere seguimiento o condiciones</span>
+                                    <div className="space-y-3">
+                                        <label className="flex items-center gap-3 p-3 bg-white rounded-lg border-2 border-gray-200 cursor-pointer hover:border-green-500 hover:bg-green-50 transition-all">
+                                            <input
+                                                type="radio"
+                                                name="admissionDecision"
+                                                value="ACEPTADO"
+                                                checked={reportData.admissionDecision === 'ACEPTADO'}
+                                                onChange={(e) => updateReportData('admissionDecision', e.target.value)}
+                                                className="w-5 h-5 text-green-600"
+                                            />
+                                            <span className="font-semibold text-green-700">✓ Aceptación - Postulante cumple con los requisitos</span>
+                                        </label>
+                                        <label className="flex items-center gap-3 p-3 bg-white rounded-lg border-2 border-gray-200 cursor-pointer hover:border-yellow-500 hover:bg-yellow-50 transition-all">
+                                            <input
+                                                type="radio"
+                                                name="admissionDecision"
+                                                value="REPAROS"
+                                                checked={reportData.admissionDecision === 'REPAROS'}
+                                                onChange={(e) => updateReportData('admissionDecision', e.target.value)}
+                                                className="w-5 h-5 text-yellow-600"
+                                            />
+                                            <span className="font-semibold text-yellow-700">⚠ Con Reparos - Requiere seguimiento o condiciones</span>
+                                        </label>
+                                        <label className="flex items-center gap-3 p-3 bg-white rounded-lg border-2 border-gray-200 cursor-pointer hover:border-red-500 hover:bg-red-50 transition-all">
+                                            <input
+                                                type="radio"
+                                                name="admissionDecision"
+                                                value="NO_ACEPTADO"
+                                                checked={reportData.admissionDecision === 'NO_ACEPTADO'}
+                                                onChange={(e) => updateReportData('admissionDecision', e.target.value)}
+                                                className="w-5 h-5 text-red-600"
+                                            />
+                                            <span className="font-semibold text-red-700">✗ No Aceptación - Postulante no cumple requisitos</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Curso de Ingreso */}
+                            <div className="mb-6">
+                                <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
+                                    <label className="block text-sm font-bold text-azul-monte-tabor mb-2">
+                                        Curso de Ingreso Recomendado <span className="text-red-500">*</span>
                                     </label>
-                                    <label className="flex items-center gap-3 p-3 bg-white rounded-lg border-2 border-gray-200 cursor-pointer hover:border-red-500 hover:bg-red-50 transition-all">
-                                        <input
-                                            type="radio"
-                                            name="admissionDecision"
-                                            value="NO_ACEPTADO"
-                                            checked={reportData.admissionDecision === 'NO_ACEPTADO'}
-                                            onChange={(e) => updateReportData('admissionDecision', e.target.value)}
-                                            className="w-5 h-5 text-red-600"
-                                        />
-                                        <span className="font-semibold text-red-700">✗ No Aceptación - Postulante no cumple requisitos</span>
+                                    <select
+                                        value={reportData.entranceGrade}
+                                        onChange={(e) => updateReportData('entranceGrade', e.target.value)}
+                                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-azul-monte-tabor focus:border-azul-monte-tabor text-base font-medium"
+                                    >
+                                        <option value="">Seleccionar curso...</option>
+                                        <option value="PRE_KINDER">Pre-Kínder</option>
+                                        <option value="KINDER">Kínder</option>
+                                        <option value="1_BASICO">1° Básico</option>
+                                        <option value="2_BASICO">2° Básico</option>
+                                        <option value="3_BASICO">3° Básico</option>
+                                        <option value="4_BASICO">4° Básico</option>
+                                        <option value="5_BASICO">5° Básico</option>
+                                        <option value="6_BASICO">6° Básico</option>
+                                        <option value="7_BASICO">7° Básico</option>
+                                        <option value="8_BASICO">8° Básico</option>
+                                        <option value="I_MEDIO">I Medio</option>
+                                        <option value="II_MEDIO">II Medio</option>
+                                        <option value="III_MEDIO">III Medio</option>
+                                        <option value="IV_MEDIO">IV Medio</option>
+                                        <option value="NO_APLICA">No Aplica (No Aceptado)</option>
+                                    </select>
+                                    <p className="text-xs text-gray-600 mt-2">
+                                        Indicar el curso al que debería ingresar el estudiante si es aceptado
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Comentarios Finales */}
+                            <div className="mb-6">
+                                <div className="bg-purple-50 border-2 border-purple-200 rounded-lg p-4">
+                                    <label className="block text-sm font-bold text-azul-monte-tabor mb-2">
+                                        Comentarios y Observaciones Finales
                                     </label>
+                                    <textarea
+                                        rows={5}
+                                        value={reportData.finalRecommendations}
+                                        onChange={(e) => updateReportData('finalRecommendations', e.target.value)}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-azul-monte-tabor text-sm resize-y min-h-[120px]"
+                                        placeholder="Comentarios adicionales sobre la decisión de admisión, condiciones especiales, seguimiento requerido, etc..."
+                                    />
                                 </div>
                             </div>
                         </div>
-
-                        {/* Curso de Ingreso */}
-                        <div className="mb-6">
-                            <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
-                                <label className="block text-sm font-bold text-azul-monte-tabor mb-2">
-                                    Curso de Ingreso Recomendado <span className="text-red-500">*</span>
-                                </label>
-                                <select
-                                    value={reportData.entranceGrade}
-                                    onChange={(e) => updateReportData('entranceGrade', e.target.value)}
-                                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-azul-monte-tabor focus:border-azul-monte-tabor text-base font-medium"
-                                >
-                                    <option value="">Seleccionar curso...</option>
-                                    <option value="PRE_KINDER">Pre-Kínder</option>
-                                    <option value="KINDER">Kínder</option>
-                                    <option value="1_BASICO">1° Básico</option>
-                                    <option value="2_BASICO">2° Básico</option>
-                                    <option value="3_BASICO">3° Básico</option>
-                                    <option value="4_BASICO">4° Básico</option>
-                                    <option value="5_BASICO">5° Básico</option>
-                                    <option value="6_BASICO">6° Básico</option>
-                                    <option value="7_BASICO">7° Básico</option>
-                                    <option value="8_BASICO">8° Básico</option>
-                                    <option value="I_MEDIO">I Medio</option>
-                                    <option value="II_MEDIO">II Medio</option>
-                                    <option value="III_MEDIO">III Medio</option>
-                                    <option value="IV_MEDIO">IV Medio</option>
-                                    <option value="NO_APLICA">No Aplica (No Aceptado)</option>
-                                </select>
-                                <p className="text-xs text-gray-600 mt-2">
-                                    Indicar el curso al que debería ingresar el estudiante si es aceptado
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Comentarios Finales */}
-                        <div className="mb-6">
-                            <div className="bg-purple-50 border-2 border-purple-200 rounded-lg p-4">
-                                <label className="block text-sm font-bold text-azul-monte-tabor mb-2">
-                                    Comentarios y Observaciones Finales
-                                </label>
-                                <textarea
-                                    rows={5}
-                                    value={reportData.finalRecommendations}
-                                    onChange={(e) => updateReportData('finalRecommendations', e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-azul-monte-tabor text-sm resize-y min-h-[120px]"
-                                    placeholder="Comentarios adicionales sobre la decisión de admisión, condiciones especiales, seguimiento requerido, etc..."
-                                />
-                            </div>
-                        </div>
-                    </div>
+                    )}
 
                     {/* Información adicional para el pie */}
                     <div className="mt-8 pt-4 border-t border-gray-300 text-xs text-gray-600">
