@@ -20,7 +20,7 @@ export const CoordinatorDashboardModal: React.FC<CoordinatorDashboardModalProps>
 }) => {
   const [stats, setStats] = useState<DetailedAdminStats | null>(null);
   const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear() + 1);
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -67,7 +67,7 @@ export const CoordinatorDashboardModal: React.FC<CoordinatorDashboardModalProps>
         monthlyTrends: dashboardData.monthlyTrends || [],
         availableYears: dashboardData.availableYears?.length > 0
           ? dashboardData.availableYears
-          : [currentYear + 1]
+          : [currentYear]
       };
 
       setStats(normalizedData);
