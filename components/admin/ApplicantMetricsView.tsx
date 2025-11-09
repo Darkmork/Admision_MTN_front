@@ -16,18 +16,23 @@ export const ApplicantMetricsView: React.FC = () => {
   });
 
   useEffect(() => {
+    console.log('🔄 [ApplicantMetricsView] useEffect triggered - filters changed:', filters);
     loadApplicantMetrics();
   }, [filters]);
 
   const loadApplicantMetrics = async () => {
     try {
+      console.log('📡 [ApplicantMetricsView] loadApplicantMetrics - Iniciando carga con filtros:', filters);
       setLoading(true);
       const response = await dashboardClient.getApplicantMetrics(filters);
+      console.log('✅ [ApplicantMetricsView] Respuesta del backend:', response);
+      console.log(`📊 [ApplicantMetricsView] Total de postulantes obtenidos: ${response.data?.length || 0}`);
       setApplicants(response.data || []);
     } catch (error) {
-      console.error('Error loading applicant metrics:', error);
+      console.error('❌ [ApplicantMetricsView] Error loading applicant metrics:', error);
     } finally {
       setLoading(false);
+      console.log('🏁 [ApplicantMetricsView] Carga completada');
     }
   };
 
