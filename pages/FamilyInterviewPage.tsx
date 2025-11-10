@@ -5,6 +5,7 @@ import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import { FiArrowLeft, FiCheckCircle } from 'react-icons/fi';
 import { professorEvaluationService } from '../services/professorEvaluationService';
+import { familyInterviewService } from '../services/familyInterviewService';
 import FamilyInterviewForm, { FamilyInterviewData } from '../components/FamilyInterviewForm';
 import ParentQuestionnaireModal from '../components/interviews/ParentQuestionnaireModal';
 
@@ -92,21 +93,21 @@ const FamilyInterviewPage: React.FC = () => {
       setSaving(true);
       setError(null);
 
-      // Guardar los datos del formulario como JSON en el campo observations
-      // Y calcular el score total
-      const updateData = {
-        observations: JSON.stringify(data),
-        score: data.grandTotal,
-        status: 'COMPLETED',
-        completion_date: new Date().toISOString()
-      };
+      console.log('💾 Saving family interview data:', data);
 
-      await professorEvaluationService.updateEvaluation(parseInt(evaluationId), updateData);
+      // Use the correct endpoint: PUT /api/evaluations/:id/family-interview-data
+      // This endpoint expects { interviewData: {...} } and has INTERVIEWER role permission
+      const result = await familyInterviewService.saveInterviewData(
+        parseInt(evaluationId),
+        data
+      );
+
+      console.log('✅ Interview data saved successfully:', result);
 
       // Navigate back to dashboard
       navigate('/profesor');
     } catch (err: any) {
-      console.error('Error saving family interview:', err);
+      console.error('❌ Error saving family interview:', err);
       setError(err.message || 'Error al guardar la entrevista familiar');
       throw err; // Re-throw para que el formulario lo maneje
     } finally {
