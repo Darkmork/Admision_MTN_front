@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { vlog, verror, vwarn } from '../src/config/logging.config';
 import { useNavigate } from 'react-router-dom';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -199,19 +200,19 @@ const AdminDashboard: React.FC = () => {
 
   const loadApplications = async () => {
     try {
-      console.log('📦 [loadApplications] Iniciando carga de aplicaciones...');
+      vlog('📦 [loadApplications] Iniciando carga de aplicaciones...');
       dispatch({ type: 'SET_LOADING', payload: true });
       // Use the applicationService which handles the API calls properly
       const applications = await applicationService.getAllApplications();
-      console.log(`✅ [loadApplications] ${applications.length} aplicaciones obtenidas del backend`);
+      vlog(`✅ [loadApplications] ${applications.length} aplicaciones obtenidas del backend`);
 
       // Load evaluations for each application
       const applicationsWithEvaluations = await Promise.all(
         applications.map(async (app) => {
           try {
-            console.log(`🔍 [loadApplications] Cargando evaluaciones para application ${app.id} (${app.student?.firstName} ${app.student?.lastName})...`);
+            vlog(`🔍 [loadApplications] Cargando evaluaciones para application ${app.id} (${app.student?.firstName} ${app.student?.lastName})...`);
             const evaluations = await evaluationService.getEvaluationsByApplicationId(app.id);
-            console.log(`✅ [loadApplications] Application ${app.id}: ${evaluations.length} evaluaciones obtenidas`);
+            vlog(`✅ [loadApplications] Application ${app.id}: ${evaluations.length} evaluaciones obtenidas`);
 
             // Log detalles de evaluaciones académicas
             const academicEvals = evaluations.filter(e =>
@@ -219,12 +220,12 @@ const AdminDashboard: React.FC = () => {
               e.evaluationType === 'LANGUAGE_EXAM' ||
               e.evaluationType === 'ENGLISH_EXAM'
             );
-            console.log(`📚 [loadApplications] Application ${app.id}: ${academicEvals.length} evaluaciones académicas (${academicEvals.map(e => `${e.evaluationType} - evaluator: ${e.evaluatorId}`).join(', ')})`);
+            vlog(`📚 [loadApplications] Application ${app.id}: ${academicEvals.length} evaluaciones académicas (${academicEvals.map(e => `${e.evaluationType} - evaluator: ${e.evaluatorId}`).join(', ')})`);
 
             return { ...app, evaluations };
           } catch (error) {
-            console.error(`❌ [loadApplications] Error loading evaluations for application ${app.id}:`, error);
-            console.error(`❌ [loadApplications] Error details:`, {
+            verror(`❌ [loadApplications] Error loading evaluations for application ${app.id}:`, error);
+            verror(`❌ [loadApplications] Error details:`, {
               message: error.message,
               response: error.response?.data,
               status: error.response?.status
@@ -234,8 +235,8 @@ const AdminDashboard: React.FC = () => {
         })
       );
 
-      console.log(`🎯 [loadApplications] Total aplicaciones con evaluaciones: ${applicationsWithEvaluations.length}`);
-      console.log(`📊 [loadApplications] Distribución de evaluaciones:`,
+      vlog(`🎯 [loadApplications] Total aplicaciones con evaluaciones: ${applicationsWithEvaluations.length}`);
+      vlog(`📊 [loadApplications] Distribución de evaluaciones:`,
         applicationsWithEvaluations.map(app => ({
           id: app.id,
           student: `${app.student?.firstName} ${app.student?.lastName}`,
@@ -250,12 +251,12 @@ const AdminDashboard: React.FC = () => {
 
       dispatch({ type: 'SET_APPLICATIONS', payload: applicationsWithEvaluations });
     } catch (error) {
-      console.error('❌ [loadApplications] Error loading applications:', error);
+      verror('❌ [loadApplications] Error loading applications:', error);
       // applicationService already handles fallbacks, but set empty array if it fails completely
       dispatch({ type: 'SET_APPLICATIONS', payload: [] });
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
-      console.log('🏁 [loadApplications] Carga completada');
+      vlog('🏁 [loadApplications] Carga completada');
     }
   };
 
@@ -266,7 +267,7 @@ const AdminDashboard: React.FC = () => {
       // userService devuelve PagedResponse, necesitamos solo el contenido (solo staff del colegio)
       setUsers(usersData.content || []);
     } catch (error) {
-      console.error('Error cargando usuarios:', error);
+      verror('Error cargando usuarios:', error);
       addNotification({
         type: 'error',
         title: 'Error',
@@ -279,7 +280,7 @@ const AdminDashboard: React.FC = () => {
 
   // Transformar datos de Application a Postulante para el modal
   const transformApplicationToPostulante = (app: Application): any => {
-    console.log('🔄 transformApplicationToPostulante - app.student:', app.student);
+    vlog('🔄 transformApplicationToPostulante - app.student:', app.student);
 
     const birthDate = new Date(app.student.birthDate);
     const today = new Date();
@@ -288,7 +289,7 @@ const AdminDashboard: React.FC = () => {
                 (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate()) ? 1 : 0);
 
     const nombreCompleto = `${app.student.firstName} ${app.student.paternalLastName || app.student.lastName} ${app.student.maternalLastName || ''}`.trim();
-    console.log('✅ nombreCompleto construido:', nombreCompleto);
+    vlog('✅ nombreCompleto construido:', nombreCompleto);
 
     return {
       id: app.id,
@@ -371,7 +372,7 @@ const AdminDashboard: React.FC = () => {
             const evaluations = await evaluationService.getEvaluationsByApplicationId(app.id);
             return { ...app, evaluations };
           } catch (error) {
-            console.error(`Error loading evaluations for application ${app.id}:`, error);
+            verror(`Error loading evaluations for application ${app.id}:`, error);
             return { ...app, evaluations: [] };
           }
         })
@@ -379,7 +380,7 @@ const AdminDashboard: React.FC = () => {
 
       setAdminApplications(appsWithEvaluations);
     } catch (error) {
-      console.error('Error cargando postulaciones admin:', error);
+      verror('Error cargando postulaciones admin:', error);
       showApplicationToast('No se pudieron cargar las postulaciones', 'error');
     } finally {
       setIsLoadingAdminApplications(false);
@@ -394,8 +395,8 @@ const AdminDashboard: React.FC = () => {
 
   // Manejar asignación de evaluadores
   const handleAssignEvaluator = async (applicationId: number, assignments: any[]) => {
-    console.log(`🔧 handleAssignEvaluator called for application ${applicationId}`);
-    console.log('Assignments to create:', assignments);
+    vlog(`🔧 handleAssignEvaluator called for application ${applicationId}`);
+    vlog('Assignments to create:', assignments);
 
     try {
       // Usar Promise.allSettled en lugar de Promise.all para manejar errores individuales
@@ -413,8 +414,8 @@ const AdminDashboard: React.FC = () => {
       const successful = results.filter(r => r.status === 'fulfilled');
       const failed = results.filter(r => r.status === 'rejected');
 
-      console.log(`✅ ${successful.length} evaluaciones asignadas exitosamente`);
-      console.log(`❌ ${failed.length} evaluaciones fallaron`);
+      vlog(`✅ ${successful.length} evaluaciones asignadas exitosamente`);
+      vlog(`❌ ${failed.length} evaluaciones fallaron`);
 
       if (failed.length > 0) {
         // Si alguna falló, verificar si son errores 409 (duplicado)
@@ -423,12 +424,12 @@ const AdminDashboard: React.FC = () => {
         );
 
         if (duplicateErrors.length > 0) {
-          console.warn(`⚠️ ${duplicateErrors.length} evaluaciones ya existían (409 Conflict)`);
+          vwarn(`⚠️ ${duplicateErrors.length} evaluaciones ya existían (409 Conflict)`);
         }
 
         // Si todas las fallas fueron por duplicados, considerarlo como éxito parcial
         if (failed.length === duplicateErrors.length && successful.length > 0) {
-          console.log('✓ Algunas evaluaciones ya existían, pero se crearon las nuevas');
+          vlog('✓ Algunas evaluaciones ya existían, pero se crearon las nuevas');
         } else if (successful.length === 0) {
           // Si ninguna se creó y no todas son duplicados, lanzar error
           const firstError = (failed[0] as any).reason;
@@ -441,7 +442,7 @@ const AdminDashboard: React.FC = () => {
 
       // No mostrar notificación aquí, el modal ya la muestra
     } catch (error: any) {
-      console.error('❌ Error asignando evaluadores:', error);
+      verror('❌ Error asignando evaluadores:', error);
       // Re-lanzar el error para que el modal lo maneje
       throw error;
     }
@@ -482,12 +483,12 @@ Esta acción:
 
   // Funciones para manejar el modal de detalles
   const handleViewApplicationDetail = (app: Application) => {
-    console.log('🔍 handleViewApplicationDetail called with app:', app);
+    vlog('🔍 handleViewApplicationDetail called with app:', app);
     const postulante = transformApplicationToPostulante(app);
-    console.log('✅ Transformed postulante:', postulante);
+    vlog('✅ Transformed postulante:', postulante);
     setSelectedPostulante(postulante);
     setIsDetailModalOpen(true);
-    console.log('📖 Modal state set to open');
+    vlog('📖 Modal state set to open');
   };
 
   const handleCloseDetailModal = () => {
@@ -969,7 +970,7 @@ Esta acción:
           // TODO: Implementar edición si se necesita
         }}
         onScheduleInterview={(postulante, interviewType) => {
-          console.log('📅 onScheduleInterview called with:', { postulante, interviewType });
+          vlog('📅 onScheduleInterview called with:', { postulante, interviewType });
           handleCloseDetailModal();
           setScheduleInterviewModal({
             show: true,
@@ -1032,7 +1033,7 @@ Esta acción:
               onSubmit={async (data) => {
                 try {
                   setIsSchedulingInterview(true);
-                  console.log('📤 Submitting interview data:', data);
+                  vlog('📤 Submitting interview data:', data);
 
                   await interviewService.createInterview(data as any);
 
@@ -1044,7 +1045,7 @@ Esta acción:
                   setScheduleInterviewModal({ show: false, postulante: null, interviewType: undefined });
                   await loadAdminApplications(); // Reload to show updated interview status
                 } catch (error: any) {
-                  console.error('❌ Error scheduling interview:', error);
+                  verror('❌ Error scheduling interview:', error);
                   setApplicationToast({
                     message: error.message || 'Error al programar la entrevista',
                     type: 'error'
