@@ -569,9 +569,11 @@ export const ApplicantMetricsView: React.FC = () => {
                   <td className="px-4 py-4">
                     {applicant.familyInterviews && applicant.familyInterviews.length > 0 ? (
                       <div className="space-y-2">
-                        {/* Calculate average percentage from all interviews with scores */}
+                        {/* Calculate average percentage from COMPLETED interviews with scores */}
                         {(() => {
-                          const interviewsWithScores = applicant.familyInterviews.filter(i => i.score !== null && i.score !== undefined);
+                          const interviewsWithScores = applicant.familyInterviews.filter(
+                            i => i.status === 'COMPLETED' && i.score !== null && i.score !== undefined
+                          );
                           const totalPercentage = interviewsWithScores.reduce((sum, interview) => {
                             return sum + ((interview.score || 0) / 10) * 100;
                           }, 0);
@@ -581,12 +583,12 @@ export const ApplicantMetricsView: React.FC = () => {
 
                           return (
                             <>
-                              {/* Show average percentage badge at the top */}
+                              {/* Show average percentage badge at the top if there are completed interviews */}
                               {averagePercentage !== null && (
                                 <div className="mb-2">
                                   {getScoreBadge(averagePercentage, 'COMPLETED')}
                                   <div className="text-xs text-gray-500 mt-1">
-                                    Promedio de {interviewsWithScores.length} entrevista{interviewsWithScores.length !== 1 ? 's' : ''}
+                                    Promedio de {interviewsWithScores.length} entrevista{interviewsWithScores.length !== 1 ? 's' : ''} completada{interviewsWithScores.length !== 1 ? 's' : ''}
                                   </div>
                                 </div>
                               )}
@@ -596,8 +598,12 @@ export const ApplicantMetricsView: React.FC = () => {
                                 <div key={idx} className="text-xs border-t pt-1">
                                   <div className="font-medium text-gray-600">{interview.interviewerName}</div>
                                   <div className="flex items-center gap-2">
-                                    {getInterviewResultBadge(interview.result)}
-                                    {interview.score !== null && (
+                                    {/* Show status badge for scheduled interviews */}
+                                    {interview.status === 'SCHEDULED' && (
+                                      <Badge variant="warning">Programada</Badge>
+                                    )}
+                                    {interview.status === 'COMPLETED' && interview.result && getInterviewResultBadge(interview.result)}
+                                    {interview.status === 'COMPLETED' && interview.score !== null && (
                                       <span className="text-xs text-gray-500">
                                         {interview.score}/10 ({((interview.score / 10) * 100).toFixed(1)}%)
                                       </span>

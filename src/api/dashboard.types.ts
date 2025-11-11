@@ -159,6 +159,7 @@ export interface FamilyInterview {
   interviewerName: string;
   score: number | null;
   result: 'POSITIVE' | 'NEGATIVE' | 'NEUTRAL' | null;
+  status: 'SCHEDULED' | 'COMPLETED' | 'CANCELLED' | 'RESCHEDULED';
 }
 
 export interface DocumentMetrics {
