@@ -616,7 +616,7 @@ Esta acción:
                   setActiveSection('postulaciones');
                 }}
               >
-                <XCircleIcon className="w-8 h-8 text-red-500 mx-auto mb-2" />
+                <FiXCircle className="w-8 h-8 text-red-500 mx-auto mb-2" />
                 <p className="text-2xl font-bold text-red-600">
                   {applications.filter(app => app.status === 'REJECTED').length}
                 </p>
