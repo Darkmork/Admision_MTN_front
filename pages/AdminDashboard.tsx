@@ -598,20 +598,6 @@ Esta acción:
               <Card
                 className="p-4 text-center cursor-pointer hover:shadow-lg transition-shadow"
                 onClick={() => {
-                  setStatusFilter('EXAM_SCHEDULED');
-                  setActiveSection('postulaciones');
-                }}
-              >
-                <FiCalendar className="w-8 h-8 text-orange-500 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-orange-600">
-                  {applications.filter(app => app.status === 'EXAM_SCHEDULED' || app.status === 'INTERVIEW_SCHEDULED').length}
-                </p>
-                <p className="text-sm text-gris-piedra">Examen Programado</p>
-              </Card>
-
-              <Card
-                className="p-4 text-center cursor-pointer hover:shadow-lg transition-shadow"
-                onClick={() => {
                   setStatusFilter('APPROVED');
                   setActiveSection('postulaciones');
                 }}
@@ -621,6 +607,20 @@ Esta acción:
                   {applications.filter(app => app.status === 'APPROVED').length}
                 </p>
                 <p className="text-sm text-gris-piedra">Aprobadas</p>
+              </Card>
+
+              <Card
+                className="p-4 text-center cursor-pointer hover:shadow-lg transition-shadow"
+                onClick={() => {
+                  setStatusFilter('REJECTED');
+                  setActiveSection('postulaciones');
+                }}
+              >
+                <XCircleIcon className="w-8 h-8 text-red-500 mx-auto mb-2" />
+                <p className="text-2xl font-bold text-red-600">
+                  {applications.filter(app => app.status === 'REJECTED').length}
+                </p>
+                <p className="text-sm text-gris-piedra">Rechazadas</p>
               </Card>
             </div>
           </div>
