@@ -569,19 +569,45 @@ export const ApplicantMetricsView: React.FC = () => {
                   <td className="px-4 py-4">
                     {applicant.familyInterviews && applicant.familyInterviews.length > 0 ? (
                       <div className="space-y-2">
-                        {applicant.familyInterviews.map((interview, idx) => (
-                          <div key={idx} className="text-sm">
-                            <div className="font-medium text-gray-700">{interview.interviewerName}</div>
-                            <div className="flex items-center gap-2">
-                              {getInterviewResultBadge(interview.result)}
-                              {interview.score !== null && (
-                                <span className="text-xs text-gray-500">
-                                  Puntaje: {interview.score}/10
-                                </span>
+                        {/* Calculate average percentage from all interviews with scores */}
+                        {(() => {
+                          const interviewsWithScores = applicant.familyInterviews.filter(i => i.score !== null && i.score !== undefined);
+                          const totalPercentage = interviewsWithScores.reduce((sum, interview) => {
+                            return sum + ((interview.score || 0) / 10) * 100;
+                          }, 0);
+                          const averagePercentage = interviewsWithScores.length > 0
+                            ? (totalPercentage / interviewsWithScores.length).toFixed(1)
+                            : null;
+
+                          return (
+                            <>
+                              {/* Show average percentage badge at the top */}
+                              {averagePercentage !== null && (
+                                <div className="mb-2">
+                                  {getScoreBadge(averagePercentage, 'COMPLETED')}
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    Promedio de {interviewsWithScores.length} entrevista{interviewsWithScores.length !== 1 ? 's' : ''}
+                                  </div>
+                                </div>
                               )}
-                            </div>
-                          </div>
-                        ))}
+
+                              {/* Show individual interview details */}
+                              {applicant.familyInterviews.map((interview, idx) => (
+                                <div key={idx} className="text-xs border-t pt-1">
+                                  <div className="font-medium text-gray-600">{interview.interviewerName}</div>
+                                  <div className="flex items-center gap-2">
+                                    {getInterviewResultBadge(interview.result)}
+                                    {interview.score !== null && (
+                                      <span className="text-xs text-gray-500">
+                                        {interview.score}/10 ({((interview.score / 10) * 100).toFixed(1)}%)
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </>
+                          );
+                        })()}
                       </div>
                     ) : (
                       <Badge variant="warning">Sin entrevistas</Badge>
