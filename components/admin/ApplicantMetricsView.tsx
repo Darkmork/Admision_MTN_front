@@ -121,12 +121,21 @@ export const ApplicantMetricsView: React.FC = () => {
       const langScore = parseFloat(app.examScores?.language?.percentage || '0');
       const engScore = parseFloat(app.examScores?.english?.percentage || '0');
 
-      const avgScore = (mathScore + langScore + engScore) / 3;
+      // Count only exams with scores (not 0)
+      const scores = [mathScore, langScore, engScore].filter(score => score > 0);
+
+      // If no scores at all, mark as pending
+      if (scores.length === 0) {
+        acc.pendiente++;
+        return acc;
+      }
+
+      // Calculate average only from exams with scores
+      const avgScore = scores.reduce((sum, score) => sum + score, 0) / scores.length;
 
       if (avgScore >= 80) acc.excelente++;
       else if (avgScore >= 60) acc.bueno++;
-      else if (avgScore > 0) acc.regular++;
-      else acc.pendiente++;
+      else acc.regular++;
 
       return acc;
     }, { excelente: 0, bueno: 0, regular: 0, pendiente: 0 });
