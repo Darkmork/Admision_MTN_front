@@ -801,6 +801,40 @@ class ApplicationService {
             throw new Error('Error de conexión al guardar el formulario complementario');
         }
     }
+
+    /**
+     * Mark that document notification was sent for an application
+     * This also automatically updates documentosCompletos field based on document approval status
+     */
+    async markDocumentNotificationSent(applicationId: number): Promise<any> {
+        try {
+            console.log(`📝 Marking document notification as sent for application ${applicationId}`);
+
+            const response = await api.patch(
+                `/api/applications/${applicationId}/document-notification-sent`
+            );
+
+            console.log('✅ Document notification marked successfully:', response.data);
+            return response.data;
+
+        } catch (error: any) {
+            console.error('❌ Error marking document notification:', error);
+
+            if (error.response) {
+                const { status, data } = error.response;
+                switch (status) {
+                    case 404:
+                        throw new Error('Postulación no encontrada');
+                    case 403:
+                        throw new Error('No tienes permisos para realizar esta acción');
+                    default:
+                        throw new Error(data.error || 'Error al marcar notificación de documentos');
+                }
+            }
+
+            throw new Error('Error de conexión al marcar notificación de documentos');
+        }
+    }
 }
 
 export const applicationService = new ApplicationService();

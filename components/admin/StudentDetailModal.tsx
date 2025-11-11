@@ -588,6 +588,16 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
             console.log('📧 Respuesta del servicio de email:', response);
 
             if (response.success) {
+                // STEP 3: Mark that notification was sent in database
+                console.log('📝 Marking document notification as sent in database...');
+                try {
+                    const markResponse = await applicationService.markDocumentNotificationSent(postulante.id);
+                    console.log('✅ Document notification marked:', markResponse);
+                } catch (markError: any) {
+                    console.error('⚠️ Error marking notification (non-critical):', markError);
+                    // Don't block the user flow if this fails
+                }
+
                 // Mensaje según el contexto
                 let successMessage;
                 if (allApproved) {
@@ -606,7 +616,7 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                     message: successMessage
                 });
 
-                // STEP 3: Refresh application data to show updated approval status with locked state
+                // STEP 4: Refresh application data to show updated approval status with locked state
                 await loadFullApplication();
             } else {
                 console.error('❌ Error en respuesta del servicio:', response);
@@ -1595,6 +1605,34 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Notification Sent Indicator */}
+                            {fullApplication.lastDocumentNotificationAt && (
+                                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                                    <div className="flex items-start gap-3">
+                                        <FiCheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
+                                        <div className="flex-1">
+                                            <p className="font-medium text-green-900 mb-1">
+                                                ✅ Notificación ya enviada
+                                            </p>
+                                            <p className="text-sm text-green-700">
+                                                Última notificación enviada el{' '}
+                                                {new Date(fullApplication.lastDocumentNotificationAt).toLocaleDateString('es-CL', {
+                                                    year: 'numeric',
+                                                    month: 'long',
+                                                    day: 'numeric',
+                                                    hour: '2-digit',
+                                                    minute: '2-digit'
+                                                })}
+                                            </p>
+                                            <p className="text-xs text-green-600 mt-1">
+                                                Puedes enviar otra notificación si hay cambios nuevos en los documentos
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             <Button
                                 variant="primary"
                                 size="lg"
@@ -1605,7 +1643,7 @@ const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                                 className="w-full"
                             >
                                 <FiMail className="w-5 h-5 mr-2" />
-                                Enviar Notificación al Apoderado
+                                {fullApplication.lastDocumentNotificationAt ? 'Reenviar Notificación al Apoderado' : 'Enviar Notificación al Apoderado'}
                             </Button>
                         </div>
                     </>
