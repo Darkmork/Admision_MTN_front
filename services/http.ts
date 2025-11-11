@@ -114,7 +114,7 @@ class HttpClient {
               ...config.headers,
               'X-CSRF-Token': csrfToken,
             };
-            console.log(`🛡️ http.ts - Added CSRF token to ${method} request:`, csrfToken.substring(0, 20) + '...');
+            // console.log(`🛡️ http.ts - Added CSRF token to ${method} request:`, csrfToken.substring(0, 20) + '...');
           } catch (error) {
             console.error('❌ http.ts - Failed to get CSRF token:', error);
             // Continue without CSRF - backend will reject if required

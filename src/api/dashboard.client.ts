@@ -287,11 +287,11 @@ class DashboardClient {
         { params }
       );
 
-      console.log('📥 [dashboardClient] Respuesta del servidor:', {
-        success: response.data.success,
-        totalRecords: response.data.data?.length || 0,
-        filters: response.data.filters
-      });
+      // console.log('📥 [dashboardClient] Respuesta del servidor:', {
+      //   success: response.data.success,
+      //   totalRecords: response.data.data?.length || 0,
+      //   filters: response.data.filters
+      // });
 
       return response.data;
     } catch (error: any) {

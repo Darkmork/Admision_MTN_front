@@ -346,7 +346,7 @@ class EvaluationService {
             const response = await api.get('/api/evaluations');
 
             if (response.data.success) {
-                console.log(`✅ ${response.data.count} evaluaciones obtenidas`);
+                // console.log(`✅ ${response.data.count} evaluaciones obtenidas`);
                 return response.data.data;
             }
 
@@ -399,8 +399,8 @@ class EvaluationService {
 
             // Backend returns { success: true, data: [...] }
             const evaluations = response.data.data || response.data;
-            console.log(`✅ ${evaluations.length} evaluaciones obtenidas`);
-            console.log('Evaluaciones:', evaluations);
+            // console.log(`✅ ${evaluations.length} evaluaciones obtenidas`);
+            // console.log('Evaluaciones:', evaluations);
             return evaluations;
         } catch (error: any) {
             console.error('❌ Error obteniendo evaluaciones por application:', error);
@@ -514,7 +514,7 @@ class EvaluationService {
             const response = await api.get(`/api/evaluations/evaluator/${evaluatorId}`);
 
             if (response.data.success) {
-                console.log(`✅ ${response.data.count} evaluaciones obtenidas`);
+                // console.log(`✅ ${response.data.count} evaluaciones obtenidas`);
                 return response.data.data;
             }
 

@@ -209,9 +209,9 @@ const AdminDashboard: React.FC = () => {
       const applicationsWithEvaluations = await Promise.all(
         applications.map(async (app) => {
           try {
-            console.log(`🔍 [loadApplications] Cargando evaluaciones para application ${app.id} (${app.student?.firstName} ${app.student?.lastName})...`);
+            // console.log(`🔍 [loadApplications] Cargando evaluaciones para application ${app.id} (${app.student?.firstName} ${app.student?.lastName})...`);
             const evaluations = await evaluationService.getEvaluationsByApplicationId(app.id);
-            console.log(`✅ [loadApplications] Application ${app.id}: ${evaluations.length} evaluaciones obtenidas`);
+            // console.log(`✅ [loadApplications] Application ${app.id}: ${evaluations.length} evaluaciones obtenidas`);
 
             // Log detalles de evaluaciones académicas
             const academicEvals = evaluations.filter(e =>
@@ -219,7 +219,7 @@ const AdminDashboard: React.FC = () => {
               e.evaluationType === 'LANGUAGE_EXAM' ||
               e.evaluationType === 'ENGLISH_EXAM'
             );
-            console.log(`📚 [loadApplications] Application ${app.id}: ${academicEvals.length} evaluaciones académicas (${academicEvals.map(e => `${e.evaluationType} - evaluator: ${e.evaluatorId}`).join(', ')})`);
+            // console.log(`📚 [loadApplications] Application ${app.id}: ${academicEvals.length} evaluaciones académicas (${academicEvals.map(e => `${e.evaluationType} - evaluator: ${e.evaluatorId}`).join(', ')})`);
 
             return { ...app, evaluations };
           } catch (error) {
