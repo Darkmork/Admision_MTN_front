@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { vlog, verror, vwarn } from '../src/config/logging.config';
 import { csrfService } from './csrfService';
 import { getApiBaseUrl } from '../config/api.config';
 
@@ -44,7 +45,7 @@ api.interceptors.request.use(
         // This bypasses the gateway which is having redirect issues
         if (config.url && config.url.includes('/api/email/')) {
             runtimeBaseURL = 'https://notification-service-production-3411.up.railway.app';
-            console.log('📧 Using direct notification-service URL for email endpoint');
+            vlog('📧 Using direct notification-service URL for email endpoint');
         }
 
         // Build full URL if config.url is relative
@@ -55,8 +56,8 @@ api.interceptors.request.use(
         const url = config.url || '';
         const isPublic = isPublicRoute(url);
 
-        console.log(`📤 api.ts - Runtime baseURL: ${runtimeBaseURL}`);
-        console.log(`🔍 API Request: ${url} - Is Public: ${isPublic}`);
+        vlog(`📤 api.ts - Runtime baseURL: ${runtimeBaseURL}`);
+        vlog(`🔍 API Request: ${url} - Is Public: ${isPublic}`);
 
         // Solo agregar token de autenticación si NO es una ruta pública
         if (!isPublic) {
@@ -70,35 +71,35 @@ api.interceptors.request.use(
 
             if (token) {
                 config.headers.Authorization = `Bearer ${token}`;
-                console.log(`🔑 Added auth token for private route`);
+                vlog(`🔑 Added auth token for private route`);
             } else {
-                console.log(`❓ No token found for private route`);
+                vlog(`❓ No token found for private route`);
             }
         } else {
-            console.log(`🌐 Public route - no auth required`);
+            vlog(`🌐 Public route - no auth required`);
         }
 
         // Add CSRF token for POST, PUT, DELETE, PATCH requests
         const method = (config.method || 'get').toUpperCase();
         const needsCsrf = ['POST', 'PUT', 'DELETE', 'PATCH'].includes(method);
 
-        console.log(`🔒 CSRF Check - Method: ${method}, NeedsCsrf: ${needsCsrf}, URL: ${url}`);
+        vlog(`🔒 CSRF Check - Method: ${method}, NeedsCsrf: ${needsCsrf}, URL: ${url}`);
 
         // Skip CSRF token for CSRF token endpoint itself
         if (needsCsrf && !url.includes('/csrf-token')) {
-            console.log(`🔒 Attempting to get CSRF token for ${method} request...`);
+            vlog(`🔒 Attempting to get CSRF token for ${method} request...`);
             try {
                 const csrfHeaders = await csrfService.getCsrfHeaders();
-                console.log(`🔒 CSRF headers received:`, csrfHeaders);
+                vlog(`🔒 CSRF headers received:`, csrfHeaders);
                 config.headers['X-CSRF-Token'] = csrfHeaders['X-CSRF-Token'];
-                console.log(`🛡️ Added CSRF token to ${method} request`);
+                vlog(`🛡️ Added CSRF token to ${method} request`);
             } catch (error) {
-                console.error('❌ Failed to get CSRF token:', error);
-                console.error('❌ Error details:', error);
+                verror('❌ Failed to get CSRF token:', error);
+                verror('❌ Error details:', error);
                 // Continue without CSRF token - backend will reject the request
             }
         } else {
-            console.log(`🔒 Skipping CSRF token - needsCsrf: ${needsCsrf}, isCSRFEndpoint: ${url.includes('/csrf-token')}`);
+            vlog(`🔒 Skipping CSRF token - needsCsrf: ${needsCsrf}, isCSRFEndpoint: ${url.includes('/csrf-token')}`);
         }
 
         return config;
@@ -113,25 +114,25 @@ api.interceptors.response.use(
     (response) => {
         // DEFENSIVE: Validate response exists before returning
         if (!response) {
-            console.error('❌ api.ts interceptor: response is undefined');
+            verror('❌ api.ts interceptor: response is undefined');
             return Promise.reject(new Error('No se recibió respuesta del servidor'));
         }
         return response;
     },
     (error) => {
-        console.error('API Error:', error);
+        verror('API Error:', error);
 
         if (error.response) {
             // El servidor respondió con un código de estado fuera del rango 2xx
             // DEFENSIVE: Validate error.response.data exists before accessing
-            console.error('Error response:', error.response?.data || 'No response data');
-            console.error('Error status:', error.response.status);
-            console.error('Error headers:', error.response.headers);
-            console.error('Request data:', error.config?.data || 'No request data');
+            verror('Error response:', error.response?.data || 'No response data');
+            verror('Error status:', error.response.status);
+            verror('Error headers:', error.response.headers);
+            verror('Request data:', error.config?.data || 'No request data');
             
             // Si es 401, limpiar la sesión correspondiente y redirigir
             if (error.response.status === 401) {
-                console.warn('🔐 JWT token expired or invalid - cleaning session');
+                vwarn('🔐 JWT token expired or invalid - cleaning session');
 
                 // Limpiar token de usuario regular
                 localStorage.removeItem('auth_token');
@@ -151,7 +152,7 @@ api.interceptors.response.use(
                                      requestUrl.includes('/api/auth/register');
 
                 if (!isLoginPage && !isPublicRoute) {
-                    console.warn('🔄 Redirecting to login due to expired token');
+                    vwarn('🔄 Redirecting to login due to expired token');
                     // Usar setTimeout para evitar problemas con el contexto de React
                     setTimeout(() => {
                         if (currentPath.includes('/admin') || currentPath.includes('/profesor')) {
@@ -168,17 +169,17 @@ api.interceptors.response.use(
                 // DEFENSIVE: Use optional chaining for error.response.data
                 const errorMessage = String(error.response?.data?.error || error.response?.data?.message || '');
                 if (errorMessage.toLowerCase().includes('csrf') || errorMessage.toLowerCase().includes('invalid token')) {
-                    console.warn('🛡️ CSRF token invalid or missing - clearing token');
+                    vwarn('🛡️ CSRF token invalid or missing - clearing token');
                     csrfService.clearToken();
                     // El próximo request automáticamente obtendrá un nuevo token
                 }
             }
         } else if (error.request) {
             // La petición fue hecha pero no se recibió respuesta
-            console.error('No response received:', error.request);
+            verror('No response received:', error.request);
         } else {
             // Algo pasó al configurar la petición
-            console.error('Request setup error:', error.message);
+            verror('Request setup error:', error.message);
         }
         
         return Promise.reject(error);

@@ -1,4 +1,5 @@
 /**
+import { vlog, verror, vwarn } from '../src/config/logging.config';
  * API Configuration
  * Runtime detection of deployment environment
  *
@@ -32,7 +33,7 @@ export function getApiBaseUrl(): string {
   try {
     // DEFENSIVE: Check if we're in a browser environment
     if (typeof window === 'undefined') {
-      console.warn('[API Config] Not in browser environment, using localhost');
+      vwarn('[API Config] Not in browser environment, using localhost');
       return 'http://localhost:8080';
     }
 
@@ -44,12 +45,12 @@ export function getApiBaseUrl(): string {
     const hostnameStr = String(hostname);
 
     // Debug logging (side effect prevents tree-shaking)
-    console.log('[API Config] ========================================');
-    console.log('[API Config] Full location:', location.href);
-    console.log('[API Config] Hostname detected:', hostnameStr);
-    console.log('[API Config] Protocol:', location.protocol);
-    console.log('[API Config] Port:', location.port);
-    console.log('[API Config] ========================================');
+    vlog('[API Config] ========================================');
+    vlog('[API Config] Full location:', location.href);
+    vlog('[API Config] Hostname detected:', hostnameStr);
+    vlog('[API Config] Protocol:', location.protocol);
+    vlog('[API Config] Port:', location.port);
+    vlog('[API Config] ========================================');
 
     // Railway backend URL (production) - Gateway Service
     const RAILWAY_URL = 'https://gateway-service-production-a753.up.railway.app';
@@ -57,27 +58,27 @@ export function getApiBaseUrl(): string {
     // DEFENSIVE: Use indexOf instead of includes for compatibility
     // Vercel deployment detection
     const isVercel = hostnameStr.indexOf('vercel.app') !== -1;
-    console.log('[API Config] Is Vercel?', isVercel, '(checking for "vercel.app" in', hostnameStr, ')');
+    vlog('[API Config] Is Vercel?', isVercel, '(checking for "vercel.app" in', hostnameStr, ')');
 
     if (isVercel) {
-      console.log('[API Config] ✅ Vercel deployment detected → Railway backend');
-      console.log('[API Config] Returning:', RAILWAY_URL);
+      vlog('[API Config] ✅ Vercel deployment detected → Railway backend');
+      vlog('[API Config] Returning:', RAILWAY_URL);
       return RAILWAY_URL;
     }
 
     // Custom production domains
     if (hostnameStr === 'admision.mtn.cl' || hostnameStr === 'admin.mtn.cl') {
-      console.log('[API Config] Production domain detected → Railway backend');
+      vlog('[API Config] Production domain detected → Railway backend');
       return RAILWAY_URL;
     }
 
     // Default to localhost for development
-    console.log('[API Config] ⚠️  No match found, defaulting to localhost');
-    console.log('[API Config] Hostname was:', hostnameStr);
+    vlog('[API Config] ⚠️  No match found, defaulting to localhost');
+    vlog('[API Config] Hostname was:', hostnameStr);
     return 'http://localhost:8080';
   } catch (error) {
     // Fallback for any unexpected errors
-    console.error('[API Config] Error detecting environment:', error);
+    verror('[API Config] Error detecting environment:', error);
     return 'http://localhost:8080';
   }
 }
@@ -86,6 +87,6 @@ export function getApiBaseUrl(): string {
 // This forces the bundler to keep the function
 export const API_CONFIG_VERSION = '2.0-runtime-detection';
 export const debugApiConfig = () => {
-  console.log('API Config Version:', API_CONFIG_VERSION);
-  console.log('Current Base URL:', getApiBaseUrl());
+  vlog('API Config Version:', API_CONFIG_VERSION);
+  vlog('Current Base URL:', getApiBaseUrl());
 };

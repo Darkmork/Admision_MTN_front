@@ -1,4 +1,5 @@
 import api from './api';
+import { vlog, verror, vwarn } from '../src/config/logging.config';
 import {
   User,
   CreateUserRequest,
@@ -20,7 +21,7 @@ class UserService {
    */
   async getAllUsers(filters: UserFilters = {}): Promise<PagedResponse<User>> {
     try {
-      console.log('👥 Obteniendo usuarios desde microservicio:', filters);
+      vlog('👥 Obteniendo usuarios desde microservicio:', filters);
 
       const params = new URLSearchParams();
       
@@ -33,16 +34,16 @@ class UserService {
 
       const response = await api.get(`/api/users?${params.toString()}`);
       
-      console.log('✅ Respuesta cruda del microservicio:', response.data);
+      vlog('✅ Respuesta cruda del microservicio:', response.data);
       
       // Usar el adaptador para convertir datos simples a estructura compleja
       const adaptedResponse = DataAdapter.adaptUserApiResponse(response);
       
-      console.log('✅ Usuarios adaptados exitosamente:', adaptedResponse.content.length);
+      vlog('✅ Usuarios adaptados exitosamente:', adaptedResponse.content.length);
       return adaptedResponse;
 
     } catch (error: any) {
-      console.error('❌ Error obteniendo usuarios del microservicio:', error);
+      verror('❌ Error obteniendo usuarios del microservicio:', error);
       throw this.handleError(error, 'Error al obtener los usuarios');
     }
   }
@@ -52,21 +53,21 @@ class UserService {
    */
   async getUserById(id: number): Promise<User> {
     try {
-      console.log('👤 Obteniendo usuario por ID:', id);
+      vlog('👤 Obteniendo usuario por ID:', id);
 
       const response = await api.get(`/api/users/${id}`);
 
       // DEFENSIVE: Validate response exists
       if (!response || !response.data) {
-        console.error('❌ getUserById: response or response.data is undefined');
+        verror('❌ getUserById: response or response.data is undefined');
         throw new Error('No se recibió respuesta válida del servidor');
       }
 
-      console.log('✅ Usuario obtenido exitosamente');
+      vlog('✅ Usuario obtenido exitosamente');
       return response.data;
 
     } catch (error: any) {
-      console.error('❌ Error obteniendo usuario:', error);
+      verror('❌ Error obteniendo usuario:', error);
       throw this.handleError(error, 'Error al obtener el usuario');
     }
   }
@@ -76,21 +77,21 @@ class UserService {
    */
   async createUser(request: CreateUserRequest): Promise<User> {
     try {
-      console.log('➕ Creando usuario:', request.email);
+      vlog('➕ Creando usuario:', request.email);
 
       const response = await api.post('/api/users', request);
 
       // DEFENSIVE: Validate response exists
       if (!response || !response.data) {
-        console.error('❌ createUser: response or response.data is undefined');
+        verror('❌ createUser: response or response.data is undefined');
         throw new Error('No se recibió respuesta válida del servidor');
       }
 
-      console.log('✅ Usuario creado exitosamente');
+      vlog('✅ Usuario creado exitosamente');
       return response.data;
 
     } catch (error: any) {
-      console.error('❌ Error creando usuario:', error);
+      verror('❌ Error creando usuario:', error);
       throw this.handleError(error, 'Error al crear el usuario');
     }
   }
@@ -100,21 +101,21 @@ class UserService {
    */
   async updateUser(id: number, request: UpdateUserRequest): Promise<User> {
     try {
-      console.log('✏️ Actualizando usuario:', id);
+      vlog('✏️ Actualizando usuario:', id);
 
       const response = await api.put(`/api/users/${id}`, request);
 
       // DEFENSIVE: Validate response exists
       if (!response || !response.data) {
-        console.error('❌ updateUser: response or response.data is undefined');
+        verror('❌ updateUser: response or response.data is undefined');
         throw new Error('No se recibió respuesta válida del servidor');
       }
 
-      console.log('✅ Usuario actualizado exitosamente');
+      vlog('✅ Usuario actualizado exitosamente');
       return response.data;
 
     } catch (error: any) {
-      console.error('❌ Error actualizando usuario:', error);
+      verror('❌ Error actualizando usuario:', error);
       throw this.handleError(error, 'Error al actualizar el usuario');
     }
   }
@@ -124,14 +125,14 @@ class UserService {
    */
   async deactivateUser(id: number): Promise<void> {
     try {
-      console.log('🔒 Desactivando usuario:', id);
+      vlog('🔒 Desactivando usuario:', id);
 
       await api.put(`/api/users/${id}/deactivate`);
       
-      console.log('✅ Usuario desactivado exitosamente');
+      vlog('✅ Usuario desactivado exitosamente');
 
     } catch (error: any) {
-      console.error('❌ Error desactivando usuario:', error);
+      verror('❌ Error desactivando usuario:', error);
       throw this.handleError(error, 'Error al desactivar el usuario');
     }
   }
@@ -141,14 +142,14 @@ class UserService {
    */
   async deleteUser(id: number): Promise<void> {
     try {
-      console.log('🗑️ Eliminando usuario permanentemente:', id);
+      vlog('🗑️ Eliminando usuario permanentemente:', id);
 
       await api.delete(`/api/users/${id}`);
       
-      console.log('✅ Usuario eliminado permanentemente');
+      vlog('✅ Usuario eliminado permanentemente');
 
     } catch (error: any) {
-      console.error('❌ Error eliminando usuario:', error);
+      verror('❌ Error eliminando usuario:', error);
       throw this.handleError(error, 'Error al eliminar el usuario');
     }
   }
@@ -158,21 +159,21 @@ class UserService {
    */
   async activateUser(id: number): Promise<User> {
     try {
-      console.log('🔓 Activando usuario:', id);
+      vlog('🔓 Activando usuario:', id);
 
       const response = await api.put(`/api/users/${id}/activate`);
 
       // DEFENSIVE: Validate response exists
       if (!response || !response.data) {
-        console.error('❌ activateUser: response or response.data is undefined');
+        verror('❌ activateUser: response or response.data is undefined');
         throw new Error('No se recibió respuesta válida del servidor');
       }
 
-      console.log('✅ Usuario activado exitosamente');
+      vlog('✅ Usuario activado exitosamente');
       return response.data;
 
     } catch (error: any) {
-      console.error('❌ Error activando usuario:', error);
+      verror('❌ Error activando usuario:', error);
       throw this.handleError(error, 'Error al activar el usuario');
     }
   }
@@ -182,14 +183,14 @@ class UserService {
    */
   async resetUserPassword(id: number): Promise<void> {
     try {
-      console.log('🔑 Restableciendo contraseña:', id);
+      vlog('🔑 Restableciendo contraseña:', id);
 
       await api.put(`/api/users/${id}/reset-password`);
       
-      console.log('✅ Contraseña restablecida exitosamente');
+      vlog('✅ Contraseña restablecida exitosamente');
 
     } catch (error: any) {
-      console.error('❌ Error restableciendo contraseña:', error);
+      verror('❌ Error restableciendo contraseña:', error);
       throw this.handleError(error, 'Error al restablecer la contraseña');
     }
   }
@@ -199,22 +200,22 @@ class UserService {
    */
   async getAllRoles(): Promise<UserRole[]> {
     try {
-      console.log('📋 Obteniendo roles disponibles');
+      vlog('📋 Obteniendo roles disponibles');
 
       const response = await api.get('/api/users/roles');
 
       // DEFENSIVE: Validate response exists
       if (!response || !response.data) {
-        console.error('❌ getAllRoles: response or response.data is undefined');
+        verror('❌ getAllRoles: response or response.data is undefined');
         // Fallback a los roles definidos en el frontend
         return Object.values(UserRole);
       }
 
-      console.log('✅ Roles obtenidos exitosamente');
+      vlog('✅ Roles obtenidos exitosamente');
       return response.data;
 
     } catch (error: any) {
-      console.error('❌ Error obteniendo roles:', error);
+      verror('❌ Error obteniendo roles:', error);
       // Fallback a los roles definidos en el frontend
       return Object.values(UserRole);
     }
@@ -225,21 +226,21 @@ class UserService {
    */
   async getUserStats(): Promise<UserStats> {
     try {
-      console.log('📊 Obteniendo estadísticas de usuarios');
+      vlog('📊 Obteniendo estadísticas de usuarios');
 
       const response = await api.get('/api/users/stats');
 
       // DEFENSIVE: Validate response exists
       if (!response || !response.data) {
-        console.error('❌ getUserStats: response or response.data is undefined');
+        verror('❌ getUserStats: response or response.data is undefined');
         throw new Error('No se recibió respuesta válida del servidor');
       }
 
-      console.log('✅ Estadísticas obtenidas exitosamente');
+      vlog('✅ Estadísticas obtenidas exitosamente');
       return response.data;
 
     } catch (error: any) {
-      console.error('❌ Error obteniendo estadísticas:', error);
+      verror('❌ Error obteniendo estadísticas:', error);
       throw this.handleError(error, 'Error al obtener las estadísticas');
     }
   }
@@ -281,7 +282,7 @@ class UserService {
    */
   async getSchoolStaffUsers(filters: UserFilters = {}): Promise<PagedResponse<User>> {
     try {
-      console.log('👨‍🏫 Obteniendo usuarios del colegio desde microservicio (usando /api/users/staff)');
+      vlog('👨‍🏫 Obteniendo usuarios del colegio desde microservicio (usando /api/users/staff)');
 
       const params = new URLSearchParams();
 
@@ -295,13 +296,13 @@ class UserService {
       // FIXED: Use /api/users/staff endpoint which correctly excludes APODERADOS and supports pagination
       const response = await api.get(`/api/users/staff?${params.toString()}`);
 
-      console.log('✅ Respuesta del endpoint /api/users/staff:', response.data);
+      vlog('✅ Respuesta del endpoint /api/users/staff:', response.data);
 
       // Backend /api/users/staff already returns paginated format, no adapter needed
       return response.data;
 
     } catch (error: any) {
-      console.error('❌ Error obteniendo usuarios staff del microservicio:', error);
+      verror('❌ Error obteniendo usuarios staff del microservicio:', error);
       throw this.handleError(error, 'Error al obtener usuarios del colegio');
     }
   }
@@ -358,7 +359,7 @@ class UserService {
       };
 
     } catch (error: any) {
-      console.error('❌ Error obteniendo evaluadores:', error);
+      verror('❌ Error obteniendo evaluadores:', error);
       throw this.handleError(error, 'Error al obtener los evaluadores');
     }
   }
@@ -410,20 +411,20 @@ class UserService {
    */
   async getSchoolStaffUsersPublic(): Promise<PagedResponse<User>> {
     try {
-      console.log('👨‍🏫 Obteniendo usuarios del colegio desde endpoint público');
+      vlog('👨‍🏫 Obteniendo usuarios del colegio desde endpoint público');
 
       const response = await api.get('/api/users/public/school-staff');
 
       // DEFENSIVE: Validate response exists
       if (!response || !response.data) {
-        console.error('❌ getSchoolStaffUsersPublic: response or response.data is undefined');
+        verror('❌ getSchoolStaffUsersPublic: response or response.data is undefined');
         throw new Error('No se recibió respuesta válida del servidor');
       }
 
-      console.log('✅ Respuesta del endpoint público:', response.data);
+      vlog('✅ Respuesta del endpoint público:', response.data);
       return response.data;
     } catch (error) {
-      console.error('❌ Error obteniendo usuarios del colegio (público):', error);
+      verror('❌ Error obteniendo usuarios del colegio (público):', error);
       throw this.handleError(error, 'Error al obtener usuarios del colegio');
     }
   }
