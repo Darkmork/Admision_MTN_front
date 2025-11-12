@@ -304,17 +304,12 @@ const CycleDirectorReportForm: React.FC = () => {
             };
             
             await professorEvaluationService.updateEvaluation(evaluation.id, updatedEvaluation);
-            
+
             addNotification({
                 type: 'success',
                 title: 'Informe guardado',
-                message: 'El informe del Director de Ciclo ha sido guardado exitosamente'
+                message: 'El informe ha sido guardado exitosamente. Puedes seguir editándolo si es necesario.'
             });
-            
-            // Navegar de regreso al dashboard después de guardar exitosamente
-            setTimeout(() => {
-                navigate('/profesor/dashboard');
-            }, 1500);
             
         } catch (error) {
             console.error('❌ Error al guardar informe:', error);
