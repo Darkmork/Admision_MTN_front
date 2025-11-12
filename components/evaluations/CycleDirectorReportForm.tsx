@@ -106,14 +106,37 @@ const CycleDirectorReportForm: React.FC = () => {
                         entryCourse = courseMatch[1].trim();
                     }
 
+                    // Parsear observations para extraer campos individuales
+                    const observations = directorEvaluation.observations || '';
+                    let academicBackground = '';
+                    let interviewAdaptation = '';
+                    let outstandingTraits = '';
+                    let familyBackground = '';
+
+                    // El formato guardado es: academicBackground\n\nAdaptación a entrevista: valor\nRasgos sobresalientes: valor\nAntecedentes familiares: valor
+                    const parts = observations.split('\n\n');
+                    if (parts.length > 0) {
+                        academicBackground = parts[0].trim();
+                    }
+                    if (parts.length > 1) {
+                        const detailsPart = parts[1];
+                        const adaptationMatch = detailsPart.match(/Adaptación a entrevista:\s*(.+?)(?:\n|$)/);
+                        const traitsMatch = detailsPart.match(/Rasgos sobresalientes:\s*(.+?)(?:\n|$)/);
+                        const familyMatch = detailsPart.match(/Antecedentes familiares:\s*(.+?)(?:\n|$)/);
+
+                        if (adaptationMatch) interviewAdaptation = adaptationMatch[1].trim();
+                        if (traitsMatch) outstandingTraits = traitsMatch[1].trim();
+                        if (familyMatch) familyBackground = familyMatch[1].trim();
+                    }
+
                     // Primero mapear datos de la evaluación
                     const evaluationData = {
                         strengths: directorEvaluation.strengths || '',
                         difficulties: directorEvaluation.areasForImprovement || '',
-                        interviewAdaptation: '',
-                        outstandingTraits: '',
-                        familyBackground: '',
-                        academicBackground: directorEvaluation.observations || '',
+                        interviewAdaptation,
+                        outstandingTraits,
+                        familyBackground,
+                        academicBackground,
                         finalDecision,
                         entryCourse
                     };
