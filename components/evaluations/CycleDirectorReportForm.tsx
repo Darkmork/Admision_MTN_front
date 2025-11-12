@@ -306,17 +306,20 @@ const CycleDirectorReportForm: React.FC = () => {
     };
 
     const updateReportData = (field: keyof CycleDirectorReportData, value: string) => {
-        setReportData(prev => ({
-            ...prev,
-            [field]: value
-        }));
+        console.log('📝 Updating field:', field, 'with value:', value);
+        setReportData(prev => {
+            const newData = { ...prev, [field]: value };
+            console.log('📊 New reportData:', newData);
+            return newData;
+        });
     };
 
     const handleSave = async () => {
         if (!evaluation) return;
-        
+
+        console.log('💾 Saving report with data:', reportData);
         setIsSubmitting(true);
-        
+
         try {
             // Actualizar la evaluación con los datos del informe
             const updatedEvaluation: Partial<ProfessorEvaluation> = {
@@ -326,8 +329,10 @@ const CycleDirectorReportForm: React.FC = () => {
                 recommendations: `Informe completado por Director de Ciclo: ${currentProfessor?.firstName} ${currentProfessor?.lastName}\n\nDecisión Final: ${reportData.finalDecision}\nCurso de Ingreso: ${reportData.entryCourse}`,
                 status: 'COMPLETED'
             };
-            
-            await professorEvaluationService.updateEvaluation(evaluation.id, updatedEvaluation);
+
+            console.log('📤 Sending to backend:', updatedEvaluation);
+            const response = await professorEvaluationService.updateEvaluation(evaluation.id, updatedEvaluation);
+            console.log('✅ Backend response:', response);
 
             addNotification({
                 type: 'success',
