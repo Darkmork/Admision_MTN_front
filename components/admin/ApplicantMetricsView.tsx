@@ -7,6 +7,7 @@ import { dashboardClient } from '../../src/api/dashboard.client';
 import type { ApplicantMetric, ApplicantMetricsFilters } from '../../src/api/dashboard.types';
 import { PieChart, Pie, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList } from 'recharts';
 
+// Version: 2025-11-11 - Added overallOpinionScore display
 export const ApplicantMetricsView: React.FC = () => {
   const [applicants, setApplicants] = useState<ApplicantMetric[]>([]);
   const [loading, setLoading] = useState(true);
