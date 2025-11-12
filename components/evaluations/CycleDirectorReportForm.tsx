@@ -14,16 +14,20 @@ interface CycleDirectorReportData {
     age: string;
     currentSchool: string;
     gradeApplied: string;
-    
+
     // Antecedentes relevantes
     strengths: string;
     difficulties: string;
     interviewAdaptation: string;
     outstandingTraits: string;
     familyBackground: string;
-    
+
     // Antecedentes académicos
     academicBackground: string;
+
+    // Recomendaciones finales
+    finalDecision: string;
+    entryCourse: string;
 }
 
 interface SubjectResult {
@@ -55,7 +59,9 @@ const CycleDirectorReportForm: React.FC = () => {
         interviewAdaptation: '',
         outstandingTraits: '',
         familyBackground: '',
-        academicBackground: ''
+        academicBackground: '',
+        finalDecision: '',
+        entryCourse: ''
     });
 
     // Obtener profesor actual del localStorage
@@ -299,7 +305,7 @@ const CycleDirectorReportForm: React.FC = () => {
                 strengths: reportData.strengths,
                 areasForImprovement: reportData.difficulties,
                 observations: `${reportData.academicBackground}\n\nAdaptación a entrevista: ${reportData.interviewAdaptation}\nRasgos sobresalientes: ${reportData.outstandingTraits}\nAntecedentes familiares: ${reportData.familyBackground}`,
-                recommendations: `Informe completado por Director de Ciclo: ${currentProfessor?.firstName} ${currentProfessor?.lastName}`,
+                recommendations: `Informe completado por Director de Ciclo: ${currentProfessor?.firstName} ${currentProfessor?.lastName}\n\nDecisión Final: ${reportData.finalDecision}\nCurso de Ingreso: ${reportData.entryCourse}`,
                 status: 'COMPLETED'
             };
             
@@ -602,10 +608,12 @@ const CycleDirectorReportForm: React.FC = () => {
                                         1. Aceptación/ No aceptación/ reparos
                                     </td>
                                     <td className="border border-gray-400 px-4 py-3">
-                                        {/* Campo editable para decisión final */}
-                                        <div className="min-h-[60px]">
-                                            {/* Aquí se puede agregar lógica para editar */}
-                                        </div>
+                                        <textarea
+                                            value={reportData.finalDecision}
+                                            onChange={(e) => setReportData({ ...reportData, finalDecision: e.target.value })}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-azul-monte-tabor min-h-[60px]"
+                                            placeholder="Ingrese la decisión final (Aceptación, No aceptación, Reparos)..."
+                                        />
                                     </td>
                                 </tr>
                                 <tr>
@@ -613,10 +621,13 @@ const CycleDirectorReportForm: React.FC = () => {
                                         2. Curso ingreso
                                     </td>
                                     <td className="border border-gray-400 px-4 py-3">
-                                        {/* Campo editable para curso de ingreso */}
-                                        <div className="min-h-[60px]">
-                                            {/* Aquí se puede agregar lógica para editar */}
-                                        </div>
+                                        <input
+                                            type="text"
+                                            value={reportData.entryCourse}
+                                            onChange={(e) => setReportData({ ...reportData, entryCourse: e.target.value })}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-azul-monte-tabor"
+                                            placeholder="Ej: 1° Básico, 5° Básico, etc."
+                                        />
                                     </td>
                                 </tr>
                             </tbody>
