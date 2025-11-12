@@ -334,6 +334,18 @@ const CycleDirectorReportForm: React.FC = () => {
             const response = await professorEvaluationService.updateEvaluation(evaluation.id, updatedEvaluation);
             console.log('✅ Backend response:', response);
 
+            // Actualizar el objeto evaluation local con los datos guardados
+            setEvaluation(prev => prev ? {
+                ...prev,
+                strengths: reportData.strengths,
+                areasForImprovement: reportData.difficulties,
+                observations: updatedEvaluation.observations,
+                recommendations: updatedEvaluation.recommendations,
+                status: 'COMPLETED'
+            } : null);
+
+            console.log('🔄 Evaluation local actualizada con los cambios guardados');
+
             addNotification({
                 type: 'success',
                 title: 'Informe guardado',
