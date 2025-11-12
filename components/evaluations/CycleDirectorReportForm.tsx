@@ -121,11 +121,11 @@ const CycleDirectorReportForm: React.FC = () => {
                     // Cargar información completa del estudiante desde la aplicación
                     const studentInfo = await loadStudentInfo(directorEvaluation.applicationId);
 
-                    // Combinar ambos conjuntos de datos
+                    // Combinar ambos conjuntos de datos - studentInfo primero para que evaluationData lo sobrescriba
                     setReportData(prev => ({
                         ...prev,
-                        ...evaluationData,
-                        ...studentInfo
+                        ...studentInfo,    // Datos básicos del estudiante (nombre, edad, etc.)
+                        ...evaluationData  // Datos editables (strengths, difficulties, etc.) - tienen prioridad
                     }));
 
                     // Cargar todas las evaluaciones del mismo estudiante para obtener resultados académicos
