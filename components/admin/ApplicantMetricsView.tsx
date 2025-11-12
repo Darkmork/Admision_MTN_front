@@ -575,7 +575,8 @@ export const ApplicantMetricsView: React.FC = () => {
                             i => i.status === 'COMPLETED' && i.score !== null && i.score !== undefined
                           );
                           const totalPercentage = interviewsWithScores.reduce((sum, interview) => {
-                            return sum + ((interview.score || 0) / 10) * 100;
+                            const maxScore = interview.maxScore || 10; // Default to 10 if not provided
+                            return sum + ((interview.score || 0) / maxScore) * 100;
                           }, 0);
                           const averagePercentage = interviewsWithScores.length > 0
                             ? (totalPercentage / interviewsWithScores.length).toFixed(1)
@@ -605,7 +606,12 @@ export const ApplicantMetricsView: React.FC = () => {
                                     {interview.status === 'COMPLETED' && interview.result && getInterviewResultBadge(interview.result)}
                                     {interview.status === 'COMPLETED' && interview.score !== null && (
                                       <span className="text-xs text-gray-500">
-                                        {interview.score}/10 ({((interview.score / 10) * 100).toFixed(1)}%)
+                                        {interview.score}/{interview.maxScore || 10} ({((interview.score / (interview.maxScore || 10)) * 100).toFixed(1)}%)
+                                        {interview.overallOpinionScore && (
+                                          <span className="ml-2 font-medium text-blue-600">
+                                            | Opinión: {interview.overallOpinionScore}/5
+                                          </span>
+                                        )}
                                       </span>
                                     )}
                                   </div>

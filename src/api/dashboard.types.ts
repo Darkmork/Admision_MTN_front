@@ -158,8 +158,10 @@ export interface ExamScore {
 export interface FamilyInterview {
   interviewerName: string;
   score: number | null;
+  maxScore?: number; // Default 10 for interviews table
   result: 'POSITIVE' | 'NEGATIVE' | 'NEUTRAL' | null;
   status: 'SCHEDULED' | 'COMPLETED' | 'CANCELLED' | 'RESCHEDULED';
+  overallOpinionScore?: number; // Overall opinion rating (1-5 scale)
 }
 
 export interface DocumentMetrics {
