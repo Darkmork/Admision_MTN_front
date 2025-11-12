@@ -90,6 +90,22 @@ const CycleDirectorReportForm: React.FC = () => {
                         studentGrade: directorEvaluation.studentGrade
                     });
 
+                    // Parsear recommendations para extraer finalDecision y entryCourse
+                    const recommendations = directorEvaluation.recommendations || '';
+                    let finalDecision = '';
+                    let entryCourse = '';
+
+                    // Extraer Decisión Final y Curso de Ingreso del campo recommendations
+                    const decisionMatch = recommendations.match(/Decisión Final:\s*(.+?)(?:\n|$)/);
+                    const courseMatch = recommendations.match(/Curso de Ingreso:\s*(.+?)(?:\n|$)/);
+
+                    if (decisionMatch) {
+                        finalDecision = decisionMatch[1].trim();
+                    }
+                    if (courseMatch) {
+                        entryCourse = courseMatch[1].trim();
+                    }
+
                     // Primero mapear datos de la evaluación
                     const evaluationData = {
                         strengths: directorEvaluation.strengths || '',
@@ -97,7 +113,9 @@ const CycleDirectorReportForm: React.FC = () => {
                         interviewAdaptation: '',
                         outstandingTraits: '',
                         familyBackground: '',
-                        academicBackground: directorEvaluation.observations || ''
+                        academicBackground: directorEvaluation.observations || '',
+                        finalDecision,
+                        entryCourse
                     };
 
                     // Cargar información completa del estudiante desde la aplicación
