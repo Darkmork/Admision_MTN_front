@@ -56,7 +56,7 @@ function App() {
                 <AppProvider>
                     <div className="flex flex-col min-h-screen font-sans bg-blanco-pureza text-gray-800">
                         <Header />
-                        <main className="flex-grow">
+                        <main className="flex-grow overflow-x-hidden">
                             <Suspense fallback={<LoadingFallback />}>
                                 <Routes>
                             <Route path="/" element={<HomePage />} />
