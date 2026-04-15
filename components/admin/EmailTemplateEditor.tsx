@@ -128,12 +128,12 @@ const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <div className="flex items-center space-x-4">
+        <div className="flex flex-wrap items-start justify-between gap-3 p-6 border-b border-gray-200">
+          <div className="flex flex-wrap items-center gap-3">
             {mode === 'create' ? (
-              <FiPlus className="w-5 h-5 text-green-600" />
+              <FiPlus className="w-5 h-5 text-green-600 flex-shrink-0" />
             ) : (
-              <FiCode className="w-5 h-5 text-blue-600" />
+              <FiCode className="w-5 h-5 text-blue-600 flex-shrink-0" />
             )}
             <div>
               <h2 className="text-xl font-semibold text-gray-900">
@@ -148,7 +148,7 @@ const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
             </div>
           </div>
           
-          <div className="flex items-center space-x-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="outline"
               onClick={() => setShowPreview(!showPreview)}

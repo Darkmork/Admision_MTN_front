@@ -1005,8 +1005,8 @@ const EnhancedApplicationsDataTable: React.FC<EnhancedApplicationsDataTableProps
         <div className="space-y-6">
             {/* Advanced Filters */}
             <div className="bg-white rounded-lg border border-gray-200 p-4">
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+                    <div className="flex flex-wrap items-center gap-2">
                         <h3 className="text-lg font-semibold text-gray-900">Filtros Avanzados</h3>
                         {activeFilters.length > 0 && (
                             <Badge variant="blue" size="sm">
@@ -1014,7 +1014,7 @@ const EnhancedApplicationsDataTable: React.FC<EnhancedApplicationsDataTableProps
                             </Badge>
                         )}
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                         {activeFilters.length > 0 && (
                             <Button
                                 variant="outline"
