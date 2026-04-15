@@ -247,7 +247,7 @@ const EvaluationsOverviewTable: React.FC = () => {
             </div>
 
             {/* Filtros */}
-            <div className="mb-6 flex gap-4 items-end">
+            <div className="mb-6 flex flex-wrap gap-4 items-end">
                 <div className="flex-1">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                         Filtrar por Curso

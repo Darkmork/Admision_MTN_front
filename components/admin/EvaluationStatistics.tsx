@@ -122,7 +122,7 @@ const EvaluationStatistics: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <Card className="p-6 bg-gradient-to-r from-azul-monte-tabor to-blue-600 text-white">
-        <div className="flex justify-between items-start">
+        <div className="flex flex-wrap justify-between items-start gap-3">
           <div>
             <h2 className="text-2xl font-bold mb-2">
               📊 Estadísticas de Evaluaciones
@@ -142,7 +142,7 @@ const EvaluationStatistics: React.FC = () => {
       </Card>
 
       {/* Navigation tabs */}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {[
           { key: 'overview', label: '📈 Resumen General', icon: ChartBarIcon },
           { key: 'performance', label: '🏆 Rendimiento', icon: TrophyIcon },

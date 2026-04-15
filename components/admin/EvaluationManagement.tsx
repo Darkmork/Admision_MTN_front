@@ -258,7 +258,7 @@ const EvaluationManagement: React.FC<EvaluationManagementProps> = ({
   return (
     <div className="space-y-6">
       <Card className="p-6">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
           <div className="flex items-center space-x-3">
             <BarChart3 className="w-6 h-6 text-azul-monte-tabor" />
             <h2 className="text-xl font-semibold text-gray-900">
@@ -266,7 +266,7 @@ const EvaluationManagement: React.FC<EvaluationManagementProps> = ({
             </h2>
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Badge variant="info" size="sm">
               {evaluators.length} evaluadores disponibles
             </Badge>

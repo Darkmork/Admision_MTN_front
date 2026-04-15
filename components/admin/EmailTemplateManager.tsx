@@ -240,7 +240,7 @@ Equipo de Admisión`,
         <div className="space-y-6">
             {/* Header con filtros */}
             <Card className="p-6">
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
                     <div>
                         <h2 className="text-xl font-bold text-gray-900">Templates de Correo Electrónico</h2>
                         <p className="text-sm text-gray-600 mt-1">
@@ -251,7 +251,7 @@ Equipo de Admisión`,
                 </div>
 
                 {/* Filtros */}
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                     <button
                         onClick={() => setFilterCategory('all')}
                         className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -336,7 +336,7 @@ Equipo de Admisión`,
                                     </p>
                                 </div>
                             </div>
-                            <div className="flex gap-2 ml-4">
+                            <div className="flex flex-wrap gap-2 ml-4">
                                 <Button
                                     variant="outline"
                                     size="sm"

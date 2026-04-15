@@ -387,7 +387,7 @@ const EvaluationReports: React.FC<EvaluationReportsProps> = ({
     <div className="space-y-6">
       {/* Header */}
       <Card className="p-6 bg-gradient-to-r from-azul-monte-tabor to-blue-600 text-white">
-        <div className="flex justify-between items-start">
+        <div className="flex flex-wrap justify-between items-start gap-3">
           <div>
             <h2 className="text-2xl font-bold mb-2">
               📊 Reportes de Evaluaciones
@@ -460,7 +460,7 @@ const EvaluationReports: React.FC<EvaluationReportsProps> = ({
       <div className="grid gap-4">
         {filteredEvaluations.map((evaluation) => (
           <Card key={evaluation.id} className="p-6">
-            <div className="flex justify-between items-start">
+            <div className="flex flex-wrap justify-between items-start gap-3">
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-3">
                   {getTypeIcon(evaluation.evaluationType)}
