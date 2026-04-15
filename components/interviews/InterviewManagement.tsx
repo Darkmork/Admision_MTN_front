@@ -387,8 +387,8 @@ const InterviewManagement: React.FC<InterviewManagementProps> = ({ className = '
   return (
     <div className={`space-y-6 ${className}`}>
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {onBack && (
             <Button 
               onClick={onBack}
@@ -399,7 +399,7 @@ const InterviewManagement: React.FC<InterviewManagementProps> = ({ className = '
               Volver
             </Button>
           )}
-          <CalendarIcon className="w-8 h-8 text-azul-monte-tabor" />
+          <CalendarIcon className="w-8 h-8 text-azul-monte-tabor flex-shrink-0" />
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
               Gestión de Entrevistas
@@ -410,7 +410,7 @@ const InterviewManagement: React.FC<InterviewManagementProps> = ({ className = '
           </div>
         </div>
 
-        <div className="flex items-center space-x-3">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
             onClick={() => setShowFilters(!showFilters)}
@@ -929,7 +929,7 @@ const StudentDetailView: React.FC<StudentDetailViewProps> = ({
       )}
 
       <Card className="p-6">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
           <div>
             <h3 className="text-xl font-semibold text-gray-900">{studentName}</h3>
             <p className="text-sm text-gray-600">ID de aplicación: {applicationId}</p>
