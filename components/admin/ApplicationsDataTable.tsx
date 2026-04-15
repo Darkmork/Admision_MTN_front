@@ -45,7 +45,7 @@ const ApplicationsDataTable: React.FC<ApplicationsDataTableProps> = ({
     const [loading, setLoading] = useState(false);
     const [pagination, setPagination] = useState({
         current: 1,
-        pageSize: 20,
+        pageSize: 5,
         total: 0
     });
     const { addNotification } = useNotifications();
@@ -299,7 +299,7 @@ const ApplicationsDataTable: React.FC<ApplicationsDataTableProps> = ({
     };
 
     // Cargar aplicaciones (simulado)
-    const loadApplications = async (page = 1, size = 20) => {
+    const loadApplications = async (page = 1, size = 5) => {
         setLoading(true);
         try {
             // Obtener aplicaciones reales del backend

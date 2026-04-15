@@ -31,7 +31,7 @@ export const useDataTable = <T>(
     options: DataTableOptions<T> = {}
 ): DataTableHook<T> => {
     const {
-        initialPageSize = 25,
+        initialPageSize = 5,
         enableAutoLoad = true,
         transformData,
         fallbackData = []
