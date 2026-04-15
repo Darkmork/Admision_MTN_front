@@ -53,12 +53,16 @@ const EvaluationReports: React.FC<EvaluationReportsProps> = ({
   const [showFormModal, setShowFormModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 5;
   
   const [filters, setFilters] = useState({
     type: 'all',
     status: 'all',
     search: ''
   });
+
+  useEffect(() => { setCurrentPage(1); }, [filters]);
 
   const { addNotification } = useNotifications();
 
@@ -456,9 +460,30 @@ const EvaluationReports: React.FC<EvaluationReportsProps> = ({
         </div>
       </Card>
 
-      {/* Evaluations List */}
-      <div className="grid gap-4">
-        {filteredEvaluations.map((evaluation) => (
+      {/* Paginación y lista */}
+      {(() => {
+        const totalPages = Math.ceil(filteredEvaluations.length / PAGE_SIZE);
+        const safeCurrentPage = Math.min(currentPage, totalPages || 1);
+        const pagedEvaluations = filteredEvaluations.slice(
+          (safeCurrentPage - 1) * PAGE_SIZE,
+          safeCurrentPage * PAGE_SIZE
+        );
+        return (
+          <>
+            {filteredEvaluations.length > PAGE_SIZE && (
+              <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-gray-600">
+                <span>Mostrando {(safeCurrentPage - 1) * PAGE_SIZE + 1}–{Math.min(safeCurrentPage * PAGE_SIZE, filteredEvaluations.length)} de {filteredEvaluations.length} registros</span>
+                <div className="flex items-center gap-1">
+                  <button onClick={() => setCurrentPage(1)} disabled={safeCurrentPage === 1} className="px-2 py-1 rounded border disabled:opacity-40 hover:bg-gray-100">«</button>
+                  <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={safeCurrentPage === 1} className="px-2 py-1 rounded border disabled:opacity-40 hover:bg-gray-100">‹</button>
+                  <span className="px-3 py-1 rounded border bg-azul-monte-tabor text-white">{safeCurrentPage} / {totalPages}</span>
+                  <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={safeCurrentPage === totalPages} className="px-2 py-1 rounded border disabled:opacity-40 hover:bg-gray-100">›</button>
+                  <button onClick={() => setCurrentPage(totalPages)} disabled={safeCurrentPage === totalPages} className="px-2 py-1 rounded border disabled:opacity-40 hover:bg-gray-100">»</button>
+                </div>
+              </div>
+            )}
+            <div className="grid gap-4">
+              {pagedEvaluations.map((evaluation) => (
           <Card key={evaluation.id} className="p-6">
             <div className="flex flex-wrap justify-between items-start gap-3">
               <div className="flex-1">
@@ -560,13 +585,16 @@ const EvaluationReports: React.FC<EvaluationReportsProps> = ({
           </Card>
         ))}
 
-        {filteredEvaluations.length === 0 && (
-          <Card className="p-8 text-center">
-            <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gris-piedra">No se encontraron evaluaciones que coincidan con los filtros</p>
-          </Card>
-        )}
-      </div>
+            {filteredEvaluations.length === 0 && (
+              <Card className="p-8 text-center">
+                <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <p className="text-gris-piedra">No se encontraron evaluaciones que coincidan con los filtros</p>
+              </Card>
+            )}
+            </div>
+          </>
+        );
+      })()}
 
       {/* Evaluation Form Modal */}
       <Modal

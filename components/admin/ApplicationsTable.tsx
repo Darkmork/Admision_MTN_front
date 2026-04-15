@@ -28,6 +28,9 @@ const ApplicationsTable: React.FC<ApplicationsTableProps> = ({
   onDecision,
   className = ''
 }) => {
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const PAGE_SIZE = 5;
+  React.useEffect(() => { setCurrentPage(1); }, [applications]);
   console.log('📊 ApplicationsTable render - applications:', applications.length, 'onView:', !!onView);
   console.log('📊 First application data:', applications[0]);
 
@@ -122,8 +125,26 @@ const ApplicationsTable: React.FC<ApplicationsTableProps> = ({
     }
   };
 
+  const totalPages = Math.ceil(applications.length / PAGE_SIZE);
+  const pagedApplications = applications.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
+
   return (
     <div className={`overflow-hidden ${className}`}>
+      {applications.length > PAGE_SIZE && (
+        <div className="flex flex-wrap items-center justify-between gap-2 px-6 py-3 border-b text-sm text-gray-600">
+          <span>Mostrando {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, applications.length)} de {applications.length} postulaciones</span>
+          <div className="flex items-center gap-1">
+            <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1} className="px-2 py-1 rounded border disabled:opacity-40 hover:bg-gray-100">«</button>
+            <button onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1} className="px-2 py-1 rounded border disabled:opacity-40 hover:bg-gray-100">‹</button>
+            <span className="px-3 py-1 rounded border bg-azul-monte-tabor text-white">{currentPage} / {totalPages}</span>
+            <button onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === totalPages} className="px-2 py-1 rounded border disabled:opacity-40 hover:bg-gray-100">›</button>
+            <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} className="px-2 py-1 rounded border disabled:opacity-40 hover:bg-gray-100">»</button>
+          </div>
+        </div>
+      )}
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
@@ -149,7 +170,7 @@ const ApplicationsTable: React.FC<ApplicationsTableProps> = ({
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {applications.map((application) => (
+            {pagedApplications.map((application) => (
               <tr key={application.id} className="hover:bg-gray-50">
                 {/* Estudiante */}
                 <td className="px-6 py-4 whitespace-nowrap">
