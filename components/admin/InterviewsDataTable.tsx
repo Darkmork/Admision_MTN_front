@@ -40,7 +40,7 @@ const InterviewsDataTable: React.FC<InterviewsDataTableProps> = ({ className = '
 
   // Estados de paginación y filtros optimizados
   const [currentPage, setCurrentPage] = useState(0);
-  const [pageSize, setPageSize] = useState(20);
+  const [pageSize, setPageSize] = useState(5);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
   const [filters, setFilters] = useState<InterviewFilters>({});
@@ -475,7 +475,7 @@ const InterviewsDataTable: React.FC<InterviewsDataTableProps> = ({ className = '
                     setCurrentPage(page - 1);
                     setPageSize(newPageSize);
                   }}
-                  pageSizeOptions={[10, 20, 50, 100]}
+                  pageSizeOptions={[5, 10, 20, 50, 100]}
                   showSizeChanger={true}
                   showQuickJumper={true}
                   showTotal={true}

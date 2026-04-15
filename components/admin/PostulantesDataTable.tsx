@@ -93,7 +93,7 @@ const PostulantesDataTable: React.FC<PostulantesDataTableProps> = ({
     const [loading, setLoading] = useState(false);
     const [pagination, setPagination] = useState({
         current: 1,
-        pageSize: 25,
+        pageSize: 5,
         total: 0
     });
     const [selectedPostulante, setSelectedPostulante] = useState<Postulante | null>(null);
@@ -473,7 +473,7 @@ const PostulantesDataTable: React.FC<PostulantesDataTableProps> = ({
     };
 
     // Cargar postulantes con datos reales del backend
-    const loadPostulantes = async (page = 1, size = 25) => {
+    const loadPostulantes = async (page = 1, size = 5) => {
         setLoading(true);
         try {
             console.log('📊 Admin: Cargando postulantes desde backend...');

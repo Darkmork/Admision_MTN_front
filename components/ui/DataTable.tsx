@@ -544,7 +544,7 @@ const DataTable = <T extends Record<string, any>>({
                         pageSize={pagination.pageSize}
                         onChange={pagination.onChange}
                         onShowSizeChange={pagination.onChange}
-                        pageSizeOptions={pagination.pageSizeOptions || [10, 20, 50, 100]}
+                        pageSizeOptions={pagination.pageSizeOptions || [5, 10, 20, 50, 100]}
                         showSizeChanger={pagination.showSizeChanger !== false}
                         showQuickJumper={pagination.showQuickJumper !== false}
                         showTotal={pagination.showTotal !== false}

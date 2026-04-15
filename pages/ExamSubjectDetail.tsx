@@ -59,8 +59,8 @@ const ExamSubjectDetail: React.FC = () => {
 
 
     return (
-        <div className="bg-gray-50 min-h-screen py-12">
-            <div className="container mx-auto px-6 max-w-4xl">
+        <div className="bg-gray-50 min-h-screen py-8 sm:py-12">
+            <div className="container mx-auto px-4 sm:px-6 max-w-4xl">
                 {/* Breadcrumb */}
                 <div className="mb-6">
                     <Link 
@@ -73,12 +73,12 @@ const ExamSubjectDetail: React.FC = () => {
                 </div>
 
                 {/* Subject Header */}
-                <Card className="p-8 mb-8">
+                <Card className="p-4 sm:p-8 mb-8">
                     <div className="text-center mb-6">
                         <div className="mb-4 flex justify-center">
                             {getSubjectIcon(subject.id)}
                         </div>
-                        <h1 className="text-3xl font-bold text-azul-monte-tabor mb-3">
+                        <h1 className="text-2xl sm:text-3xl font-bold text-azul-monte-tabor mb-3">
                             {subject.name}
                         </h1>
                         <p className="text-gris-piedra text-lg leading-relaxed max-w-2xl mx-auto">
@@ -87,7 +87,7 @@ const ExamSubjectDetail: React.FC = () => {
                     </div>
 
                     {/* Subject Stats */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                    <div className="grid grid-cols-3 gap-3 sm:gap-6 text-center">
                         <div className="bg-blue-50 p-4 rounded-lg">
                             <Clock className="w-8 h-8 text-azul-monte-tabor mx-auto mb-2" />
                             <div className="font-bold text-azul-monte-tabor">
@@ -135,7 +135,7 @@ const ExamSubjectDetail: React.FC = () => {
                     <p className="text-gris-piedra mb-4">
                         Los temas del examen se adaptan según tu nivel educativo actual.
                     </p>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
                         {educationalLevelsForForm.map((level) => (
                             <button
                                 key={level.value}
@@ -160,7 +160,7 @@ const ExamSubjectDetail: React.FC = () => {
                     <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">
                         Temas a Evaluar - {educationalLevelsForForm.find(l => l.value === selectedLevel)?.label}
                     </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {getTopicsByLevel(subject.id, selectedLevel).map((topic, index) => (
                             <div key={index} className="flex items-center gap-2">
                                 <Badge variant="info" size="sm">
@@ -182,7 +182,7 @@ const ExamSubjectDetail: React.FC = () => {
                         Fechas y horarios programados para el examen de {subject.name}.
                     </p>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {subject.schedules.map((schedule) => (
                             <div 
                                 key={schedule.id} 

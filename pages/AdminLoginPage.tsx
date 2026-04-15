@@ -37,7 +37,7 @@ const LoginPage: React.FC = () => {
                         <img src="/images/logoMTN.png" alt="Logo Colegio Monte Tabor y Nazaret" className="h-14" />
                     </Link>
                 </div>
-                <Card className="p-8 shadow-2xl">
+                <Card className="p-5 sm:p-8 shadow-2xl">
                     <div className="flex justify-center mb-6 gap-4">
                         <button
                             className={`px-4 py-2 rounded-lg font-bold border transition-colors duration-200 ${userType === 'familia' ? 'bg-dorado-nazaret text-azul-monte-tabor border-dorado-nazaret' : 'bg-white text-gris-piedra border-gray-300'}`}

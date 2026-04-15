@@ -132,6 +132,9 @@ const AdminDashboard: React.FC = () => {
   // Coordinator Dashboard Modal state
   const [showCoordinatorDashboard, setShowCoordinatorDashboard] = useState(false);
 
+  // Mobile sidebar state
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
   // Estados para aplicaciones reales
   const { applications } = useApplications();
   const { addNotification } = useNotifications();
@@ -846,75 +849,102 @@ Esta acción:
     }
   };
 
+  const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => (
+    <>
+      <div className="p-6">
+        <h1 className="text-xl font-bold text-azul-monte-tabor">Panel Admin</h1>
+        <p className="text-sm text-gris-piedra mt-1">{user?.firstName} {user?.lastName}</p>
+      </div>
+      <div className="px-4 mb-4">
+        <button
+          onClick={() => { setShowCoordinatorDashboard(true); onNavigate?.(); }}
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-md hover:shadow-lg"
+          aria-label="Abrir dashboard del coordinador con analytics y búsqueda avanzada"
+        >
+          <FiBarChart2 className="w-5 h-5" aria-hidden="true" />
+          <div className="flex-1">
+            <div className="text-sm font-semibold">Dashboard Coordinador</div>
+            <div className="text-xs opacity-90">Analytics y búsqueda avanzada</div>
+          </div>
+        </button>
+      </div>
+      <nav className="px-4" aria-label="Menú de navegación principal del administrador">
+        {sections.map(section => (
+          <button
+            key={section.key}
+            onClick={() => { setActiveSection(section.key); onNavigate?.(); }}
+            className={`w-full flex items-center gap-3 px-4 py-3 mb-2 rounded-lg text-left transition-colors ${
+              activeSection === section.key
+                ? 'bg-azul-monte-tabor text-white'
+                : 'text-gris-piedra hover:bg-gray-100'
+            }`}
+            aria-label={`Navegar a sección ${section.label}`}
+            aria-current={activeSection === section.key ? 'page' : undefined}
+          >
+            <span className="text-sm">{section.label}</span>
+          </button>
+        ))}
+      </nav>
+      <div className="px-4 mt-4">
+        <ChangePasswordButton className="w-full" variant="outline" />
+      </div>
+      <div className="px-4 mt-4">
+        <Button
+          variant="primary"
+          className="w-full bg-azul-monte-tabor hover:bg-blue-700 text-white font-medium py-3 transition-all duration-200 shadow-md hover:shadow-lg"
+          onClick={() => logout()}
+          ariaLabel="Cerrar sesión y salir del panel de administración"
+        >
+          Cerrar Sesión
+        </Button>
+      </div>
+      <div className="flex-1"></div>
+    </>
+  );
+
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Mobile top bar */}
+      <div className="md:hidden bg-white shadow-sm px-4 py-3 flex items-center justify-between sticky top-0 z-30">
+        <div>
+          <h1 className="text-lg font-bold text-azul-monte-tabor">Panel Admin</h1>
+          <p className="text-xs text-gris-piedra">{user?.firstName} {user?.lastName}</p>
+        </div>
+        <button
+          onClick={() => setIsSidebarOpen(prev => !prev)}
+          className="p-2 rounded-lg text-gris-piedra hover:bg-gray-100 transition-colors"
+          aria-label="Abrir menú de navegación"
+        >
+          {isSidebarOpen ? (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          ) : (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          )}
+        </button>
+      </div>
+
+      {/* Mobile overlay */}
+      {isSidebarOpen && (
+        <div className="md:hidden fixed inset-0 bg-black bg-opacity-40 z-40" onClick={() => setIsSidebarOpen(false)} />
+      )}
+
+      {/* Mobile sidebar drawer */}
+      <div className={`md:hidden fixed top-0 left-0 h-full w-64 bg-white shadow-xl z-50 flex flex-col overflow-y-auto transform transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <SidebarContent onNavigate={() => setIsSidebarOpen(false)} />
+      </div>
+
       <div className="flex">
-        {/* Sidebar */}
-        <aside className="w-64 bg-white shadow-md min-h-screen flex flex-col">
-          <div className="p-6">
-            <h1 className="text-xl font-bold text-azul-monte-tabor">Panel Admin</h1>
-            <p className="text-sm text-gris-piedra mt-1">{user?.firstName} {user?.lastName}</p>
-          </div>
-
-          {/* Botón de Acceso al Módulo del Coordinador */}
-          <div className="px-4 mb-4">
-            <button
-              onClick={() => setShowCoordinatorDashboard(true)}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-md hover:shadow-lg"
-              aria-label="Abrir dashboard del coordinador con analytics y búsqueda avanzada"
-            >
-              <FiBarChart2 className="w-5 h-5" aria-hidden="true" />
-              <div className="flex-1">
-                <div className="text-sm font-semibold">Dashboard Coordinador</div>
-                <div className="text-xs opacity-90">Analytics y búsqueda avanzada</div>
-              </div>
-            </button>
-          </div>
-
-          <nav className="px-4" aria-label="Menú de navegación principal del administrador">
-            {sections.map(section => (
-              <button
-                key={section.key}
-                onClick={() => setActiveSection(section.key)}
-                className={`w-full flex items-center gap-3 px-4 py-3 mb-2 rounded-lg text-left transition-colors ${
-                  activeSection === section.key
-                    ? 'bg-azul-monte-tabor text-white'
-                    : 'text-gris-piedra hover:bg-gray-100'
-                }`}
-                aria-label={`Navegar a sección ${section.label}`}
-                aria-current={activeSection === section.key ? 'page' : undefined}
-              >
-                <span className="text-sm">{section.label}</span>
-              </button>
-            ))}
-          </nav>
-
-          {/* Botón de Cambiar Contraseña */}
-          <div className="px-4 mt-4">
-            <ChangePasswordButton
-              className="w-full"
-              variant="outline"
-            />
-          </div>
-
-          {/* Botón de Cerrar Sesión */}
-          <div className="px-4 mt-4">
-            <Button
-              variant="primary"
-              className="w-full bg-azul-monte-tabor hover:bg-blue-700 text-white font-medium py-3 transition-all duration-200 shadow-md hover:shadow-lg"
-              onClick={() => logout()}
-              ariaLabel="Cerrar sesión y salir del panel de administración"
-            >
-              Cerrar Sesión
-            </Button>
-          </div>
-
-          {/* Spacer para empujar contenido hacia abajo si es necesario */}
-          <div className="flex-1"></div>
+        {/* Desktop Sidebar */}
+        <aside className="w-64 bg-white shadow-md min-h-screen flex-col hidden md:flex sticky top-0 self-start h-screen overflow-y-auto">
+          <SidebarContent />
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-6" role="main" aria-label="Contenido principal del dashboard">
+        <main className="flex-1 p-4 sm:p-6 min-w-0" role="main" aria-label="Contenido principal del dashboard">
           {renderSection()}
         </main>
       </div>

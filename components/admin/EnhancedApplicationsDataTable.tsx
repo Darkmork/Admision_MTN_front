@@ -99,9 +99,9 @@ const EnhancedApplicationsDataTable: React.FC<EnhancedApplicationsDataTableProps
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [pagination, setPagination] = useState({
         current: 1,
-        pageSize: 25,
+        pageSize: 5,
         total: 0,
-        pageSizeOptions: [10, 25, 50, 100],
+        pageSizeOptions: [5, 10, 25, 50, 100],
         showSizeChanger: true,
         showQuickJumper: true,
         showTotal: true
@@ -723,7 +723,7 @@ const EnhancedApplicationsDataTable: React.FC<EnhancedApplicationsDataTableProps
     };
 
     // Cargar postulaciones con datos reales del backend
-    const loadApplications = async (page = 1, size = 25, preserveFilters = false) => {
+    const loadApplications = async (page = 1, size = 5, preserveFilters = false) => {
         setLoading(true);
         try {
             console.log('📊 EnhancedApplications: Cargando postulaciones...');

@@ -432,11 +432,11 @@ const ReportsDashboard: React.FC = () => {
       {/* Header */}
       <div className="mb-4">
         
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center space-x-3">
-            <ChartBarIcon className="w-8 h-8 text-azul-monte-tabor" />
+            <ChartBarIcon className="w-8 h-8 text-azul-monte-tabor flex-shrink-0" />
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
                 Dashboard de Reportes
               </h1>
               <p className="text-sm text-gray-600">
@@ -445,7 +445,7 @@ const ReportsDashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center space-x-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <Button
               variant="outline"
               onClick={refreshAllReports}
@@ -471,7 +471,7 @@ const ReportsDashboard: React.FC = () => {
       {showFilters && (
         <div className="bg-gray-50 p-4 rounded-lg border">
           <h3 className="text-lg font-medium mb-4">Filtros de Reportes</h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Fecha Desde
@@ -534,7 +534,7 @@ const ReportsDashboard: React.FC = () => {
       )}
 
       {/* Grid de Reportes */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {Object.values(reports).map((report) => {
           const IconComponent = report.icon;
           return (

@@ -40,7 +40,7 @@ const UsersDataTable: React.FC<UsersDataTableProps> = ({
     const [loading, setLoading] = useState(false);
     const [pagination, setPagination] = useState({
         current: 1,
-        pageSize: 20,
+        pageSize: 5,
         total: 0
     });
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -222,7 +222,7 @@ const UsersDataTable: React.FC<UsersDataTableProps> = ({
     ];
 
     // Cargar usuarios
-    const loadUsers = async (page = 1, size = 20) => {
+    const loadUsers = async (page = 1, size = 5) => {
         setLoading(true);
         try {
             const response = await userService.getAllUsers({

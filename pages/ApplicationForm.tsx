@@ -2335,12 +2335,12 @@ const ApplicationForm: React.FC = () => {
     }
 
     return (
-        <div className="bg-gray-50 py-16">
-            <div className="container mx-auto px-6 max-w-4xl">
+        <div className="bg-gray-50 py-8 sm:py-16">
+            <div className="container mx-auto px-4 sm:px-6 max-w-4xl">
                 {/* Header con información del usuario */}
-                <div className="mb-6 flex justify-between items-center">
+                <div className="mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                     <div>
-                        <h1 className="text-4xl font-bold text-azul-monte-tabor font-serif">Formulario de Postulación</h1>
+                        <h1 className="text-2xl sm:text-4xl font-bold text-azul-monte-tabor font-serif">Formulario de Postulación</h1>
                         <p className="text-gris-piedra">Siga los pasos para completar el proceso de admisión.</p>
                     </div>
                     <div className="text-right">
@@ -2353,20 +2353,24 @@ const ApplicationForm: React.FC = () => {
                 </div>
 
                 {/* Progress Bar */}
-                <div className="mb-10">
-                    <div className="flex justify-between mb-2">
+                <div className="mb-8 sm:mb-10">
+                    <div className="hidden sm:flex justify-between mb-2">
                         {steps.map((step, index) => (
-                             <div key={index} className={`text-center w-1/4 ${index <= currentStep ? 'text-azul-monte-tabor font-bold' : 'text-gris-piedra'}`}>
+                             <div key={index} className={`text-center w-1/4 text-sm ${index <= currentStep ? 'text-azul-monte-tabor font-bold' : 'text-gris-piedra'}`}>
                                 {step}
                             </div>
                         ))}
+                    </div>
+                    <div className="sm:hidden flex justify-between mb-2 text-xs">
+                        <span className={currentStep > 0 ? 'text-azul-monte-tabor font-bold' : 'text-gris-piedra'}>Paso {currentStep + 1}/{steps.length}</span>
+                        <span className="font-semibold text-azul-monte-tabor">{steps[currentStep]}</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2.5">
                         <div className="bg-dorado-nazaret h-2.5 rounded-full" style={{ width: `${(currentStep / (steps.length - 1)) * 100}%` }}></div>
                     </div>
                 </div>
 
-                <Card className="p-8 md:p-12">
+                <Card className="p-4 sm:p-8 md:p-12">
                     {renderStepContent()}
                 </Card>
 

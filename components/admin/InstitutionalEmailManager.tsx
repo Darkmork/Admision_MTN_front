@@ -692,7 +692,7 @@ const InstitutionalEmailManager: React.FC<InstitutionalEmailManagerProps> = ({ o
         </div>
         <div>
           <div className="space-y-4">
-            <div className="max-h-96 overflow-y-auto">
+            <div className="max-h-96 overflow-y-auto overflow-x-auto">
               <table className="min-w-full">
                 <thead className="bg-gray-50">
                   <tr>
