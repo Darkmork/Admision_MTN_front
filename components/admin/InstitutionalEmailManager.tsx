@@ -385,7 +385,7 @@ const InstitutionalEmailManager: React.FC<InstitutionalEmailManagerProps> = ({ o
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-start space-x-4">
           {onBack && (
             <Button 
@@ -577,7 +577,7 @@ const InstitutionalEmailManager: React.FC<InstitutionalEmailManagerProps> = ({ o
 
       {/* Templates de Correo */}
       <Card className="p-6">
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
           <div>
             <h3 className="text-lg font-semibold flex items-center">
               <FiMail className="mr-2" />
@@ -587,7 +587,7 @@ const InstitutionalEmailManager: React.FC<InstitutionalEmailManagerProps> = ({ o
               {templates.length > 0 ? `${templates.length} templates disponibles` : 'Cargando templates...'}
             </p>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               onClick={() => handleEditTemplate()}
               size="sm"

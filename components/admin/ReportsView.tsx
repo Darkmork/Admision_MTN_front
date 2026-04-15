@@ -100,12 +100,12 @@ export const ReportsView: React.FC = () => {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                     <h2 className="text-2xl font-bold text-gray-900">Reportes del Sistema</h2>
                     <p className="text-gray-600 mt-1">Análisis detallado del proceso de admisión {filters.academicYear}</p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                     <select
                         value={filters.academicYear}
                         onChange={(e) => setFilters({ ...filters, academicYear: parseInt(e.target.value) })}

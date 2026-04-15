@@ -168,6 +168,9 @@ const DataTable = <T extends Record<string, any>>({
         return result;
     }, [data, filters, searchTerm]);
 
+    // Aplicar paginación cliente (cuando se pasan todos los datos de una vez)
+    const isClientSidePagination = pagination != null && pagination.total === data.length && data.length > 0;
+
     // Aplicar ordenamiento
     const sortedData = useMemo(() => {
         if (!sort.field || !sort.direction) return filteredData;
@@ -390,9 +393,9 @@ const DataTable = <T extends Record<string, any>>({
         <div className={`bg-white rounded-lg border border-gray-200 ${className}`}>
             {/* Header */}
             <div className="p-4 border-b border-gray-200">
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex flex-wrap items-start justify-between gap-2 mb-4">
                     <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                         {actions}
                         {onExport && (
                             <Button
@@ -420,7 +423,7 @@ const DataTable = <T extends Record<string, any>>({
                 </div>
 
                 {/* Búsqueda global y filtros */}
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center gap-3">
                     <div className="flex-1 max-w-md">
                         <Input
                             placeholder="Buscar en todos los campos..."
@@ -509,7 +512,10 @@ const DataTable = <T extends Record<string, any>>({
                                 </td>
                             </tr>
                         ) : (
-                            sortedData.map((record, index) => {
+                            (isClientSidePagination && pagination
+                                ? sortedData.slice((pagination.current - 1) * pagination.pageSize, pagination.current * pagination.pageSize)
+                                : sortedData
+                            ).map((record, index) => {
                                 const key = typeof rowKey === 'function' ? rowKey(record) : record[rowKey];
                                 return (
                                     <tr key={key} className="hover:bg-gray-50">

@@ -633,7 +633,7 @@ Esta acción:
         return (
           <div className="space-y-6">
             {/* Navigation tabs for subsections */}
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button
                 variant={evaluationSubsection === 'management' ? 'primary' : 'outline'}
                 onClick={() => setEvaluationSubsection('management')}
@@ -700,7 +700,7 @@ Esta acción:
         return (
           <div className="space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="flex items-center space-x-3">
                 <FileTextIcon className="w-8 h-8 text-azul-monte-tabor" />
                 <div>
@@ -718,7 +718,7 @@ Esta acción:
                 </div>
               </div>
 
-              <div className="flex items-center space-x-3">
+              <div className="flex flex-wrap items-center gap-2">
                 {statusFilter !== 'all' && (
                   <Button
                     variant="outline"
@@ -791,7 +791,7 @@ Esta acción:
         return (
           <div className="space-y-6">
             {/* Navigation tabs for subsections */}
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button
                 variant={userSubsection === 'staff' ? 'primary' : 'outline'}
                 onClick={() => setUserSubsection('staff')}

@@ -256,8 +256,8 @@ const ApplicationsTable: React.FC<ApplicationsTableProps> = ({
 
       {/* Leyenda */}
       <div className="mt-4 px-6 py-3 bg-gray-50 border-t">
-        <div className="flex items-center justify-between text-xs text-gray-500">
-          <div className="flex items-center space-x-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center space-x-1">
               <Badge variant="info">Enviada</Badge>
               <span>Nueva postulación</span>
