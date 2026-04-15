@@ -35,8 +35,6 @@ const StudentProfile = lazy(() => import('./pages/StudentProfile'));
 const CalendarNotifications = lazy(() => import('./pages/CalendarNotifications'));
 const InterviewModule = lazy(() => import('./pages/InterviewModule'));
 const ReportsDashboard = lazy(() => import('./pages/ReportsDashboard'));
-const InterviewSchedulingTest = lazy(() => import('./pages/InterviewSchedulingTest'));
-const MicroservicesTestPage = lazy(() => import('./pages/MicroservicesTestPage'));
 
 // Coordinator Components
 const CoordinatorLayout = lazy(() => import('./components/layout/CoordinatorLayout'));
@@ -133,12 +131,6 @@ function App() {
                                     <ReportsDashboard />
                                 </ProtectedAdminRoute>
                             } />
-                            <Route path="/test-interview-scheduling" element={
-                                <ProtectedAdminRoute>
-                                    <InterviewSchedulingTest />
-                                </ProtectedAdminRoute>
-                            } />
-                            <Route path="/test-microservices" element={<MicroservicesTestPage />} />
 
                             {/* Coordinator Routes */}
                             <Route
