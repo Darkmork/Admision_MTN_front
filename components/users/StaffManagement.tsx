@@ -327,8 +327,8 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ onBack }) => {
     <div className="space-y-6">
 
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {onBack && (
             <Button 
               onClick={onBack}
@@ -339,7 +339,7 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ onBack }) => {
               Volver
             </Button>
           )}
-          <UsersIcon className="w-8 h-8 text-azul-monte-tabor" />
+          <UsersIcon className="w-8 h-8 text-azul-monte-tabor flex-shrink-0" />
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
               Gestión de Usuarios
@@ -350,7 +350,7 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ onBack }) => {
           </div>
         </div>
 
-        <div className="flex items-center space-x-3">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
             onClick={() => setShowStats(!showStats)}

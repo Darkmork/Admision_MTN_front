@@ -67,6 +67,8 @@ const EvaluationManagement: React.FC<EvaluationManagementProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
   const [showAssignModal, setShowAssignModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 5;
   const { addNotification } = useNotifications();
 
   useEffect(() => {
@@ -238,7 +240,7 @@ const EvaluationManagement: React.FC<EvaluationManagementProps> = ({
     return availableEvaluators;
   };
 
-  const applicationsWithEvaluations = applications.map(app => {
+  const allApplicationsWithEvaluations = applications.map(app => {
     const pendingEvaluations = app.evaluations?.filter(
       evaluation => evaluation.status === EvaluationStatus.PENDING
     ).length || 0;
@@ -254,6 +256,12 @@ const EvaluationManagement: React.FC<EvaluationManagementProps> = ({
       totalEvaluations: app.evaluations?.length || 0
     };
   });
+
+  const totalPages = Math.ceil(allApplicationsWithEvaluations.length / PAGE_SIZE);
+  const applicationsWithEvaluations = allApplicationsWithEvaluations.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
 
   return (
     <div className="space-y-6">
@@ -280,6 +288,20 @@ const EvaluationManagement: React.FC<EvaluationManagementProps> = ({
             </Button>
           </div>
         </div>
+
+        {/* Paginación superior */}
+        {allApplicationsWithEvaluations.length > PAGE_SIZE && (
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-4 text-sm text-gray-600">
+            <span>Mostrando {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, allApplicationsWithEvaluations.length)} de {allApplicationsWithEvaluations.length} registros</span>
+            <div className="flex items-center gap-1">
+              <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1} className="px-2 py-1 rounded border disabled:opacity-40 hover:bg-gray-100">«</button>
+              <button onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1} className="px-2 py-1 rounded border disabled:opacity-40 hover:bg-gray-100">‹</button>
+              <span className="px-3 py-1 rounded border bg-azul-monte-tabor text-white">{currentPage} / {totalPages}</span>
+              <button onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === totalPages} className="px-2 py-1 rounded border disabled:opacity-40 hover:bg-gray-100">›</button>
+              <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} className="px-2 py-1 rounded border disabled:opacity-40 hover:bg-gray-100">»</button>
+            </div>
+          </div>
+        )}
 
         <div className="overflow-x-auto">
           <table className="min-w-full table-auto">

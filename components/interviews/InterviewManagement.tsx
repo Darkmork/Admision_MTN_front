@@ -387,8 +387,8 @@ const InterviewManagement: React.FC<InterviewManagementProps> = ({ className = '
   return (
     <div className={`space-y-6 ${className}`}>
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {onBack && (
             <Button 
               onClick={onBack}
@@ -399,7 +399,7 @@ const InterviewManagement: React.FC<InterviewManagementProps> = ({ className = '
               Volver
             </Button>
           )}
-          <CalendarIcon className="w-8 h-8 text-azul-monte-tabor" />
+          <CalendarIcon className="w-8 h-8 text-azul-monte-tabor flex-shrink-0" />
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
               Gestión de Entrevistas
@@ -410,7 +410,7 @@ const InterviewManagement: React.FC<InterviewManagementProps> = ({ className = '
           </div>
         </div>
 
-        <div className="flex items-center space-x-3">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
             onClick={() => setShowFilters(!showFilters)}
@@ -701,6 +701,8 @@ interface StudentListViewProps {
 const StudentListView: React.FC<StudentListViewProps> = ({ onStudentSelect }) => {
   const [applications, setApplications] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 5;
 
   useEffect(() => {
     loadApplications();
@@ -765,15 +767,34 @@ const StudentListView: React.FC<StudentListViewProps> = ({ onStudentSelect }) =>
     );
   }
 
+  const totalPages = Math.ceil(applications.length / PAGE_SIZE);
+  const pagedApplications = applications.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
+
   return (
     <Card className="p-6">
       <div className="mb-4">
         <h3 className="text-lg font-semibold text-gray-900">Estudiantes para Entrevistas</h3>
         <p className="text-sm text-gray-600">Selecciona un estudiante para gestionar sus entrevistas</p>
       </div>
+
+      {applications.length > PAGE_SIZE && (
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-4 text-sm text-gray-600">
+          <span>Mostrando {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, applications.length)} de {applications.length} estudiantes</span>
+          <div className="flex items-center gap-1">
+            <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1} className="px-2 py-1 rounded border disabled:opacity-40 hover:bg-gray-100">«</button>
+            <button onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1} className="px-2 py-1 rounded border disabled:opacity-40 hover:bg-gray-100">‹</button>
+            <span className="px-3 py-1 rounded border bg-azul-monte-tabor text-white">{currentPage} / {totalPages}</span>
+            <button onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === totalPages} className="px-2 py-1 rounded border disabled:opacity-40 hover:bg-gray-100">›</button>
+            <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} className="px-2 py-1 rounded border disabled:opacity-40 hover:bg-gray-100">»</button>
+          </div>
+        </div>
+      )}
       
       <div className="grid gap-4">
-        {applications.map((app) => (
+        {pagedApplications.map((app) => (
           <div
             key={app.id}
             className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 cursor-pointer transition-colors"
@@ -908,7 +929,7 @@ const StudentDetailView: React.FC<StudentDetailViewProps> = ({
       )}
 
       <Card className="p-6">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
           <div>
             <h3 className="text-xl font-semibold text-gray-900">{studentName}</h3>
             <p className="text-sm text-gray-600">ID de aplicación: {applicationId}</p>
