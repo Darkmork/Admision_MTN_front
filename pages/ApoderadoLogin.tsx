@@ -109,7 +109,7 @@ const ApoderadoLogin: React.FC = () => {
                     <div className="flex justify-center mb-8">
                         <LogoIcon className="w-32 h-32" />
                     </div>
-                    <h2 className="text-3xl font-bold text-azul-monte-tabor">
+                    <h2 className="text-2xl sm:text-3xl font-bold text-azul-monte-tabor">
                         {showRegister ? 'Crear Cuenta para Postular' : 'Acceso de Apoderados'}
                     </h2>
                     <p className="mt-2 text-gris-piedra">
@@ -120,7 +120,7 @@ const ApoderadoLogin: React.FC = () => {
                     </p>
                 </div>
 
-                <Card className="p-8">
+                <Card className="p-5 sm:p-8">
                     {!showRegister ? (
                         // Formulario de Login
                         <form onSubmit={handleLogin} className="space-y-6">
@@ -181,7 +181,7 @@ const ApoderadoLogin: React.FC = () => {
                                 </div>
                             )}
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <Input
                                     id="firstName"
                                     label="Nombres"
@@ -228,7 +228,7 @@ const ApoderadoLogin: React.FC = () => {
                                 isRequired
                             />
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <Input
                                     id="password-register"
                                     label="Contraseña"

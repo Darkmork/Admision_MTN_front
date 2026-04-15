@@ -375,10 +375,10 @@ const EvaluationForm: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <button
               onClick={() => navigate('/profesor/dashboard')}
@@ -403,7 +403,7 @@ const EvaluationForm: React.FC = () => {
           <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">
             Información del Estudiante
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium text-gris-piedra">Nombre:</label>
               <p className="text-lg font-semibold">{evaluation.studentName || 'No disponible'}</p>
@@ -449,7 +449,7 @@ const EvaluationForm: React.FC = () => {
             <h2 className="text-xl font-bold text-azul-monte-tabor mb-4 flex items-center gap-2">
               <span>🎤</span> Información de Entrevista Realizada
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-gris-piedra">Tipo de Entrevista</label>
                 <p className="text-lg font-semibold">{interviewData.interview_type}</p>
@@ -559,7 +559,7 @@ const EvaluationForm: React.FC = () => {
               Estas observaciones son confidenciales y serán visibles solo para el comité de admisión
             </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
               {/* Academic Readiness */}
               <div>
                 <label className="block text-sm font-medium text-gris-piedra mb-2">
@@ -859,7 +859,7 @@ const EvaluationForm: React.FC = () => {
                       key={hist.id}
                       className="p-4 bg-white rounded-lg border border-amber-300"
                     >
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                         <div>
                           <label className="text-xs font-medium text-gris-piedra">Tipo de Evaluación</label>
                           <p className="text-sm font-semibold">{getEvaluationTypeLabel(hist.evaluation_type)}</p>

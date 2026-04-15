@@ -66,6 +66,7 @@ const ProfessorDashboard: React.FC = () => {
     };
 
     const [activeSection, setActiveSection] = useState(getInitialSection());
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     // Usar useRef para estabilizar la referencia y evitar re-renders infinitos
     const currentProfessorRef = useRef(currentProfessor);
@@ -1557,71 +1558,106 @@ const ProfessorDashboard: React.FC = () => {
         }
     };
 
+    const SidebarNav = ({ onNavigate }: { onNavigate?: () => void }) => (
+        <>
+            <div className="text-blanco-pureza mb-8">
+                <h2 className="text-xl font-bold">Portal Profesores</h2>
+                <p className="text-blue-200 text-sm">Sistema de Evaluaciones</p>
+            </div>
+            <nav className="space-y-2 flex-1" aria-label="Menú de navegación del profesor">
+                {sections.map((section) => {
+                    const IconComponent = section.icon;
+                    const showBadge = section.key === 'entrevistas' && interviews.length > 0;
+                    return (
+                        <button
+                            key={section.key}
+                            onClick={() => { setActiveSection(section.key); onNavigate?.(); }}
+                            className={`w-full text-left px-4 py-3 rounded-lg font-semibold transition-colors duration-200 flex items-center gap-3 ${
+                                activeSection === section.key
+                                    ? 'bg-dorado-nazaret text-azul-monte-tabor'
+                                    : 'text-blanco-pureza hover:bg-blue-800'
+                            }`}
+                            aria-label={`Navegar a sección ${section.label}`}
+                            aria-current={activeSection === section.key ? 'page' : undefined}
+                        >
+                            <IconComponent className="w-5 h-5" aria-hidden="true" />
+                            <span className="flex-1">{section.label}</span>
+                            {showBadge && (
+                                <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                                    {interviews.length}
+                                </span>
+                            )}
+                        </button>
+                    );
+                })}
+            </nav>
+            <div className="mt-8 pt-8 border-t border-blue-700 space-y-2">
+                <Link to="/" onClick={() => onNavigate?.()}>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full text-blanco-pureza border-blanco-pureza hover:bg-blanco-pureza hover:text-azul-monte-tabor"
+                        ariaLabel="Volver al portal principal del sistema"
+                    >
+                        Volver al Portal Principal
+                    </Button>
+                </Link>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full text-blanco-pureza border-blanco-pureza hover:bg-red-500 hover:text-blanco-pureza"
+                    onClick={handleLogout}
+                    ariaLabel="Cerrar sesión y salir del portal de profesores"
+                >
+                    Cerrar Sesión
+                </Button>
+            </div>
+        </>
+    );
+
     return (
         <div className="bg-gray-50 min-h-screen">
+            {/* Mobile top bar */}
+            <div className="md:hidden bg-azul-monte-tabor text-white px-4 py-3 flex items-center justify-between sticky top-0 z-30">
+                <div>
+                    <span className="font-bold">Portal Profesores</span>
+                    <p className="text-blue-200 text-xs">Sistema de Evaluaciones</p>
+                </div>
+                <button
+                    onClick={() => setIsSidebarOpen(prev => !prev)}
+                    className="p-2 rounded-lg hover:bg-blue-800 transition-colors"
+                    aria-label="Abrir menú de navegación"
+                >
+                    {isSidebarOpen ? (
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    ) : (
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    )}
+                </button>
+            </div>
+
+            {/* Mobile overlay */}
+            {isSidebarOpen && (
+                <div className="md:hidden fixed inset-0 bg-black bg-opacity-40 z-40" onClick={() => setIsSidebarOpen(false)} />
+            )}
+
+            {/* Mobile sidebar drawer */}
+            <div className={`md:hidden fixed top-0 left-0 h-full w-64 bg-azul-monte-tabor z-50 p-6 flex flex-col overflow-y-auto transform transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                <SidebarNav onNavigate={() => setIsSidebarOpen(false)} />
+            </div>
+
             <div className="flex">
-                {/* Sidebar */}
-                <aside className="w-64 bg-azul-monte-tabor min-h-screen p-6">
-                    <div className="text-blanco-pureza mb-8">
-                        <h2 className="text-xl font-bold">Portal Profesores</h2>
-                        <p className="text-blue-200 text-sm">Sistema de Evaluaciones</p>
-                    </div>
-                    
-                    <nav className="space-y-2" aria-label="Menú de navegación del profesor">
-                        {sections.map((section) => {
-                            const IconComponent = section.icon;
-                            // Show count badge for interviews section
-                            const showBadge = section.key === 'entrevistas' && interviews.length > 0;
-
-                            return (
-                                <button
-                                    key={section.key}
-                                    onClick={() => setActiveSection(section.key)}
-                                    className={`w-full text-left px-4 py-3 rounded-lg font-semibold transition-colors duration-200 flex items-center gap-3 ${
-                                        activeSection === section.key
-                                            ? 'bg-dorado-nazaret text-azul-monte-tabor'
-                                            : 'text-blanco-pureza hover:bg-blue-800'
-                                    }`}
-                                    aria-label={`Navegar a sección ${section.label}`}
-                                    aria-current={activeSection === section.key ? 'page' : undefined}
-                                >
-                                    <IconComponent className="w-5 h-5" aria-hidden="true" />
-                                    <span className="flex-1">{section.label}</span>
-                                    {showBadge && (
-                                        <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                                            {interviews.length}
-                                        </span>
-                                    )}
-                                </button>
-                            );
-                        })}
-                    </nav>
-
-                    <div className="mt-8 pt-8 border-t border-blue-700 space-y-2">
-                        <Link to="/">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="w-full text-blanco-pureza border-blanco-pureza hover:bg-blanco-pureza hover:text-azul-monte-tabor"
-                                ariaLabel="Volver al portal principal del sistema"
-                            >
-                                Volver al Portal Principal
-                            </Button>
-                        </Link>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-full text-blanco-pureza border-blanco-pureza hover:bg-red-500 hover:text-blanco-pureza"
-                            onClick={handleLogout}
-                            ariaLabel="Cerrar sesión y salir del portal de profesores"
-                        >
-                            Cerrar Sesión
-                        </Button>
-                    </div>
+                {/* Desktop Sidebar */}
+                <aside className="w-64 bg-azul-monte-tabor min-h-screen p-6 hidden md:flex flex-col sticky top-0 self-start h-screen overflow-y-auto">
+                    <SidebarNav />
                 </aside>
 
                 {/* Main Content */}
-                <main className="flex-1 p-8" role="main" aria-label="Contenido principal del dashboard del profesor">
+                <main className="flex-1 p-4 sm:p-8 min-w-0" role="main" aria-label="Contenido principal del dashboard del profesor">
                     {renderSection()}
                 </main>
             </div>

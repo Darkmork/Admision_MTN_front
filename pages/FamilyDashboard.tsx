@@ -81,6 +81,7 @@ const getDocumentStatusIcon = (status: Document['status']) => {
 const FamilyDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState('resumen');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [realApplications, setRealApplications] = useState<Application[]>([]);
   const [selectedApplicationIndex, setSelectedApplicationIndex] = useState(0);
   const [documents, setDocuments] = useState<any[]>([]);
@@ -235,12 +236,12 @@ const FamilyDashboard: React.FC = () => {
                   </button>
                 </div>
               )}
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-6">
-                  <LogoIcon className="w-24 h-24" />
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
+                <div className="flex items-center gap-4">
+                  <LogoIcon className="w-16 h-16 sm:w-24 sm:h-24 flex-shrink-0" />
                   <div>
-                    <h1 className="text-3xl font-bold">Monte Tabor & Nazaret</h1>
-                    <p className="text-blue-100 text-lg">Portal de Apoderados</p>
+                    <h1 className="text-xl sm:text-3xl font-bold">Monte Tabor & Nazaret</h1>
+                    <p className="text-blue-100 text-sm sm:text-lg">Portal de Apoderados</p>
                     {user && (
                       <p className="text-blue-200 text-sm">Bienvenido, {user.firstName} {user.lastName}</p>
                     )}
@@ -755,28 +756,75 @@ const FamilyDashboard: React.FC = () => {
   }
 
   return (
-    <div className="bg-gray-50 min-h-screen py-12 flex">
-      {/* Sidebar */}
-      <aside className="w-64 bg-azul-monte-tabor p-6 flex-shrink-0 hidden md:flex md:flex-col rounded-xl mr-8" role="complementary" aria-label="Menú de navegación">
-        <nav className="space-y-2" aria-label="Secciones del portal de apoderados">
-          {sections.map(section => (
-            <button
-              key={section.key}
-              onClick={() => setActiveSection(section.key)}
-              className={`w-full text-left px-4 py-2 rounded-lg font-semibold transition-colors duration-200 ${activeSection === section.key ? 'bg-dorado-nazaret/20 text-dorado-nazaret' : 'text-blanco-pureza hover:bg-blue-800'}`}
-              aria-label={`Navegar a sección ${section.label}`}
-              aria-current={activeSection === section.key ? 'page' : undefined}
-            >
-              {section.label}
-            </button>
-          ))}
-        </nav>
-      </aside>
-      {/* Main Content */}
-      <main className="flex-1 max-w-3xl mx-auto" role="main" aria-label="Contenido principal del portal de apoderados">
-        {renderSection()}
-      </main>
+    <div className="bg-gray-50 min-h-screen">
+      {/* Mobile top bar */}
+      <div className="md:hidden bg-azul-monte-tabor text-white px-4 py-3 flex items-center justify-between">
+        <span className="font-bold text-lg">Portal Apoderados</span>
+        <button
+          onClick={() => setIsSidebarOpen(prev => !prev)}
+          className="p-2 rounded-lg hover:bg-blue-800 transition-colors"
+          aria-label="Abrir menú de secciones"
+        >
+          {isSidebarOpen ? (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          ) : (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          )}
+        </button>
+      </div>
+
+      {/* Mobile sidebar overlay */}
+      {isSidebarOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-black bg-opacity-40 z-40"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
+      {/* Mobile sidebar drawer */}
+      <div className={`md:hidden fixed top-0 left-0 h-full w-64 bg-azul-monte-tabor z-50 transform transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="p-6 pt-14">
+          <nav className="space-y-2" aria-label="Secciones del portal de apoderados">
+            {sections.map(section => (
+              <button
+                key={section.key}
+                onClick={() => { setActiveSection(section.key); setIsSidebarOpen(false); }}
+                className={`w-full text-left px-4 py-3 rounded-lg font-semibold transition-colors duration-200 ${activeSection === section.key ? 'bg-dorado-nazaret/20 text-dorado-nazaret' : 'text-blanco-pureza hover:bg-blue-800'}`}
+              >
+                {section.label}
+              </button>
+            ))}
+          </nav>
         </div>
+      </div>
+
+      <div className="flex py-6 sm:py-12 px-4 sm:px-6">
+        {/* Desktop Sidebar */}
+        <aside className="w-64 bg-azul-monte-tabor p-6 flex-shrink-0 hidden md:flex md:flex-col rounded-xl mr-8 self-start sticky top-20" role="complementary" aria-label="Menú de navegación">
+          <nav className="space-y-2" aria-label="Secciones del portal de apoderados">
+            {sections.map(section => (
+              <button
+                key={section.key}
+                onClick={() => setActiveSection(section.key)}
+                className={`w-full text-left px-4 py-2 rounded-lg font-semibold transition-colors duration-200 ${activeSection === section.key ? 'bg-dorado-nazaret/20 text-dorado-nazaret' : 'text-blanco-pureza hover:bg-blue-800'}`}
+                aria-label={`Navegar a sección ${section.label}`}
+                aria-current={activeSection === section.key ? 'page' : undefined}
+              >
+                {section.label}
+              </button>
+            ))}
+          </nav>
+        </aside>
+        {/* Main Content */}
+        <main className="flex-1 min-w-0 max-w-3xl mx-auto md:mx-0" role="main" aria-label="Contenido principal del portal de apoderados">
+          {renderSection()}
+        </main>
+      </div>
+    </div>
     );
 };
 

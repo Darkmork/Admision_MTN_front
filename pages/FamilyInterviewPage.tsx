@@ -169,10 +169,10 @@ const FamilyInterviewPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <button
               onClick={() => navigate('/profesor')}
@@ -180,7 +180,7 @@ const FamilyInterviewPage: React.FC = () => {
             >
               <FiArrowLeft /> Volver al Dashboard
             </button>
-            <h1 className="text-3xl font-bold text-azul-monte-tabor">
+            <h1 className="text-2xl sm:text-3xl font-bold text-azul-monte-tabor">
               Entrevista Familiar
             </h1>
           </div>
@@ -197,7 +197,7 @@ const FamilyInterviewPage: React.FC = () => {
           <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">
             Entrevistador
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium text-gris-piedra">Nombre del Entrevistador</label>
               <p className="text-lg font-semibold">
@@ -218,7 +218,7 @@ const FamilyInterviewPage: React.FC = () => {
           <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">
             Información del Estudiante
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium text-gris-piedra">Nombre Completo</label>
               <p className="text-lg font-semibold">{evaluation.studentName}</p>
@@ -249,7 +249,7 @@ const FamilyInterviewPage: React.FC = () => {
           <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">
             Información de los Padres
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {/* Father */}
             <div className="space-y-3">
               <h3 className="font-semibold text-azul-monte-tabor">Padre</h3>

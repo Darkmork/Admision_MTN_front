@@ -83,7 +83,7 @@ const StudentProfile: React.FC = () => {
 
     return (
         <div className="bg-gray-50 min-h-screen py-8">
-            <div className="container mx-auto px-6 max-w-6xl">
+            <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
                 {/* Header */}
                 <div className="mb-6">
                     <button 
@@ -94,22 +94,22 @@ const StudentProfile: React.FC = () => {
                         Volver al Dashboard
                     </button>
                     
-                    <Card className="p-6 bg-gradient-to-r from-azul-monte-tabor to-blue-700 text-blanco-pureza">
-                        <div className="flex items-center gap-6">
-                            <div className="bg-blanco-pureza bg-opacity-20 p-4 rounded-full">
-                                <UserIcon className="w-12 h-12 text-blanco-pureza" />
+                    <Card className="p-4 sm:p-6 bg-gradient-to-r from-azul-monte-tabor to-blue-700 text-blanco-pureza">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                            <div className="bg-blanco-pureza bg-opacity-20 p-4 rounded-full self-start sm:self-auto">
+                                <UserIcon className="w-10 h-10 sm:w-12 sm:h-12 text-blanco-pureza" />
                             </div>
                             <div className="flex-1">
-                                <h1 className="text-3xl font-bold mb-2">
+                                <h1 className="text-2xl sm:text-3xl font-bold mb-2">
                                     {student.firstName} {student.lastName}
                                 </h1>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-blue-100">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-blue-100">
                                     <p><strong>Nivel:</strong> {student.grade}</p>
                                     <p><strong>Fecha de Nacimiento:</strong> {new Date(student.birthDate).toLocaleDateString('es-CL')}</p>
                                     <p><strong>ID Postulación:</strong> {student.applicationId}</p>
                                 </div>
                             </div>
-                            <div className="text-right">
+                            <div className="sm:text-right">
                                 <div className="text-3xl font-bold text-dorado-nazaret">
                                     {Math.round(averageScore)}%
                                 </div>
@@ -152,7 +152,7 @@ const StudentProfile: React.FC = () => {
 
                                         {exam.evaluation ? (
                                             <div className="bg-gray-50 rounded-lg p-4">
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                                <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4">
                                                     <div>
                                                         <span className="text-sm text-gris-piedra">Puntaje:</span>
                                                         <div className="font-semibold">
@@ -179,7 +179,7 @@ const StudentProfile: React.FC = () => {
                                                         <h4 className="font-semibold text-azul-monte-tabor mb-2">
                                                             Evaluación por Áreas:
                                                         </h4>
-                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                                             {exam.evaluation.areaScores.map((area, index) => (
                                                                 <div key={index} className="flex justify-between items-center bg-white p-2 rounded">
                                                                     <span className="text-sm">{area.area}</span>

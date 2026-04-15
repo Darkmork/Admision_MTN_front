@@ -10,6 +10,7 @@ const Header: React.FC = () => {
     const [isAdmin, setIsAdmin] = useState(false);
     const [isProfessorLoggedIn, setIsProfessorLoggedIn] = useState(false);
     const [isAnyUserLoggedIn, setIsAnyUserLoggedIn] = useState(false);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     // Verificar si el usuario actual es admin, profesor o cualquier usuario autenticado
     useEffect(() => {
@@ -89,14 +90,16 @@ const Header: React.FC = () => {
 
     return (
         <header className="bg-blanco-pureza shadow-md sticky top-0 z-50">
-            <div className="container mx-auto px-6 py-3 flex justify-between items-center">
-                <Link to="/" onClick={handleLogoutAndGoHome} className="flex items-center gap-3">
-                    <img src="/images/logoMTN.png" alt="Logo Colegio Monte Tabor y Nazaret" className="h-12" />
-                    <span className="text-xl font-bold text-azul-monte-tabor font-serif">
+            <div className="container mx-auto px-4 sm:px-6 py-3 flex justify-between items-center">
+                <Link to="/" onClick={handleLogoutAndGoHome} className="flex items-center gap-2 sm:gap-3 min-w-0">
+                    <img src="/images/logoMTN.png" alt="Logo Colegio Monte Tabor y Nazaret" className="h-10 sm:h-12 flex-shrink-0" />
+                    <span className="text-base sm:text-xl font-bold text-azul-monte-tabor font-serif hidden xs:block truncate">
                         Colegio Monte Tabor y Nazaret
                     </span>
                 </Link>
-                <nav className="hidden md:flex items-center gap-8">
+
+                {/* Desktop Nav */}
+                <nav className="hidden md:flex items-center gap-6 lg:gap-8">
                     <NavLink
                         to="/"
                         onClick={handleLogoutAndGoHome}
@@ -106,7 +109,6 @@ const Header: React.FC = () => {
                     </NavLink>
                     <NavLink to="/examenes" className={({ isActive }) => isActive ? `${navLinkClasses} ${activeLinkClasses}`: navLinkClasses}>Exámenes</NavLink>
                     <NavLink to="/apoderado/login" className={({ isActive }) => isActive ? `${navLinkClasses} ${activeLinkClasses}`: navLinkClasses}>Portal Familia</NavLink>
-                    {/* Ocultar "Profesores" si hay un profesor autenticado (para evitar que salga de su sesión) */}
                     {!isProfessorLoggedIn && (
                         <NavLink to="/profesor/login" className={({ isActive }) => isActive ? `${navLinkClasses} ${activeLinkClasses}`: navLinkClasses}>Profesores</NavLink>
                     )}
@@ -122,17 +124,90 @@ const Header: React.FC = () => {
                         </NavLink>
                     )}
                 </nav>
-                <div className="flex items-center gap-4">
-                     {/* Ocultar "Iniciar Postulación" si hay CUALQUIER usuario autenticado */}
-                     {!isAnyUserLoggedIn && (
-                        <Link to="/postulacion">
-                            <Button variant="primary">
+
+                <div className="flex items-center gap-2 sm:gap-4">
+                    {!isAnyUserLoggedIn && (
+                        <Link to="/postulacion" className="hidden sm:block">
+                            <Button variant="primary" size="sm">
                                 Iniciar Postulación
                             </Button>
                         </Link>
-                     )}
+                    )}
+                    {/* Hamburger button */}
+                    <button
+                        className="md:hidden p-2 rounded-lg text-gris-piedra hover:text-azul-monte-tabor hover:bg-gray-100 transition-colors"
+                        onClick={() => setIsMobileMenuOpen(prev => !prev)}
+                        aria-label="Abrir menú de navegación"
+                        aria-expanded={isMobileMenuOpen}
+                    >
+                        {isMobileMenuOpen ? (
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        ) : (
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                            </svg>
+                        )}
+                    </button>
                 </div>
             </div>
+
+            {/* Mobile Menu */}
+            {isMobileMenuOpen && (
+                <div className="md:hidden bg-blanco-pureza border-t border-gray-100 shadow-lg">
+                    <nav className="container mx-auto px-4 py-3 flex flex-col gap-1">
+                        <NavLink
+                            to="/"
+                            onClick={(e) => { handleLogoutAndGoHome(e); setIsMobileMenuOpen(false); }}
+                            className={({ isActive }) => `px-4 py-3 rounded-lg font-semibold transition-colors ${isActive ? 'text-azul-monte-tabor bg-blue-50' : 'text-gris-piedra hover:bg-gray-50'}`}
+                        >
+                            Inicio
+                        </NavLink>
+                        <NavLink
+                            to="/examenes"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className={({ isActive }) => `px-4 py-3 rounded-lg font-semibold transition-colors ${isActive ? 'text-azul-monte-tabor bg-blue-50' : 'text-gris-piedra hover:bg-gray-50'}`}
+                        >
+                            Exámenes
+                        </NavLink>
+                        <NavLink
+                            to="/apoderado/login"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className={({ isActive }) => `px-4 py-3 rounded-lg font-semibold transition-colors ${isActive ? 'text-azul-monte-tabor bg-blue-50' : 'text-gris-piedra hover:bg-gray-50'}`}
+                        >
+                            Portal Familia
+                        </NavLink>
+                        {!isProfessorLoggedIn && (
+                            <NavLink
+                                to="/profesor/login"
+                                onClick={() => setIsMobileMenuOpen(false)}
+                                className={({ isActive }) => `px-4 py-3 rounded-lg font-semibold transition-colors ${isActive ? 'text-azul-monte-tabor bg-blue-50' : 'text-gris-piedra hover:bg-gray-50'}`}
+                            >
+                                Profesores
+                            </NavLink>
+                        )}
+                        {isAdmin && (
+                            <NavLink
+                                to="/admin"
+                                onClick={() => setIsMobileMenuOpen(false)}
+                                className={({ isActive }) => `px-4 py-3 rounded-lg font-semibold transition-colors ${isActive ? 'text-azul-monte-tabor bg-blue-50' : 'text-gris-piedra hover:bg-gray-50'}`}
+                            >
+                                ⚙️ Admin
+                            </NavLink>
+                        )}
+                        {!isAnyUserLoggedIn && (
+                            <div className="pt-2 pb-1">
+                                <Link to="/postulacion" onClick={() => setIsMobileMenuOpen(false)}>
+                                    <Button variant="primary" className="w-full">
+                                        Iniciar Postulación
+                                    </Button>
+                                </Link>
+                            </div>
+                        )}
+                    </nav>
+                </div>
+            )}
         </header>
     );
 };

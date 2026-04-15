@@ -267,11 +267,11 @@ const ComplementaryApplicationForm: React.FC = () => {
   }
 
   return (
-    <div className="bg-gray-50 min-h-screen py-12 px-4">
+    <div className="bg-gray-50 min-h-screen py-8 sm:py-12 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <Card className="p-6 mb-6 bg-gradient-to-r from-azul-monte-tabor to-blue-700 text-white">
-          <div className="flex items-center justify-between">
+        <Card className="p-4 sm:p-6 mb-6 bg-gradient-to-r from-azul-monte-tabor to-blue-700 text-white">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <h1 className="text-3xl font-bold mb-2">Formulario Complementario de Postulación</h1>
               <p className="text-blue-100">Complete la siguiente información sobre su familia y motivaciones</p>
@@ -333,7 +333,7 @@ const ComplementaryApplicationForm: React.FC = () => {
           <Card className="p-6">
             <h2 className="text-xl font-bold text-azul-monte-tabor mb-4">Datos de Referencia</h2>
             <p className="text-sm text-gris-piedra mb-4">Estos datos provienen de su postulación inicial</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gris-piedra mb-1">Email</label>
                 <input
