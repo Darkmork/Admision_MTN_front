@@ -36,6 +36,7 @@ import {
   type DashboardMetrics,
   type EvaluationGroup,
   type FlowApplication,
+  type GroupCluster,
   type Professional,
   type ProfessionalRoleCode,
   type ProfessionalRoleDefinition,
@@ -164,6 +165,10 @@ export function PrekinderOperations({
   const [professionalRoles, setProfessionalRoles] = useState<ProfessionalRoleDefinition[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [groups, setGroups] = useState<EvaluationGroup[]>([]);
+  const [groupClusters, setGroupClusters] = useState<GroupCluster[]>([]);
+  // null mientras el backend de agrupaciones no responda: la pestaña avisa en
+  // lugar de mostrar una lista vacía que parece "todavía no hay agrupaciones".
+  const [clustersAvailable, setClustersAvailable] = useState(true);
   const [controlTower, setControlTower] = useState<ControlTowerDay | null>(null);
   const [configuration, setConfiguration] = useState<ProcessConfiguration | null>(null);
   const [readiness, setReadiness] = useState<ProcessReadiness | null>(null);
@@ -234,7 +239,8 @@ export function PrekinderOperations({
     setError("");
     try {
       const [nextMetrics, nextWaves, nextApplications, nextRooms, nextGroups, nextControlTower,
-        nextProcessProfessionals, nextConfiguration, nextReadiness, nextCommunications, nextBatches, nextEvaluationDays] =
+        nextProcessProfessionals, nextConfiguration, nextReadiness, nextCommunications, nextBatches, nextEvaluationDays,
+        nextClusters] =
         await Promise.all([
           prekinderApi.dashboard(id),
           prekinderApi.waves(id),
@@ -248,12 +254,17 @@ export function PrekinderOperations({
           prekinderApi.communicationTemplates(id),
           prekinderApi.publicationBatches(id),
           prekinderApi.evaluationDays(id),
+          // Aislado del resto: si el módulo de agrupaciones aún no está
+          // desplegado, la jornada completa debe seguir cargando.
+          prekinderApi.groupClusters(id, day).catch(() => null),
         ]);
       setMetrics(nextMetrics);
       setWaves(nextWaves);
       setApplications(nextApplications);
       setRooms(nextRooms);
       setGroups(nextGroups);
+      setClustersAvailable(nextClusters !== null);
+      setGroupClusters(nextClusters ?? []);
       setControlTower(nextControlTower);
       setProcessProfessionals(nextProcessProfessionals);
       setConfiguration(nextConfiguration);
@@ -844,12 +855,15 @@ export function PrekinderOperations({
               date={date}
               rooms={rooms}
               groups={groups}
+              clusters={groupClusters}
+              clustersAvailable={clustersAvailable}
               applications={applications}
               professionals={processProfessionals}
               journeys={journeys}
               busy={busy}
               onDateChange={selectJourneyByDate}
               onAction={action}
+              onClusterAction={actionSilent}
               onOpenGroup={(groupId) => {
                 setSelectedGroup(groupId);
                 setSection("Torre de control");
