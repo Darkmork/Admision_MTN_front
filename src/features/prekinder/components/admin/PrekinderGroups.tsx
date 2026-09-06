@@ -19,25 +19,37 @@ import {
   X,
 } from "lucide-react";
 import {
+  ApiError,
   prekinderApi,
   type EvaluationGroup,
   type FlowApplication,
+  type GroupCluster,
   type Professional,
   type Room,
 } from "../../services/api";
 import type { EvaluationJourney } from "../../data/evaluationJourneys";
+import {
+  CLUSTER_MIN_GROUPS,
+  clusterErrorMessage,
+  isActiveCluster,
+} from "../../data/groupClusters";
+
+type ClusterActionResult = { ok: boolean; error?: string };
 
 type Props = {
   processId: string;
   date: string;
   rooms: Room[];
   groups: EvaluationGroup[];
+  clusters: GroupCluster[];
+  clustersAvailable: boolean;
   applications: FlowApplication[];
   professionals: Professional[];
   journeys: EvaluationJourney[];
   busy: boolean;
   onDateChange: (date: string) => void;
   onAction: (work: () => Promise<unknown>, success: string) => Promise<boolean>;
+  onClusterAction: (work: () => Promise<unknown>, success: string) => Promise<ClusterActionResult>;
   onOpenGroup: (groupId: string) => void;
   onGoToControlTower: () => void;
 };
@@ -187,10 +199,15 @@ export function PrekinderGroups(props: Props) {
       </aside>
       {view === "clusters" && (
         <GroupClusters
+          processId={props.processId}
           groups={props.groups}
+          clusters={props.clusters}
+          clustersAvailable={props.clustersAvailable}
           date={props.date}
           journeys={props.journeys}
+          busy={props.busy}
           onDateChange={props.onDateChange}
+          onClusterAction={props.onClusterAction}
         />
       )}
       {view === "groups" && (
@@ -390,6 +407,12 @@ export function PrekinderGroups(props: Props) {
                         <td className="px-5 py-4">
                           <p className="font-black text-slate-950">{group.code}</p>
                           <p className="mt-0.5 text-xs text-slate-500">{group.roomName}</p>
+                          {group.clusters?.length ? (
+                            <p className="mt-1.5 inline-flex max-w-full items-center gap-1 rounded-full bg-violet-50 px-2 py-0.5 text-xs font-bold text-violet-800">
+                              <Layers size={11} className="shrink-0" aria-hidden="true" />
+                              <span className="truncate">{group.clusters[0].name}</span>
+                            </p>
+                          ) : null}
                         </td>
                         <td className="px-5 py-4 text-center">
                           <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-black ${meta.className}`}>
@@ -495,25 +518,77 @@ export function PrekinderGroups(props: Props) {
   );
 }
 
+type ClusterEditorState =
+  | { mode: "create" }
+  | { mode: "edit"; cluster: GroupCluster }
+  | null;
+
+// Traduce los códigos de conflicto del backend antes de que el mensaje llegue
+// al manejador genérico, que solo conoce `error.message`.
+async function callCluster<T>(work: () => Promise<T>): Promise<T> {
+  try {
+    return await work();
+  } catch (reason) {
+    if (reason instanceof ApiError) {
+      throw new ApiError(reason.status, clusterErrorMessage(reason.code, reason.message), reason.code);
+    }
+    throw reason;
+  }
+}
+
 function GroupClusters({
+  processId,
   groups,
+  clusters,
+  clustersAvailable,
   date,
   journeys,
+  busy,
   onDateChange,
+  onClusterAction,
 }: {
+  processId: string;
   groups: EvaluationGroup[];
+  clusters: GroupCluster[];
+  clustersAvailable: boolean;
   date: string;
   journeys: EvaluationJourney[];
+  busy: boolean;
   onDateChange: (date: string) => void;
+  onClusterAction: (work: () => Promise<unknown>, success: string) => Promise<ClusterActionResult>;
 }) {
-  const [clusters, setClusters] = useState<Array<{ id: string; name: string; groupIds: string[] }>>([]);
-  const [formOpen, setFormOpen] = useState(false);
+  const [editor, setEditor] = useState<ClusterEditorState>(null);
   const [name, setName] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const activeGroups = groups.filter((group) => group.status !== "CANCELLED");
-  const sortedJourneys = [...journeys].sort((a, b) => a.date.localeCompare(b.date));
+  const [formError, setFormError] = useState("");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState("");
 
-  useEffect(() => setSelected(new Set()), [date]);
+  const activeGroups = groups.filter((group) => group.status !== "CANCELLED");
+  const visibleClusters = clusters.filter(isActiveCluster);
+  const sortedJourneys = [...journeys].sort((a, b) => a.date.localeCompare(b.date));
+  const journeyId = journeys.find((journey) => journey.date === date)?.id ?? null;
+  const formOpen = editor !== null;
+
+  // Un grupo solo puede pertenecer a una agrupación: el backend rechaza el
+  // resto por cruce de horarios, así que aquí se bloquean antes de enviar.
+  const clusterByGroupId = useMemo(() => {
+    const result = new Map<string, GroupCluster>();
+    clusters.filter(isActiveCluster).forEach((cluster) =>
+      cluster.groupIds.forEach((groupId) => result.set(groupId, cluster)),
+    );
+    return result;
+  }, [clusters]);
+
+  // Al cambiar de jornada, la lista y la selección corresponden a otro día.
+  useEffect(() => {
+    setEditor(null);
+    setName("");
+    setSelected(new Set());
+    setFormError("");
+    setDeletingId(null);
+    setDeleteError("");
+  }, [date]);
 
   function toggleGroup(groupId: string) {
     setSelected((current) => {
@@ -524,21 +599,79 @@ function GroupClusters({
     });
   }
 
-  function closeForm() {
-    setFormOpen(false);
+  function openCreate() {
+    setEditor({ mode: "create" });
     setName("");
     setSelected(new Set());
+    setFormError("");
   }
 
-  function createCluster() {
-    if (!name.trim() || selected.size === 0) return;
-    setClusters((current) => [...current, { id: crypto.randomUUID(), name: name.trim(), groupIds: [...selected] }]);
-    closeForm();
+  function openEdit(cluster: GroupCluster) {
+    setEditor({ mode: "edit", cluster });
+    setName(cluster.name);
+    setSelected(new Set(cluster.groupIds));
+    setFormError("");
   }
 
-  function removeCluster(id: string) {
-    setClusters((current) => current.filter((cluster) => cluster.id !== id));
+  function closeForm() {
+    setEditor(null);
+    setName("");
+    setSelected(new Set());
+    setFormError("");
   }
+
+  async function saveCluster() {
+    if (!editor) return;
+    const trimmed = name.trim();
+    const groupIds = [...selected];
+    if (!trimmed || groupIds.length < CLUSTER_MIN_GROUPS) return;
+    setFormError("");
+
+    const result =
+      editor.mode === "create"
+        ? journeyId
+          ? await onClusterAction(
+              () =>
+                callCluster(() =>
+                  prekinderApi.createGroupCluster({
+                    processId,
+                    evaluationDayId: journeyId,
+                    name: trimmed,
+                    groupIds,
+                  }),
+                ),
+              `Agrupación ${trimmed} creada.`,
+            )
+          : { ok: false as const, error: "Selecciona una jornada de evaluación antes de crear la agrupación." }
+        : await onClusterAction(
+            () =>
+              callCluster(() =>
+                prekinderApi.updateGroupCluster(editor.cluster.clusterId, {
+                  name: trimmed,
+                  groupIds,
+                  reason: "Actualización desde gestión de agrupaciones",
+                  expectedVersion: editor.cluster.version,
+                }),
+              ),
+            `Agrupación ${trimmed} actualizada.`,
+          );
+
+    if (result.ok) closeForm();
+    else setFormError(result.error ?? "No pudimos guardar la agrupación.");
+  }
+
+  async function removeCluster(cluster: GroupCluster) {
+    setDeleteError("");
+    const result = await onClusterAction(
+      () => callCluster(() => prekinderApi.deleteGroupCluster(cluster.clusterId, cluster.version)),
+      `Agrupación ${cluster.name} eliminada.`,
+    );
+    if (result.ok) setDeletingId(null);
+    else setDeleteError(result.error ?? "No pudimos eliminar la agrupación.");
+  }
+
+  const canSave = Boolean(name.trim()) && selected.size >= CLUSTER_MIN_GROUPS;
+  const canCreate = clustersAvailable && activeGroups.length >= CLUSTER_MIN_GROUPS && Boolean(journeyId);
 
   return (
     <div className="space-y-5">
@@ -568,16 +701,24 @@ function GroupClusters({
         </div>
       )}
 
-      <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
-        <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-        Vista de prueba: las agrupaciones se guardan solo en este navegador y se pierden al recargar la página.
-      </div>
+      {!clustersAvailable && (
+        <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
+          <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          No pudimos cargar las agrupaciones de esta jornada. Vuelve a intentar en unos minutos.
+        </div>
+      )}
 
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
         <div className="flex flex-wrap items-start justify-between gap-4 p-6">
           <div>
-            <h2 className="text-lg font-black">Crear agrupación</h2>
-            <p className="mt-1 text-sm leading-5 text-slate-600">Une varios grupos de evaluación en una sola agrupación.</p>
+            <h2 className="text-lg font-black">
+              {editor?.mode === "edit" ? `Editar ${editor.cluster.name}` : "Crear agrupación"}
+            </h2>
+            <p className="mt-1 text-sm leading-5 text-slate-600">
+              {editor?.mode === "edit"
+                ? "Cambia el nombre o los grupos que componen la agrupación."
+                : `Une ${CLUSTER_MIN_GROUPS} o más grupos de evaluación en una sola agrupación.`}
+            </p>
           </div>
           {formOpen ? (
             <button className="secondary shrink-0 !px-3" onClick={closeForm} aria-label="Cerrar formulario">
@@ -586,8 +727,9 @@ function GroupClusters({
           ) : (
             <button
               className="primary shrink-0"
-              disabled={!activeGroups.length}
-              onClick={() => setFormOpen(true)}
+              disabled={busy || !canCreate}
+              onClick={openCreate}
+              title={canCreate ? undefined : `Necesitas una jornada con al menos ${CLUSTER_MIN_GROUPS} grupos activos`}
             >
               <Plus className="mr-2 inline" size={17} />
               Nueva agrupación
@@ -620,29 +762,49 @@ function GroupClusters({
                       ) : (
                         activeGroups.map((group) => {
                           const checked = selected.has(group.groupId);
+                          const owner = clusterByGroupId.get(group.groupId);
+                          const takenBy =
+                            owner && owner.clusterId !== (editor?.mode === "edit" ? editor.cluster.clusterId : null)
+                              ? owner
+                              : null;
                           return (
-                            <label key={group.groupId} className="flex cursor-pointer items-start gap-3 rounded-lg p-2.5 hover:bg-white">
+                            <label
+                              key={group.groupId}
+                              className={`flex items-start gap-3 rounded-lg p-2.5 ${takenBy ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:bg-white"}`}
+                            >
                               <input
                                 className="mt-1 h-4 w-4 accent-blue-700"
                                 type="checkbox"
                                 checked={checked}
+                                disabled={Boolean(takenBy)}
                                 onChange={() => toggleGroup(group.groupId)}
                               />
                               <span className="min-w-0">
                                 <b className="block truncate text-sm text-slate-900">{group.code}</b>
-                                <small className="block truncate text-slate-500">{group.roomName}</small>
+                                <small className="block truncate text-slate-500">
+                                  {group.roomName} · {formatTime(group.startsAt)}
+                                  {takenBy ? ` · Ya está en ${takenBy.name}` : ""}
+                                </small>
                               </span>
                             </label>
                           );
                         })
                       )}
                     </div>
+                    {selected.size > 0 && selected.size < CLUSTER_MIN_GROUPS && (
+                      <p className="mt-2 text-sm font-semibold text-amber-800">
+                        Selecciona al menos {CLUSTER_MIN_GROUPS} grupos.
+                      </p>
+                    )}
                   </fieldset>
                 </div>
+                {formError && (
+                  <p className="px-6 pb-4 text-sm font-semibold text-red-700" role="alert">{formError}</p>
+                )}
                 <div className="flex justify-end gap-2 border-t border-slate-200 p-6">
                   <button className="secondary" onClick={closeForm}>Cancelar</button>
-                  <button className="primary" disabled={!name.trim() || selected.size === 0} onClick={createCluster}>
-                    <Plus className="mr-2 inline" size={17} />Crear agrupación
+                  <button className="primary" disabled={busy || !canSave} onClick={() => void saveCluster()}>
+                    {busy ? "Guardando…" : editor?.mode === "edit" ? "Guardar cambios" : "Crear agrupación"}
                   </button>
                 </div>
               </div>
@@ -652,42 +814,96 @@ function GroupClusters({
       </section>
 
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-        {!clusters.length ? (
+        {!visibleClusters.length ? (
           <div className="px-5 py-14 text-center">
             <Layers className="mx-auto text-slate-300" size={36} />
             <h2 className="mt-3 text-lg font-black text-slate-900">Aún no hay agrupaciones</h2>
             <p className="mx-auto mt-1 max-w-md text-sm leading-6 text-slate-500">
-              Selecciona dos o más grupos arriba y crea la primera agrupación.
+              {activeGroups.length >= CLUSTER_MIN_GROUPS
+                ? `Selecciona ${CLUSTER_MIN_GROUPS} o más grupos arriba y crea la primera agrupación.`
+                : `Esta jornada necesita al menos ${CLUSTER_MIN_GROUPS} grupos activos para poder agruparlos.`}
             </p>
           </div>
         ) : (
           <div className="divide-y divide-slate-100">
-            {clusters.map((cluster) => {
-              const members = groups.filter((group) => cluster.groupIds.includes(group.groupId));
-              const totalPostulantes = members.reduce((sum, group) => sum + group.memberIds.length, 0);
-              const totalEvaluadores = members.reduce((sum, group) => sum + group.evaluatorIds.length, 0);
+            {visibleClusters.map((cluster) => {
+              const meta = statusMeta[cluster.status] ?? {
+                label: cluster.status,
+                className: "bg-slate-100 text-slate-700",
+              };
+              const members = cluster.groups.filter((group) => group.status !== "CANCELLED");
+              const removed = cluster.groups.length - members.length;
+              const confirming = deletingId === cluster.clusterId;
               return (
-                <article key={cluster.id} className="p-5">
+                <article key={cluster.clusterId} className="p-5">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <h3 className="text-base font-black text-slate-950">{cluster.name}</h3>
+                      <h3 className="flex flex-wrap items-center gap-2 text-base font-black text-slate-950">
+                        {cluster.name}
+                        <span className={`rounded-full px-2.5 py-1 text-xs font-black ${meta.className}`}>{meta.label}</span>
+                      </h3>
                       <p className="mt-1 text-sm text-slate-500">
-                        {members.length} grupos · {totalPostulantes} postulantes · {totalEvaluadores} evaluadores
+                        {cluster.groupCount} grupos · {cluster.memberCount} postulantes · {cluster.evaluatorCount} evaluadores
+                        {cluster.startsAt && cluster.endsAt
+                          ? ` · ${formatTime(cluster.startsAt)}–${formatTime(cluster.endsAt)}`
+                          : ""}
                       </p>
                     </div>
-                    <button
-                      className="min-h-10 rounded-lg px-3 text-sm font-black text-red-700 hover:bg-red-50"
-                      onClick={() => removeCluster(cluster.id)}
-                    >
-                      <Trash2 className="mr-1 inline" size={16} />Eliminar
-                    </button>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        className="secondary !px-3 !py-2 text-xs"
+                        disabled={busy || confirming}
+                        onClick={() => openEdit(cluster)}
+                      >
+                        <Pencil className="mr-1 inline" size={14} />Editar
+                      </button>
+                      {confirming ? (
+                        <>
+                          <button
+                            className="min-h-9 rounded-lg bg-red-700 px-3 text-xs font-black text-white hover:bg-red-800 disabled:opacity-50"
+                            disabled={busy}
+                            onClick={() => void removeCluster(cluster)}
+                          >
+                            Confirmar
+                          </button>
+                          <button
+                            className="secondary !px-3 !py-2 text-xs"
+                            onClick={() => {
+                              setDeletingId(null);
+                              setDeleteError("");
+                            }}
+                          >
+                            Cancelar
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          className="min-h-9 rounded-lg px-3 text-xs font-black text-red-700 hover:bg-red-50 disabled:text-red-300 disabled:hover:bg-transparent"
+                          disabled={busy}
+                          onClick={() => {
+                            setDeletingId(cluster.clusterId);
+                            setDeleteError("");
+                          }}
+                        >
+                          <Trash2 className="mr-1 inline" size={14} />Eliminar
+                        </button>
+                      )}
+                    </div>
                   </div>
+                  {confirming && deleteError && (
+                    <p className="mt-2 text-sm font-semibold text-red-700" role="alert">{deleteError}</p>
+                  )}
                   <div className="mt-3 flex flex-wrap gap-2">
                     {members.map((group) => (
                       <span key={group.groupId} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">
-                        {group.code} · {group.roomName}
+                        {group.code} · {group.roomName} · {formatTime(group.startsAt)}
                       </span>
                     ))}
+                    {removed > 0 && (
+                      <span className="rounded-full bg-slate-50 px-3 py-1 text-xs font-bold text-slate-400">
+                        {removed} grupo{removed === 1 ? "" : "s"} eliminado{removed === 1 ? "" : "s"}
+                      </span>
+                    )}
                   </div>
                 </article>
               );

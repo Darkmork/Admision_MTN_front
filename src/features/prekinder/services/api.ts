@@ -276,6 +276,11 @@ export type EvaluationDay = {
   version: number;
 };
 
+export type GroupClusterRef = {
+  clusterId: string;
+  name: string;
+};
+
 export type EvaluationGroup = {
   groupId: string;
   processId: string;
@@ -291,6 +296,41 @@ export type EvaluationGroup = {
   version: number;
   memberIds: string[];
   evaluatorIds: string[];
+  // El backend entrega un arreglo porque la pertenencia se valida por cruce de
+  // horarios y no por índice único. En la práctica trae 0 o 1 agrupación.
+  clusters?: GroupClusterRef[];
+};
+
+export type GroupClusterGroupSummary = {
+  groupId: string;
+  code: string;
+  roomId: string;
+  roomName: string;
+  stage: EvaluationGroup["stage"];
+  startsAt: string;
+  endsAt: string;
+  status: string;
+  capacity: number;
+  memberCount: number;
+  requiredEvaluators: number;
+  evaluatorCount: number;
+};
+
+export type GroupCluster = {
+  clusterId: string;
+  processId: string;
+  evaluationDayId: string;
+  date: string;
+  name: string;
+  status: string;
+  version: number;
+  groupIds: string[];
+  groupCount: number;
+  memberCount: number;
+  evaluatorCount: number;
+  startsAt: string | null;
+  endsAt: string | null;
+  groups: GroupClusterGroupSummary[];
 };
 
 export type ReportSummary = {
@@ -406,7 +446,21 @@ export type ControlTowerDay = {
       attendance: { present: number; pending: number; absent: number };
       instrumentProgress: Record<string, string>;
       version: number;
+      clusters?: GroupClusterRef[];
     }>;
+  }>;
+  clusters?: Array<{
+    clusterId: string;
+    name: string;
+    status: string;
+    version: number;
+    groupIds: string[];
+    roomIds: string[];
+    startsAt: string | null;
+    endsAt: string | null;
+    attendance: { present: number; pending: number; absent: number };
+    instrumentProgress: Record<string, string>;
+    openIncidents: number;
   }>;
 };
 
@@ -961,6 +1015,66 @@ export const prekinderApi = {
         method: "PUT",
         body: JSON.stringify({ expectedVersion }),
       },
+    ),
+  groupClusters: (processId: string, date: string) =>
+    apiRequest<GroupCluster[]>(
+      `/v1/prekinder/processes/${processId}/group-clusters?date=${encodeURIComponent(date)}`,
+    ),
+  createGroupCluster: (input: {
+    processId: string;
+    evaluationDayId: string;
+    name: string;
+    groupIds: string[];
+  }) =>
+    apiRequest<GroupCluster>("/v1/prekinder/group-clusters", {
+      method: "POST",
+      body: JSON.stringify(input),
+    }),
+  updateGroupCluster: (
+    clusterId: string,
+    input: {
+      name: string;
+      groupIds: string[];
+      reason: string;
+      expectedVersion: number;
+    },
+  ) =>
+    apiRequest<GroupCluster>(`/v1/prekinder/group-clusters/${clusterId}`, {
+      method: "PUT",
+      body: JSON.stringify(input),
+    }),
+  deleteGroupCluster: (clusterId: string, expectedVersion: number) =>
+    apiRequest<GroupCluster>(
+      `/v1/prekinder/group-clusters/${clusterId}?expectedVersion=${expectedVersion}`,
+      { method: "DELETE" },
+    ),
+  addGroupToCluster: (clusterId: string, groupId: string, expectedVersion: number) =>
+    apiRequest<GroupCluster>(
+      `/v1/prekinder/group-clusters/${clusterId}/groups/${groupId}`,
+      { method: "POST", body: JSON.stringify({ expectedVersion }) },
+    ),
+  removeGroupFromCluster: (clusterId: string, groupId: string, expectedVersion: number) =>
+    apiRequest<GroupCluster>(
+      `/v1/prekinder/group-clusters/${clusterId}/groups/${groupId}?expectedVersion=${expectedVersion}`,
+      { method: "DELETE" },
+    ),
+  rescheduleGroupCluster: (
+    clusterId: string,
+    input: {
+      startsAt: string;
+      durationMinutes: number;
+      reason: string;
+      expectedVersion: number;
+    },
+  ) =>
+    apiRequest<GroupCluster>(`/v1/prekinder/group-clusters/${clusterId}/schedule`, {
+      method: "PUT",
+      body: JSON.stringify(input),
+    }),
+  confirmGroupCluster: (clusterId: string, expectedVersion: number) =>
+    apiRequest<GroupCluster>(
+      `/v1/prekinder/group-clusters/${clusterId}/confirmation`,
+      { method: "PUT", body: JSON.stringify({ expectedVersion }) },
     ),
   agenda: (date: string) =>
     apiRequest<AgendaGroup[]>(`/v1/prekinder/me/agenda?date=${date}`),
