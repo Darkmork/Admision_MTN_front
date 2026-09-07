@@ -197,6 +197,11 @@ export const ApplicantCardModal: React.FC<ApplicantCardModalProps> = ({ card, lo
                 </dl>
               </CardSection>
 
+              {/* DEBUG: Test label for Entrevista Familiar */}
+              <div style={{padding: '10px', background: 'yellow', border: '2px solid red', margin: '10px 0'}}>
+                <strong>DEBUG: Entrevista Familiar - Si ves esto, el modal funciona</strong>
+              </div>
+
               <CardSection title="Estado y resultado" accent="slate">
                 <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
                   <Field label="Estado (etapa actual)" value={card.statusLabel} />
