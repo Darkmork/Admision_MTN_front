@@ -282,7 +282,7 @@ const FamilyInterviewPage: React.FC = () => {
           onSave={handleSave}
           onCancel={() => navigate('/profesor')}
           disabled={saving}
-          readonly={evaluation.status === 'COMPLETED'}
+          readonly={false}
         />
 
         {/* Parent Questionnaire Modal */}
