@@ -503,13 +503,12 @@ const FamilyInterviewForm: React.FC<FamilyInterviewFormProps> = ({
                   }
                 }))}
                 disabled={readonly || disabled}
-                rows={5}
-                maxLength={500}
+                maxLength={2000}
                 className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Escriba su justificación aquí (máximo 5 líneas)..."
+                placeholder="Escriba su justificación aquí"
               />
               <p className="text-xs text-gray-500 mt-1">
-                {interviewData.observations?.justification?.length || 0} / 500 caracteres
+                {interviewData.observations?.justification?.length || 0} / 2000 caracteres
               </p>
             </div>
           )}
