@@ -197,10 +197,41 @@ export const ApplicantCardModal: React.FC<ApplicantCardModalProps> = ({ card, lo
                 </dl>
               </CardSection>
 
-              {/* DEBUG: Test label for Entrevista Familiar */}
-              <div style={{padding: '10px', background: 'yellow', border: '2px solid red', margin: '10px 0'}}>
-                <strong>DEBUG: Entrevista Familiar - Si ves esto, el modal funciona</strong>
-              </div>
+              {/* Entrevista Familiar */}
+              <CardSection title="Entrevista Familiar" accent="teal">
+                {(() => {
+                  const fi = (card as any)?.familyInterview;
+                  const hasData = fi?.percentage !== null || (fi?.scores && fi.scores.length > 0);
+                  if (!hasData) {
+                    return <p className="text-sm text-slate-500 py-2">Sin registro de entrevista familiar.</p>;
+                  }
+                  return (
+                    <details className="group">
+                      <summary className="flex cursor-pointer list-none items-center gap-3 py-2 text-sm font-semibold text-teal-800 hover:text-teal-700">
+                        <div className="flex items-center gap-4 flex-1">
+                          <span className="flex items-center gap-2">
+                            <span className="text-lg font-bold text-teal-700">{fi.percentage}%</span>
+                            <span className="text-sm text-slate-500 font-normal">de puntaje</span>
+                          </span>
+                        </div>
+                        <svg className="h-5 w-5 text-teal-600 transition-transform duration-200 group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </summary>
+                      <div className="mt-4 space-y-4 border-t border-slate-200 pt-4">
+                        <div>
+                          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                            Observación cualitativa (Justificación)
+                          </p>
+                          <div className="bg-slate-50 rounded-lg p-4 text-sm text-slate-700 whitespace-pre-line">
+                            {fi.justification || 'Sin observación registrada'}
+                          </div>
+                        </div>
+                      </div>
+                    </details>
+                  );
+                })()}
+              </CardSection>
 
               <CardSection title="Estado y resultado" accent="slate">
                 <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
